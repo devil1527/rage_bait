@@ -115,3 +115,8 @@ func _reset_level() -> void:
 	coin_counter_label.text = "COINS: 0 / %d" % GameManager.total_coins_required
 	player.reset_to(spawn_point.global_position)
 	exit_gate.reset()
+	var platforms = get_node_or_null("Platforms")
+	if platforms:
+		for p in platforms.get_children():
+			if p.has_method("reset"):
+				p.reset()

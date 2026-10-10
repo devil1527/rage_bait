@@ -3,6 +3,7 @@ extends Area2D
 ## Coin entity with retro bobbing animation and optional gentle surprise hop for the final coin.
 
 @export var is_surprise_coin: bool = false
+@export var greedy_platform: NodePath = NodePath("")
 
 var _collected: bool = false
 var _initial_pos: Vector2
@@ -70,6 +71,11 @@ func collect() -> void:
 	tween.tween_callback(func(): visible = false)
 	
 	GameManager.collect_coin()
+	
+	if greedy_platform != NodePath(""):
+		var gp = get_node_or_null(greedy_platform)
+		if gp and gp.has_method("trigger_greedy_drop"):
+			gp.trigger_greedy_drop()
 
 func reset() -> void:
 	_collected = false

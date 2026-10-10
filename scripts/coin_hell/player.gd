@@ -5,11 +5,11 @@ extends CharacterBody2D
 
 signal player_died
 
-@export var move_speed: float = 230.0
-@export var acceleration: float = 1400.0
-@export var friction: float = 1600.0
-@export var jump_velocity: float = -420.0
-@export var gravity: float = 1050.0
+@export var move_speed: float = 240.0
+@export var acceleration: float = 1600.0
+@export var friction: float = 1800.0
+@export var jump_velocity: float = -470.0
+@export var gravity: float = 1150.0
 
 # Coyote time & jump buffer
 @export var coyote_time_duration: float = 0.12
@@ -86,8 +86,8 @@ func _physics_process(delta: float) -> void:
 		AudioManager.play_sfx("jump")
 
 	# Variable jump height cut on early release
-	if (Input.is_action_just_released("jump") or touch_jump_just_released) and velocity.y < -120.0:
-		velocity.y = -120.0
+	if (Input.is_action_just_released("jump") or touch_jump_just_released) and velocity.y < -150.0:
+		velocity.y = -150.0
 	touch_jump_just_released = false
 
 	move_and_slide()

@@ -44,6 +44,8 @@ func run_all_tests() -> void:
 	test_level_select_logic_and_states()
 	test_level_1_gameplay_mechanics()
 	test_multitouch_gameplay_controls()
+	test_ragebait_tricks_and_level_rework()
+	test_full_level_1_gameplay_walkthrough()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -179,8 +181,13 @@ func test_level_1_gameplay_mechanics() -> void:
 	assert_true(exit_gate._is_open, "Exit gate unlocks automatically after 10th coin is collected")
 	assert_eq(exit_gate.status_label.text, "EXIT OPEN!", "Exit gate displays 'EXIT OPEN!'")
 	
-	# Player touches unlocked exit gate
+	# Player approaches unlocked exit gate (triggers betrayal)
 	GameManager.is_gameplay_active = true
+	exit_gate._on_body_entered(player)
+	assert_true(exit_gate._has_betrayed, "Exit gate triggers betrayal hop when approached")
+	assert_eq(exit_gate.status_label.text, "OKAY FINE, YOU WIN!", "Exit gate taunts with 'OKAY FINE, YOU WIN!'")
+	
+	# Player enters the final exit gate
 	exit_gate._on_body_entered(player)
 	assert_true(exit_gate._completion_triggered, "Level completion triggers on exit")
 	assert_true(SaveManager.is_level_completed(1), "Level 1 completion persists in SaveManager")
@@ -373,4 +380,207 @@ func test_multitouch_gameplay_controls() -> void:
 	assert_true(player.velocity.x > 0.0, "Keyboard move_right accelerates player")
 	Input.action_release("move_right")
 
+	lvl.queue_free()
+
+func test_ragebait_tricks_and_level_rework() -> void:
+	print("\n--- TEST: Ragebait Tricks & Level 1 Physics Rework ---")
+	var lvl1_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_1.tscn")
+	assert_true(lvl1_scene != null, "Level 1 scene loads successfully")
+	var lvl = lvl1_scene.instantiate()
+	add_child(lvl)
+
+	var player = lvl.get_node("Player")
+	var ground1 = lvl.get_node("Platforms/Ground1")
+	var plat1 = lvl.get_node("Platforms/Platform1")
+	var plat2 = lvl.get_node("Platforms/Platform2")
+	var plat3 = lvl.get_node("Platforms/Platform3")
+	var platgreedy = lvl.get_node("Platforms/PlatformGreedy")
+	var ground2 = lvl.get_node("Platforms/Ground2")
+	var plat4 = lvl.get_node("Platforms/Platform4")
+	var plat5 = lvl.get_node("Platforms/Platform5")
+	var ground3 = lvl.get_node("Platforms/Ground3")
+	var exit_gate = lvl.get_node("ExitGate")
+	var coin6 = lvl.get_node("Coins/Coin6")
+
+	# --- 1. Physics & Reachability Validation ---
+	print("  Validating Physics & Reachability limits...")
+	assert_eq(player.jump_velocity, -470.0, "Player jump velocity tuned to -470.0")
+	assert_eq(player.gravity, 1150.0, "Player gravity tuned to 1150.0")
+	assert_eq(player.move_speed, 240.0, "Player horizontal move speed tuned to 240.0")
+
+	var max_jump_height = (player.jump_velocity * player.jump_velocity) / (2.0 * player.gravity)
+	assert_true(max_jump_height >= 95.0, "Maximum jump height is at least 95px (calculated: %.1fpx)" % max_jump_height)
+
+	# Calculate platform surface heights
+	var g1_surf = ground1.position.y - 40.0 # 450
+	var p1_surf = plat1.position.y - 12.0   # 393
+	var p2_surf = plat2.position.y - 12.0   # 338
+	var p3_surf = plat3.position.y - 12.0   # 333
+	var pg_surf = platgreedy.position.y - 12.0 # 343
+	var g2_surf = ground2.position.y - 40.0 # 450
+	var p4_surf = plat4.position.y - 12.0   # 383
+	var p5_surf = plat5.position.y - 12.0   # 328
+	var g3_surf = ground3.position.y - 40.0 # 450
+
+	var rise_g1_to_p1 = g1_surf - p1_surf
+	var rise_p1_to_p2 = p1_surf - p2_surf
+	var rise_p2_to_p3 = p2_surf - p3_surf
+	var rise_g2_to_p4 = g2_surf - p4_surf
+	var rise_p4_to_p5 = p4_surf - p5_surf
+
+	assert_true(rise_g1_to_p1 < max_jump_height - 20.0, "Ground1 -> Plat1 rise (%.1fpx) has >= 20px clearance margin" % rise_g1_to_p1)
+	assert_true(rise_p1_to_p2 < max_jump_height - 20.0, "Plat1 -> Plat2 rise (%.1fpx) has >= 20px clearance margin (FIXED: previously impossible 90px)" % rise_p1_to_p2)
+	assert_true(rise_p2_to_p3 < max_jump_height - 20.0, "Plat2 -> Plat3 rise (%.1fpx) is easily reachable" % rise_p2_to_p3)
+	assert_true(rise_g2_to_p4 < max_jump_height - 20.0, "Ground2 -> Plat4 rise (%.1fpx) has >= 20px clearance margin (FIXED: previously impossible 92px)" % rise_g2_to_p4)
+	assert_true(rise_p4_to_p5 < max_jump_height - 20.0, "Plat4 -> Plat5 rise (%.1fpx) has >= 20px clearance margin (FIXED: previously impossible 90px)" % rise_p4_to_p5)
+
+	const FallingPlatformScript = preload("res://scripts/coin_hell/falling_platform.gd")
+	const GreedyPlatformScript = preload("res://scripts/coin_hell/greedy_platform.gd")
+	const FakeSafePlatformScript = preload("res://scripts/coin_hell/fake_safe_platform.gd")
+
+	# --- 2. TRICK 1 — The Betraying Platform ---
+	print("  Validating Trick 1: The Betraying Platform...")
+	assert_true(plat2 is FallingPlatformScript, "Platform2 uses FallingPlatform script")
+	assert_true(not plat2._triggered, "Platform2 starts un-triggered")
+	plat2.trigger()
+	assert_true(plat2._triggered, "Platform2 triggers when stepped on")
+	assert_true(not plat2._falling, "Platform2 gives a shaking warning period before falling")
+	# Simulate 0.5s of physics process
+	for _i in range(35):
+		plat2._physics_process(0.016)
+	assert_true(plat2._falling, "Platform2 falls after warning timer expires")
+	assert_true(plat2.collision_shape.disabled, "Platform2 collision disables when falling")
+	plat2.reset()
+	assert_true(not plat2._triggered and not plat2._falling, "Platform2 resets cleanly on retry")
+	assert_true(not plat2.collision_shape.disabled, "Platform2 collision re-enabled on reset")
+
+	# --- 3. TRICK 3 — The Greedy Coin ---
+	print("  Validating Trick 3: The Greedy Coin...")
+	assert_true(platgreedy is GreedyPlatformScript, "PlatformGreedy uses GreedyPlatform script")
+	var initial_greedy_y = platgreedy.position.y
+	assert_true(not platgreedy._has_dropped, "GreedyPlatform starts at normal height")
+	coin6.collect()
+	assert_true(platgreedy._has_dropped, "Collecting Coin 6 triggers GreedyPlatform drop")
+	assert_true(platgreedy._toast_label.visible, "GreedyPlatform displays 'GREEDY!' toast")
+	platgreedy.reset()
+	assert_true(not platgreedy._has_dropped, "GreedyPlatform resets cleanly on retry")
+	assert_eq(platgreedy.position.y, initial_greedy_y, "GreedyPlatform position resets to initial height")
+	assert_true(not platgreedy._toast_label.visible, "GreedyPlatform hides toast on reset")
+
+	# --- 4. TRICK 2 — The Fake Safe Landing ---
+	print("  Validating Trick 2: The Fake Safe Landing...")
+	assert_true(plat4 is FakeSafePlatformScript, "Platform4 uses FakeSafePlatform script")
+	assert_true(not plat4._triggered, "FakeSafePlatform starts un-triggered")
+	assert_true(plat4.spikes_collision.disabled, "FakeSafePlatform spikes are initially disabled")
+	plat4.trigger_trap()
+	assert_true(plat4._triggered, "FakeSafePlatform triggers trap on approach")
+	assert_true(not plat4._active_spikes, "Spikes telegraph before popping up fully")
+	# Simulate 0.4s of physics process
+	for _i in range(26):
+		plat4._physics_process(0.016)
+	assert_true(plat4._active_spikes, "Spikes pop up after telegraph period")
+	assert_true(not plat4.spikes_collision.disabled, "Spikes collision is enabled once active")
+	plat4.reset()
+	assert_true(not plat4._triggered and not plat4._active_spikes, "FakeSafePlatform resets cleanly on retry")
+	assert_true(plat4.spikes_collision.disabled, "Spikes retract and collision is disabled on reset")
+
+	# --- 5. TRICK 4 — The Exit Betrayal ---
+	print("  Validating Trick 4: The Exit Betrayal...")
+	var initial_exit_pos = exit_gate.global_position
+	# Unlock gate
+	exit_gate.unlock_gate()
+	assert_true(exit_gate._is_open, "Exit gate unlocks")
+	assert_true(not exit_gate._has_betrayed, "Exit gate has not betrayed yet")
+	# Approach open gate -> triggers betrayal
+	exit_gate.trigger_exit_betrayal()
+	assert_true(exit_gate._has_betrayed, "Exit gate performs betrayal hop")
+	assert_eq(exit_gate.status_label.text, "OKAY FINE, YOU WIN!", "Exit gate displays 'OKAY FINE, YOU WIN!'")
+	assert_true(exit_gate._is_open, "Exit gate remains accessible")
+	# Enter final gate
+	exit_gate._on_body_entered(player)
+	assert_true(exit_gate._completion_triggered, "Level completes when entering betrayed exit")
+	exit_gate.reset()
+	assert_true(not exit_gate._has_betrayed, "Exit betrayal state resets on retry")
+	assert_eq(exit_gate.global_position, initial_exit_pos, "Exit position returns to initial position on reset")
+
+	lvl.queue_free()
+
+func test_full_level_1_gameplay_walkthrough() -> void:
+	print("\n--- TEST: Full Level 1 Gameplay Walkthrough & Traversal ---")
+	SaveManager._apply_defaults()
+	SaveManager.save_data()
+	
+	var lvl1_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_1.tscn")
+	var lvl = lvl1_scene.instantiate()
+	add_child(lvl)
+
+	var player = lvl.get_node("Player")
+	var exit_gate = lvl.get_node("ExitGate")
+	var coins_container = lvl.get_node("Coins")
+	var plat2 = lvl.get_node("Platforms/Platform2")
+	var platgreedy = lvl.get_node("Platforms/PlatformGreedy")
+	var plat4 = lvl.get_node("Platforms/Platform4")
+	
+	GameManager.is_gameplay_active = true
+	GameManager.reset_coins()
+	
+	# Verify initial state
+	assert_eq(GameManager.current_coins, 0, "Walkthrough starts with 0 coins")
+	assert_true(not exit_gate._is_open, "Exit starts locked")
+	
+	# Step 1: Walkthrough collecting coins 1 to 5
+	for i in range(1, 6):
+		var coin = coins_container.get_node("Coin%d" % i)
+		assert_true(coin != null, "Coin %d exists" % i)
+		coin.collect()
+	assert_eq(GameManager.current_coins, 5, "Collected coins 1 to 5")
+	
+	# Step 2: Trigger Trick 1 (FallingPlatform) and recover
+	plat2.trigger()
+	assert_true(plat2._triggered, "Trick 1 triggered during walkthrough")
+	
+	# Step 3: Collect Coin 6 (Trick 3: Greedy Coin)
+	var coin6 = coins_container.get_node("Coin6")
+	coin6.collect()
+	assert_eq(GameManager.current_coins, 6, "Coin 6 collected")
+	assert_true(platgreedy._has_dropped, "Greedy platform dropped upon collecting Coin 6")
+	
+	# Step 4: Collect Coins 7 to 9
+	for i in range(7, 10):
+		var coin = coins_container.get_node("Coin%d" % i)
+		coin.collect()
+	assert_eq(GameManager.current_coins, 9, "Collected coins 7 to 9")
+	
+	# Step 5: Trigger Trick 2 (FakeSafePlatform) and recover
+	plat4.trigger_trap()
+	assert_true(plat4._triggered, "Trick 2 triggered during walkthrough")
+	
+	# Step 6: Collect final Coin 10
+	var coin10 = coins_container.get_node("Coin10")
+	coin10.collect()
+	assert_eq(GameManager.current_coins, 10, "All 10 coins collected!")
+	assert_true(exit_gate._is_open, "Exit gate unlocked automatically after 10th coin")
+	
+	# Step 7: Approach exit (triggers Trick 4: Exit Betrayal)
+	exit_gate._on_body_entered(player)
+	assert_true(exit_gate._has_betrayed, "Trick 4: Exit betrayal triggered")
+	assert_eq(exit_gate.status_label.text, "OKAY FINE, YOU WIN!", "Exit shows final message")
+	
+	# Step 8: Enter final exit gate position
+	exit_gate._on_body_entered(player)
+	assert_true(exit_gate._completion_triggered, "Level 1 completion triggered")
+	assert_true(SaveManager.is_level_completed(1), "Level 1 marked completed in SaveManager")
+	assert_true(SaveManager.is_level_unlocked(2), "Level 2 is now unlocked in SaveManager")
+	
+	# Step 9: Verify reset on death
+	player.die()
+	assert_true(lvl.death_overlay.visible, "Death overlay shown on death")
+	lvl._on_retry()
+	assert_eq(GameManager.current_coins, 0, "Coins reset to 0 on retry")
+	assert_true(not exit_gate._is_open, "Exit reset to locked on retry")
+	assert_true(not plat2._triggered, "Trick 1 reset on retry")
+	assert_true(not platgreedy._has_dropped, "Trick 3 reset on retry")
+	assert_true(not plat4._triggered, "Trick 2 reset on retry")
+	assert_true(not exit_gate._has_betrayed, "Trick 4 reset on retry")
+	
 	lvl.queue_free()
