@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3 uid="uid://b1m2n3k4j5h6g"]
+[gd_scene load_steps=25 format=3 uid="uid://b1m2n3k4j5h6g"]
 
 [ext_resource type="Script" path="res://scripts/coin_hell/level_1.gd" id="1_lev1"]
 [ext_resource type="PackedScene" path="res://scenes/coin_hell/player.tscn" id="2_play"]
@@ -12,6 +12,9 @@
 [ext_resource type="Texture2D" path="res://assets/sprites/btn_left.png" id="10_bleft"]
 [ext_resource type="Texture2D" path="res://assets/sprites/btn_right.png" id="11_bright"]
 [ext_resource type="Texture2D" path="res://assets/sprites/btn_jump.png" id="12_bjump"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_left_pressed.png" id="13_bleft_p"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_right_pressed.png" id="14_bright_p"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_jump_pressed.png" id="15_bjump_p"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ground1"]
 size = Vector2(480, 80)
@@ -374,12 +377,14 @@ layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = 30.0
-offset_top = -94.0
-offset_right = 94.0
-offset_bottom = -30.0
+offset_left = 28.0
+offset_top = -98.0
+offset_right = 98.0
+offset_bottom = -28.0
 grow_vertical = 0
 texture_normal = ExtResource("10_bleft")
+texture_pressed = ExtResource("13_bleft_p")
+ignore_texture_size = true
 stretch_mode = 5
 
 [node name="RightBtn" type="TextureButton" parent="HUD/TouchControls"]
@@ -387,12 +392,14 @@ layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = 110.0
-offset_top = -94.0
-offset_right = 174.0
-offset_bottom = -30.0
+offset_left = 112.0
+offset_top = -98.0
+offset_right = 182.0
+offset_bottom = -28.0
 grow_vertical = 0
 texture_normal = ExtResource("11_bright")
+texture_pressed = ExtResource("14_bright_p")
+ignore_texture_size = true
 stretch_mode = 5
 
 [node name="JumpBtn" type="TextureButton" parent="HUD/TouchControls"]
@@ -402,13 +409,15 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -94.0
-offset_top = -94.0
-offset_right = -30.0
-offset_bottom = -30.0
+offset_left = -106.0
+offset_top = -106.0
+offset_right = -26.0
+offset_bottom = -26.0
 grow_horizontal = 0
 grow_vertical = 0
 texture_normal = ExtResource("12_bjump")
+texture_pressed = ExtResource("15_bjump_p")
+ignore_texture_size = true
 stretch_mode = 5
 
 [node name="PauseOverlay" parent="HUD" instance=ExtResource("6_paus")]

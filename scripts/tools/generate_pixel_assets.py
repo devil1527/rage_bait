@@ -140,24 +140,37 @@ def create_exit_gates():
 
 def create_touch_buttons():
     # 64x64 touch control buttons
-    def make_btn(symbol):
+    def make_btn(symbol, pressed=False):
         btn = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
         d = ImageDraw.Draw(btn)
         # Background circle
-        d.ellipse([2, 2, 61, 61], fill=(20, 25, 45, 160), outline=(0, 210, 230, 200), width=2)
-        d.ellipse([6, 6, 57, 57], outline=(40, 70, 100, 140))
+        if pressed:
+            if symbol == "jump":
+                d.ellipse([2, 2, 61, 61], fill=(180, 140, 20, 220), outline=(255, 230, 100, 255), width=3)
+            else:
+                d.ellipse([2, 2, 61, 61], fill=(0, 160, 200, 220), outline=(150, 245, 255, 255), width=3)
+        else:
+            d.ellipse([2, 2, 61, 61], fill=(20, 25, 45, 160), outline=(0, 210, 230, 200), width=2)
+            d.ellipse([6, 6, 57, 57], outline=(40, 70, 100, 140))
         
+        offset = 1 if pressed else 0
         if symbol == "left":
-            d.polygon([(42, 18), (20, 32), (42, 46)], fill=(0, 240, 255, 240))
+            fill_col = (255, 255, 255, 255) if pressed else (0, 240, 255, 240)
+            d.polygon([(42 + offset, 18 + offset), (20 + offset, 32 + offset), (42 + offset, 46 + offset)], fill=fill_col)
         elif symbol == "right":
-            d.polygon([(22, 18), (44, 32), (22, 46)], fill=(0, 240, 255, 240))
+            fill_col = (255, 255, 255, 255) if pressed else (0, 240, 255, 240)
+            d.polygon([(22 + offset, 18 + offset), (44 + offset, 32 + offset), (22 + offset, 46 + offset)], fill=fill_col)
         elif symbol == "jump":
-            d.polygon([(32, 18), (18, 38), (27, 38), (27, 46), (37, 46), (37, 38), (46, 38)], fill=(255, 215, 50, 240))
+            fill_col = (255, 255, 255, 255) if pressed else (255, 215, 50, 240)
+            d.polygon([(32 + offset, 18 + offset), (18 + offset, 38 + offset), (27 + offset, 38 + offset), (27 + offset, 46 + offset), (37 + offset, 46 + offset), (37 + offset, 38 + offset), (46 + offset, 38 + offset)], fill=fill_col)
         return btn
 
-    make_btn("left").save("assets/sprites/btn_left.png")
-    make_btn("right").save("assets/sprites/btn_right.png")
-    make_btn("jump").save("assets/sprites/btn_jump.png")
+    make_btn("left", False).save("assets/sprites/btn_left.png")
+    make_btn("left", True).save("assets/sprites/btn_left_pressed.png")
+    make_btn("right", False).save("assets/sprites/btn_right.png")
+    make_btn("right", True).save("assets/sprites/btn_right_pressed.png")
+    make_btn("jump", False).save("assets/sprites/btn_jump.png")
+    make_btn("jump", True).save("assets/sprites/btn_jump_pressed.png")
 
 def create_game_cards():
     # 200x120 artwork banners for the 4 arcade games

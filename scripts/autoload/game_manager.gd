@@ -38,6 +38,8 @@ var levels: Dictionary = {
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	if OS.get_name() == "Android" or OS.get_name() == "iOS":
+		DisplayServer.screen_set_orientation(DisplayServer.SCREEN_LANDSCAPE)
 	_setup_input_actions()
 
 func _setup_input_actions() -> void:

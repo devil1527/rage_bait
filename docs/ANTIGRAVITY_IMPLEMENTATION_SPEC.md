@@ -26,6 +26,21 @@ initially. If a later level becomes unlocked but its gameplay has not
 been implemented, show a clear "unlocked but still being built"
 message---never a blank scene.
 
+## 1A. Mandatory visual/layout corrections from the recorded prototype
+
+The current recorded prototype demonstrates that navigation and some gameplay are present, but its layout needs correction before expanding content. Treat these as required fixes, not optional polish:
+
+1. **The APK currently appears in portrait orientation.** This is incorrect. Force the entire app to landscape at the project/export level and verify it on the phone. Do not rely on the user manually rotating the phone.
+2. **The main-menu cards are excessively tall and mostly empty in portrait.** In landscape, use a balanced 2×2 grid of four compact, visually rich cards. Each card should use its available area intentionally: original icon/illustration, title, one-line description, and status/action. Coin Hell should be clearly highlighted as the only playable card.
+3. **The level-select grid currently occupies only the top portion of the portrait screen, leaving a huge unused area.** In landscape, use the available screen efficiently. Show all 20 level tiles at once when practical, arranged as a clear 5-column × 4-row grid (20 tiles) or another layout with similarly efficient use of space. Keep the header compact and the tiles large enough to tap. Avoid a giant empty area below the grid.
+4. **The gameplay world currently occupies only a narrow/top strip of the portrait screen.** In landscape, make the playfield use the majority of the viewport. The player, platforms, coins, hazards, and exit should be easy to see. Put the HUD in a compact top strip and touch controls in the bottom corners without covering important gameplay objects.
+5. **Use readable text and clear hierarchy.** The game title, screen title, level number, coin counter, lock state, and primary action must be legible at normal phone viewing distance. Avoid tiny labels and low-contrast secondary text.
+6. **Use screen space intentionally.** Menus should not look like desktop layouts squeezed into portrait. Gameplay should not place all the action in the top third with a large empty lower half. Design and test for landscape first.
+7. **Dialogs must remain properly centred and sized in landscape.** A Coming Soon message should dim the background lightly, use a compact modal, and have a clear dismiss button. It must not obscure the entire screen unnecessarily.
+8. **Verify actual phone orientation and scaling.** Take screenshots or record a test on the target Android phone after the orientation change. Inspect the main menu, level selection, gameplay, pause overlay, death overlay, and completion overlay.
+
+These corrections take priority over adding extra ragebait effects or new levels.
+
 ## 2. Technology and constraints
 
 -   Engine: **Godot 4.x** stable release.

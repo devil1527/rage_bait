@@ -12,6 +12,57 @@ extends Control
 var lock_icon: Texture2D = preload("res://assets/sprites/icon_lock.png")
 var completed_icon: Texture2D = preload("res://assets/sprites/icon_completed.png")
 
+var _style_comp_normal: StyleBoxFlat
+var _style_comp_hover: StyleBoxFlat
+var _style_avail_normal: StyleBoxFlat
+var _style_avail_hover: StyleBoxFlat
+var _style_lock_normal: StyleBoxFlat
+var _style_lock_hover: StyleBoxFlat
+
+func _init() -> void:
+	_init_styles()
+
+func _init_styles() -> void:
+	_style_comp_normal = StyleBoxFlat.new()
+	_style_comp_normal.bg_color = Color(0.08, 0.18, 0.16, 0.95)
+	_style_comp_normal.set_border_width_all(2)
+	_style_comp_normal.border_color = Color(0.0, 0.95, 0.65, 1.0)
+	_style_comp_normal.set_corner_radius_all(8)
+	
+	_style_comp_hover = StyleBoxFlat.new()
+	_style_comp_hover.bg_color = Color(0.12, 0.24, 0.22, 0.98)
+	_style_comp_hover.set_border_width_all(2)
+	_style_comp_hover.border_color = Color(0.2, 1.0, 0.75, 1.0)
+	_style_comp_hover.set_corner_radius_all(8)
+
+	_style_avail_normal = StyleBoxFlat.new()
+	_style_avail_normal.bg_color = Color(0.15, 0.12, 0.26, 0.95)
+	_style_avail_normal.set_border_width_all(2)
+	_style_avail_normal.border_color = Color(1.0, 0.82, 0.15, 1.0)
+	_style_avail_normal.set_corner_radius_all(8)
+	_style_avail_normal.shadow_color = Color(1.0, 0.75, 0.1, 0.3)
+	_style_avail_normal.shadow_size = 4
+
+	_style_avail_hover = StyleBoxFlat.new()
+	_style_avail_hover.bg_color = Color(0.20, 0.16, 0.34, 0.98)
+	_style_avail_hover.set_border_width_all(3)
+	_style_avail_hover.border_color = Color(1.0, 0.92, 0.35, 1.0)
+	_style_avail_hover.set_corner_radius_all(8)
+	_style_avail_hover.shadow_color = Color(1.0, 0.85, 0.2, 0.5)
+	_style_avail_hover.shadow_size = 6
+
+	_style_lock_normal = StyleBoxFlat.new()
+	_style_lock_normal.bg_color = Color(0.08, 0.08, 0.13, 0.85)
+	_style_lock_normal.set_border_width_all(1)
+	_style_lock_normal.border_color = Color(0.22, 0.25, 0.35, 0.85)
+	_style_lock_normal.set_corner_radius_all(8)
+
+	_style_lock_hover = StyleBoxFlat.new()
+	_style_lock_hover.bg_color = Color(0.12, 0.12, 0.18, 0.92)
+	_style_lock_hover.set_border_width_all(2)
+	_style_lock_hover.border_color = Color(0.32, 0.36, 0.48, 0.9)
+	_style_lock_hover.set_corner_radius_all(8)
+
 func _ready() -> void:
 	back_button.pressed.connect(_on_back_pressed)
 	modal_ok_btn.pressed.connect(_on_modal_close)
@@ -35,22 +86,25 @@ func _build_level_tiles() -> void:
 		var lvl_name: String = info.get("name", "Level %d" % lvl_id)
 		
 		var btn := Button.new()
-		btn.custom_minimum_size = Vector2(180, 85)
+		btn.custom_minimum_size = Vector2(170, 94)
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		btn.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		btn.name = "LevelBtn_%d" % lvl_id
 		
 		var vbox := VBoxContainer.new()
 		vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
 		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 		vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vbox.add_theme_constant_override("separation", 3)
 		
 		var header_box := HBoxContainer.new()
 		header_box.alignment = BoxContainer.ALIGNMENT_CENTER
 		header_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		header_box.add_theme_constant_override("separation", 6)
 		
 		var num_label := Label.new()
 		num_label.text = "LEVEL %d" % lvl_id
-		num_label.add_theme_font_size_override("font_size", 16)
+		num_label.add_theme_font_size_override("font_size", 14)
 		num_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		header_box.add_child(num_label)
 		
@@ -65,14 +119,14 @@ func _build_level_tiles() -> void:
 		
 		var name_label := Label.new()
 		name_label.text = lvl_name
-		name_label.add_theme_font_size_override("font_size", 12)
+		name_label.add_theme_font_size_override("font_size", 11)
 		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		vbox.add_child(name_label)
 		
 		var state_label := Label.new()
 		state_label.name = "StateLabel"
-		state_label.add_theme_font_size_override("font_size", 11)
+		state_label.add_theme_font_size_override("font_size", 10)
 		state_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		state_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		vbox.add_child(state_label)
@@ -100,6 +154,9 @@ func _refresh_tile_states() -> void:
 		var is_completed: bool = SaveManager.is_level_completed(lvl_id)
 		
 		if is_completed:
+			btn.add_theme_stylebox_override("normal", _style_comp_normal)
+			btn.add_theme_stylebox_override("hover", _style_comp_hover)
+			btn.add_theme_stylebox_override("focus", _style_comp_hover)
 			num_label.add_theme_color_override("font_color", Color(0.0, 0.95, 0.8))
 			name_label.add_theme_color_override("font_color", Color(0.8, 1.0, 0.9))
 			state_label.text = "COMPLETED"
@@ -107,12 +164,18 @@ func _refresh_tile_states() -> void:
 			status_icon.texture = completed_icon
 			status_icon.visible = true
 		elif is_unlocked:
+			btn.add_theme_stylebox_override("normal", _style_avail_normal)
+			btn.add_theme_stylebox_override("hover", _style_avail_hover)
+			btn.add_theme_stylebox_override("focus", _style_avail_hover)
 			num_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
 			name_label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.8))
 			state_label.text = "AVAILABLE"
 			state_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2))
 			status_icon.visible = false
 		else:
+			btn.add_theme_stylebox_override("normal", _style_lock_normal)
+			btn.add_theme_stylebox_override("hover", _style_lock_hover)
+			btn.add_theme_stylebox_override("focus", _style_lock_hover)
 			num_label.add_theme_color_override("font_color", Color(0.5, 0.55, 0.65))
 			name_label.add_theme_color_override("font_color", Color(0.4, 0.45, 0.55))
 			state_label.text = "LOCKED"

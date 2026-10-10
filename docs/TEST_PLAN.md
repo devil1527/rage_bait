@@ -98,3 +98,24 @@ godot --headless "res://scenes/tests/test_runner.tscn"
 2. **Persistence After Relaunch**:
    - Close app completely and reopen.
    - Navigate to Level Select: Level 1 remains completed, Level 2 remains unlocked.
+
+### E. Landscape Orientation & Visual Polish Verification (Section 1A)
+1. **Forced Landscape Orientation**:
+   - Verify `window/handheld/orientation = 0` in `project.godot`.
+   - Verify `screen/orientation = 0` in `export_presets.cfg`.
+   - Verify runtime orientation enforcement in `game_manager.gd`.
+   - On Android, verify app launches locked in landscape regardless of physical phone rotation.
+2. **Main Menu 2x2 Grid**:
+   - Verify 4 compact, visually balanced arcade cards in a 2x2 responsive grid.
+   - Coin Hell is prominently highlighted with an arcade gold glowing border, shadow, and vivid "▶ PLAY NOW" badge.
+   - Other three cards feature muted cyber slate borders and "🔒 COMING SOON" indicators.
+3. **Level Select 5x4 Grid (20 Tiles)**:
+   - Verify all 20 tiles are displayed simultaneously in a 5-column x 4-row layout without wasted space.
+   - Completed (emerald border/star), Available (gold border/glow), Locked (slate/lock icon).
+4. **Landscape Gameplay Viewport**:
+   - Playfield utilizes the full 960x540 landscape viewport.
+   - HUD is kept in a compact top strip (< 55px).
+   - Touch buttons are positioned in bottom corners (Left/Right bottom-left, Jump bottom-right) with visible pressed states and comfortable thumb target sizes.
+5. **Landscape Modals & Dialogs**:
+   - All modals (Coming Soon, Locked Level, Level In Progress) are neatly centered in landscape with 65% dimming and explicit dismiss buttons.
+
