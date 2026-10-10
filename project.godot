@@ -14,7 +14,7 @@ config/name="Retro Rage Arcade"
 config/description="Retro Rage Arcade - Featuring Coin Hell"
 config/version="0.1.0"
 run/main_scene="res://scenes/ui/main_menu.tscn"
-config/features=PackedStringArray("4.7", "Forward Plus")
+config/features=PackedStringArray("4.3", "GL Compatibility")
 
 [autoload]
 
@@ -63,3 +63,7 @@ pause={
 
 textures/canvas_textures/default_texture_filter=0
 environment/defaults/default_clear_color=Color(0.0705882, 0.054902, 0.121569, 1)
+textures/vram_compression/import_etc2_astc=true
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+
