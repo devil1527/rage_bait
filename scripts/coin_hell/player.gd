@@ -31,6 +31,9 @@ var touch_jump_just_released: bool = false
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
+func _ready() -> void:
+	add_to_group("player")
+
 func _physics_process(delta: float) -> void:
 	if not _is_alive or _input_disabled:
 		velocity.x = move_toward(velocity.x, 0.0, friction * delta)

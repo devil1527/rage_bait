@@ -2,7 +2,7 @@ extends Area2D
 
 ## Exit Gate for Coin Hell. Stays locked until all coins are collected.
 ## TRICK 4 — THE EXIT BETRAYAL: When the player first approaches the unlocked exit,
-## it hops away with a funny "SIKE!" betrayal before permanently opening with
+## it hops away with a funny "SIKE! NOT SO FAST! 😈" betrayal before permanently opening with
 ## "OKAY FINE, YOU WIN!" to complete the level.
 
 signal level_completed
@@ -27,16 +27,33 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	GameManager.coin_collected.connect(_on_coin_collected)
 	GameManager.coins_reset.connect(reset)
+	_setup_labels()
 	_update_visuals()
 	toast_label.visible = false
 
+func _setup_labels() -> void:
+	if status_label:
+		status_label.add_theme_font_size_override("font_size", 13)
+		status_label.add_theme_color_override("font_outline_color", Color.BLACK)
+		status_label.add_theme_constant_override("outline_size", 4)
+	if toast_label:
+		toast_label.add_theme_font_size_override("font_size", 16)
+		toast_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
+		toast_label.add_theme_color_override("font_outline_color", Color(0.1, 0.0, 0.0, 1.0))
+		toast_label.add_theme_constant_override("outline_size", 5)
+
 func _process(_delta: float) -> void:
 	if _is_open and not _has_betrayed and not _completion_triggered:
+		var player_node: Node2D = null
 		var players := get_tree().get_nodes_in_group("player")
 		if players.size() > 0:
-			var player_node: Node2D = players[0]
-			# If player gets close to the gate, trigger the comedic betrayal hop
-			if global_position.distance_to(player_node.global_position) < 85.0:
+			player_node = players[0]
+		else:
+			player_node = get_tree().root.find_child("Player", true, false)
+		
+		if player_node:
+			# If player gets within 95px of the gate, trigger the comedic betrayal hop
+			if global_position.distance_to(player_node.global_position) < 95.0:
 				trigger_exit_betrayal()
 
 func _on_coin_collected(current: int, total: int) -> void:
@@ -49,7 +66,7 @@ func unlock_gate() -> void:
 	AudioManager.play_sfx("unlock")
 	# Small bounce tween when opening
 	var tween := create_tween()
-	tween.tween_property(sprite, "scale", Vector2(1.2, 1.2), 0.15)
+	tween.tween_property(sprite, "scale", Vector2(1.25, 1.25), 0.15)
 	tween.tween_property(sprite, "scale", Vector2(1.0, 1.0), 0.15)
 
 func trigger_exit_betrayal() -> void:
@@ -62,11 +79,11 @@ func trigger_exit_betrayal() -> void:
 	status_label.text = "OKAY FINE, YOU WIN!"
 	status_label.add_theme_color_override("font_color", Color(0.2, 1.0, 0.5))
 	
-	# Funny cartoony bounce-away tween
+	# Funny cartoony bounce-away hop to the right
 	var tween := create_tween()
-	tween.tween_property(self, "global_position:y", _initial_pos.y - 28.0, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.parallel().tween_property(self, "global_position:x", _initial_pos.x + betrayal_hop_distance, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_property(self, "global_position:y", _initial_pos.y, 0.13).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(self, "global_position:y", _initial_pos.y - 30.0, 0.14).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(self, "global_position:x", _initial_pos.x + betrayal_hop_distance, 0.28).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(self, "global_position:y", _initial_pos.y, 0.14).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 	
 	tween.tween_callback(func():
 		AudioManager.play_sfx("unlock")
@@ -109,7 +126,7 @@ func show_toast(msg: String) -> void:
 	toast_label.visible = true
 	toast_label.modulate.a = 1.0
 	var tween := create_tween()
-	tween.tween_interval(1.5)
+	tween.tween_interval(1.8)
 	tween.tween_property(toast_label, "modulate:a", 0.0, 0.4)
 	tween.tween_callback(func(): toast_label.visible = false)
 
