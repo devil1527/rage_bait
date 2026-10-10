@@ -1,0 +1,14 @@
+# Godot 4 .gitignore
+.godot/
+*.translation
+
+# Export builds
+build/
+bin/
+*.apk
+*.aab
+
+# OS generated
+.DS_Store
+Thumbs.db
+*.tmp

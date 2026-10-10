@@ -1,0 +1,323 @@
+[gd_scene load_steps=7 format=3 uid="uid://b7vnm6w0c8x1q"]
+
+[ext_resource type="Script" path="res://scripts/ui/main_menu.gd" id="1_menu"]
+[ext_resource type="Texture2D" path="res://assets/sprites/card_coin_hell.png" id="2_chel"]
+[ext_resource type="Texture2D" path="res://assets/sprites/card_bullet_betrayal.png" id="3_bbet"]
+[ext_resource type="Texture2D" path="res://assets/sprites/card_ninja_nightmare.png" id="4_nnig"]
+[ext_resource type="Texture2D" path="res://assets/sprites/card_castle_lies.png" id="5_clie"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal"]
+bg_color = Color(0.12549, 0.101961, 0.211765, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0, 0.898039, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_menu")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0666667, 0.0509804, 0.117647, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="HeaderBar" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="TitleBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HeaderBar"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="MarginContainer/VBoxContainer/HeaderBar/TitleBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.843137, 0, 1)
+theme_override_colors/font_shadow_color = Color(0.85, 0.2, 0.3, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 28
+text = "RETRO RAGE ARCADE"
+
+[node name="SubtitleLabel" type="Label" parent="MarginContainer/VBoxContainer/HeaderBar/TitleBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0.941176, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "Four games. One very bad idea."
+
+[node name="Spacer" type="Control" parent="MarginContainer/VBoxContainer/HeaderBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SfxToggleBtn" type="Button" parent="MarginContainer/VBoxContainer/HeaderBar"]
+custom_minimum_size = Vector2(90, 36)
+layout_mode = 2
+size_flags_vertical = 4
+text = "SFX: ON"
+
+[node name="VersionLabel" type="Label" parent="MarginContainer/VBoxContainer/HeaderBar"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(0.5, 0.55, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+text = "  v0.1.0-alpha"
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="CardsGrid" type="GridContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 14
+columns = 2
+
+[node name="CardCoinHell" type="Button" parent="MarginContainer/VBoxContainer/CardsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/CardsGrid/CardCoinHell"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Texture" type="TextureRect" parent="MarginContainer/VBoxContainer/CardsGrid/CardCoinHell/VBox"]
+custom_minimum_size = Vector2(0, 75)
+layout_mode = 2
+texture = ExtResource("2_chel")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Title" type="Label" parent="MarginContainer/VBoxContainer/CardsGrid/CardCoinHell/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 18
+text = "COIN HELL"
+horizontal_alignment = 1
+
+[node name="Desc" type="Label" parent="MarginContainer/VBoxContainer/CardsGrid/CardCoinHell/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 1)
+theme_override_font_sizes/font_size = 12
+text = "Collect every coin. Trust nothing."
+horizontal_alignment = 1
+
+[node name="Status" type="Label" parent="MarginContainer/VBoxContainer/CardsGrid/CardCoinHell/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 1, 0.6, 1)
+theme_override_font_sizes/font_size = 13
+text = "▶ PLAY NOW"
+horizontal_alignment = 1
+
+[node name="CardBulletBetrayal" type="Button" parent="MarginContainer/VBoxContainer/CardsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/CardsGrid/CardBulletBetrayal"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Texture" type="TextureRect" parent="MarginContainer/VBoxContainer/CardsGrid/CardBulletBetrayal/VBox"]
+custom_minimum_size = Vector2(0, 75)
+layout_mode = 2
+texture = ExtResource("3_bbet")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Title" type="Label" parent="MarginContainer/VBoxContainer/CardsGrid/CardBulletBetrayal/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 18
+text = "BULLET BETRAYAL"
+horizontal_alignment = 1
+
+[node name="Desc" type="Label" parent="MarginContainer/VBoxContainer/CardsGrid/CardBulletBetrayal/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.55, 0.65, 1)
+theme_override_font_sizes/font_size = 12
+text = "Your ammo has trust issues."
+horizontal_alignment = 1
+
+[node name="Status" type="Label" parent="MarginContainer/VBoxContainer/CardsGrid/CardBulletBetrayal/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 13
+text = "🔒 COMING SOON"
+horizontal_alignment = 1
+
+[node name="CardNinjaNightmare" type="Button" parent="MarginContainer/VBoxContainer/CardsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/CardsGrid/CardNinjaNightmare"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Texture" type="TextureRect" parent="MarginContainer/VBoxContainer/CardsGrid/CardNinjaNightmare/VBox"]
+custom_minimum_size = Vector2(0, 75)
+layout_mode = 2
+texture = ExtResource("4_nnig")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Title" type="Label" parent="MarginContainer/VBoxContainer/CardsGrid/CardNinjaNightmare/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 18
+text = "NINJA NIGHTMARE"
+horizontal_alignment = 1
+
+[node name="Desc" type="Label" parent="MarginContainer/VBoxContainer/CardsGrid/CardNinjaNightmare/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.55, 0.65, 1)
+theme_override_font_sizes/font_size = 12
+text = "Every jump is a questionable decision."
+horizontal_alignment = 1
+
+[node name="Status" type="Label" parent="MarginContainer/VBoxContainer/CardsGrid/CardNinjaNightmare/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 13
+text = "🔒 COMING SOON"
+horizontal_alignment = 1
+
+[node name="CardCastleOfLies" type="Button" parent="MarginContainer/VBoxContainer/CardsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/CardsGrid/CardCastleOfLies"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Texture" type="TextureRect" parent="MarginContainer/VBoxContainer/CardsGrid/CardCastleOfLies/VBox"]
+custom_minimum_size = Vector2(0, 75)
+layout_mode = 2
+texture = ExtResource("5_clie")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Title" type="Label" parent="MarginContainer/VBoxContainer/CardsGrid/CardCastleOfLies/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 18
+text = "CASTLE OF LIES"
+horizontal_alignment = 1
+
+[node name="Desc" type="Label" parent="MarginContainer/VBoxContainer/CardsGrid/CardCastleOfLies/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.55, 0.65, 1)
+theme_override_font_sizes/font_size = 12
+text = "That door is probably a mistake."
+horizontal_alignment = 1
+
+[node name="Status" type="Label" parent="MarginContainer/VBoxContainer/CardsGrid/CardCastleOfLies/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 13
+text = "🔒 COMING SOON"
+horizontal_alignment = 1
+
+[node name="MessageModal" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.65)
+
+[node name="Panel" type="PanelContainer" parent="MessageModal"]
+custom_minimum_size = Vector2(460, 200)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -230.0
+offset_top = -100.0
+offset_right = 230.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="VBox" type="VBoxContainer" parent="MessageModal/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="MessageModal/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 18
+text = "MESSAGE"
+horizontal_alignment = 1
+
+[node name="MessageLabel" type="Label" parent="MessageModal/Panel/VBox"]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.9, 0.9, 0.95, 1)
+theme_override_font_sizes/font_size = 14
+text = "Text goes here"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="OkButton" type="Button" parent="MessageModal/Panel/VBox"]
+custom_minimum_size = Vector2(120, 36)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "GOT IT"

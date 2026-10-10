@@ -1,0 +1,75 @@
+extends Area2D
+
+## Exit Gate for Coin Hell. Stays locked until all coins are collected.
+## Prevents duplicate triggers and informs player of remaining coins.
+
+signal level_completed
+
+var _is_open: bool = false
+var _completion_triggered: bool = false
+
+@onready var sprite: Sprite2D = $Sprite2D
+@onready var status_label: Label = $StatusLabel
+@onready var toast_label: Label = $ToastLabel
+
+var locked_texture: Texture2D = preload("res://assets/sprites/exit_locked.png")
+var open_texture: Texture2D = preload("res://assets/sprites/exit_open.png")
+
+func _ready() -> void:
+	body_entered.connect(_on_body_entered)
+	GameManager.coin_collected.connect(_on_coin_collected)
+	GameManager.coins_reset.connect(reset)
+	_update_visuals()
+	toast_label.visible = false
+
+func _on_coin_collected(current: int, total: int) -> void:
+	if current >= total and not _is_open:
+		unlock_gate()
+
+func unlock_gate() -> void:
+	_is_open = true
+	_update_visuals()
+	AudioManager.play_sfx("unlock")
+	# Small bounce tween when opening
+	var tween := create_tween()
+	tween.tween_property(sprite, "scale", Vector2(1.2, 1.2), 0.15)
+	tween.tween_property(sprite, "scale", Vector2(1.0, 1.0), 0.15)
+
+func _update_visuals() -> void:
+	if _is_open:
+		sprite.texture = open_texture
+		status_label.text = "EXIT OPEN!"
+		status_label.add_theme_color_override("font_color", Color(0.0, 1.0, 0.6))
+	else:
+		sprite.texture = locked_texture
+		status_label.text = "COINS REQUIRED"
+		status_label.add_theme_color_override("font_color", Color(1.0, 0.35, 0.35))
+
+func _on_body_entered(body: Node2D) -> void:
+	if not (body.is_in_group("player") or body.name == "Player"):
+		return
+
+	if not _is_open:
+		var remaining: int = GameManager.total_coins_required - GameManager.current_coins
+		show_toast("You still need %d coin%s!" % [remaining, "" if remaining == 1 else "s"])
+		AudioManager.play_sfx("warning")
+	else:
+		if not _completion_triggered:
+			_completion_triggered = true
+			level_completed.emit()
+			GameManager.trigger_level_complete()
+
+func show_toast(msg: String) -> void:
+	toast_label.text = msg
+	toast_label.visible = true
+	toast_label.modulate.a = 1.0
+	var tween := create_tween()
+	tween.tween_interval(1.5)
+	tween.tween_property(toast_label, "modulate:a", 0.0, 0.4)
+	tween.tween_callback(func(): toast_label.visible = false)
+
+func reset() -> void:
+	_is_open = false
+	_completion_triggered = false
+	toast_label.visible = false
+	_update_visuals()

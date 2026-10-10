@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3 uid="uid://b8y9x0w1v2u3t"]
+
+[ext_resource type="Script" path="res://scripts/coin_hell/spikes.gd" id="1_spik"]
+[ext_resource type="Texture2D" path="res://assets/sprites/spikes.png" id="2_sspr"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_spikes"]
+size = Vector2(28, 12)
+
+[node name="Spikes" type="Area2D"]
+collision_layer = 4
+collision_mask = 1
+script = ExtResource("1_spik")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_sspr")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 2)
+shape = SubResource("RectangleShape2D_spikes")
