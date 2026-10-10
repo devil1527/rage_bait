@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=3 uid="uid://b1m2n3k4j5h6g"]
+[gd_scene load_steps=26 format=3 uid="uid://b1m2n3k4j5h6g"]
 
 [ext_resource type="Script" path="res://scripts/coin_hell/level_1.gd" id="1_lev1"]
 [ext_resource type="PackedScene" path="res://scenes/coin_hell/player.tscn" id="2_play"]
@@ -15,6 +15,7 @@
 [ext_resource type="Texture2D" path="res://assets/sprites/btn_left_pressed.png" id="13_bleft_p"]
 [ext_resource type="Texture2D" path="res://assets/sprites/btn_right_pressed.png" id="14_bright_p"]
 [ext_resource type="Texture2D" path="res://assets/sprites/btn_jump_pressed.png" id="15_bjump_p"]
+[ext_resource type="Script" path="res://scripts/coin_hell/touch_button.gd" id="16_tbtn"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ground1"]
 size = Vector2(480, 80)
@@ -386,6 +387,8 @@ texture_normal = ExtResource("10_bleft")
 texture_pressed = ExtResource("13_bleft_p")
 ignore_texture_size = true
 stretch_mode = 5
+script = ExtResource("16_tbtn")
+action_name = "move_left"
 
 [node name="RightBtn" type="TextureButton" parent="HUD/TouchControls"]
 layout_mode = 1
@@ -401,6 +404,8 @@ texture_normal = ExtResource("11_bright")
 texture_pressed = ExtResource("14_bright_p")
 ignore_texture_size = true
 stretch_mode = 5
+script = ExtResource("16_tbtn")
+action_name = "move_right"
 
 [node name="JumpBtn" type="TextureButton" parent="HUD/TouchControls"]
 layout_mode = 1
@@ -419,6 +424,8 @@ texture_normal = ExtResource("12_bjump")
 texture_pressed = ExtResource("15_bjump_p")
 ignore_texture_size = true
 stretch_mode = 5
+script = ExtResource("16_tbtn")
+action_name = "jump"
 
 [node name="PauseOverlay" parent="HUD" instance=ExtResource("6_paus")]
 visible = false

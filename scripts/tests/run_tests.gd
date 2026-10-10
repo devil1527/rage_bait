@@ -43,6 +43,7 @@ func run_all_tests() -> void:
 	test_main_menu_logic_and_modals()
 	test_level_select_logic_and_states()
 	test_level_1_gameplay_mechanics()
+	test_multitouch_gameplay_controls()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -203,4 +204,173 @@ func test_level_1_gameplay_mechanics() -> void:
 	player.die()
 	assert_true(lvl.death_overlay.visible, "Player death displays DeathOverlay")
 	
+	lvl.queue_free()
+
+func test_multitouch_gameplay_controls() -> void:
+	print("\n--- TEST: Android Multi-Touch Gameplay Controls ---")
+	var lvl1_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_1.tscn")
+	assert_true(lvl1_scene != null, "Level 1 scene loads for multitouch test")
+	var lvl = lvl1_scene.instantiate()
+	add_child(lvl)
+	
+	var player = lvl.get_node("Player")
+	var left_btn: TouchButton = lvl.get_node("HUD/TouchControls/LeftBtn")
+	var right_btn: TouchButton = lvl.get_node("HUD/TouchControls/RightBtn")
+	var jump_btn: TouchButton = lvl.get_node("HUD/TouchControls/JumpBtn")
+	
+	assert_true(left_btn != null and right_btn != null and jump_btn != null, "On-screen touch buttons exist in Level 1 HUD")
+	assert_true(left_btn is TouchButton, "Left button uses TouchButton script")
+	assert_true(right_btn is TouchButton, "Right button uses TouchButton script")
+	assert_true(jump_btn is TouchButton, "Jump button uses TouchButton script")
+	assert_eq(left_btn.mouse_filter, Control.MOUSE_FILTER_IGNORE, "Left button ignores single-pointer GUI mouse filter")
+	assert_eq(right_btn.mouse_filter, Control.MOUSE_FILTER_IGNORE, "Right button ignores single-pointer GUI mouse filter")
+	assert_eq(jump_btn.mouse_filter, Control.MOUSE_FILTER_IGNORE, "Jump button ignores single-pointer GUI mouse filter")
+
+	# Helper to dispatch screen touch event to a specific button
+	var send_touch = func(btn: TouchButton, finger_index: int, pressed: bool):
+		var ev = InputEventScreenTouch.new()
+		ev.index = finger_index
+		ev.pressed = pressed
+		var xform = btn.get_global_transform_with_canvas()
+		ev.position = xform * (btn.size * 0.5)
+		btn._input(ev)
+
+	# --- TEST A: Hold RIGHT and then press JUMP with another finger ---
+	print("  Testing Scenario A: Hold RIGHT, then press JUMP...")
+	send_touch.call(right_btn, 0, true)
+	assert_true(player.touch_right, "A1: Finger 0 on RightBtn activates player.touch_right")
+	assert_true(right_btn.is_active_pressed, "A2: RightBtn is marked active pressed")
+	assert_eq(right_btn.touch_index, 0, "A3: RightBtn tracks touch index 0")
+	assert_true(Input.is_action_pressed("move_right"), "A4: Input action 'move_right' is pressed")
+
+	send_touch.call(jump_btn, 1, true)
+	assert_true(player.touch_jump, "A5: Finger 1 on JumpBtn activates player.touch_jump")
+	assert_true(jump_btn.is_active_pressed, "A6: JumpBtn is marked active pressed")
+	assert_eq(jump_btn.touch_index, 1, "A7: JumpBtn tracks touch index 1")
+	assert_true(Input.is_action_pressed("jump"), "A8: Input action 'jump' is pressed")
+	assert_true(player.touch_right, "A9: player.touch_right remains active while JUMP is pressed")
+	assert_true(right_btn.is_active_pressed, "A10: RightBtn remains held while JUMP is pressed")
+	assert_true(Input.is_action_pressed("move_right"), "A11: 'move_right' action remains pressed during simultaneous touch")
+
+	# Clean up Scenario A
+	send_touch.call(right_btn, 0, false)
+	send_touch.call(jump_btn, 1, false)
+	assert_true(not player.touch_right and not player.touch_jump, "A12: Both controls clear after release")
+
+	# --- TEST B: Hold JUMP and then press RIGHT with another finger ---
+	print("  Testing Scenario B: Hold JUMP, then press RIGHT...")
+	send_touch.call(jump_btn, 0, true)
+	assert_true(player.touch_jump, "B1: Finger 0 on JumpBtn activates player.touch_jump")
+	assert_eq(jump_btn.touch_index, 0, "B2: JumpBtn tracks touch index 0")
+
+	send_touch.call(right_btn, 1, true)
+	assert_true(player.touch_right, "B3: Finger 1 on RightBtn activates player.touch_right")
+	assert_eq(right_btn.touch_index, 1, "B4: RightBtn tracks touch index 1")
+	assert_true(player.touch_jump, "B5: player.touch_jump remains active when RIGHT is pressed")
+	assert_true(jump_btn.is_active_pressed, "B6: JumpBtn remains pressed when RIGHT is pressed")
+
+	# Clean up Scenario B
+	send_touch.call(jump_btn, 0, false)
+	send_touch.call(right_btn, 1, false)
+	assert_true(not player.touch_right and not player.touch_jump, "B7: Both controls clear after release")
+
+	# --- TEST C: Hold RIGHT + JUMP, then release RIGHT while continuing to hold JUMP ---
+	print("  Testing Scenario C: Hold RIGHT + JUMP, release RIGHT while holding JUMP...")
+	send_touch.call(right_btn, 0, true)
+	send_touch.call(jump_btn, 1, true)
+	assert_true(player.touch_right and player.touch_jump, "C1: Both RIGHT and JUMP held")
+
+	send_touch.call(right_btn, 0, false)
+	assert_true(not player.touch_right, "C2: player.touch_right cleared after releasing finger 0")
+	assert_true(not right_btn.is_active_pressed, "C3: RightBtn no longer active pressed")
+	assert_true(player.touch_jump, "C4: player.touch_jump continues to be held after RIGHT released")
+	assert_true(jump_btn.is_active_pressed, "C5: JumpBtn remains active pressed")
+	assert_eq(jump_btn.touch_index, 1, "C6: JumpBtn still cleanly holds touch index 1")
+	assert_true(Input.is_action_pressed("jump"), "C7: 'jump' action remains pressed")
+
+	# Clean up Scenario C
+	send_touch.call(jump_btn, 1, false)
+	assert_true(not player.touch_jump, "C8: JUMP clears when finger 1 released")
+
+	# --- TEST D: Hold RIGHT + JUMP, then release JUMP while continuing to hold RIGHT ---
+	print("  Testing Scenario D: Hold RIGHT + JUMP, release JUMP while holding RIGHT...")
+	send_touch.call(right_btn, 0, true)
+	send_touch.call(jump_btn, 1, true)
+	assert_true(player.touch_right and player.touch_jump, "D1: Both RIGHT and JUMP held")
+
+	send_touch.call(jump_btn, 1, false)
+	assert_true(not player.touch_jump, "D2: player.touch_jump cleared after releasing finger 1")
+	assert_true(not jump_btn.is_active_pressed, "D3: JumpBtn no longer active pressed")
+	assert_true(player.touch_right, "D4: player.touch_right continues to be held after JUMP released")
+	assert_true(right_btn.is_active_pressed, "D5: RightBtn remains active pressed")
+	assert_eq(right_btn.touch_index, 0, "D6: RightBtn still cleanly holds touch index 0")
+	assert_true(Input.is_action_pressed("move_right"), "D7: 'move_right' action remains pressed")
+
+	# Clean up Scenario D
+	send_touch.call(right_btn, 0, false)
+	assert_true(not player.touch_right, "D8: RIGHT clears when finger 0 released")
+
+	# --- TEST E: Rapidly press and release both controls ---
+	print("  Testing Scenario E: Rapid alternating and simultaneous touches...")
+	for i in range(10):
+		var f0 = i % 2
+		var f1 = 1 - f0
+		send_touch.call(right_btn, f0, true)
+		send_touch.call(jump_btn, f1, true)
+		assert_true(player.touch_right and player.touch_jump, "E rapid loop: both held at iter %d" % i)
+		send_touch.call(right_btn, f0, false)
+		send_touch.call(jump_btn, f1, false)
+		assert_true(not player.touch_right and not player.touch_jump, "E rapid loop: both released at iter %d" % i)
+
+	assert_true(not right_btn.is_active_pressed and not jump_btn.is_active_pressed, "E: No button stuck after rapid cycling")
+	assert_eq(right_btn.touch_index, -1, "E: RightBtn index reset to -1")
+	assert_eq(jump_btn.touch_index, -1, "E: JumpBtn index reset to -1")
+
+	# --- TEST F: Die, restart, pause, and resume; verify no control remains stuck ---
+	print("  Testing Scenario F: State clears on pause, resume, death, and restart...")
+	# 1. Pause
+	send_touch.call(right_btn, 0, true)
+	send_touch.call(jump_btn, 1, true)
+	assert_true(player.touch_right and player.touch_jump, "F1: Active before pause")
+	lvl._on_pause_pressed()
+	assert_true(not right_btn.is_active_pressed, "F2: RightBtn reset on pause")
+	assert_true(not jump_btn.is_active_pressed, "F3: JumpBtn reset on pause")
+	assert_eq(right_btn.touch_index, -1, "F4: RightBtn touch index cleared on pause")
+	assert_eq(jump_btn.touch_index, -1, "F5: JumpBtn touch index cleared on pause")
+
+	# 2. Resume
+	lvl.pause_overlay._on_resume_pressed()
+	assert_true(not player.touch_right and not player.touch_jump, "F6: Controls not stuck after resume")
+
+	# 3. Death
+	send_touch.call(right_btn, 0, true)
+	send_touch.call(jump_btn, 1, true)
+	player.die()
+	assert_true(not player.touch_right and not player.touch_jump, "F7: Player touch flags cleared on death")
+	assert_true(not Input.is_action_pressed("move_right"), "F8: 'move_right' action released on death")
+	assert_true(not Input.is_action_pressed("jump"), "F9: 'jump' action released on death")
+
+	# 4. Restart / Reset
+	lvl._on_retry()
+	assert_true(not player.touch_right and not player.touch_jump, "F10: Controls clear on level retry")
+	assert_true(not right_btn.is_active_pressed and not jump_btn.is_active_pressed, "F11: Buttons inactive on level retry")
+
+	# --- Additional Test: LEFT + JUMP simultaneous multitouch ---
+	print("  Testing LEFT + JUMP combination...")
+	send_touch.call(left_btn, 0, true)
+	send_touch.call(jump_btn, 1, true)
+	assert_true(player.touch_left and player.touch_jump, "LEFT+JUMP: Both active simultaneously")
+	assert_true(Input.is_action_pressed("move_left") and Input.is_action_pressed("jump"), "LEFT+JUMP: Actions active")
+	send_touch.call(left_btn, 0, false)
+	assert_true(not player.touch_left and player.touch_jump, "LEFT+JUMP: Releasing LEFT keeps JUMP held")
+	send_touch.call(jump_btn, 1, false)
+	assert_true(not player.touch_jump, "LEFT+JUMP: Cleanly released")
+
+	# --- Additional Test: Keyboard Controls Preservation ---
+	print("  Testing Keyboard Controls Preservation...")
+	Input.action_press("move_right")
+	player._physics_process(0.016)
+	assert_true(player.velocity.x > 0.0, "Keyboard move_right accelerates player")
+	Input.action_release("move_right")
+
 	lvl.queue_free()

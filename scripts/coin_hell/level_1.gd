@@ -50,23 +50,39 @@ func _ready() -> void:
 	_reset_level()
 
 func _setup_touch_controls() -> void:
-	touch_btn_left.button_down.connect(func(): player.touch_left = true)
-	touch_btn_left.button_up.connect(func(): player.touch_left = false)
+	touch_btn_left.action_name = "move_left"
+	touch_btn_right.action_name = "move_right"
+	touch_btn_jump.action_name = "jump"
 	
-	touch_btn_right.button_down.connect(func(): player.touch_right = true)
-	touch_btn_right.button_up.connect(func(): player.touch_right = false)
+	touch_btn_left.touch_down.connect(func(): player.touch_left = true)
+	touch_btn_left.touch_up.connect(func(): player.touch_left = false)
 	
-	touch_btn_jump.button_down.connect(func():
+	touch_btn_right.touch_down.connect(func(): player.touch_right = true)
+	touch_btn_right.touch_up.connect(func(): player.touch_right = false)
+	
+	touch_btn_jump.touch_down.connect(func():
 		player.touch_jump = true
 		player.touch_jump_just_pressed = true
 	)
-	touch_btn_jump.button_up.connect(func(): player.touch_jump = false)
+	touch_btn_jump.touch_up.connect(func():
+		player.touch_jump = false
+		player.touch_jump_just_released = true
+	)
+
+func _clear_touch_controls() -> void:
+	if touch_btn_left and touch_btn_left.has_method("reset"):
+		touch_btn_left.reset()
+	if touch_btn_right and touch_btn_right.has_method("reset"):
+		touch_btn_right.reset()
+	if touch_btn_jump and touch_btn_jump.has_method("reset"):
+		touch_btn_jump.reset()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause"):
 		_on_pause_pressed()
 
 func _on_pause_pressed() -> void:
+	_clear_touch_controls()
 	AudioManager.play_sfx("click")
 	pause_overlay.open()
 
@@ -74,9 +90,11 @@ func _on_coin_collected(current: int, total: int) -> void:
 	coin_counter_label.text = "COINS: %d / %d" % [current, total]
 
 func _on_player_died() -> void:
+	_clear_touch_controls()
 	death_overlay.open()
 
 func _on_level_completed(level_id: int) -> void:
+	_clear_touch_controls()
 	player.disable_input()
 	level_complete_overlay.open(GameManager.current_coins, GameManager.total_coins_required)
 
@@ -88,9 +106,11 @@ func _on_retry() -> void:
 	_reset_level()
 
 func _reset_level() -> void:
+	_clear_touch_controls()
 	death_overlay.visible = false
 	level_complete_overlay.visible = false
 	pause_overlay.visible = false
+	GameManager.is_gameplay_active = true
 	GameManager.reset_coins()
 	coin_counter_label.text = "COINS: 0 / %d" % GameManager.total_coins_required
 	player.reset_to(spawn_point.global_position)

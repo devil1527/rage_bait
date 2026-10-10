@@ -26,6 +26,7 @@ var touch_left: bool = false
 var touch_right: bool = false
 var touch_jump: bool = false
 var touch_jump_just_pressed: bool = false
+var touch_jump_just_released: bool = false
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
@@ -85,8 +86,9 @@ func _physics_process(delta: float) -> void:
 		AudioManager.play_sfx("jump")
 
 	# Variable jump height cut on early release
-	if (Input.is_action_just_released("jump") or (not touch_jump and velocity.y < 0)) and velocity.y < -120.0:
+	if (Input.is_action_just_released("jump") or touch_jump_just_released) and velocity.y < -120.0:
 		velocity.y = -120.0
+	touch_jump_just_released = false
 
 	move_and_slide()
 
@@ -95,6 +97,14 @@ func die() -> void:
 		return
 	_is_alive = false
 	_input_disabled = true
+	touch_left = false
+	touch_right = false
+	touch_jump = false
+	touch_jump_just_pressed = false
+	touch_jump_just_released = false
+	Input.action_release("move_left")
+	Input.action_release("move_right")
+	Input.action_release("jump")
 	velocity = Vector2.ZERO
 	# Small death hop
 	velocity.y = -200.0
@@ -103,6 +113,14 @@ func die() -> void:
 
 func disable_input() -> void:
 	_input_disabled = true
+	touch_left = false
+	touch_right = false
+	touch_jump = false
+	touch_jump_just_pressed = false
+	touch_jump_just_released = false
+	Input.action_release("move_left")
+	Input.action_release("move_right")
+	Input.action_release("jump")
 	velocity.x = 0.0
 
 func reset_to(spawn_position: Vector2) -> void:
@@ -116,5 +134,9 @@ func reset_to(spawn_position: Vector2) -> void:
 	touch_right = false
 	touch_jump = false
 	touch_jump_just_pressed = false
+	touch_jump_just_released = false
+	Input.action_release("move_left")
+	Input.action_release("move_right")
+	Input.action_release("jump")
 	if sprite:
 		sprite.flip_h = false
