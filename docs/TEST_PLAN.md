@@ -11,22 +11,22 @@ An automated test suite is implemented in [`scripts/tests/test_runner.gd`](file:
 godot --headless "res://scenes/tests/test_runner.tscn"
 ```
 
-### Automated Coverage Matrix (337 Assertions)
+### Automated Coverage Matrix (419 Assertions)
 
 | Category | Test Case | Expected Result | Status |
 | :--- | :--- | :--- | :---: |
 | **Save / Persistence** | Fresh save defaults | Highest unlocked = 1, completed = 0 | **PASS** |
-| **Save / Persistence** | Sequential unlock | Completing Level 1 unlocks Level 2 | **PASS** |
+| **Save / Persistence** | Sequential unlock | Completing Level 1 unlocks 2, completing 2 unlocks 3, completing 3 unlocks 4 | **PASS** |
 | **Save / Persistence** | Disk persistence | Progress survives save file reload | **PASS** |
 | **Save / Persistence** | Corrupt save resilience | Graceful fallback to safe defaults without crash | **PASS** |
 | **Game Data** | 20 planned levels | All 20 levels cataloged with official names | **PASS** |
-| **Game Data** | Playable state | Only Level 1 & Level 2 playable | **PASS** |
-| **Game Data** | Coin counter clamp | Counter never exceeds configured total (10) | **PASS** |
+| **Game Data** | Playable state | Levels 1, 2, and 3 playable; Levels 4-20 unimplemented | **PASS** |
+| **Game Data** | Coin counter clamp | Counter never exceeds configured total | **PASS** |
 | **Main Menu** | Card availability | All 4 arcade cards present | **PASS** |
 | **Main Menu** | Coming soon modals | Modal shows exact spec message when locked card clicked | **PASS** |
 | **Level Select** | 20 level tiles | Responsive grid contains all 20 tiles | **PASS** |
 | **Level Select** | Locked tile modal | Tapping locked tile shows spec message | **PASS** |
-| **Level Select** | Unimplemented modal | Tapping unlocked Level 3 shows "still being built" message | **PASS** |
+| **Level Select** | Unimplemented modal | Tapping unlocked Level 4 shows "still being built" message | **PASS** |
 | **Level 1 Gameplay** | Entity instantiation | Player, 10 coins, hazards, exit gate present | **PASS** |
 | **Level 1 Gameplay** | Exit gate locked state | Gate begins locked with "COINS REQUIRED" | **PASS** |
 | **Level 1 Gameplay** | Gate feedback | Approaching gate early shows remaining coins toast | **PASS** |
@@ -39,7 +39,14 @@ godot --headless "res://scenes/tests/test_runner.tscn"
 | **Level 2 Fix 3** | Coin Platform Unexpected Death Fix | Replaced invalid spike PackedScene texture with spikes.png, eliminated safe platform trigger overlap, raised ceiling headroom | **PASS** |
 | **Level 2 Fix 4** | Moving Wall Spike Trap | Wall crossing triggers rapid floor spikes without warning text, lethal hitbox, safe ruin block reaction landing | **PASS** |
 | **Level 2 Fix 5** | Fake Exit at Pit Edge | Fake exit positioned at platform edge above death pit; drops upon coin approach; real exit revealed on high ledge | **PASS** |
+| **Level 2 Part 2**| Removed Explanatory Text | Removed all explanatory labels ("FAKED!", "DECEIVED!", "REAL EXIT!"); displays standard clean states | **PASS** |
 | **Level 2 Fix 6** | Comprehensive Retry Reset | Clean reset of player spawn, 10 coins, 3 bridge sections, greedy platform, spike floor, moving wall, spike trap, exits | **PASS** |
+| **Level 3 Section A**| Safe Start & Controls | Safe spawn at X=100, Y=380, ample headroom, responsive touch controls | **PASS** |
+| **Level 3 Section B**| Spike Gauntlet | 5 spike popup encounters, reaction window < 1s, lethal hitboxes, clean resets | **PASS** |
+| **Level 3 Section C**| First 10 Coins Distribution | First 10 coins placed strictly before InfernoGate1 (X < 1500) | **PASS** |
+| **Level 3 Section D**| Inferno Gate Proximity & Seal | Gate dormant before trigger; erupts full-height wall of fire floor-to-ceiling; cannot jump over | **PASS** |
+| **Level 3 Section E**| Fire Timing Cycle & Twist | 1.3s lethal active fire; 1.3s safe retracted opening; safe to cross while retracted; jumping into fire kills | **PASS** |
+| **Level 3 Section F**| Gauntlet Finale & Completion | Coins 11 & 12 in final gauntlet; InfernoGate2 timing; 12 coins unlocks exit; completing unlocks Level 4 | **PASS** |
 
 ---
 

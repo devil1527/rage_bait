@@ -39,7 +39,6 @@ func reveal() -> void:
 	if collision_shape:
 		collision_shape.set_deferred("disabled", false)
 	unlock_gate()
-	status_label.text = "REAL EXIT!"
 
 func _setup_labels() -> void:
 	if status_label:

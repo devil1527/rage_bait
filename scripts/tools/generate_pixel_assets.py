@@ -366,6 +366,55 @@ def create_neon_ruins_assets():
     df.point((20, 35), fill=(255, 200, 60, 255))
     fake.save("assets/sprites/exit_fake.png")
 
+def create_inferno_gate_assets():
+    # 1. 36x12 inferno_emitter.png - Ruin fire nozzle / magma vent
+    emit = Image.new("RGBA", (36, 12), (0, 0, 0, 0))
+    de = ImageDraw.Draw(emit)
+    # Heavy stone base
+    de.rectangle([0, 2, 35, 11], fill=(22, 18, 32, 255), outline=(50, 40, 70, 255))
+    # Glowing magma conduits
+    de.rectangle([2, 0, 33, 3], fill=(255, 70, 20, 255))
+    de.line([(6, 1), (29, 1)], fill=(255, 220, 50, 255))
+    # Vent slots
+    for x in range(6, 30, 6):
+        de.rectangle([x, 5, x+2, 9], fill=(255, 130, 20, 255))
+    emit.save("assets/sprites/inferno_emitter.png")
+
+    # 2. 36x128 inferno_flame.png - Vertical column of blazing neon fire
+    flame = Image.new("RGBA", (36, 128), (0, 0, 0, 0))
+    df = ImageDraw.Draw(flame)
+    import math
+    for y in range(128):
+        # Calculate width of flame envelope at height y
+        norm_y = y / 128.0
+        # Wavy flicker based on sine waves
+        wobble1 = math.sin(y * 0.22) * 2.5
+        wobble2 = math.cos(y * 0.15) * 2.0
+        cx = 18.0 + wobble1
+        half_w = 14.0 + wobble2
+        
+        # Outer flame aura (neon magenta/crimson)
+        x0_out = max(0, int(cx - half_w))
+        x1_out = min(35, int(cx + half_w))
+        df.line([(x0_out, y), (x1_out, y)], fill=(255, 30, 80, 210))
+        
+        # Mid flame core (blazing fire orange)
+        x0_mid = max(3, int(cx - half_w * 0.75))
+        x1_mid = min(32, int(cx + half_w * 0.75))
+        df.line([(x0_mid, y), (x1_mid, y)], fill=(255, 120, 20, 245))
+        
+        # Inner flame core (scorching yellow)
+        x0_in = max(6, int(cx - half_w * 0.45))
+        x1_in = min(29, int(cx + half_w * 0.45))
+        df.line([(x0_in, y), (x1_in, y)], fill=(255, 225, 50, 255))
+        
+        # White-hot plasma channel in center
+        x0_core = max(11, int(cx - half_w * 0.2))
+        x1_core = min(24, int(cx + half_w * 0.2))
+        df.line([(x0_core, y), (x1_core, y)], fill=(255, 255, 230, 255))
+
+    flame.save("assets/sprites/inferno_flame.png")
+
 if __name__ == "__main__":
     create_player()
     create_coin()
@@ -376,4 +425,5 @@ if __name__ == "__main__":
     create_game_cards()
     create_ui_icons()
     create_neon_ruins_assets()
+    create_inferno_gate_assets()
     print("All pixel assets generated successfully!")

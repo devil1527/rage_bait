@@ -57,8 +57,7 @@ func _on_coin_collected(current: int, total: int) -> void:
 func _update_visuals() -> void:
 	if _has_tricked:
 		sprite.texture = fake_texture
-		status_label.text = "FAKED!"
-		status_label.add_theme_color_override("font_color", Color(1.0, 0.25, 0.4))
+		status_label.text = ""
 	elif _is_coins_ready:
 		sprite.texture = open_texture
 		status_label.text = "EXIT OPEN!"
@@ -90,9 +89,7 @@ func trigger_deception() -> void:
 	fake_exit_triggered.emit()
 	
 	sprite.texture = fake_texture
-	status_label.text = "FAKED!"
-	status_label.add_theme_color_override("font_color", Color(1.0, 0.25, 0.4))
-	show_toast("DECIEVED! LOOK BEHIND YOU!")
+	status_label.text = ""
 
 	# Reveal real exit
 	if real_exit_path != NodePath(""):
