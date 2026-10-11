@@ -78,8 +78,8 @@ func _run_visual_verification() -> void:
 	for i in range(5):
 		await get_tree().process_frame
 	
-	# Collect Coin 6, which triggers Greedy drop
-	coins.get_node("Coin6").collect()
+	# Stepping onto lower Platform Greedy drops into pit
+	plat_greedy.trigger_greedy_drop()
 	for i in range(12):
 		await get_tree().process_frame
 	
@@ -87,6 +87,7 @@ func _run_visual_verification() -> void:
 	
 	# STAGE 4: Trick 2 — Fake Safe Platform 4 Pop-up Spikes
 	print("\nSimulating approach to Trick 2 (Fake Safe Platform 4)...")
+	coins.get_node("Coin6").collect()
 	coins.get_node("Coin7").collect()
 	
 	# Player approaches / lands on Platform 4
@@ -100,7 +101,7 @@ func _run_visual_verification() -> void:
 	
 	await _capture("res://screenshots/stage4_fake_safe_platform_spikes.png")
 	
-	# STAGE 5: Trick 4 — Exit Betrayal
+	# STAGE 5: Trick 4 — Unlocked Stationary Exit Gate
 	print("\nSimulating collection of all coins and approaching exit...")
 	coins.get_node("Coin8").collect()
 	coins.get_node("Coin9").collect()
@@ -110,19 +111,14 @@ func _run_visual_verification() -> void:
 	print("  Coins collected: ", GameManager.current_coins, " / ", GameManager.total_coins_required)
 	print("  Exit gate is open: ", exit_gate._is_open)
 	
-	# Move player close to exit gate to trigger betrayal
-	player.global_position = Vector2(1800, 434)
+	# Move player close to stationary exit gate
+	player.global_position = Vector2(1810, 434)
 	player.velocity = Vector2.ZERO
 	
-	for i in range(10):
+	for i in range(12):
 		await get_tree().process_frame
 	
-	# Trigger exit betrayal hop
-	exit_gate.trigger_exit_betrayal()
-	for i in range(15):
-		await get_tree().process_frame
-	
-	await _capture("res://screenshots/stage5_exit_betrayal.png")
+	await _capture("res://screenshots/stage5_stationary_exit_open.png")
 	
 	# STAGE 6: Completing Level 1
 	print("\nCompleting level...")

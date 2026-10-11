@@ -97,7 +97,7 @@ limit_bottom = 540
 [node name="Platforms" type="Node2D" parent="."]
 
 [node name="Ground1" type="StaticBody2D" parent="Platforms"]
-position = Vector2(220, 490)
+position = Vector2(220, 480)
 collision_layer = 2
 collision_mask = 0
 
@@ -118,7 +118,7 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Platform1" type="StaticBody2D" parent="Platforms"]
-position = Vector2(510, 405)
+position = Vector2(490, 390)
 collision_layer = 2
 collision_mask = 0
 
@@ -139,7 +139,7 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Platform2" type="StaticBody2D" parent="Platforms"]
-position = Vector2(680, 350)
+position = Vector2(670, 325)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("17_fplat")
@@ -169,7 +169,7 @@ collision_mask = 1
 shape = SubResource("RectangleShape2D_plat2_step")
 
 [node name="Platform3" type="StaticBody2D" parent="Platforms"]
-position = Vector2(850, 345)
+position = Vector2(850, 275)
 collision_layer = 2
 collision_mask = 0
 
@@ -190,7 +190,7 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="PlatformGreedy" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1010, 355)
+position = Vector2(1010, 440)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("18_gplat")
@@ -220,7 +220,7 @@ collision_mask = 1
 shape = SubResource("RectangleShape2D_platgreedy_step")
 
 [node name="Ground2" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1200, 490)
+position = Vector2(1170, 370)
 collision_layer = 2
 collision_mask = 0
 
@@ -241,7 +241,7 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Platform4" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1400, 395)
+position = Vector2(1380, 380)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("19_kplat")
@@ -284,7 +284,7 @@ position = Vector2(0, -4)
 shape = SubResource("RectangleShape2D_plat4_spikes")
 
 [node name="Platform5" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1580, 345)
+position = Vector2(1560, 320)
 collision_layer = 2
 collision_mask = 0
 
@@ -305,7 +305,7 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Ground3" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1860, 490)
+position = Vector2(1840, 480)
 collision_layer = 2
 collision_mask = 0
 
@@ -344,16 +344,19 @@ shape = SubResource("RectangleShape2D_wall")
 [node name="Hazards" type="Node2D" parent="."]
 
 [node name="SpikesPit1" parent="Hazards" instance=ExtResource("5_spik")]
-position = Vector2(780, 520)
+position = Vector2(580, 520)
 
 [node name="SpikesPit2" parent="Hazards" instance=ExtResource("5_spik")]
-position = Vector2(920, 520)
+position = Vector2(760, 520)
 
 [node name="SpikesPit3" parent="Hazards" instance=ExtResource("5_spik")]
-position = Vector2(1330, 520)
+position = Vector2(1010, 520)
 
 [node name="SpikesPit4" parent="Hazards" instance=ExtResource("5_spik")]
-position = Vector2(1490, 520)
+position = Vector2(1280, 520)
+
+[node name="SpikesPit5" parent="Hazards" instance=ExtResource("5_spik")]
+position = Vector2(1470, 520)
 
 [node name="PitHazardArea" type="Area2D" parent="."]
 position = Vector2(1000, 570)
@@ -366,67 +369,58 @@ shape = SubResource("RectangleShape2D_pit")
 [node name="Coins" type="Node2D" parent="."]
 
 [node name="Coin1" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(160, 400)
+position = Vector2(160, 390)
 
 [node name="Coin2" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(320, 380)
+position = Vector2(300, 370)
 
 [node name="Coin3" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(510, 335)
+position = Vector2(490, 320)
 
 [node name="Coin4" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(680, 280)
+position = Vector2(670, 255)
 
 [node name="Coin5" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(850, 275)
+position = Vector2(850, 205)
 
 [node name="Coin6" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1010, 285)
+position = Vector2(1010, 195)
 greedy_platform = NodePath("../../Platforms/PlatformGreedy")
 
 [node name="Coin7" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1200, 390)
+position = Vector2(1170, 260)
 
 [node name="Coin8" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1400, 320)
+position = Vector2(1380, 305)
 
 [node name="Coin9" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1580, 270)
+position = Vector2(1560, 245)
 
 [node name="Coin10" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1750, 390)
+position = Vector2(1730, 370)
 
 [node name="ExitGate" parent="." instance=ExtResource("4_exit")]
-position = Vector2(1860, 422)
+position = Vector2(1860, 412)
 
 [node name="HUD" type="CanvasLayer" parent="."]
 
 [node name="MarginContainer" type="MarginContainer" parent="HUD"]
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 60.0
+offset_bottom = 44.0
 grow_horizontal = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 20
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 24
 
 [node name="TopBar" type="HBoxContainer" parent="HUD/MarginContainer"]
 layout_mode = 2
 
-[node name="LevelInfoBox" type="VBoxContainer" parent="HUD/MarginContainer/TopBar"]
-layout_mode = 2
-
-[node name="LevelTitle" type="Label" parent="HUD/MarginContainer/TopBar/LevelInfoBox"]
+[node name="LevelTitle" type="Label" parent="HUD/MarginContainer/TopBar"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
-theme_override_font_sizes/font_size = 16
-text = "LEVEL 1 — THE WARM-UP (TRUST US)"
-
-[node name="Objective" type="Label" parent="HUD/MarginContainer/TopBar/LevelInfoBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0, 0.9, 1, 1)
-theme_override_font_sizes/font_size = 12
-text = "COLLECT EVERY COIN TO OPEN THE EXIT"
+theme_override_font_sizes/font_size = 14
+text = "LEVEL 1 — THE WARM-UP"
 
 [node name="Spacer" type="Control" parent="HUD/MarginContainer/TopBar"]
 layout_mode = 2
@@ -435,15 +429,15 @@ size_flags_horizontal = 3
 [node name="CoinCounter" type="Label" parent="HUD/MarginContainer/TopBar"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 18
 text = "COINS: 0 / 10"
 
 [node name="Spacer2" type="Control" parent="HUD/MarginContainer/TopBar"]
-custom_minimum_size = Vector2(20, 0)
+custom_minimum_size = Vector2(16, 0)
 layout_mode = 2
 
 [node name="PauseBtn" type="Button" parent="HUD/MarginContainer/TopBar"]
-custom_minimum_size = Vector2(80, 36)
+custom_minimum_size = Vector2(72, 32)
 layout_mode = 2
 text = "⏸ PAUSE"
 
@@ -462,8 +456,8 @@ anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 28.0
-offset_top = -98.0
-offset_right = 98.0
+offset_top = -132.0
+offset_right = 132.0
 offset_bottom = -28.0
 grow_vertical = 0
 texture_normal = ExtResource("10_bleft")
@@ -472,15 +466,17 @@ ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("16_tbtn")
 action_name = "move_left"
+touch_margin = 8.0
+drag_margin = 32.0
 
 [node name="RightBtn" type="TextureButton" parent="HUD/TouchControls"]
 layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = 112.0
-offset_top = -98.0
-offset_right = 182.0
+offset_left = 156.0
+offset_top = -132.0
+offset_right = 260.0
 offset_bottom = -28.0
 grow_vertical = 0
 texture_normal = ExtResource("11_bright")
@@ -489,6 +485,8 @@ ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("16_tbtn")
 action_name = "move_right"
+touch_margin = 8.0
+drag_margin = 32.0
 
 [node name="JumpBtn" type="TextureButton" parent="HUD/TouchControls"]
 layout_mode = 1
@@ -497,10 +495,10 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -106.0
-offset_top = -106.0
-offset_right = -26.0
-offset_bottom = -26.0
+offset_left = -152.0
+offset_top = -152.0
+offset_right = -28.0
+offset_bottom = -28.0
 grow_horizontal = 0
 grow_vertical = 0
 texture_normal = ExtResource("12_bjump")
@@ -509,6 +507,8 @@ ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("16_tbtn")
 action_name = "jump"
+touch_margin = 16.0
+drag_margin = 40.0
 
 [node name="PauseOverlay" parent="HUD" instance=ExtResource("6_paus")]
 visible = false

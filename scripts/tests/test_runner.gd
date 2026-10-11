@@ -172,7 +172,7 @@ func test_level_1_gameplay_mechanics() -> void:
 	# Player touches locked exit gate
 	exit_gate._on_body_entered(player)
 	assert_true(not exit_gate._is_open, "Exit gate stays locked when player enters without all coins")
-	assert_eq(exit_gate.toast_label.text, "You still need 10 coins!", "Exit gate toast informs player of remaining coins")
+	assert_eq(exit_gate.toast_label.text, "Need 10 more coins!", "Exit gate toast informs player of remaining coins")
 	
 	# Collect all coins
 	for coin in coins_container.get_children():
@@ -181,13 +181,8 @@ func test_level_1_gameplay_mechanics() -> void:
 	assert_true(exit_gate._is_open, "Exit gate unlocks automatically after 10th coin is collected")
 	assert_eq(exit_gate.status_label.text, "EXIT OPEN!", "Exit gate displays 'EXIT OPEN!'")
 	
-	# Player approaches unlocked exit gate (triggers betrayal)
+	# Player enters unlocked stationary exit gate
 	GameManager.is_gameplay_active = true
-	exit_gate._on_body_entered(player)
-	assert_true(exit_gate._has_betrayed, "Exit gate triggers betrayal hop when approached")
-	assert_eq(exit_gate.status_label.text, "OKAY FINE, YOU WIN!", "Exit gate taunts with 'OKAY FINE, YOU WIN!'")
-	
-	# Player enters the final exit gate
 	exit_gate._on_body_entered(player)
 	assert_true(exit_gate._completion_triggered, "Level completion triggers on exit")
 	assert_true(SaveManager.is_level_completed(1), "Level 1 completion persists in SaveManager")
@@ -459,13 +454,17 @@ func test_ragebait_tricks_and_level_rework() -> void:
 	assert_true(platgreedy is GreedyPlatformScript, "PlatformGreedy uses GreedyPlatform script")
 	var initial_greedy_y = platgreedy.position.y
 	assert_true(not platgreedy._has_dropped, "GreedyPlatform starts at normal height")
-	coin6.collect()
-	assert_true(platgreedy._has_dropped, "Collecting Coin 6 triggers GreedyPlatform drop")
-	assert_true(platgreedy._toast_label.visible, "GreedyPlatform displays 'GREEDY!' toast")
+	platgreedy.trigger_greedy_drop()
+	assert_true(platgreedy._has_dropped, "GreedyPlatform triggers drop upon player stepping on it")
+	assert_true(not platgreedy._falling, "GreedyPlatform shakes before falling into pit")
+	for _i in range(30):
+		platgreedy._physics_process(0.016)
+	assert_true(platgreedy._falling, "GreedyPlatform falls into pit, making missed jump unrecoverable")
+	assert_true(platgreedy.collision_shape.disabled, "GreedyPlatform collision disabled when fallen")
 	platgreedy.reset()
-	assert_true(not platgreedy._has_dropped, "GreedyPlatform resets cleanly on retry")
+	assert_true(not platgreedy._has_dropped and not platgreedy._falling, "GreedyPlatform resets cleanly on retry")
 	assert_eq(platgreedy.position.y, initial_greedy_y, "GreedyPlatform position resets to initial height")
-	assert_true(not platgreedy._toast_label.visible, "GreedyPlatform hides toast on reset")
+	assert_true(not platgreedy.collision_shape.disabled, "GreedyPlatform collision re-enabled on reset")
 
 	# --- 4. TRICK 2 — The Fake Safe Landing ---
 	print("  Validating Trick 2: The Fake Safe Landing...")
@@ -484,24 +483,21 @@ func test_ragebait_tricks_and_level_rework() -> void:
 	assert_true(not plat4._triggered and not plat4._active_spikes, "FakeSafePlatform resets cleanly on retry")
 	assert_true(plat4.spikes_collision.disabled, "Spikes retract and collision is disabled on reset")
 
-	# --- 5. TRICK 4 — The Exit Betrayal ---
-	print("  Validating Trick 4: The Exit Betrayal...")
+	# --- 5. TRICK 4 — The Stationary Exit Gate ---
+	print("  Validating Trick 4: The Stationary Exit Gate...")
 	var initial_exit_pos = exit_gate.global_position
 	# Unlock gate
 	exit_gate.unlock_gate()
 	assert_true(exit_gate._is_open, "Exit gate unlocks")
-	assert_true(not exit_gate._has_betrayed, "Exit gate has not betrayed yet")
-	# Approach open gate -> triggers betrayal
-	exit_gate.trigger_exit_betrayal()
-	assert_true(exit_gate._has_betrayed, "Exit gate performs betrayal hop")
-	assert_eq(exit_gate.status_label.text, "OKAY FINE, YOU WIN!", "Exit gate displays 'OKAY FINE, YOU WIN!'")
-	assert_true(exit_gate._is_open, "Exit gate remains accessible")
-	# Enter final gate
+	assert_eq(exit_gate.status_label.text, "EXIT OPEN!", "Exit gate displays 'EXIT OPEN!'")
+	assert_eq(exit_gate.global_position, initial_exit_pos, "Exit gate remains stationary as required")
+	# Enter exit gate
 	exit_gate._on_body_entered(player)
-	assert_true(exit_gate._completion_triggered, "Level completes when entering betrayed exit")
+	assert_true(exit_gate._completion_triggered, "Level completes when entering stationary exit")
 	exit_gate.reset()
-	assert_true(not exit_gate._has_betrayed, "Exit betrayal state resets on retry")
-	assert_eq(exit_gate.global_position, initial_exit_pos, "Exit position returns to initial position on reset")
+	assert_true(not exit_gate._is_open, "Exit gate resets to locked on retry")
+	assert_true(not exit_gate._completion_triggered, "Exit completion flag resets on retry")
+	assert_eq(exit_gate.global_position, initial_exit_pos, "Exit position remains unchanged on reset")
 
 	lvl.queue_free()
 
@@ -543,7 +539,8 @@ func test_full_level_1_gameplay_walkthrough() -> void:
 	var coin6 = coins_container.get_node("Coin6")
 	coin6.collect()
 	assert_eq(GameManager.current_coins, 6, "Coin 6 collected")
-	assert_true(platgreedy._has_dropped, "Greedy platform dropped upon collecting Coin 6")
+	platgreedy.trigger_greedy_drop()
+	assert_true(platgreedy._has_dropped, "Greedy platform triggered drop upon landing")
 	
 	# Step 4: Collect Coins 7 to 9
 	for i in range(7, 10):
@@ -561,18 +558,13 @@ func test_full_level_1_gameplay_walkthrough() -> void:
 	assert_eq(GameManager.current_coins, 10, "All 10 coins collected!")
 	assert_true(exit_gate._is_open, "Exit gate unlocked automatically after 10th coin")
 	
-	# Step 7: Approach exit (triggers Trick 4: Exit Betrayal)
+	# Step 7: Enter unlocked stationary exit gate
 	exit_gate._on_body_entered(player)
-	assert_true(exit_gate._has_betrayed, "Trick 4: Exit betrayal triggered")
-	assert_eq(exit_gate.status_label.text, "OKAY FINE, YOU WIN!", "Exit shows final message")
-	
-	# Step 8: Enter final exit gate position
-	exit_gate._on_body_entered(player)
-	assert_true(exit_gate._completion_triggered, "Level 1 completion triggered")
+	assert_true(exit_gate._completion_triggered, "Level 1 completion triggered upon reaching exit")
 	assert_true(SaveManager.is_level_completed(1), "Level 1 marked completed in SaveManager")
 	assert_true(SaveManager.is_level_unlocked(2), "Level 2 is now unlocked in SaveManager")
 	
-	# Step 9: Verify reset on death
+	# Step 8: Verify reset on death
 	player.die()
 	assert_true(lvl.death_overlay.visible, "Death overlay shown on death")
 	lvl._on_retry()
@@ -581,6 +573,6 @@ func test_full_level_1_gameplay_walkthrough() -> void:
 	assert_true(not plat2._triggered, "Trick 1 reset on retry")
 	assert_true(not platgreedy._has_dropped, "Trick 3 reset on retry")
 	assert_true(not plat4._triggered, "Trick 2 reset on retry")
-	assert_true(not exit_gate._has_betrayed, "Trick 4 reset on retry")
+	assert_true(not exit_gate._completion_triggered, "Exit completion reset on retry")
 	
 	lvl.queue_free()

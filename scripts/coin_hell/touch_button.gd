@@ -110,6 +110,16 @@ func _set_pressed(pressed: bool) -> void:
 	if _base_pressed_tex:
 		texture_normal = _base_pressed_tex if pressed else _base_normal_tex
 
+	# Responsive, instant visual scale & highlight feedback without input delay
+	pivot_offset = size * 0.5
+	var tween := create_tween()
+	if pressed:
+		tween.tween_property(self, "scale", Vector2(0.92, 0.92), 0.04).set_trans(Tween.TRANS_QUAD)
+		tween.parallel().tween_property(self, "modulate", Color(1.2, 1.2, 1.2, 1.0), 0.04)
+	else:
+		tween.tween_property(self, "scale", Vector2.ONE, 0.06).set_trans(Tween.TRANS_QUAD)
+		tween.parallel().tween_property(self, "modulate", Color.WHITE, 0.06)
+
 	if pressed:
 		if action_name != "":
 			Input.action_press(action_name)
@@ -125,6 +135,8 @@ func reset() -> void:
 	if touch_index != -1 or is_active_pressed:
 		touch_index = -1
 		_set_pressed(false)
+	scale = Vector2.ONE
+	modulate = Color.WHITE
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_PAUSED:

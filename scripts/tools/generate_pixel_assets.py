@@ -139,31 +139,85 @@ def create_exit_gates():
     img_open.save("assets/sprites/exit_open.png")
 
 def create_touch_buttons():
-    # 64x64 touch control buttons
-    def make_btn(symbol, pressed=False):
-        btn = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
-        d = ImageDraw.Draw(btn)
-        # Background circle
-        if pressed:
-            if symbol == "jump":
-                d.ellipse([2, 2, 61, 61], fill=(180, 140, 20, 220), outline=(255, 230, 100, 255), width=3)
-            else:
-                d.ellipse([2, 2, 61, 61], fill=(0, 160, 200, 220), outline=(150, 245, 255, 255), width=3)
-        else:
-            d.ellipse([2, 2, 61, 61], fill=(20, 25, 45, 160), outline=(0, 210, 230, 200), width=2)
-            d.ellipse([6, 6, 57, 57], outline=(40, 70, 100, 140))
+    # 128x128 polished high-res touch control buttons with retro neon styling
+    def draw_pixel_jump(d, start_x, start_y, fill):
+        # J (12x16)
+        jx = start_x
+        d.rectangle([jx, start_y, jx + 11, start_y + 2], fill=fill)
+        d.rectangle([jx + 6, start_y, jx + 9, start_y + 12], fill=fill)
+        d.rectangle([jx, start_y + 9, jx + 3, start_y + 12], fill=fill)
+        d.rectangle([jx, start_y + 12, jx + 9, start_y + 15], fill=fill)
+        # U (12x16)
+        ux = jx + 15
+        d.rectangle([ux, start_y, ux + 3, start_y + 12], fill=fill)
+        d.rectangle([ux + 8, start_y, ux + 11, start_y + 12], fill=fill)
+        d.rectangle([ux, start_y + 12, ux + 11, start_y + 15], fill=fill)
+        # M (16x16)
+        mx = ux + 15
+        d.rectangle([mx, start_y, mx + 3, start_y + 15], fill=fill)
+        d.rectangle([mx + 12, start_y, mx + 15, start_y + 15], fill=fill)
+        d.rectangle([mx + 3, start_y + 3, mx + 6, start_y + 6], fill=fill)
+        d.rectangle([mx + 9, start_y + 3, mx + 12, start_y + 6], fill=fill)
+        d.rectangle([mx + 6, start_y + 5, mx + 9, start_y + 8], fill=fill)
+        # P (12x16)
+        px = mx + 19
+        d.rectangle([px, start_y, px + 3, start_y + 15], fill=fill)
+        d.rectangle([px, start_y, px + 11, start_y + 2], fill=fill)
+        d.rectangle([px + 8, start_y, px + 11, start_y + 8], fill=fill)
+        d.rectangle([px, start_y + 7, px + 11, start_y + 9], fill=fill)
+
+    def make_btn(btn_type, pressed):
+        img = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
+        d = ImageDraw.Draw(img)
+        offset = 2 if pressed else 0
         
-        offset = 1 if pressed else 0
-        if symbol == "left":
-            fill_col = (255, 255, 255, 255) if pressed else (0, 240, 255, 240)
-            d.polygon([(42 + offset, 18 + offset), (20 + offset, 32 + offset), (42 + offset, 46 + offset)], fill=fill_col)
-        elif symbol == "right":
-            fill_col = (255, 255, 255, 255) if pressed else (0, 240, 255, 240)
-            d.polygon([(22 + offset, 18 + offset), (44 + offset, 32 + offset), (22 + offset, 46 + offset)], fill=fill_col)
-        elif symbol == "jump":
-            fill_col = (255, 255, 255, 255) if pressed else (255, 215, 50, 240)
-            d.polygon([(32 + offset, 18 + offset), (18 + offset, 38 + offset), (27 + offset, 38 + offset), (27 + offset, 46 + offset), (37 + offset, 46 + offset), (37 + offset, 38 + offset), (46 + offset, 38 + offset)], fill=fill_col)
-        return btn
+        if btn_type == "jump":
+            bg_fill = (180, 135, 15, 235) if pressed else (20, 24, 44, 210)
+            outline = (255, 240, 110, 255) if pressed else (255, 205, 45, 240)
+            elem_fill = (255, 255, 255, 255) if pressed else (255, 215, 50, 255)
+            d.ellipse([5, 5, 122, 122], fill=bg_fill, outline=outline, width=4)
+            if not pressed:
+                d.ellipse([11, 11, 116, 116], outline=(120, 95, 25, 130), width=2)
+            # Arrow
+            d.polygon([
+                (64 + offset, 20 + offset),
+                (36 + offset, 50 + offset),
+                (51 + offset, 50 + offset),
+                (51 + offset, 62 + offset),
+                (77 + offset, 62 + offset),
+                (77 + offset, 50 + offset),
+                (92 + offset, 50 + offset)
+            ], fill=elem_fill)
+            # Text JUMP
+            draw_pixel_jump(d, 33 + offset, 72 + offset, elem_fill)
+        else:
+            bg_fill = (0, 160, 210, 235) if pressed else (18, 24, 46, 210)
+            outline = (180, 245, 255, 255) if pressed else (0, 220, 240, 240)
+            elem_fill = (255, 255, 255, 255) if pressed else (0, 240, 255, 255)
+            d.ellipse([5, 5, 122, 122], fill=bg_fill, outline=outline, width=4)
+            if not pressed:
+                d.ellipse([11, 11, 116, 116], outline=(30, 80, 110, 130), width=2)
+            if btn_type == "left":
+                d.polygon([
+                    (32 + offset, 64 + offset),
+                    (68 + offset, 30 + offset),
+                    (68 + offset, 46 + offset),
+                    (92 + offset, 46 + offset),
+                    (92 + offset, 82 + offset),
+                    (68 + offset, 82 + offset),
+                    (68 + offset, 98 + offset)
+                ], fill=elem_fill)
+            else: # right
+                d.polygon([
+                    (96 + offset, 64 + offset),
+                    (60 + offset, 30 + offset),
+                    (60 + offset, 46 + offset),
+                    (36 + offset, 46 + offset),
+                    (36 + offset, 82 + offset),
+                    (60 + offset, 82 + offset),
+                    (60 + offset, 98 + offset)
+                ], fill=elem_fill)
+        return img
 
     make_btn("left", False).save("assets/sprites/btn_left.png")
     make_btn("left", True).save("assets/sprites/btn_left_pressed.png")
