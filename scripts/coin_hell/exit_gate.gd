@@ -5,6 +5,8 @@ extends Area2D
 
 signal level_completed
 
+@export var hidden_initially: bool = false
+
 var _is_open: bool = false
 var _completion_triggered: bool = false
 var _initial_pos: Vector2
@@ -12,6 +14,7 @@ var _initial_pos: Vector2
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var status_label: Label = $StatusLabel
 @onready var toast_label: Label = $ToastLabel
+@onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
 var locked_texture: Texture2D = preload("res://assets/sprites/exit_locked.png")
 var open_texture: Texture2D = preload("res://assets/sprites/exit_open.png")
@@ -22,9 +25,21 @@ func _ready() -> void:
 	GameManager.coin_collected.connect(_on_coin_collected)
 	GameManager.coins_reset.connect(reset)
 	_setup_labels()
-	_update_visuals()
+	if hidden_initially:
+		visible = false
+		if collision_shape:
+			collision_shape.set_deferred("disabled", true)
+	else:
+		_update_visuals()
 	if toast_label:
 		toast_label.visible = false
+
+func reveal() -> void:
+	visible = true
+	if collision_shape:
+		collision_shape.set_deferred("disabled", false)
+	unlock_gate()
+	status_label.text = "REAL EXIT!"
 
 func _setup_labels() -> void:
 	if status_label:
@@ -92,4 +107,9 @@ func reset() -> void:
 	global_position = _initial_pos
 	if toast_label:
 		toast_label.visible = false
-	_update_visuals()
+	if hidden_initially:
+		visible = false
+		if collision_shape:
+			collision_shape.set_deferred("disabled", true)
+	else:
+		_update_visuals()

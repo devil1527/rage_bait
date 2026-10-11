@@ -33,13 +33,22 @@ This repository contains the first playable milestone featuring **COIN HELL** �
   - Hazard spikes and pit detection with full retry/respawn flow.
   - Pause overlay with Resume, Restart, Level Select, and SFX toggle.
   - Level Complete overlay with Replay, Level Select, and Next Level flow.
+- **Playable Level 2 ("Trust Nothing" — World 1: Neon Ruins)**:
+  - Atmospheric dark ruin theme with cracked stone tiles and vibrant neon magenta/cyan accents.
+  - 10 collectible gold coins distributed across 5 challenging platforming sections.
+  - **Trap 1: Crumbling Bridge** — sequential platform collapse with crack/shake anticipation and immediate collision clearing.
+  - **Trap 2: Greedy Coin Platform** — lower tempting coin platform drops into the pit upon landing, demanding a rapid reaction leap.
+  - **Trap 3: Hidden Spike Floor** — safe-looking ruin floor with instant emerging lethal spikes from all directions upon crossing trigger.
+  - **Trap 4: Moving Wall** — solid sliding ruin monolith with frame-rate independent AnimatableBody2D physics and jumpable clearing height.
+  - **Final Surprise: Fake Exit Gate** — deceptive gate drops into the floor when approached after collecting all 10 coins, revealing the Real Exit Gate atop an elevated ledge.
+  - Full death/retry loop restoring all 10 coins, platform states, and exit gates. Completing Level 2 unlocks Level 3!
 - **On-Screen Mobile Touch Controls**:
   - Ergonomic Left, Right, and Jump touch buttons in bottom corners with visual pressed feedback.
 - **Local Save System**:
   - Persists completed levels and unlocked stages to `user://retro_rage_save.json`.
   - Automatic fallback to safe defaults on missing or corrupted data.
 - **Automated Headless Test Suite**:
-  - 75 automated assertions covering persistence, game data, UI flows, and physics mechanics.
+  - 312 automated assertions covering persistence, game data, UI flows, Level 1 mechanics, all 6 spike collision cases, and complete Level 2 trap/exit validation.
 
 ---
 

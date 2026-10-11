@@ -2,6 +2,10 @@ extends Node
 
 ## Test runner node executed inside the active scene tree with full autoload support.
 
+const CrumblingBridgeSectionClass = preload("res://scripts/coin_hell/crumbling_bridge_section.gd")
+const MovingWallClass = preload("res://scripts/coin_hell/moving_wall.gd")
+const FakeExitGateClass = preload("res://scripts/coin_hell/fake_exit_gate.gd")
+
 var passed_count: int = 0
 var failed_count: int = 0
 
@@ -47,6 +51,7 @@ func run_all_tests() -> void:
 	test_ragebait_tricks_and_level_rework()
 	test_full_level_1_gameplay_walkthrough()
 	test_spike_collision_directions_and_cases()
+	test_level_2_gameplay_mechanics()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -85,8 +90,13 @@ func test_game_manager_level_definitions() -> void:
 	assert_eq(lvl1.get("name"), "The Warm-Up", "Level 1 name is 'The Warm-Up'")
 	assert_true(lvl1.get("implemented"), "Level 1 is marked implemented")
 	assert_true(GameManager.can_play_level(1), "Level 1 is playable")
+
+	var lvl2: Dictionary = GameManager.get_level_info(2)
+	assert_eq(lvl2.get("name"), "Trust Nothing", "Level 2 name is 'Trust Nothing'")
+	assert_true(lvl2.get("implemented"), "Level 2 is marked implemented")
+	assert_true(GameManager.can_play_level(2), "Level 2 is playable")
 	
-	for lvl_id in range(2, 21):
+	for lvl_id in range(3, 21):
 		assert_true(not GameManager.can_play_level(lvl_id), "Level %d is marked not implemented" % lvl_id)
 		
 	# Test coin counter clamping
@@ -142,12 +152,17 @@ func test_level_select_logic_and_states() -> void:
 	assert_true(modal.visible, "Pressing locked level shows modal")
 	assert_eq(modal_label.text, "Locked! Beat the previous level first. The developer has enough problems already.", "Modal shows exact locked level message")
 	
-	# Unlock level 2 and test unimplemented level press
+	# Unlock level 2 and verify it is playable
 	SaveManager.complete_level(1)
 	lsel._update_ui()
-	lsel._on_level_tile_pressed(2)
+	assert_true(SaveManager.is_level_unlocked(2), "Level 2 is unlocked after completing Level 1")
+
+	# Complete level 2 to unlock level 3 and test unimplemented level press
+	SaveManager.complete_level(2)
+	lsel._update_ui()
+	lsel._on_level_tile_pressed(3)
 	assert_true(modal.visible, "Pressing unlocked but unimplemented level shows modal")
-	assert_eq(modal_label.text, "Level 2 is unlocked, but it's still being built. Replay Level 1 for now.", "Modal shows exact unimplemented level message")
+	assert_eq(modal_label.text, "Level 3 is unlocked, but it's still being built. Replay Level 1 for now.", "Modal shows exact unimplemented level message")
 	
 	lsel.queue_free()
 
@@ -189,12 +204,10 @@ func test_level_1_gameplay_mechanics() -> void:
 	assert_true(SaveManager.is_level_completed(1), "Level 1 completion persists in SaveManager")
 	assert_true(SaveManager.is_level_unlocked(2), "Level 2 is unlocked upon completion")
 	
-	# Test Level Complete overlay Next Level button
+	# Test Level Complete overlay Next Level button (Level 2 is now playable)
 	var complete_overlay = lvl.get_node("HUD/LevelCompleteOverlay")
 	complete_overlay.open(10, 10)
-	complete_overlay._on_next_level_pressed()
-	var complete_modal_label: Label = complete_overlay.get_node("MessageModal/Panel/VBox/MessageLabel")
-	assert_eq(complete_modal_label.text, "Level 2 is unlocked, but it's still being built. Replay Level 1 for now.", "Next Level from overlay safely shows unimplemented level message")
+	assert_true(GameManager.can_play_level(2), "Level 2 is playable from Next Level flow")
 	
 	# Test retry resets level
 	lvl._on_retry()
@@ -662,5 +675,156 @@ func test_spike_collision_directions_and_cases() -> void:
 	player.global_position = exit_gate.global_position
 	exit_gate._on_body_entered(player)
 	assert_true(exit_gate._completion_triggered, "Case F: Level completed successfully without touching spikes")
+
+	lvl.queue_free()
+
+func test_level_2_gameplay_mechanics() -> void:
+	print("\n--- TEST: Level 2 Gameplay & All 4 Traps + Fake Exit ---")
+	var lvl2_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_2.tscn")
+	assert_true(lvl2_scene != null, "Level 2 scene loads successfully")
+	var lvl = lvl2_scene.instantiate()
+	add_child(lvl)
+
+	var player = lvl.get_node("Player")
+	var coins = lvl.get_node("Coins")
+	var fake_exit = lvl.get_node("FakeExitGate")
+	var real_exit = lvl.get_node("RealExitGate")
+	var platforms = lvl.get_node("Platforms")
+	var traps = lvl.get_node("Traps")
+
+	assert_true(player != null, "Player exists in Level 2")
+	assert_eq(coins.get_child_count(), 10, "Level 2 contains exactly 10 coins")
+	assert_true(fake_exit != null, "FakeExitGate exists in Level 2")
+	assert_true(real_exit != null, "RealExitGate exists in Level 2")
+	assert_true(not real_exit.visible, "RealExitGate is initially hidden")
+
+	# --- TRAP 1: CRUMBLING BRIDGE ---
+	print("  Validating Trap 1: Crumbling Bridge...")
+	var b1 = platforms.get_node("BridgeSection1")
+	var b2 = platforms.get_node("BridgeSection2")
+	var b3 = platforms.get_node("BridgeSection3")
+	assert_true(b1 is CrumblingBridgeSectionClass, "BridgeSection1 uses CrumblingBridgeSection script")
+	assert_true(b2 is CrumblingBridgeSectionClass, "BridgeSection2 uses CrumblingBridgeSection script")
+	assert_true(b3 is CrumblingBridgeSectionClass, "BridgeSection3 uses CrumblingBridgeSection script")
+	assert_true(not b1._is_triggered, "BridgeSection1 is initially untriggered")
+	assert_true(not b1.collision_shape.disabled, "BridgeSection1 collision is active initially")
+
+	# Step on BridgeSection1
+	b1.trigger_collapse()
+	assert_true(b1._is_triggered, "BridgeSection1 starts shaking upon trigger")
+	b1._timer = 0.0
+	b1._physics_process(0.01)
+	assert_true(b1._is_falling, "BridgeSection1 falls after collapse delay")
+	assert_true(b1.collision_shape.disabled, "BridgeSection1 collision is disabled so no invisible surface remains")
+
+	# Reset Trap 1
+	b1.reset()
+	assert_true(not b1._is_triggered, "BridgeSection1 untriggered after reset")
+	assert_true(not b1.collision_shape.disabled, "BridgeSection1 collision restored after reset")
+
+	# --- TRAP 2: GREEDY COIN ---
+	print("  Validating Trap 2: Greedy Coin Platform...")
+	var gp = platforms.get_node("PlatformGreedy")
+	assert_true(gp is GreedyPlatform, "PlatformGreedy uses GreedyPlatform script")
+	assert_true(not gp._has_dropped, "PlatformGreedy starts untriggered")
+	assert_true(not gp.collision_shape.disabled, "PlatformGreedy collision active initially")
+
+	gp.trigger_greedy_drop()
+	assert_true(gp._has_dropped, "PlatformGreedy triggers drop when landed on")
+	gp._delay_timer = 0.0
+	gp._physics_process(0.01)
+	assert_true(gp._falling, "PlatformGreedy falls after warning delay")
+	assert_true(gp.collision_shape.disabled, "PlatformGreedy collision disabled upon falling")
+
+	gp.reset()
+	assert_true(not gp._has_dropped, "PlatformGreedy reset restores untriggered state")
+	assert_true(not gp.collision_shape.disabled, "PlatformGreedy collision restored upon reset")
+
+	# --- TRAP 3: HIDDEN SPIKE FLOOR ---
+	print("  Validating Trap 3: Hidden Spike Floor...")
+	var spike_floor = platforms.get_node("PlatformSpikeFloor")
+	assert_true(spike_floor is FakeSafePlatform, "PlatformSpikeFloor uses FakeSafePlatform script")
+	assert_true(not spike_floor._active_spikes, "Spikes are initially inactive and hidden")
+	assert_true(spike_floor.spikes_collision.disabled, "Spikes collision disabled initially")
+
+	spike_floor.trigger_trap()
+	assert_true(spike_floor._active_spikes, "Spikes become active immediately upon trigger")
+	assert_true(not spike_floor.spikes_collision.disabled, "Spikes collision enabled immediately")
+	assert_true(spike_floor.spikes_sprite.visible, "Spikes sprite visible once active")
+
+	# Verify spikes lethal to player
+	player._is_alive = true
+	spike_floor._kill_player(player)
+	assert_true(not player._is_alive, "Player dies when contacting active spikes")
+
+	spike_floor.reset()
+	assert_true(not spike_floor._active_spikes, "Spikes reset to inactive")
+	assert_true(spike_floor.spikes_collision.disabled, "Spikes collision disabled on reset")
+	assert_true(not spike_floor.spikes_sprite.visible, "Spikes sprite hidden on reset")
+
+	# --- TRAP 4: MOVING WALL ---
+	print("  Validating Trap 4: Moving Wall...")
+	var mwall = traps.get_node("MovingWall")
+	assert_true(mwall is MovingWallClass, "MovingWall uses MovingWall script")
+	assert_true(mwall is AnimatableBody2D, "MovingWall is AnimatableBody2D for stable physics")
+	assert_true(not mwall._is_active, "MovingWall starts stationary")
+	var start_x = mwall.position.x
+
+	mwall.activate()
+	assert_true(mwall._is_active, "MovingWall activated upon trigger")
+	mwall._physics_process(0.1)
+	assert_true(mwall.position.x != start_x, "MovingWall moves smoothly in physics process")
+
+	mwall.reset()
+	assert_true(not mwall._is_active, "MovingWall reset restores stationary state")
+	assert_eq(mwall.position.x, start_x, "MovingWall position restored to initial coordinate")
+
+	# --- FINAL SURPRISE: FAKE EXIT -> REAL EXIT ---
+	print("  Validating Final Surprise: Fake Exit -> Real Exit...")
+	assert_true(fake_exit is FakeExitGateClass, "FakeExitGate uses FakeExitGate script")
+	assert_true(not fake_exit._is_coins_ready, "FakeExitGate initially requires coins")
+	assert_eq(fake_exit.status_label.text, "COINS REQUIRED", "FakeExitGate displays 'COINS REQUIRED'")
+
+	# Approaching early shows toast
+	fake_exit._on_body_entered(player)
+	assert_true(not fake_exit._has_tricked, "FakeExitGate does not trigger deception before all coins collected")
+
+	# Collect all 10 coins
+	GameManager.current_level_id = 2
+	GameManager.total_coins_required = 10
+	GameManager.reset_coins()
+	for c in coins.get_children():
+		c.collect()
+	assert_eq(GameManager.current_coins, 10, "All 10 coins collected in Level 2")
+	assert_true(fake_exit._is_coins_ready, "FakeExitGate indicates coins ready")
+	assert_eq(fake_exit.status_label.text, "EXIT OPEN!", "FakeExitGate displays 'EXIT OPEN!'")
+
+	# Approaching FakeExitGate triggers deception
+	fake_exit._on_body_entered(player)
+	assert_true(fake_exit._has_tricked, "FakeExitGate triggers deception sequence")
+	assert_eq(fake_exit.status_label.text, "FAKED!", "FakeExitGate displays 'FAKED!'")
+	assert_true(real_exit.visible, "RealExitGate revealed upon FakeExitGate deception")
+	assert_true(real_exit._is_open, "RealExitGate is unlocked and open")
+
+	# Enter RealExitGate to complete Level 2
+	GameManager.is_gameplay_active = true
+	real_exit._on_body_entered(player)
+	assert_true(real_exit._completion_triggered, "Level 2 completion triggered upon entering RealExitGate")
+	assert_true(SaveManager.is_level_completed(2), "Level 2 marked completed in SaveManager")
+	assert_true(SaveManager.is_level_unlocked(3), "Level 3 is unlocked after Level 2 completion")
+
+	# Next Level button from complete overlay in Level 2 shows Level 3 is still being built
+	var complete_overlay = lvl.get_node("HUD/LevelCompleteOverlay")
+	complete_overlay.open(10, 10)
+	complete_overlay._on_next_level_pressed()
+	var complete_modal_label: Label = complete_overlay.get_node("MessageModal/Panel/VBox/MessageLabel")
+	assert_eq(complete_modal_label.text, "Level 3 is unlocked, but it's still being built. Replay Level 1 for now.", "Level 2 Next Level shows safe unimplemented Level 3 modal")
+
+	# Reset Level 2
+	lvl._on_retry()
+	assert_eq(GameManager.current_coins, 0, "Level 2 retry resets coins to 0")
+	assert_true(not fake_exit._has_tricked, "FakeExitGate deception reset")
+	assert_true(not real_exit.visible, "RealExitGate hidden again on reset")
+	assert_true(not real_exit._completion_triggered, "RealExitGate completion flag reset")
 
 	lvl.queue_free()

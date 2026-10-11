@@ -300,6 +300,72 @@ def create_ui_icons():
     ds.polygon([(8, 1), (10, 5), (15, 6), (11, 10), (12, 15), (8, 12), (4, 15), (5, 10), (1, 6), (6, 5)], fill=(0, 240, 200, 255), outline=(0, 160, 140, 255))
     star.save("assets/sprites/icon_completed.png")
 
+def create_neon_ruins_assets():
+    brick_dark = (12, 10, 20, 255)
+    brick_mid = (30, 24, 46, 255)
+
+    # 1. 32x32 platform_ruins.png - Cracked stone platform with neon magenta/cyan trim
+    ruins = Image.new("RGBA", (32, 32), (18, 14, 28, 255))
+    dr = ImageDraw.Draw(ruins)
+    # Neon top rim (magenta/purple glow)
+    dr.line([(0, 0), (31, 0)], fill=(255, 30, 140, 255))
+    dr.line([(0, 1), (31, 1)], fill=(180, 20, 100, 255))
+    # Stone brick pattern with ruin cracks
+    dr.rectangle([1, 3, 14, 14], fill=brick_mid, outline=brick_dark)
+    dr.rectangle([16, 3, 30, 14], fill=brick_mid, outline=brick_dark)
+    dr.rectangle([1, 16, 10, 29], fill=brick_mid, outline=brick_dark)
+    dr.rectangle([12, 16, 25, 29], fill=brick_mid, outline=brick_dark)
+    dr.rectangle([27, 16, 30, 29], fill=brick_mid, outline=brick_dark)
+    # Fissure crack lines
+    dr.line([(6, 5), (9, 9), (8, 13)], fill=(0, 220, 240, 200))
+    dr.line([(22, 6), (20, 11), (24, 14)], fill=(255, 40, 160, 180))
+    dr.line([(16, 18), (18, 24)], fill=(0, 220, 240, 200))
+    ruins.save("assets/sprites/platform_ruins.png")
+
+    # 2. 32x32 crumbling_tile.png - Visibly fractured/unstable ruin stone
+    crumb = Image.new("RGBA", (32, 32), (18, 14, 28, 255))
+    dc = ImageDraw.Draw(crumb)
+    dc.line([(0, 0), (31, 0)], fill=(255, 90, 50, 255))
+    dc.line([(0, 1), (31, 1)], fill=(180, 50, 30, 255))
+    # Fractured segments
+    dc.polygon([(1, 3), (12, 3), (8, 14), (1, 14)], fill=(32, 22, 40, 255), outline=brick_dark)
+    dc.polygon([(14, 3), (30, 3), (28, 14), (10, 14)], fill=(28, 20, 36, 255), outline=brick_dark)
+    dc.polygon([(1, 16), (15, 16), (11, 29), (1, 29)], fill=(26, 18, 34, 255), outline=brick_dark)
+    dc.polygon([(17, 16), (30, 16), (30, 29), (13, 29)], fill=(32, 22, 40, 255), outline=brick_dark)
+    # Deep cracks with fiery/neon glow
+    dc.line([(12, 2), (9, 15), (16, 16), (12, 30)], fill=(255, 120, 40, 255), width=1)
+    dc.line([(20, 4), (25, 10), (22, 14)], fill=(255, 60, 80, 255), width=1)
+    crumb.save("assets/sprites/crumbling_tile.png")
+
+    # 3. 36x64 moving_wall.png - Heavy stone crusher monolith
+    wall = Image.new("RGBA", (36, 64), (14, 12, 22, 255))
+    dw = ImageDraw.Draw(wall)
+    # Outer frame
+    dw.rectangle([0, 0, 35, 63], outline=(255, 40, 140, 255), width=2)
+    # Inner metal / stone ribs
+    for y in range(4, 60, 8):
+        dw.line([(4, y), (31, y)], fill=(40, 34, 58, 255), width=2)
+    # Center hazardous warning rune
+    dw.polygon([(18, 16), (28, 32), (18, 48), (8, 32)], fill=(25, 20, 38, 255), outline=(255, 50, 120, 255), width=2)
+    dw.ellipse([14, 28, 22, 36], fill=(255, 200, 40, 255))
+    wall.save("assets/sprites/moving_wall.png")
+
+    # 4. 40x56 exit_fake.png - Deceptive glitching door
+    fake = Image.new("RGBA", (40, 56), (0, 0, 0, 0))
+    df = ImageDraw.Draw(fake)
+    # Pillars
+    df.rectangle([2, 4, 8, 55], fill=(30, 25, 45, 255), outline=(255, 40, 140, 255))
+    df.rectangle([31, 4, 37, 55], fill=(30, 25, 45, 255), outline=(255, 40, 140, 255))
+    df.rectangle([2, 2, 37, 10], fill=(40, 30, 60, 255), outline=(255, 60, 180, 255))
+    # Interior glitch portal
+    df.rectangle([9, 11, 30, 55], fill=(20, 10, 30, 255))
+    for y in range(14, 52, 6):
+        df.line([(10, y), (29, y)], fill=(255, 40, 120, 200))
+    # Decoy question/skull glyph
+    df.ellipse([16, 22, 24, 30], outline=(255, 200, 60, 255), width=2)
+    df.point((20, 35), fill=(255, 200, 60, 255))
+    fake.save("assets/sprites/exit_fake.png")
+
 if __name__ == "__main__":
     create_player()
     create_coin()
@@ -309,4 +375,5 @@ if __name__ == "__main__":
     create_touch_buttons()
     create_game_cards()
     create_ui_icons()
+    create_neon_ruins_assets()
     print("All pixel assets generated successfully!")

@@ -27,13 +27,21 @@ godot --headless "res://scenes/tests/test_runner.tscn"
 | **Level Select** | 20 level tiles | Responsive grid contains all 20 tiles | **PASS** |
 | **Level Select** | Locked tile modal | Tapping locked tile shows spec message | **PASS** |
 | **Level Select** | Unimplemented modal | Tapping unlocked Level 2 shows "still being built" message | **PASS** |
-| **Gameplay** | Entity instantiation | Player, 10 coins, hazards, exit gate present | **PASS** |
-| **Gameplay** | Exit gate locked state | Gate begins locked with "COINS REQUIRED" | **PASS** |
-| **Gameplay** | Gate feedback | Approaching gate early shows remaining coins toast | **PASS** |
-| **Gameplay** | Coin collection | Collecting 10th coin unlocks gate ("EXIT OPEN!") | **PASS** |
-| **Gameplay** | Exit completion | Touching open gate triggers completion exactly once | **PASS** |
-| **Gameplay** | Retry reset | Resets player position, resets coins (0/10), locks gate | **PASS** |
-| **Gameplay** | Hazard & Death | Hazard triggers death overlay without soft lock | **PASS** |
+| **Level 1 Gameplay** | Entity instantiation | Player, 10 coins, hazards, exit gate present | **PASS** |
+| **Level 1 Gameplay** | Exit gate locked state | Gate begins locked with "COINS REQUIRED" | **PASS** |
+| **Level 1 Gameplay** | Gate feedback | Approaching gate early shows remaining coins toast | **PASS** |
+| **Level 1 Gameplay** | Coin collection | Collecting 10th coin unlocks gate ("EXIT OPEN!") | **PASS** |
+| **Level 1 Gameplay** | Exit completion | Touching open gate triggers completion exactly once | **PASS** |
+| **Level 1 Gameplay** | Retry reset | Resets player position, resets coins (0/10), locks gate | **PASS** |
+| **Level 1 Gameplay** | Hazard & Death | Hazard triggers death overlay without soft lock | **PASS** |
+| **Level 2 Gameplay** | Level 2 instantiation | Player, 10 coins, 5 traps/features, fake & real exits present | **PASS** |
+| **Level 2 Trap 1** | Crumbling Bridge | Sequential shake, collapse after delay, collision disabled, clean retry reset | **PASS** |
+| **Level 2 Trap 2** | Greedy Platform | Falls into pit upon landing, leaves gap unrecoverable, collision disabled, clean retry reset | **PASS** |
+| **Level 2 Trap 3** | Hidden Spike Floor | Safe-looking floor, immediate lethal emergence, no warning delay, clean retry reset | **PASS** |
+| **Level 2 Trap 4** | Moving Wall | Smooth AnimatableBody2D glide, real solid collision, jumpable over, clean retry reset | **PASS** |
+| **Level 2 Surprise** | Fake Exit -> Real Exit | Fake exit drops away upon approach with coins, reveals Real Exit on elevated ledge | **PASS** |
+| **Level 2 Progression**| Level 2 Completion | Reaching real exit completes Level 2, marks cleared, unlocks Level 3 | **PASS** |
+| **Level 2 Retry** | Complete Level 2 Reset | Resets player, 10 coins, all 4 traps, fake exit, and hides real exit | **PASS** |
 
 ---
 

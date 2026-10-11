@@ -15,7 +15,7 @@ var is_gameplay_active: bool = false
 # 20 planned levels definitions as specified in section 7
 var levels: Dictionary = {
 	1: {"id": 1, "name": "The Warm-Up", "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_1.tscn", "coin_count": 10},
-	2: {"id": 2, "name": "Trust Issues", "implemented": false, "scene": "", "coin_count": 12},
+	2: {"id": 2, "name": "Trust Nothing", "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_2.tscn", "coin_count": 10},
 	3: {"id": 3, "name": "Coinception", "implemented": false, "scene": "", "coin_count": 15},
 	4: {"id": 4, "name": "The Moving Floor", "implemented": false, "scene": "", "coin_count": 10},
 	5: {"id": 5, "name": "False Hope", "implemented": false, "scene": "", "coin_count": 14},
