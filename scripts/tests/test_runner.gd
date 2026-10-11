@@ -407,15 +407,15 @@ func test_ragebait_tricks_and_level_rework() -> void:
 	assert_true(max_jump_height >= 95.0, "Maximum jump height is at least 95px (calculated: %.1fpx)" % max_jump_height)
 
 	# Calculate platform surface heights
-	var g1_surf = ground1.position.y - 40.0 # 450
-	var p1_surf = plat1.position.y - 12.0   # 393
-	var p2_surf = plat2.position.y - 12.0   # 338
-	var p3_surf = plat3.position.y - 12.0   # 333
-	var pg_surf = platgreedy.position.y - 12.0 # 343
-	var g2_surf = ground2.position.y - 40.0 # 450
-	var p4_surf = plat4.position.y - 12.0   # 383
-	var p5_surf = plat5.position.y - 12.0   # 328
-	var g3_surf = ground3.position.y - 40.0 # 450
+	var g1_surf = ground1.position.y - 40.0 # 380
+	var p1_surf = plat1.position.y - 12.0   # 328
+	var p2_surf = plat2.position.y - 12.0   # 268
+	var p3_surf = plat3.position.y - 12.0   # 218
+	var pg_surf = platgreedy.position.y - 12.0 # 388
+	var g2_surf = ground2.position.y - 40.0 # 280
+	var p4_surf = plat4.position.y - 12.0   # 318
+	var p5_surf = plat5.position.y - 12.0   # 258
+	var g3_surf = ground3.position.y - 40.0 # 380
 
 	var rise_g1_to_p1 = g1_surf - p1_surf
 	var rise_p1_to_p2 = p1_surf - p2_surf
@@ -426,8 +426,15 @@ func test_ragebait_tricks_and_level_rework() -> void:
 	assert_true(rise_g1_to_p1 < max_jump_height - 20.0, "Ground1 -> Plat1 rise (%.1fpx) has >= 20px clearance margin" % rise_g1_to_p1)
 	assert_true(rise_p1_to_p2 < max_jump_height - 20.0, "Plat1 -> Plat2 rise (%.1fpx) has >= 20px clearance margin (FIXED: previously impossible 90px)" % rise_p1_to_p2)
 	assert_true(rise_p2_to_p3 < max_jump_height - 20.0, "Plat2 -> Plat3 rise (%.1fpx) is easily reachable" % rise_p2_to_p3)
-	assert_true(rise_g2_to_p4 < max_jump_height - 20.0, "Ground2 -> Plat4 rise (%.1fpx) has >= 20px clearance margin (FIXED: previously impossible 92px)" % rise_g2_to_p4)
-	assert_true(rise_p4_to_p5 < max_jump_height - 20.0, "Plat4 -> Plat5 rise (%.1fpx) has >= 20px clearance margin (FIXED: previously impossible 90px)" % rise_p4_to_p5)
+	assert_true(rise_g2_to_p4 < max_jump_height - 20.0, "Ground2 -> Plat4 rise (%.1fpx) has >= 20px clearance margin" % rise_g2_to_p4)
+	assert_true(rise_p4_to_p5 < max_jump_height - 20.0, "Plat4 -> Plat5 rise (%.1fpx) has >= 20px clearance margin" % rise_p4_to_p5)
+
+	# Verify player visibility and no control overlap
+	var jump_btn = lvl.get_node("HUD/TouchControls/JumpBtn")
+	var jump_top_y = 540.0 + jump_btn.offset_top # 400.0
+	assert_true(g1_surf <= jump_top_y - 20.0, "Ground 1 surface (%.1fpx) is >= 20px above controls top (%.1fpx)" % [g1_surf, jump_top_y])
+	assert_true(g3_surf <= jump_top_y - 20.0, "Ground 3 surface (%.1fpx) is >= 20px above controls top (%.1fpx)" % [g3_surf, jump_top_y])
+	assert_true(lvl.spawn_point.position.x > 100.0, "SpawnPoint (x=%.1f) is positioned clear of Left button" % lvl.spawn_point.position.x)
 
 	const FallingPlatformScript = preload("res://scripts/coin_hell/falling_platform.gd")
 	const GreedyPlatformScript = preload("res://scripts/coin_hell/greedy_platform.gd")
@@ -470,17 +477,16 @@ func test_ragebait_tricks_and_level_rework() -> void:
 	print("  Validating Trick 2: The Fake Safe Landing...")
 	assert_true(plat4 is FakeSafePlatformScript, "Platform4 uses FakeSafePlatform script")
 	assert_true(not plat4._triggered, "FakeSafePlatform starts un-triggered")
-	assert_true(plat4.spikes_collision.disabled, "FakeSafePlatform spikes are initially disabled")
+	assert_true(not plat4.spikes_sprite.visible, "Spikes are completely hidden before activation with no warning indicators")
+	assert_true(plat4.spikes_collision.disabled, "FakeSafePlatform spikes collision is initially disabled")
 	plat4.trigger_trap()
 	assert_true(plat4._triggered, "FakeSafePlatform triggers trap on approach")
-	assert_true(not plat4._active_spikes, "Spikes telegraph before popping up fully")
-	# Simulate 0.4s of physics process
-	for _i in range(26):
-		plat4._physics_process(0.016)
-	assert_true(plat4._active_spikes, "Spikes pop up after telegraph period")
-	assert_true(not plat4.spikes_collision.disabled, "Spikes collision is enabled once active")
+	assert_true(plat4._active_spikes, "Spikes emerge immediately upon crossing trigger with no delay")
+	assert_true(plat4.spikes_sprite.visible, "Spikes sprite is visible once emerged")
+	assert_true(not plat4.spikes_collision.disabled, "Spikes collision is enabled immediately once active")
 	plat4.reset()
 	assert_true(not plat4._triggered and not plat4._active_spikes, "FakeSafePlatform resets cleanly on retry")
+	assert_true(not plat4.spikes_sprite.visible, "Spikes are hidden again on reset")
 	assert_true(plat4.spikes_collision.disabled, "Spikes retract and collision is disabled on reset")
 
 	# --- 5. TRICK 4 — The Stationary Exit Gate ---

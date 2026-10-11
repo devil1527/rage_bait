@@ -2,21 +2,17 @@ class_name FakeSafePlatform
 extends StaticBody2D
 
 ## TRICK B — THE FAKE SAFE LANDING
-## A platform that appears safe at a glance, but contains concealed pop-up spikes.
-## When stepped on, a subtle 0.35s visual telegraph (peeking spikes + sound)
-## gives the player a brief reaction window to leap away.
-## If the player lingers, the spikes snap up fully and impale them.
-## Communicates purely through animation and sound — NO spoiling warning text.
+## A platform that appears completely safe and ordinary at a glance.
+## Contains concealed pop-up spikes with NO visible red warnings or countdowns beforehand.
+## When the player crosses the trigger point, the spikes emerge immediately with a
+## fast, consistent pop-up animation and active collision.
 ## Resets cleanly on retry.
 
 signal trap_triggered
 
-@export var telegraph_duration: float = 0.35
-
 var _initial_pos: Vector2
 var _triggered: bool = false
 var _active_spikes: bool = false
-var _timer: float = 0.0
 
 @onready var visual_rect: NinePatchRect = $NinePatchRect
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
@@ -37,11 +33,10 @@ func _ready() -> void:
 func _setup_initial_spikes_state() -> void:
 	_triggered = false
 	_active_spikes = false
-	_timer = 0.0
 	if spikes_sprite:
-		spikes_sprite.visible = true
-		spikes_sprite.position.y = 10.0  # Fully retracted inside platform
-		spikes_sprite.modulate = Color(1.0, 0.4, 0.4, 0.25) # Subtle suspicious tint
+		spikes_sprite.visible = false
+		spikes_sprite.position.y = 12.0  # Fully concealed inside platform
+		spikes_sprite.modulate = Color(1.0, 0.2, 0.2, 1.0) # Standard hazard red once emerged
 	if spikes_collision:
 		spikes_collision.disabled = true
 
@@ -53,33 +48,24 @@ func trigger_trap() -> void:
 	if _triggered:
 		return
 	_triggered = true
-	_timer = telegraph_duration
+	_active_spikes = true
 	trap_triggered.emit()
 	AudioManager.play_sfx("warning")
 	
-	# Telegraph: spikes peek up slightly (halfway) with amber warning glow
+	# Immediate fast emergence animation (no pre-warning, no countdown)
 	if spikes_sprite:
+		spikes_sprite.visible = true
+		spikes_sprite.position.y = 10.0
 		var tween := create_tween()
-		tween.tween_property(spikes_sprite, "position:y", 2.0, 0.08)
-		spikes_sprite.modulate = Color(1.0, 0.8, 0.2, 1.0)
-
-func _physics_process(delta: float) -> void:
-	if _triggered and not _active_spikes:
-		_timer -= delta
-		if _timer <= 0.0:
-			# Pop up fully!
-			_active_spikes = true
-			if spikes_sprite:
-				var tween := create_tween()
-				tween.tween_property(spikes_sprite, "position:y", -14.0, 0.06)
-				spikes_sprite.modulate = Color(1.0, 0.15, 0.15, 1.0) # Danger red
-			if spikes_collision:
-				spikes_collision.disabled = false
-			AudioManager.play_sfx("warning")
-			
-			# Check any body already standing on the spikes
-			for body in spikes_area.get_overlapping_bodies():
-				_kill_player(body)
+		tween.tween_property(spikes_sprite, "position:y", -14.0, 0.05)
+	
+	if spikes_collision:
+		spikes_collision.disabled = false
+	
+	# Check any body standing on the trap at emergence
+	if spikes_area:
+		for body in spikes_area.get_overlapping_bodies():
+			_kill_player(body)
 
 func _on_spikes_body_entered(body: Node2D) -> void:
 	if _active_spikes:

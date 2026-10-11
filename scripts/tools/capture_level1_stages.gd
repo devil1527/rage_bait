@@ -55,8 +55,10 @@ func _run_visual_verification() -> void:
 	coins.get_node("Coin3").collect()
 	
 	# Land player on Platform 2
-	player.global_position = Vector2(680, 320)
+	player.global_position = Vector2(670, 250)
 	player.velocity = Vector2.ZERO
+	if player.get_node_or_null("Camera2D"):
+		player.get_node("Camera2D").reset_smoothing()
 	for i in range(6):
 		await get_tree().process_frame
 	
@@ -73,8 +75,10 @@ func _run_visual_verification() -> void:
 	# STAGE 3: Trick 3 — The Greedy Coin on Platform Greedy
 	print("\nSimulating approach to Trick 3 (Platform Greedy)...")
 	coins.get_node("Coin5").collect()
-	player.global_position = Vector2(1010, 320)
+	player.global_position = Vector2(1010, 370)
 	player.velocity = Vector2.ZERO
+	if player.get_node_or_null("Camera2D"):
+		player.get_node("Camera2D").reset_smoothing()
 	for i in range(5):
 		await get_tree().process_frame
 	
@@ -91,29 +95,37 @@ func _run_visual_verification() -> void:
 	coins.get_node("Coin7").collect()
 	
 	# Player approaches / lands on Platform 4
-	player.global_position = Vector2(1400, 360)
+	player.global_position = Vector2(1380, 300)
 	player.velocity = Vector2.ZERO
+	if player.get_node_or_null("Camera2D"):
+		player.get_node("Camera2D").reset_smoothing()
 	plat4.trigger_trap()
 	
-	# Allow telegraph to run and spikes to fully pop up
-	for i in range(35):
+	# Allow spikes to emerge
+	for i in range(15):
 		await get_tree().process_frame
 	
 	await _capture("res://screenshots/stage4_fake_safe_platform_spikes.png")
 	
+	# Reset after death trap
+	level._on_retry()
+	for i in range(5):
+		await get_tree().process_frame
+	
 	# STAGE 5: Trick 4 — Unlocked Stationary Exit Gate
 	print("\nSimulating collection of all coins and approaching exit...")
-	coins.get_node("Coin8").collect()
-	coins.get_node("Coin9").collect()
-	coins.get_node("Coin10").collect()
+	for i in range(1, 11):
+		coins.get_node("Coin%d" % i).collect()
 	
 	# Check exit unlocked
 	print("  Coins collected: ", GameManager.current_coins, " / ", GameManager.total_coins_required)
 	print("  Exit gate is open: ", exit_gate._is_open)
 	
-	# Move player close to stationary exit gate
-	player.global_position = Vector2(1810, 434)
+	# Move player close to stationary exit gate on Ground 3
+	player.global_position = Vector2(1780, 360)
 	player.velocity = Vector2.ZERO
+	if player.get_node_or_null("Camera2D"):
+		player.get_node("Camera2D").reset_smoothing()
 	
 	for i in range(12):
 		await get_tree().process_frame
@@ -123,6 +135,8 @@ func _run_visual_verification() -> void:
 	# STAGE 6: Completing Level 1
 	print("\nCompleting level...")
 	player.global_position = exit_gate.global_position
+	if player.get_node_or_null("Camera2D"):
+		player.get_node("Camera2D").reset_smoothing()
 	exit_gate._on_body_entered(player)
 	for i in range(15):
 		await get_tree().process_frame

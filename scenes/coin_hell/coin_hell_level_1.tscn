@@ -81,10 +81,10 @@ grow_vertical = 2
 color = Color(0.0666667, 0.0509804, 0.117647, 1)
 
 [node name="SpawnPoint" type="Marker2D" parent="."]
-position = Vector2(80, 410)
+position = Vector2(120, 350)
 
 [node name="Player" parent="." instance=ExtResource("2_play")]
-position = Vector2(80, 410)
+position = Vector2(120, 350)
 
 [node name="Camera2D" type="Camera2D" parent="Player"]
 position_smoothing_enabled = true
@@ -97,7 +97,7 @@ limit_bottom = 540
 [node name="Platforms" type="Node2D" parent="."]
 
 [node name="Ground1" type="StaticBody2D" parent="Platforms"]
-position = Vector2(220, 480)
+position = Vector2(220, 420)
 collision_layer = 2
 collision_mask = 0
 
@@ -118,7 +118,7 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Platform1" type="StaticBody2D" parent="Platforms"]
-position = Vector2(490, 390)
+position = Vector2(490, 340)
 collision_layer = 2
 collision_mask = 0
 
@@ -139,7 +139,7 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Platform2" type="StaticBody2D" parent="Platforms"]
-position = Vector2(670, 325)
+position = Vector2(670, 280)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("17_fplat")
@@ -169,7 +169,7 @@ collision_mask = 1
 shape = SubResource("RectangleShape2D_plat2_step")
 
 [node name="Platform3" type="StaticBody2D" parent="Platforms"]
-position = Vector2(850, 275)
+position = Vector2(850, 230)
 collision_layer = 2
 collision_mask = 0
 
@@ -190,7 +190,7 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="PlatformGreedy" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1010, 440)
+position = Vector2(1010, 400)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("18_gplat")
@@ -220,7 +220,7 @@ collision_mask = 1
 shape = SubResource("RectangleShape2D_platgreedy_step")
 
 [node name="Ground2" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1170, 370)
+position = Vector2(1170, 320)
 collision_layer = 2
 collision_mask = 0
 
@@ -241,7 +241,7 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Platform4" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1380, 380)
+position = Vector2(1380, 330)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("19_kplat")
@@ -284,7 +284,7 @@ position = Vector2(0, -4)
 shape = SubResource("RectangleShape2D_plat4_spikes")
 
 [node name="Platform5" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1560, 320)
+position = Vector2(1560, 270)
 collision_layer = 2
 collision_mask = 0
 
@@ -305,7 +305,7 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Ground3" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1840, 480)
+position = Vector2(1840, 420)
 collision_layer = 2
 collision_mask = 0
 
@@ -369,38 +369,38 @@ shape = SubResource("RectangleShape2D_pit")
 [node name="Coins" type="Node2D" parent="."]
 
 [node name="Coin1" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(160, 390)
+position = Vector2(160, 330)
 
 [node name="Coin2" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(300, 370)
+position = Vector2(300, 310)
 
 [node name="Coin3" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(490, 320)
+position = Vector2(490, 270)
 
 [node name="Coin4" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(670, 255)
+position = Vector2(670, 210)
 
 [node name="Coin5" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(850, 205)
+position = Vector2(850, 160)
 
 [node name="Coin6" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1010, 195)
+position = Vector2(1010, 150)
 greedy_platform = NodePath("../../Platforms/PlatformGreedy")
 
 [node name="Coin7" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1170, 260)
+position = Vector2(1170, 210)
 
 [node name="Coin8" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1380, 305)
+position = Vector2(1380, 255)
 
 [node name="Coin9" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1560, 245)
+position = Vector2(1560, 195)
 
 [node name="Coin10" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1730, 370)
+position = Vector2(1730, 310)
 
 [node name="ExitGate" parent="." instance=ExtResource("4_exit")]
-position = Vector2(1860, 412)
+position = Vector2(1860, 352)
 
 [node name="HUD" type="CanvasLayer" parent="."]
 
@@ -455,10 +455,10 @@ layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = 28.0
-offset_top = -132.0
-offset_right = 132.0
-offset_bottom = -28.0
+offset_left = 20.0
+offset_top = -120.0
+offset_right = 124.0
+offset_bottom = -16.0
 grow_vertical = 0
 texture_normal = ExtResource("10_bleft")
 texture_pressed = ExtResource("13_bleft_p")
@@ -474,10 +474,10 @@ layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = 156.0
-offset_top = -132.0
-offset_right = 260.0
-offset_bottom = -28.0
+offset_left = 144.0
+offset_top = -120.0
+offset_right = 248.0
+offset_bottom = -16.0
 grow_vertical = 0
 texture_normal = ExtResource("11_bright")
 texture_pressed = ExtResource("14_bright_p")
@@ -495,10 +495,10 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -152.0
-offset_top = -152.0
-offset_right = -28.0
-offset_bottom = -28.0
+offset_left = -140.0
+offset_top = -140.0
+offset_right = -16.0
+offset_bottom = -16.0
 grow_horizontal = 0
 grow_vertical = 0
 texture_normal = ExtResource("12_bjump")
