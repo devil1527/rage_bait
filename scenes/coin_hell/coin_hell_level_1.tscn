@@ -52,7 +52,7 @@ size = Vector2(120, 24)
 size = Vector2(116, 18)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_plat4_spikes"]
-size = Vector2(32, 14)
+size = Vector2(34, 18)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_plat5"]
 size = Vector2(130, 24)
@@ -280,7 +280,7 @@ position = Vector2(0, 8)
 texture = ExtResource("20_sspr")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform4/SpikesArea"]
-position = Vector2(0, -4)
+position = Vector2(0, -14)
 shape = SubResource("RectangleShape2D_plat4_spikes")
 
 [node name="Platform5" type="StaticBody2D" parent="Platforms"]

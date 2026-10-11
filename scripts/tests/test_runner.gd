@@ -46,6 +46,7 @@ func run_all_tests() -> void:
 	test_multitouch_gameplay_controls()
 	test_ragebait_tricks_and_level_rework()
 	test_full_level_1_gameplay_walkthrough()
+	test_spike_collision_directions_and_cases()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -581,4 +582,85 @@ func test_full_level_1_gameplay_walkthrough() -> void:
 	assert_true(not plat4._triggered, "Trick 2 reset on retry")
 	assert_true(not exit_gate._completion_triggered, "Exit completion reset on retry")
 	
+	lvl.queue_free()
+
+func test_spike_collision_directions_and_cases() -> void:
+	print("\n--- TEST: Spike Collision Cases (A through F) ---")
+	var lvl1_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_1.tscn")
+	var lvl = lvl1_scene.instantiate()
+	add_child(lvl)
+
+	var player = lvl.get_node("Player")
+	var plat4 = lvl.get_node("Platforms/Platform4")
+	var exit_gate = lvl.get_node("ExitGate")
+
+	# --- CASE A: Walk into active spikes from the side ---
+	print("  Testing Case A: Walk into active spikes from the side...")
+	plat4.reset()
+	player.reset_to(Vector2(1340, 300))
+	plat4.trigger_trap()
+	assert_true(plat4._active_spikes, "Case A: Spikes are active")
+	player.global_position = Vector2(1370, 304)
+	plat4._check_spike_collision()
+	assert_true(not player._is_alive, "Case A: Player died walking into active spikes from the side")
+	assert_true(lvl.death_overlay.visible, "Case A: Death overlay shown")
+
+	# --- CASE B: Jump onto active spikes from above ---
+	print("  Testing Case B: Jump onto active spikes from above...")
+	lvl._on_retry()
+	plat4.trigger_trap()
+	assert_true(plat4._active_spikes, "Case B: Spikes are active")
+	player.global_position = Vector2(1380, 270)
+	player.velocity = Vector2(0, 300)
+	player.global_position = Vector2(1380, 302)
+	plat4._check_spike_collision()
+	assert_true(not player._is_alive, "Case B: Player died jumping onto active spikes from above")
+
+	# --- CASE C: Land directly on top of the spikes ---
+	print("  Testing Case C: Land directly on top of the spikes...")
+	lvl._on_retry()
+	player.reset_to(Vector2(1380, 280))
+	player.global_position = Vector2(1380, 304)
+	plat4.trigger_trap()
+	plat4._check_spike_collision()
+	assert_true(not player._is_alive, "Case C: Player died landing directly on top of the spikes")
+
+	# --- CASE D: Touch the spikes immediately after they emerge ---
+	print("  Testing Case D: Touch spikes immediately after they emerge...")
+	lvl._on_retry()
+	player.reset_to(Vector2(1380, 304))
+	assert_true(player._is_alive, "Case D: Player alive before trap triggers")
+	plat4.trigger_trap()
+	assert_true(plat4._active_spikes, "Case D: Trap emerged immediately")
+	assert_true(not player._is_alive, "Case D: Player died in emergence frame upon touching new spikes")
+
+	# --- CASE E: Restart after dying and trigger the same trap again ---
+	print("  Testing Case E: Restart after dying and trigger same trap again...")
+	lvl._on_retry()
+	assert_true(player._is_alive, "Case E: Player alive after retry")
+	assert_true(not plat4._triggered and not plat4._active_spikes, "Case E: Platform 4 spikes reset to hidden/harmless")
+	assert_true(plat4.spikes_collision.disabled, "Case E: Spikes collision disabled on reset")
+	assert_true(not plat4.spikes_sprite.visible, "Case E: Spikes sprite hidden on reset")
+	player.global_position = Vector2(1340, 300)
+	plat4._check_spike_collision()
+	assert_true(player._is_alive, "Case E: Player unharmed before trap triggers")
+	plat4.trigger_trap()
+	player.global_position = Vector2(1380, 304)
+	plat4._check_spike_collision()
+	assert_true(not player._is_alive, "Case E: Player died when triggering same trap again after retry")
+
+	# --- CASE F: Complete the level without touching the spikes ---
+	print("  Testing Case F: Complete level without touching the spikes...")
+	lvl._on_retry()
+	assert_true(player._is_alive, "Case F: Player alive on fresh attempt")
+	var coins = lvl.get_node("Coins")
+	for i in range(1, 11):
+		coins.get_node("Coin%d" % i).collect()
+	assert_true(exit_gate._is_open, "Case F: Exit open after 10 coins")
+	player.global_position = Vector2(1560, 250)
+	assert_true(player._is_alive, "Case F: Player alive on Platform 5 without touching spikes")
+	player.global_position = exit_gate.global_position
+	exit_gate._on_body_entered(player)
+	assert_true(exit_gate._completion_triggered, "Case F: Level completed successfully without touching spikes")
+
 	lvl.queue_free()
