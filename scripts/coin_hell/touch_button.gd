@@ -17,6 +17,7 @@ var is_active_pressed: bool = false
 
 var _base_normal_tex: Texture2D
 var _base_pressed_tex: Texture2D
+var _base_modulate: Color = Color.WHITE
 
 func _ready() -> void:
 	# Ignore GUI mouse routing to prevent Godot's single-pointer BaseButton
@@ -24,6 +25,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_base_normal_tex = texture_normal
 	_base_pressed_tex = texture_pressed
+	_base_modulate = modulate
 
 func _input(event: InputEvent) -> void:
 	if not is_visible_in_tree():
@@ -115,10 +117,11 @@ func _set_pressed(pressed: bool) -> void:
 	var tween := create_tween()
 	if pressed:
 		tween.tween_property(self, "scale", Vector2(0.92, 0.92), 0.04).set_trans(Tween.TRANS_QUAD)
-		tween.parallel().tween_property(self, "modulate", Color(1.2, 1.2, 1.2, 1.0), 0.04)
+		var pressed_col := Color(_base_modulate.r * 1.2, _base_modulate.g * 1.2, _base_modulate.b * 1.2, _base_modulate.a)
+		tween.parallel().tween_property(self, "modulate", pressed_col, 0.04)
 	else:
 		tween.tween_property(self, "scale", Vector2.ONE, 0.06).set_trans(Tween.TRANS_QUAD)
-		tween.parallel().tween_property(self, "modulate", Color.WHITE, 0.06)
+		tween.parallel().tween_property(self, "modulate", _base_modulate, 0.06)
 
 	if pressed:
 		if action_name != "":
@@ -136,7 +139,7 @@ func reset() -> void:
 		touch_index = -1
 		_set_pressed(false)
 	scale = Vector2.ONE
-	modulate = Color.WHITE
+	modulate = _base_modulate
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_PAUSED:

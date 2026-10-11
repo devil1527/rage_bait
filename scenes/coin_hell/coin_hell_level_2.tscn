@@ -1,4 +1,4 @@
-[gd_scene load_steps=37 format=3 uid="uid://b2m3n4k5j6h7x"]
+[gd_scene load_steps=42 format=3 uid="uid://b2m3n4k5j6h7x"]
 
 [ext_resource type="Script" path="res://scripts/coin_hell/level_2.gd" id="1_lev2"]
 [ext_resource type="PackedScene" path="res://scenes/coin_hell/player.tscn" id="2_play"]
@@ -24,6 +24,8 @@
 [ext_resource type="Script" path="res://scripts/coin_hell/fake_safe_platform.gd" id="22_fplat"]
 [ext_resource type="Script" path="res://scripts/coin_hell/moving_wall.gd" id="23_mwall"]
 [ext_resource type="Script" path="res://scripts/coin_hell/fake_exit_gate.gd" id="24_fexit"]
+[ext_resource type="Texture2D" path="res://assets/sprites/spikes.png" id="25_sspr"]
+[ext_resource type="Script" path="res://scripts/coin_hell/wall_spike_trap.gd" id="26_wspik"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ground1"]
 size = Vector2(340, 80)
@@ -35,37 +37,37 @@ size = Vector2(110, 24)
 size = Vector2(106, 12)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_postbridge"]
-size = Vector2(140, 24)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_highplat"]
 size = Vector2(130, 24)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_greedyplat"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_highplat"]
 size = Vector2(110, 24)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_greedyplat"]
+size = Vector2(100, 24)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_greedy_step"]
-size = Vector2(106, 12)
+size = Vector2(96, 12)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_postgreedy"]
-size = Vector2(140, 24)
+size = Vector2(120, 24)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_spikeplat"]
-size = Vector2(160, 24)
+size = Vector2(130, 24)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_spiketrigh"]
-size = Vector2(156, 18)
+size = Vector2(100, 20)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_spikeshape"]
-size = Vector2(60, 18)
+size = Vector2(34, 18)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_abovespikes"]
-size = Vector2(110, 24)
+size = Vector2(100, 24)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_postspikes"]
-size = Vector2(140, 24)
+size = Vector2(120, 24)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_groundmwall"]
-size = Vector2(300, 80)
+size = Vector2(320, 80)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_mwalltrig"]
 size = Vector2(40, 80)
@@ -73,14 +75,23 @@ size = Vector2(40, 80)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_mwallshape"]
 size = Vector2(36, 64)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wspiktrig"]
+size = Vector2(40, 90)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wspikshape"]
+size = Vector2(32, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_saferuin"]
+size = Vector2(60, 24)
+
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_groundexit"]
-size = Vector2(260, 80)
+size = Vector2(120, 80)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_fakeshape"]
 size = Vector2(36, 54)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_realplat"]
-size = Vector2(130, 24)
+size = Vector2(100, 24)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
 size = Vector2(40, 600)
@@ -109,12 +120,13 @@ position = Vector2(110, 380)
 position = Vector2(110, 380)
 
 [node name="Camera2D" type="Camera2D" parent="Player"]
+offset = Vector2(0, -45)
 position_smoothing_enabled = true
 position_smoothing_speed = 6.0
 limit_left = 0
 limit_top = 0
-limit_right = 2180
-limit_bottom = 540
+limit_right = 2100
+limit_bottom = 600
 
 [node name="Platforms" type="Node2D" parent="."]
 
@@ -140,13 +152,13 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="BridgeSection1" type="StaticBody2D" parent="Platforms"]
-position = Vector2(425, 420)
+position = Vector2(435, 420)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("20_cbrg")
-collapse_delay = 0.55
+collapse_delay = 0.5
 next_section_path = NodePath("../BridgeSection2")
-next_section_cascade_delay = 0.2
+next_section_cascade_delay = 0.15
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/BridgeSection1"]
 shape = SubResource("RectangleShape2D_bsec1")
@@ -156,7 +168,7 @@ offset_left = -55.0
 offset_top = -12.0
 offset_right = 55.0
 offset_bottom = 12.0
-texture = ExtResource("10_crumb")
+texture = ExtResource("9_pruin")
 patch_margin_left = 4
 patch_margin_top = 4
 patch_margin_right = 4
@@ -173,11 +185,11 @@ position = Vector2(0, -12)
 shape = SubResource("RectangleShape2D_bsec_step")
 
 [node name="BridgeSection2" type="StaticBody2D" parent="Platforms"]
-position = Vector2(555, 420)
+position = Vector2(565, 420)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("20_cbrg")
-collapse_delay = 0.45
+collapse_delay = 0.4
 next_section_path = NodePath("../BridgeSection3")
 next_section_cascade_delay = 0.15
 
@@ -189,7 +201,7 @@ offset_left = -55.0
 offset_top = -12.0
 offset_right = 55.0
 offset_bottom = 12.0
-texture = ExtResource("10_crumb")
+texture = ExtResource("9_pruin")
 patch_margin_left = 4
 patch_margin_top = 4
 patch_margin_right = 4
@@ -206,7 +218,7 @@ position = Vector2(0, -12)
 shape = SubResource("RectangleShape2D_bsec_step")
 
 [node name="BridgeSection3" type="StaticBody2D" parent="Platforms"]
-position = Vector2(685, 420)
+position = Vector2(695, 420)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("20_cbrg")
@@ -220,7 +232,7 @@ offset_left = -55.0
 offset_top = -12.0
 offset_right = 55.0
 offset_bottom = 12.0
-texture = ExtResource("10_crumb")
+texture = ExtResource("9_pruin")
 patch_margin_left = 4
 patch_margin_top = 4
 patch_margin_right = 4
@@ -237,7 +249,7 @@ position = Vector2(0, -12)
 shape = SubResource("RectangleShape2D_bsec_step")
 
 [node name="PlatformPostBridge" type="StaticBody2D" parent="Platforms"]
-position = Vector2(820, 420)
+position = Vector2(825, 420)
 collision_layer = 2
 collision_mask = 0
 
@@ -245,27 +257,6 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_postbridge")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/PlatformPostBridge"]
-offset_left = -70.0
-offset_top = -12.0
-offset_right = 70.0
-offset_bottom = 12.0
-texture = ExtResource("9_pruin")
-patch_margin_left = 4
-patch_margin_top = 4
-patch_margin_right = 4
-patch_margin_bottom = 4
-axis_stretch_horizontal = 1
-axis_stretch_vertical = 1
-
-[node name="HighPlatform" type="StaticBody2D" parent="Platforms"]
-position = Vector2(960, 350)
-collision_layer = 2
-collision_mask = 0
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/HighPlatform"]
-shape = SubResource("RectangleShape2D_highplat")
-
-[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/HighPlatform"]
 offset_left = -65.0
 offset_top = -12.0
 offset_right = 65.0
@@ -278,8 +269,29 @@ patch_margin_bottom = 4
 axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
+[node name="HighPlatform" type="StaticBody2D" parent="Platforms"]
+position = Vector2(940, 330)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/HighPlatform"]
+shape = SubResource("RectangleShape2D_highplat")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/HighPlatform"]
+offset_left = -55.0
+offset_top = -12.0
+offset_right = 55.0
+offset_bottom = 12.0
+texture = ExtResource("9_pruin")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
 [node name="PlatformGreedy" type="StaticBody2D" parent="Platforms"]
-position = Vector2(960, 440)
+position = Vector2(1010, 440)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("21_gplat")
@@ -289,11 +301,11 @@ drop_speed = 700.0
 shape = SubResource("RectangleShape2D_greedyplat")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/PlatformGreedy"]
-offset_left = -55.0
+offset_left = -50.0
 offset_top = -12.0
-offset_right = 55.0
+offset_right = 50.0
 offset_bottom = 12.0
-texture = ExtResource("10_crumb")
+texture = ExtResource("9_pruin")
 patch_margin_left = 4
 patch_margin_top = 4
 patch_margin_right = 4
@@ -310,7 +322,7 @@ position = Vector2(0, -12)
 shape = SubResource("RectangleShape2D_greedy_step")
 
 [node name="PlatformPostGreedy" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1090, 420)
+position = Vector2(1130, 420)
 collision_layer = 2
 collision_mask = 0
 
@@ -318,9 +330,9 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_postgreedy")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/PlatformPostGreedy"]
-offset_left = -70.0
+offset_left = -60.0
 offset_top = -12.0
-offset_right = 70.0
+offset_right = 60.0
 offset_bottom = 12.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -331,7 +343,7 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="PlatformSpikeFloor" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1230, 420)
+position = Vector2(1270, 420)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("22_fplat")
@@ -340,9 +352,9 @@ script = ExtResource("22_fplat")
 shape = SubResource("RectangleShape2D_spikeplat")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/PlatformSpikeFloor"]
-offset_left = -80.0
+offset_left = -65.0
 offset_top = -12.0
-offset_right = 80.0
+offset_right = 65.0
 offset_bottom = 12.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -357,24 +369,25 @@ collision_layer = 0
 collision_mask = 1
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/PlatformSpikeFloor/TriggerArea"]
-position = Vector2(0, -15)
+position = Vector2(0, -16)
 shape = SubResource("RectangleShape2D_spiketrigh")
 
 [node name="SpikesArea" type="Area2D" parent="Platforms/PlatformSpikeFloor"]
+position = Vector2(0, -6)
 collision_layer = 4
 collision_mask = 1
 
 [node name="Sprite2D" type="Sprite2D" parent="Platforms/PlatformSpikeFloor/SpikesArea"]
-position = Vector2(0, 12)
-texture = ExtResource("5_spik")
+position = Vector2(0, 8)
+texture = ExtResource("25_sspr")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/PlatformSpikeFloor/SpikesArea"]
-position = Vector2(0, 12)
+position = Vector2(0, -14)
 shape = SubResource("RectangleShape2D_spikeshape")
 disabled = true
 
 [node name="PlatformAboveSpikes" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1230, 335)
+position = Vector2(1270, 330)
 collision_layer = 2
 collision_mask = 0
 
@@ -382,9 +395,9 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_abovespikes")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/PlatformAboveSpikes"]
-offset_left = -55.0
+offset_left = -50.0
 offset_top = -12.0
-offset_right = 55.0
+offset_right = 50.0
 offset_bottom = 12.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -395,7 +408,7 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="PlatformPostSpikes" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1380, 420)
+position = Vector2(1400, 420)
 collision_layer = 2
 collision_mask = 0
 
@@ -403,9 +416,9 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_postspikes")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/PlatformPostSpikes"]
-offset_left = -70.0
+offset_left = -60.0
 offset_top = -12.0
-offset_right = 70.0
+offset_right = 60.0
 offset_bottom = 12.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -416,7 +429,7 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="GroundMovingWall" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1580, 460)
+position = Vector2(1600, 460)
 collision_layer = 2
 collision_mask = 0
 
@@ -424,9 +437,9 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_groundmwall")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/GroundMovingWall"]
-offset_left = -150.0
+offset_left = -160.0
 offset_top = -40.0
-offset_right = 150.0
+offset_right = 160.0
 offset_bottom = 40.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -436,8 +449,29 @@ patch_margin_bottom = 4
 axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
+[node name="SafeRuinBlock" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1715, 370)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/SafeRuinBlock"]
+shape = SubResource("RectangleShape2D_saferuin")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/SafeRuinBlock"]
+offset_left = -30.0
+offset_top = -12.0
+offset_right = 30.0
+offset_bottom = 12.0
+texture = ExtResource("9_pruin")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
 [node name="GroundExit" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1870, 460)
+position = Vector2(1820, 460)
 collision_layer = 2
 collision_mask = 0
 
@@ -445,9 +479,9 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_groundexit")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/GroundExit"]
-offset_left = -130.0
+offset_left = -60.0
 offset_top = -40.0
-offset_right = 130.0
+offset_right = 60.0
 offset_bottom = 40.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -458,7 +492,7 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="RuinExitLedge" type="StaticBody2D" parent="Platforms"]
-position = Vector2(2070, 350)
+position = Vector2(1780, 340)
 collision_layer = 2
 collision_mask = 0
 
@@ -466,9 +500,9 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_realplat")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/RuinExitLedge"]
-offset_left = -65.0
+offset_left = -50.0
 offset_top = -12.0
-offset_right = 65.0
+offset_right = 50.0
 offset_bottom = 12.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -487,7 +521,7 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_wall")
 
 [node name="RightWall" type="StaticBody2D" parent="Platforms"]
-position = Vector2(2180, 270)
+position = Vector2(2100, 270)
 collision_layer = 2
 collision_mask = 0
 
@@ -497,7 +531,7 @@ shape = SubResource("RectangleShape2D_wall")
 [node name="Traps" type="Node2D" parent="."]
 
 [node name="MovingWallTrigger" type="Area2D" parent="Traps"]
-position = Vector2(1460, 380)
+position = Vector2(1470, 380)
 collision_layer = 0
 collision_mask = 1
 
@@ -505,11 +539,11 @@ collision_mask = 1
 shape = SubResource("RectangleShape2D_mwalltrig")
 
 [node name="MovingWall" type="AnimatableBody2D" parent="Traps"]
-position = Vector2(1680, 388)
+position = Vector2(1670, 388)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("23_mwall")
-move_distance = 150.0
+move_distance = 140.0
 move_speed = 90.0
 trigger_area_path = NodePath("../MovingWallTrigger")
 
@@ -519,19 +553,40 @@ texture = ExtResource("11_mwall")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Traps/MovingWall"]
 shape = SubResource("RectangleShape2D_mwallshape")
 
+[node name="WallSpikeTrigger" type="Area2D" parent="Traps"]
+position = Vector2(1580, 375)
+collision_layer = 0
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Traps/WallSpikeTrigger"]
+shape = SubResource("RectangleShape2D_wspiktrig")
+
+[node name="WallSpikeTrap" type="Area2D" parent="Traps"]
+position = Vector2(1640, 420)
+collision_layer = 4
+collision_mask = 1
+script = ExtResource("26_wspik")
+trigger_area_path = NodePath("../WallSpikeTrigger")
+
+[node name="Sprite2D" type="Sprite2D" parent="Traps/WallSpikeTrap"]
+position = Vector2(0, 12)
+texture = ExtResource("25_sspr")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Traps/WallSpikeTrap"]
+position = Vector2(0, 12)
+shape = SubResource("RectangleShape2D_wspikshape")
+disabled = true
+
 [node name="Hazards" type="Node2D" parent="."]
 
 [node name="SpikesPit1" parent="Hazards" instance=ExtResource("5_spik")]
-position = Vector2(490, 520)
+position = Vector2(500, 520)
 
 [node name="SpikesPit2" parent="Hazards" instance=ExtResource("5_spik")]
-position = Vector2(620, 520)
-
-[node name="SpikesPit3" parent="Hazards" instance=ExtResource("5_spik")]
-position = Vector2(960, 520)
+position = Vector2(630, 520)
 
 [node name="PitHazardArea" type="Area2D" parent="."]
-position = Vector2(1000, 570)
+position = Vector2(1000, 580)
 collision_layer = 4
 collision_mask = 1
 
@@ -541,38 +596,38 @@ shape = SubResource("RectangleShape2D_pit")
 [node name="Coins" type="Node2D" parent="."]
 
 [node name="Coin1" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(180, 370)
+position = Vector2(180, 360)
 
 [node name="Coin2" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(280, 370)
+position = Vector2(280, 360)
 
 [node name="Coin3" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(425, 360)
+position = Vector2(435, 360)
 
 [node name="Coin4" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(555, 360)
+position = Vector2(565, 360)
 
 [node name="Coin5" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(820, 360)
+position = Vector2(825, 360)
 
 [node name="Coin6" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(960, 395)
+position = Vector2(1010, 390)
 greedy_platform = NodePath("../../Platforms/PlatformGreedy")
 
 [node name="Coin7" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1230, 285)
+position = Vector2(1270, 280)
 
 [node name="Coin8" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1380, 370)
+position = Vector2(1400, 360)
 
 [node name="Coin9" parent="Coins" instance=ExtResource("3_coin")]
 position = Vector2(1600, 320)
 
 [node name="Coin10" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1770, 370)
+position = Vector2(1820, 370)
 
 [node name="FakeExitGate" type="Area2D" parent="."]
-position = Vector2(1890, 392)
+position = Vector2(1860, 388)
 collision_layer = 4
 collision_mask = 1
 script = ExtResource("24_fexit")
@@ -601,11 +656,11 @@ offset_right = 110.0
 offset_bottom = -44.0
 theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
 theme_override_font_sizes/font_size = 12
-text = "DECIEVED! LOOK BEHIND YOU!"
+text = "DECEIVED! LOOK ABOVE YOU!"
 horizontal_alignment = 1
 
 [node name="RealExitGate" parent="." instance=ExtResource("4_exit")]
-position = Vector2(2070, 322)
+position = Vector2(1780, 308)
 hidden_initially = true
 
 [node name="HUD" type="CanvasLayer" parent="."]
@@ -666,55 +721,66 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="LeftBtn" type="TextureButton" parent="HUD/TouchControls"]
+modulate = Color(1, 1, 1, 0.75)
 layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = 30.0
-offset_top = -140.0
-offset_right = 158.0
-offset_bottom = -12.0
+offset_left = 20.0
+offset_top = -120.0
+offset_right = 124.0
+offset_bottom = -16.0
 grow_vertical = 0
 texture_normal = ExtResource("13_bleft")
 texture_pressed = ExtResource("16_bleft_p")
+ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("19_tbtn")
 action_name = "move_left"
+touch_margin = 8.0
+drag_margin = 32.0
 
 [node name="RightBtn" type="TextureButton" parent="HUD/TouchControls"]
+modulate = Color(1, 1, 1, 0.75)
 layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = 175.0
-offset_top = -140.0
-offset_right = 303.0
-offset_bottom = -12.0
+offset_left = 144.0
+offset_top = -120.0
+offset_right = 248.0
+offset_bottom = -16.0
 grow_vertical = 0
 texture_normal = ExtResource("14_bright")
 texture_pressed = ExtResource("17_bright_p")
+ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("19_tbtn")
 action_name = "move_right"
+touch_margin = 8.0
+drag_margin = 32.0
 
 [node name="JumpBtn" type="TextureButton" parent="HUD/TouchControls"]
+modulate = Color(1, 1, 1, 0.75)
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -160.0
+offset_left = -140.0
 offset_top = -140.0
-offset_right = -32.0
-offset_bottom = -12.0
+offset_right = -16.0
+offset_bottom = -16.0
 grow_horizontal = 0
 grow_vertical = 0
 texture_normal = ExtResource("15_bjump")
 texture_pressed = ExtResource("18_bjump_p")
+ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("19_tbtn")
 action_name = "jump"
+touch_margin = 16.0
 
 [node name="PauseOverlay" parent="HUD" instance=ExtResource("6_paus")]
 visible = false

@@ -11,7 +11,7 @@ An automated test suite is implemented in [`scripts/tests/test_runner.gd`](file:
 godot --headless "res://scenes/tests/test_runner.tscn"
 ```
 
-### Automated Coverage Matrix (75 Assertions)
+### Automated Coverage Matrix (337 Assertions)
 
 | Category | Test Case | Expected Result | Status |
 | :--- | :--- | :--- | :---: |
@@ -20,13 +20,13 @@ godot --headless "res://scenes/tests/test_runner.tscn"
 | **Save / Persistence** | Disk persistence | Progress survives save file reload | **PASS** |
 | **Save / Persistence** | Corrupt save resilience | Graceful fallback to safe defaults without crash | **PASS** |
 | **Game Data** | 20 planned levels | All 20 levels cataloged with official names | **PASS** |
-| **Game Data** | Playable state | Only Level 1 is playable initially | **PASS** |
+| **Game Data** | Playable state | Only Level 1 & Level 2 playable | **PASS** |
 | **Game Data** | Coin counter clamp | Counter never exceeds configured total (10) | **PASS** |
 | **Main Menu** | Card availability | All 4 arcade cards present | **PASS** |
 | **Main Menu** | Coming soon modals | Modal shows exact spec message when locked card clicked | **PASS** |
 | **Level Select** | 20 level tiles | Responsive grid contains all 20 tiles | **PASS** |
 | **Level Select** | Locked tile modal | Tapping locked tile shows spec message | **PASS** |
-| **Level Select** | Unimplemented modal | Tapping unlocked Level 2 shows "still being built" message | **PASS** |
+| **Level Select** | Unimplemented modal | Tapping unlocked Level 3 shows "still being built" message | **PASS** |
 | **Level 1 Gameplay** | Entity instantiation | Player, 10 coins, hazards, exit gate present | **PASS** |
 | **Level 1 Gameplay** | Exit gate locked state | Gate begins locked with "COINS REQUIRED" | **PASS** |
 | **Level 1 Gameplay** | Gate feedback | Approaching gate early shows remaining coins toast | **PASS** |
@@ -34,14 +34,12 @@ godot --headless "res://scenes/tests/test_runner.tscn"
 | **Level 1 Gameplay** | Exit completion | Touching open gate triggers completion exactly once | **PASS** |
 | **Level 1 Gameplay** | Retry reset | Resets player position, resets coins (0/10), locks gate | **PASS** |
 | **Level 1 Gameplay** | Hazard & Death | Hazard triggers death overlay without soft lock | **PASS** |
-| **Level 2 Gameplay** | Level 2 instantiation | Player, 10 coins, 5 traps/features, fake & real exits present | **PASS** |
-| **Level 2 Trap 1** | Crumbling Bridge | Sequential shake, collapse after delay, collision disabled, clean retry reset | **PASS** |
-| **Level 2 Trap 2** | Greedy Platform | Falls into pit upon landing, leaves gap unrecoverable, collision disabled, clean retry reset | **PASS** |
-| **Level 2 Trap 3** | Hidden Spike Floor | Safe-looking floor, immediate lethal emergence, no warning delay, clean retry reset | **PASS** |
-| **Level 2 Trap 4** | Moving Wall | Smooth AnimatableBody2D glide, real solid collision, jumpable over, clean retry reset | **PASS** |
-| **Level 2 Surprise** | Fake Exit -> Real Exit | Fake exit drops away upon approach with coins, reveals Real Exit on elevated ledge | **PASS** |
-| **Level 2 Progression**| Level 2 Completion | Reaching real exit completes Level 2, marks cleared, unlocks Level 3 | **PASS** |
-| **Level 2 Retry** | Complete Level 2 Reset | Resets player, 10 coins, all 4 traps, fake exit, and hides real exit | **PASS** |
+| **Level 2 Fix 1** | Player Visibility & Touch Controls | Camera headroom (offset.y -45, limit_bottom 600), semi-transparent touch buttons, comfortable thumb offsets | **PASS** |
+| **Level 2 Fix 2** | Falling Platforms Standardization | All 3 crumbling bridge sections use identical platform_ruins texture, 110x24 size, shake/fall/collision disabled | **PASS** |
+| **Level 2 Fix 3** | Coin Platform Unexpected Death Fix | Replaced invalid spike PackedScene texture with spikes.png, eliminated safe platform trigger overlap, raised ceiling headroom | **PASS** |
+| **Level 2 Fix 4** | Moving Wall Spike Trap | Wall crossing triggers rapid floor spikes without warning text, lethal hitbox, safe ruin block reaction landing | **PASS** |
+| **Level 2 Fix 5** | Fake Exit at Pit Edge | Fake exit positioned at platform edge above death pit; drops upon coin approach; real exit revealed on high ledge | **PASS** |
+| **Level 2 Fix 6** | Comprehensive Retry Reset | Clean reset of player spawn, 10 coins, 3 bridge sections, greedy platform, spike floor, moving wall, spike trap, exits | **PASS** |
 
 ---
 

@@ -5,6 +5,7 @@ extends Node
 const CrumblingBridgeSectionClass = preload("res://scripts/coin_hell/crumbling_bridge_section.gd")
 const MovingWallClass = preload("res://scripts/coin_hell/moving_wall.gd")
 const FakeExitGateClass = preload("res://scripts/coin_hell/fake_exit_gate.gd")
+const WallSpikeTrapClass = preload("res://scripts/coin_hell/wall_spike_trap.gd")
 
 var passed_count: int = 0
 var failed_count: int = 0
@@ -698,14 +699,28 @@ func test_level_2_gameplay_mechanics() -> void:
 	assert_true(real_exit != null, "RealExitGate exists in Level 2")
 	assert_true(not real_exit.visible, "RealExitGate is initially hidden")
 
-	# --- TRAP 1: CRUMBLING BRIDGE ---
-	print("  Validating Trap 1: Crumbling Bridge...")
+	# --- FIX 1: PLAYER VISIBILITY & CAMERA / TOUCH CONTROLS ---
+	print("  Validating Fix 1: Player Visibility, Camera Framing & Controls...")
+	var cam: Camera2D = lvl.get_node("Player/Camera2D")
+	assert_eq(cam.limit_bottom, 600, "Camera2D limit_bottom frames player with safe headroom")
+	assert_eq(cam.offset.y, -45.0, "Camera2D has negative vertical offset framing player above controls")
+	var touch_controls = lvl.get_node("HUD/TouchControls")
+	assert_eq(touch_controls.get_node("LeftBtn").modulate.a, 0.75, "LeftBtn has semi-transparency")
+	assert_eq(touch_controls.get_node("LeftBtn").offset_bottom, -16.0, "LeftBtn positioned comfortably for thumbs")
+	assert_eq(touch_controls.get_node("RightBtn").offset_bottom, -16.0, "RightBtn positioned comfortably for thumbs")
+	assert_eq(touch_controls.get_node("JumpBtn").offset_bottom, -16.0, "JumpBtn positioned comfortably for thumbs")
+
+	# --- TRAP 1: CRUMBLING BRIDGE (FIX 2: CONSISTENT APPEARANCE) ---
+	print("  Validating Trap 1: Crumbling Bridge (Fix 2: Consistent Appearance)...")
 	var b1 = platforms.get_node("BridgeSection1")
 	var b2 = platforms.get_node("BridgeSection2")
 	var b3 = platforms.get_node("BridgeSection3")
 	assert_true(b1 is CrumblingBridgeSectionClass, "BridgeSection1 uses CrumblingBridgeSection script")
 	assert_true(b2 is CrumblingBridgeSectionClass, "BridgeSection2 uses CrumblingBridgeSection script")
 	assert_true(b3 is CrumblingBridgeSectionClass, "BridgeSection3 uses CrumblingBridgeSection script")
+	assert_eq(b1.get_node("NinePatchRect").texture.resource_path, "res://assets/sprites/platform_ruins.png", "BridgeSection1 uses standard ruins texture")
+	assert_eq(b2.get_node("NinePatchRect").texture.resource_path, "res://assets/sprites/platform_ruins.png", "BridgeSection2 uses standard ruins texture")
+	assert_eq(b3.get_node("NinePatchRect").texture.resource_path, "res://assets/sprites/platform_ruins.png", "BridgeSection3 uses standard ruins texture")
 	assert_true(not b1._is_triggered, "BridgeSection1 is initially untriggered")
 	assert_true(not b1.collision_shape.disabled, "BridgeSection1 collision is active initially")
 
@@ -722,10 +737,12 @@ func test_level_2_gameplay_mechanics() -> void:
 	assert_true(not b1._is_triggered, "BridgeSection1 untriggered after reset")
 	assert_true(not b1.collision_shape.disabled, "BridgeSection1 collision restored after reset")
 
-	# --- TRAP 2: GREEDY COIN ---
-	print("  Validating Trap 2: Greedy Coin Platform...")
+	# --- TRAP 2: GREEDY COIN (FIX 3: CLEAR JUMP & TEXTURE CONSISTENCY) ---
+	print("  Validating Trap 2: Greedy Coin Platform (Fix 3: Clear Jump Geometry)...")
 	var gp = platforms.get_node("PlatformGreedy")
 	assert_true(gp is GreedyPlatform, "PlatformGreedy uses GreedyPlatform script")
+	assert_eq(gp.get_node("NinePatchRect").texture.resource_path, "res://assets/sprites/platform_ruins.png", "PlatformGreedy uses standard ruins texture")
+	assert_true(platforms.get_node("HighPlatform").global_position.x < gp.global_position.x, "HighPlatform is offset from PlatformGreedy allowing clear jump")
 	assert_true(not gp._has_dropped, "PlatformGreedy starts untriggered")
 	assert_true(not gp.collision_shape.disabled, "PlatformGreedy collision active initially")
 
@@ -740,10 +757,14 @@ func test_level_2_gameplay_mechanics() -> void:
 	assert_true(not gp._has_dropped, "PlatformGreedy reset restores untriggered state")
 	assert_true(not gp.collision_shape.disabled, "PlatformGreedy collision restored upon reset")
 
-	# --- TRAP 3: HIDDEN SPIKE FLOOR ---
-	print("  Validating Trap 3: Hidden Spike Floor...")
+	# --- TRAP 3: HIDDEN SPIKE FLOOR (FIX 3: PROPER TEXTURE & NO OVERLAP) ---
+	print("  Validating Trap 3: Hidden Spike Floor (Fix 3: Proper Texture & Hitbox)...")
 	var spike_floor = platforms.get_node("PlatformSpikeFloor")
 	assert_true(spike_floor is FakeSafePlatform, "PlatformSpikeFloor uses FakeSafePlatform script")
+	assert_eq(spike_floor.spikes_sprite.texture.resource_path, "res://assets/sprites/spikes.png", "Spike floor uses valid spikes texture")
+	var spike_trig_left: float = spike_floor.global_position.x + spike_floor.get_node("TriggerArea/CollisionShape2D").position.x - 50.0
+	var post_greedy_right: float = platforms.get_node("PlatformPostGreedy").global_position.x + 60.0
+	assert_true(spike_trig_left > post_greedy_right, "Spike floor trigger does not overlap safe PlatformPostGreedy")
 	assert_true(not spike_floor._active_spikes, "Spikes are initially inactive and hidden")
 	assert_true(spike_floor.spikes_collision.disabled, "Spikes collision disabled initially")
 
@@ -762,8 +783,8 @@ func test_level_2_gameplay_mechanics() -> void:
 	assert_true(spike_floor.spikes_collision.disabled, "Spikes collision disabled on reset")
 	assert_true(not spike_floor.spikes_sprite.visible, "Spikes sprite hidden on reset")
 
-	# --- TRAP 4: MOVING WALL ---
-	print("  Validating Trap 4: Moving Wall...")
+	# --- TRAP 4: MOVING WALL & WALL SPIKE TRAP (FIX 4) ---
+	print("  Validating Trap 4: Moving Wall & Wall Spike Trap (Fix 4)...")
 	var mwall = traps.get_node("MovingWall")
 	assert_true(mwall is MovingWallClass, "MovingWall uses MovingWall script")
 	assert_true(mwall is AnimatableBody2D, "MovingWall is AnimatableBody2D for stable physics")
@@ -779,9 +800,30 @@ func test_level_2_gameplay_mechanics() -> void:
 	assert_true(not mwall._is_active, "MovingWall reset restores stationary state")
 	assert_eq(mwall.position.x, start_x, "MovingWall position restored to initial coordinate")
 
-	# --- FINAL SURPRISE: FAKE EXIT -> REAL EXIT ---
-	print("  Validating Final Surprise: Fake Exit -> Real Exit...")
+	# Validate Wall Spike Trap
+	var wall_spikes = traps.get_node("WallSpikeTrap")
+	assert_true(wall_spikes is WallSpikeTrapClass, "WallSpikeTrap exists")
+	assert_true(not wall_spikes._is_triggered, "WallSpikeTrap starts untriggered")
+	assert_true(wall_spikes.collision_shape.disabled, "WallSpikeTrap collision disabled initially")
+	assert_true(not wall_spikes.sprite.visible, "WallSpikeTrap sprite hidden initially")
+
+	wall_spikes.activate_trap()
+	assert_true(wall_spikes._is_triggered, "WallSpikeTrap triggered")
+	wall_spikes._is_active = true
+	wall_spikes.collision_shape.disabled = false
+	player._is_alive = true
+	wall_spikes._kill_player(player)
+	assert_true(not player._is_alive, "WallSpikeTrap is lethal to player")
+
+	wall_spikes.reset()
+	assert_true(not wall_spikes._is_triggered, "WallSpikeTrap resets to untriggered")
+	assert_true(wall_spikes.collision_shape.disabled, "WallSpikeTrap collision disabled on reset")
+	assert_true(not wall_spikes.sprite.visible, "WallSpikeTrap sprite hidden on reset")
+
+	# --- FINAL SURPRISE: FAKE EXIT AT EDGE (FIX 5) ---
+	print("  Validating Final Surprise: Fake Exit at Edge -> Real Exit (Fix 5)...")
 	assert_true(fake_exit is FakeExitGateClass, "FakeExitGate uses FakeExitGate script")
+	assert_true(fake_exit.global_position.x > platforms.get_node("GroundExit").global_position.x, "FakeExitGate is placed near edge of ground exit")
 	assert_true(not fake_exit._is_coins_ready, "FakeExitGate initially requires coins")
 	assert_eq(fake_exit.status_label.text, "COINS REQUIRED", "FakeExitGate displays 'COINS REQUIRED'")
 
@@ -820,11 +862,13 @@ func test_level_2_gameplay_mechanics() -> void:
 	var complete_modal_label: Label = complete_overlay.get_node("MessageModal/Panel/VBox/MessageLabel")
 	assert_eq(complete_modal_label.text, "Level 3 is unlocked, but it's still being built. Replay Level 1 for now.", "Level 2 Next Level shows safe unimplemented Level 3 modal")
 
-	# Reset Level 2
+	# Reset Level 2 (FIX 6: VERIFY ALL RESETS)
 	lvl._on_retry()
 	assert_eq(GameManager.current_coins, 0, "Level 2 retry resets coins to 0")
 	assert_true(not fake_exit._has_tricked, "FakeExitGate deception reset")
 	assert_true(not real_exit.visible, "RealExitGate hidden again on reset")
 	assert_true(not real_exit._completion_triggered, "RealExitGate completion flag reset")
+	assert_true(not wall_spikes._is_triggered, "WallSpikeTrap untriggered on level retry")
+	assert_true(not mwall._is_active, "MovingWall inactive on level retry")
 
 	lvl.queue_free()
