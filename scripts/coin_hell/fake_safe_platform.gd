@@ -99,11 +99,14 @@ func _check_spike_collision() -> void:
 	# Covers touches from any direction (top, side, bottom)
 	var player = _get_active_player()
 	if player and is_instance_valid(player) and player.has_method("die") and player._is_alive:
-		# Spikes collision shape is 34px wide x 18px high centered at Vector2(0, -14) relative to SpikesArea
-		var spike_center_global := spikes_area.global_position + Vector2(0.0, -14.0)
+		var spike_shape: Shape2D = spikes_collision.shape if spikes_collision else null
+		var spike_size: Vector2 = Vector2(34.0, 18.0)
+		if spike_shape is RectangleShape2D:
+			spike_size = (spike_shape as RectangleShape2D).size
+		var spike_center_global: Vector2 = spikes_collision.global_position if spikes_collision else (spikes_area.global_position + Vector2(0.0, -14.0))
 		var spike_rect := Rect2(
-			spike_center_global - Vector2(17.0, 9.0),
-			Vector2(34.0, 18.0)
+			spike_center_global - spike_size * 0.5,
+			spike_size
 		)
 		# Player collision shape is 16px wide x 28px high centered at Vector2(0, 2)
 		var player_center_global: Vector2 = player.global_position + Vector2(0.0, 2.0)

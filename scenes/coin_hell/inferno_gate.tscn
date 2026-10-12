@@ -14,11 +14,13 @@ size = Vector2(50, 120)
 script = ExtResource("1_infgt")
 
 [node name="TopEmitter" type="Sprite2D" parent="."]
+visible = false
 position = Vector2(0, -58)
 texture = ExtResource("2_inemt")
 flip_v = true
 
 [node name="BottomEmitter" type="Sprite2D" parent="."]
+visible = false
 position = Vector2(0, 58)
 texture = ExtResource("2_inemt")
 

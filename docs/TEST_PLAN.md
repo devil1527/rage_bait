@@ -11,7 +11,7 @@ An automated test suite is implemented in [`scripts/tests/test_runner.gd`](file:
 godot --headless "res://scenes/tests/test_runner.tscn"
 ```
 
-### Automated Coverage Matrix (421 Assertions)
+### Automated Coverage Matrix (429 Assertions)
 
 | Category | Test Case | Expected Result | Status |
 | :--- | :--- | :--- | :---: |
@@ -37,13 +37,11 @@ godot --headless "res://scenes/tests/test_runner.tscn"
 | **Level 2 Fixes** | Player Visibility & Touch Controls | Camera headroom (offset.y -45, limit_bottom 600), semi-transparent touch buttons, comfortable thumb offsets | **PASS** |
 | **Level 2 Fixes** | Falling Platforms & Traps | Uniform crumbling textures, lethal wall spikes, fake exit at pit edge, clean resets, no explanatory text | **PASS** |
 | **Level 3 Section A** | Safe Start & Controls | Safe spawn at X=100, Y=380, ample headroom, responsive touch controls | **PASS** |
-| **Level 3 Section B** | Impossible 3rd Coin Fix | PlatformRun extended to X=585; safe landing zone (X=480-560); jump gap to Platform3 reduced to 70px | **PASS** |
-| **Level 3 Section B** | Last-Moment Spike Traps | Spikes concealed until proximity trigger; instant emergence; ~0.2-0.8s reaction; lethal when active, harmless retracted | **PASS** |
-| **Level 3 Section C** | Deceptive Coin Traps | Coins 3, 4, 7, and 10 placed over concealed spikes; collectible with proper timing; survivable | **PASS** |
-| **Level 3 Section D** | 10-Coin Standardization | Exactly 10 coins in Level 3 scene; all 10 coins placed before Inferno Gate (X < 1650); HUD displays 0/10 | **PASS** |
-| **Level 3 Section E** | Concealed Inferno Gate | Dormant stone emitters (completely concealed); sudden eruption floor-to-ceiling (100px); lethal active fire; 1.3s safe opening | **PASS** |
-| **Level 3 Section E** | Fire Trap Lethality & Safety | Active fire is lethal; retracted fire has disabled collision (safe passage); clean reset on death/retry | **PASS** |
-| **Level 3 Section F** | Post-Fire Finale & Exit | SpikeTrap5 finale; ExitGate unlocked by 10th coin; completing Level 3 unlocks Level 4 | **PASS** |
+| **Level 3 Overhaul** | 10 Distinct Coin Traps | Coins 1-10 each have custom trap encounters: beneath, approach, landing, airborne, double traps, and anti-retreat | **PASS** |
+| **Level 3 Overhaul** | Airborne Spike Hazards | AirSpikes4, AirSpikes7, AirSpikes10 suspended overhead challenging jump arcs without floor reliance | **PASS** |
+| **Level 3 Overhaul** | Concealed Inferno Gate | Zero visual telegraphing (emitters hidden, no markings, flames hidden); sudden 100px floor-to-ceiling eruption | **PASS** |
+| **Level 3 Overhaul** | Fire Cycle & Traversal | Active fire lethal; safe 1.3s retracted opening allows crossing; clean reset on death/retry | **PASS** |
+| **Level 3 Section F** | Finale & Level Completion | SpikeTrap_Finale guards exit; collecting 10 coins unlocks exit gate; completing unlocks Level 4 | **PASS** |
 
 ---
 

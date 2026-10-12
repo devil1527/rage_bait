@@ -911,8 +911,8 @@ func test_level_3_gameplay_mechanics() -> void:
 	var touch_controls = lvl.get_node("HUD/TouchControls")
 	assert_eq(touch_controls.get_node("LeftBtn").modulate.a, 0.75, "Touch controls have comfortable semi-transparency")
 
-	# Section B & C: Spike Gauntlet & Deceptive Coin Traps (10 Coins Before Fire Gate)
-	print("  Validating Sections B & C: Spike Gauntlet & Deceptive Coin Traps...")
+	# Section B & C: Spike Gauntlet & 10 Distinct Coin Trap Encounters
+	print("  Validating Sections B & C: 10 Distinct Coin Trap Encounters...")
 	var inf_gate = traps.get_node("InfernoGate")
 	assert_true(inf_gate != null, "InfernoGate exists in Level 3")
 	var inf_x = inf_gate.position.x
@@ -922,77 +922,138 @@ func test_level_3_gameplay_mechanics() -> void:
 		var coin_node = coins.get_node("Coin%d" % i)
 		assert_true(coin_node.position.x < inf_x, "Coin %d (X=%d) is placed before Inferno Gate (X=%d)" % [i, int(coin_node.position.x), int(inf_x)])
 
-	# Test 2: Third coin accessibility and deceptive coin trap 1
-	var c3 = coins.get_node("Coin3")
+	# Validate Encounter 1: Coin 1 - Spikes directly below coin
+	var c1 = coins.get_node("Coin1")
 	var st1 = traps.get_node("SpikeTrap1")
-	assert_eq(c3.position.x, st1.position.x, "Coin 3 is placed directly above SpikeTrap1 as deceptive coin trap")
-	assert_true(c3.position.y < st1.position.y - 40, "Coin 3 is high enough to avoid touching resting spikes")
-	var plat_run = platforms.get_node("PlatformRun")
-	var plat_run_right = plat_run.position.x + 140.0 # PlatformRun extends to X=585
-	assert_true(plat_run_right > st1.position.x + 100, "Test 2: PlatformRun provides safe landing zone beyond SpikeTrap1 for Coin 3 leap")
-
-	# Validate Spike Traps 1 to 5
-	for i in [1, 2, 3, 4, 5]:
-		var spike_trap = traps.get_node("SpikeTrap%d" % i)
-		assert_true(spike_trap is FakeSafePlatform, "SpikeTrap%d uses FakeSafePlatform" % i)
-		assert_true(not spike_trap._active_spikes, "Test 3: SpikeTrap%d is initially dormant and concealed" % i)
-		assert_true(spike_trap.spikes_collision.disabled, "SpikeTrap%d collision disabled initially" % i)
-		assert_true(not spike_trap.spikes_sprite.visible, "SpikeTrap%d sprite hidden initially" % i)
-
-	# Test 4: Coin 3 / SpikeTrap1 trigger and jump survival
+	assert_true(st1 is FakeSafePlatform, "SpikeTrap1 uses FakeSafePlatform")
+	assert_eq(st1.position.x, c1.position.x, "Coin 1: Spikes placed directly beneath coin (X=200)")
+	assert_true(not st1._active_spikes, "SpikeTrap1 starts dormant")
+	assert_true(st1.spikes_collision.disabled, "SpikeTrap1 collision disabled initially")
 	st1.trigger_trap()
-	assert_true(st1._active_spikes, "SpikeTrap1 emerged immediately")
-	assert_true(not st1.spikes_collision.disabled, "SpikeTrap1 collision enabled immediately")
+	assert_true(st1._active_spikes, "SpikeTrap1 triggers immediately")
 	player._is_alive = true
 	st1._kill_player(player)
-	assert_true(not player._is_alive, "SpikeTrap1 is lethal to careless player")
+	assert_true(not player._is_alive, "SpikeTrap1 kills player stepping beneath Coin 1")
 	st1.reset()
-	assert_true(not st1._active_spikes, "SpikeTrap1 resets cleanly to dormant")
-	assert_true(st1.spikes_collision.disabled, "SpikeTrap1 collision disabled on reset")
+	assert_true(not st1._active_spikes, "SpikeTrap1 resets cleanly")
 
-	# Section E: Concealed Inferno Gate (Signature Surprise)
-	print("  Validating Section E: Concealed Inferno Gate...")
+	# Validate Encounter 2: Coin 2 - Spikes on approach
+	var c2 = coins.get_node("Coin2")
+	var st2 = traps.get_node("SpikeTrap2")
+	assert_true(st2 is FakeSafePlatform, "SpikeTrap2 uses FakeSafePlatform")
+	assert_true(st2.position.x < c2.position.x, "Coin 2: Spikes placed before coin on approach (X=360 vs Coin X=450)")
+	assert_true(not st2._active_spikes, "SpikeTrap2 starts dormant")
+
+	# Validate Encounter 3: Coin 3 - Spikes on landing side
+	var c3 = coins.get_node("Coin3")
+	var st3 = traps.get_node("SpikeTrap3")
+	assert_true(st3 is FakeSafePlatform, "SpikeTrap3 uses FakeSafePlatform")
+	assert_true(st3.position.x > c3.position.x, "Coin 3: Spikes placed on landing side past coin (X=680 vs Coin X=615)")
+	assert_true(not st3._active_spikes, "SpikeTrap3 starts dormant")
+
+	# Validate Encounter 4: Coin 4 - Airborne spikes + low floor trap
+	var c4 = coins.get_node("Coin4")
+	var air4 = traps.get_node("AirSpikes4")
+	var st4 = traps.get_node("SpikeTrap4")
+	assert_true(air4 != null, "Coin 4: Airborne spikes exist overhead")
+	assert_true(air4.position.y < c4.position.y, "Coin 4: AirSpikes4 suspended above jump arc (Y=275 vs Coin Y=355)")
+	assert_true(st4 is FakeSafePlatform, "Coin 4: Floor SpikeTrap4 exists")
+
+	# Validate Encounter 5: Coin 5 - Double trap: Below coin AND landing side
+	var c5 = coins.get_node("Coin5")
+	var st5 = traps.get_node("SpikeTrap5")
+	var st5_land = traps.get_node("SpikeTrap5_Landing")
+	assert_eq(st5.position.x, c5.position.x, "Coin 5: SpikeTrap5 beneath coin (X=1080)")
+	assert_true(st5_land.position.x > c5.position.x, "Coin 5: SpikeTrap5_Landing on forward landing zone (X=1160)")
+
+	# Validate Encounter 6: Coin 6 - Spikes immediately after coin
+	var c6 = coins.get_node("Coin6")
+	var st6 = traps.get_node("SpikeTrap6")
+	assert_true(st6.position.x > c6.position.x, "Coin 6: SpikeTrap6 positioned immediately after coin (X=1400 vs Coin X=1340)")
+
+	# Validate Encounter 7: Coin 7 - Stepped approach trap + airborne hazard
+	var c7 = coins.get_node("Coin7")
+	var st7 = traps.get_node("SpikeTrap7")
+	var air7 = traps.get_node("AirSpikes7")
+	assert_true(st7.position.x < c7.position.x, "Coin 7: SpikeTrap7 guards low approach")
+	assert_true(air7 != null and air7.position.y < c7.position.y, "Coin 7: AirSpikes7 restricts high jump")
+
+	# Validate Encounter 8: Coin 8 - Combined approach and landing trap
+	var c8 = coins.get_node("Coin8")
+	var st8_front = traps.get_node("SpikeTrap8")
+	var st8_back = traps.get_node("SpikeTrap8_Landing")
+	assert_true(st8_front.position.x < c8.position.x, "Coin 8: SpikeTrap8 guards front approach (X=1740)")
+	assert_true(st8_back.position.x > c8.position.x, "Coin 8: SpikeTrap8_Landing guards back landing (X=1875)")
+
+	# Validate Encounter 9: Coin 9 - Anti-retreat trap behind coin
+	var c9 = coins.get_node("Coin9")
+	var st9 = traps.get_node("SpikeTrap9")
+	assert_true(st9.position.x < c9.position.x, "Coin 9: SpikeTrap9 positioned behind coin (X=1990 vs Coin X=2020)")
+
+	# Validate Encounter 10: Coin 10 - Multi-hazard pre-gate climax (Below + Overhead + Landing)
+	var c10 = coins.get_node("Coin10")
+	var st10 = traps.get_node("SpikeTrap10")
+	var air10 = traps.get_node("AirSpikes10")
+	var st10_land = traps.get_node("SpikeTrap10_Landing")
+	assert_eq(st10.position.x, c10.position.x, "Coin 10: SpikeTrap10 directly beneath coin (X=2230)")
+	assert_true(air10 != null and air10.position.y < c10.position.y, "Coin 10: AirSpikes10 suspended overhead (Y=275)")
+	assert_true(st10_land.position.x > c10.position.x, "Coin 10: SpikeTrap10_Landing guards overshot landing (X=2300)")
+
+	# Section E: Concealed Inferno Gate (Signature Surprise - NO Markings)
+	print("  Validating Section E: Concealed Inferno Gate (No Markings)...")
 	assert_true(inf_gate is InfernoGateClass, "InfernoGate uses InfernoGate script")
-	assert_true(not inf_gate._is_triggered, "Test 5: InfernoGate is completely concealed before proximity trigger")
+	assert_true(not inf_gate._is_triggered, "InfernoGate starts dormant before proximity trigger")
 	assert_true(not inf_gate._is_active, "InfernoGate is inactive initially")
 	assert_true(inf_gate.flame_collision.disabled, "InfernoGate lethal collision disabled initially")
-	assert_true(not inf_gate.flame_sprite.visible, "Test 5: InfernoGate flame sprite is hidden before trigger")
+	assert_true(not inf_gate.flame_sprite.visible, "InfernoGate flame sprite is hidden before trigger")
+	assert_true(not inf_gate.top_emitter.visible, "InfernoGate top emitter hidden before trigger (NO MARKINGS)")
+	assert_true(not inf_gate.bottom_emitter.visible, "InfernoGate bottom emitter hidden before trigger (NO MARKINGS)")
 
-	# Test 6: Proximity activation at last moment
+	# Proximity activation at last moment
 	inf_gate.activate_gate()
-	assert_true(inf_gate._is_triggered, "Test 6: InfernoGate activates upon entering detection range")
+	assert_true(inf_gate._is_triggered, "InfernoGate activates upon entering detection range")
 	assert_true(inf_gate._is_active, "InfernoGate flames erupt suddenly")
 	assert_true(not inf_gate.flame_collision.disabled, "InfernoGate lethal collision enabled on eruption")
 	assert_true(inf_gate.flame_sprite.visible, "InfernoGate full-height flames visible and blazing")
+	assert_true(inf_gate.top_emitter.visible, "InfernoGate top emitter appears during eruption")
+	assert_true(inf_gate.bottom_emitter.visible, "InfernoGate bottom emitter appears during eruption")
 
-	# Test 7: Active flames are lethal
+	# Active fire lethality
 	player._is_alive = true
 	inf_gate._kill_player(player)
-	assert_true(not player._is_alive, "Test 7: Active fire is lethal to player")
+	assert_true(not player._is_alive, "Active fire is lethal to player")
 
-	# Test 8: Safe opening cycle
+	# Safe opening cycle
 	inf_gate._retract_flames()
 	assert_true(not inf_gate._is_active, "InfernoGate flames retract for safe opening")
 	assert_true(inf_gate._in_safe_phase, "InfernoGate enters safe opening phase")
-	assert_true(inf_gate.flame_collision.disabled, "Test 8: Lethal collision disabled during safe opening")
+	assert_true(inf_gate.flame_collision.disabled, "Lethal collision disabled during safe opening")
+	assert_true(not inf_gate.top_emitter.visible, "Top emitter hidden during safe opening")
+	assert_true(not inf_gate.bottom_emitter.visible, "Bottom emitter hidden during safe opening")
 	player._is_alive = true
 	inf_gate._on_flame_body_entered(player)
-	assert_true(player._is_alive, "Test 8: Player passes safely through retracted flame passage")
+	assert_true(player._is_alive, "Player passes safely through retracted flame passage")
 
 	# Reactivation cycle
 	inf_gate._erupt_flames()
 	assert_true(inf_gate._is_active, "InfernoGate reactivates after safe opening closes")
 	assert_true(not inf_gate.flame_collision.disabled, "InfernoGate lethal collision reactivated")
 
-	# Test 9: Reset on death / retry
+	# Reset on death / retry
 	inf_gate.reset()
-	assert_true(not inf_gate._is_triggered, "Test 9: InfernoGate resets to dormant on level retry")
+	assert_true(not inf_gate._is_triggered, "InfernoGate resets to dormant on level retry")
 	assert_true(not inf_gate._is_active, "InfernoGate inactive on reset")
 	assert_true(inf_gate.flame_collision.disabled, "InfernoGate collision disabled on reset")
 	assert_true(not inf_gate.flame_sprite.visible, "InfernoGate flame sprite concealed again on reset")
+	assert_true(not inf_gate.top_emitter.visible, "InfernoGate top emitter concealed on reset")
+	assert_true(not inf_gate.bottom_emitter.visible, "InfernoGate bottom emitter concealed on reset")
 
-	# Section F & Test 10: Collect all 10 coins and complete Level 3
-	print("  Validating Coin Collection & Level 3 Completion...")
+	# Section F: Post-fire finale & Exit Gate
+	print("  Validating Section F: Post-Fire Finale & Level 3 Completion...")
+	var st_finale = traps.get_node("SpikeTrap_Finale")
+	assert_true(st_finale is FakeSafePlatform, "SpikeTrap_Finale guards exit approach")
+
+	# Collect all 10 coins
 	GameManager.current_level_id = 3
 	GameManager.total_coins_required = 10
 	GameManager.reset_coins()
@@ -1007,7 +1068,7 @@ func test_level_3_gameplay_mechanics() -> void:
 	exit_gate._on_body_entered(player)
 	assert_true(exit_gate._completion_triggered, "Level 3 completion triggered upon entering exit gate")
 	assert_true(SaveManager.is_level_completed(3), "Level 3 marked completed in SaveManager")
-	assert_true(SaveManager.is_level_unlocked(4), "Test 10: Level 4 is unlocked after Level 3 completion")
+	assert_true(SaveManager.is_level_unlocked(4), "Level 4 is unlocked after Level 3 completion")
 
 	# Next Level button shows Level 4 unimplemented modal
 	var complete_overlay = lvl.get_node("HUD/LevelCompleteOverlay")
