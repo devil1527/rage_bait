@@ -7,6 +7,7 @@ const MovingWallClass = preload("res://scripts/coin_hell/moving_wall.gd")
 const FakeExitGateClass = preload("res://scripts/coin_hell/fake_exit_gate.gd")
 const WallSpikeTrapClass = preload("res://scripts/coin_hell/wall_spike_trap.gd")
 const InfernoGateClass = preload("res://scripts/coin_hell/inferno_gate.gd")
+const CeilingCrusherClass = preload("res://scripts/coin_hell/ceiling_crusher.gd")
 
 var passed_count: int = 0
 var failed_count: int = 0
@@ -55,6 +56,7 @@ func run_all_tests() -> void:
 	test_spike_collision_directions_and_cases()
 	test_level_2_gameplay_mechanics()
 	test_level_3_gameplay_mechanics()
+	test_level_4_gameplay_mechanics()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -103,8 +105,13 @@ func test_game_manager_level_definitions() -> void:
 	assert_eq(lvl3.get("name"), "Fire & Fury", "Level 3 name is 'Fire & Fury'")
 	assert_true(lvl3.get("implemented"), "Level 3 is marked implemented")
 	assert_true(GameManager.can_play_level(3), "Level 3 is playable")
+
+	var lvl4: Dictionary = GameManager.get_level_info(4)
+	assert_eq(lvl4.get("name"), "Crushing Silence", "Level 4 name is 'Crushing Silence'")
+	assert_true(lvl4.get("implemented"), "Level 4 is marked implemented")
+	assert_true(GameManager.can_play_level(4), "Level 4 is playable")
 	
-	for lvl_id in range(4, 21):
+	for lvl_id in range(5, 21):
 		assert_true(not GameManager.can_play_level(lvl_id), "Level %d is marked not implemented" % lvl_id)
 		
 	# Test coin counter clamping
@@ -171,13 +178,19 @@ func test_level_select_logic_and_states() -> void:
 	assert_true(SaveManager.is_level_unlocked(3), "Level 3 is unlocked after completing Level 2")
 	assert_true(GameManager.can_play_level(3), "Level 3 is playable")
 
-	# Complete level 3 to unlock level 4 and test unimplemented level press
+	# Complete level 3 to unlock level 4 and verify Level 4 is playable
 	SaveManager.complete_level(3)
 	lsel._update_ui()
 	assert_true(SaveManager.is_level_unlocked(4), "Level 4 is unlocked after completing Level 3")
-	lsel._on_level_tile_pressed(4)
+	assert_true(GameManager.can_play_level(4), "Level 4 is playable")
+
+	# Complete level 4 to unlock level 5 and test unimplemented level press
+	SaveManager.complete_level(4)
+	lsel._update_ui()
+	assert_true(SaveManager.is_level_unlocked(5), "Level 5 is unlocked after completing Level 4")
+	lsel._on_level_tile_pressed(5)
 	assert_true(modal.visible, "Pressing unlocked but unimplemented level shows modal")
-	assert_eq(modal_label.text, "Level 4 is unlocked, but it's still being built. Replay Level 1 for now.", "Modal shows exact unimplemented level message")
+	assert_eq(modal_label.text, "Level 5 is unlocked, but it's still being built. Replay Level 1 for now.", "Modal shows exact unimplemented level message")
 	
 	lsel.queue_free()
 
@@ -1069,18 +1082,157 @@ func test_level_3_gameplay_mechanics() -> void:
 	assert_true(exit_gate._completion_triggered, "Level 3 completion triggered upon entering exit gate")
 	assert_true(SaveManager.is_level_completed(3), "Level 3 marked completed in SaveManager")
 	assert_true(SaveManager.is_level_unlocked(4), "Level 4 is unlocked after Level 3 completion")
-
-	# Next Level button shows Level 4 unimplemented modal
-	var complete_overlay = lvl.get_node("HUD/LevelCompleteOverlay")
-	complete_overlay.open(10, 10)
-	complete_overlay._on_next_level_pressed()
-	var complete_modal_label: Label = complete_overlay.get_node("MessageModal/Panel/VBox/MessageLabel")
-	assert_eq(complete_modal_label.text, "Level 4 is unlocked, but it's still being built. Replay Level 1 for now.", "Level 3 Next Level shows safe unimplemented Level 4 modal")
+	assert_true(GameManager.can_play_level(4), "Level 4 is playable and ready to start after Level 3")
 
 	# Reset Level 3
 	lvl._on_retry()
 	assert_eq(GameManager.current_coins, 0, "Level 3 retry resets coins to 0")
 	assert_true(not inf_gate._is_triggered, "InfernoGate untriggered on level retry")
+	assert_true(not exit_gate._completion_triggered, "ExitGate completion flag reset")
+
+	lvl.queue_free()
+
+func test_level_4_gameplay_mechanics() -> void:
+	print("\n--- TEST: Level 4 Gameplay Mechanics (Ceiling Crushers) ---")
+	var lvl4_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_4.tscn")
+	assert_true(lvl4_scene != null, "Level 4 scene loads successfully")
+	var lvl = lvl4_scene.instantiate()
+	add_child(lvl)
+
+	var player = lvl.get_node("Player")
+	var coins = lvl.get_node("Coins")
+	var exit_gate = lvl.get_node("ExitGate")
+	var platforms = lvl.get_node("Platforms")
+	var traps = lvl.get_node("Traps")
+
+	assert_true(player != null, "Player exists in Level 4")
+	assert_eq(coins.get_child_count(), 10, "Test 1: Level 4 contains exactly 10 coins")
+	assert_true(exit_gate != null, "ExitGate exists in Level 4")
+	assert_eq(exit_gate.status_label.text, "COINS REQUIRED", "ExitGate starts locked requiring coins")
+
+	# Safe spawn and camera
+	assert_eq(lvl.get_node("SpawnPoint").global_position, Vector2(100, 380), "Player spawns safely at X=100, Y=380")
+	var cam: Camera2D = player.get_node("Camera2D")
+	assert_eq(cam.limit_bottom, 600, "Camera2D limit_bottom is 600")
+	assert_eq(cam.offset.y, -45.0, "Camera2D negative offset ensures landing visibility")
+
+	# Validate Ceiling Crusher 1 state machine and mechanics
+	print("  Validating Crusher 1 State Machine & Reaction...")
+	var cr1 = traps.get_node("Crusher1")
+	assert_true(cr1 is CeilingCrusherClass, "Crusher1 uses CeilingCrusher class")
+	assert_eq(cr1.current_state, CeilingCrusherClass.State.IDLE, "Crusher1 starts in State.IDLE")
+	assert_true(cr1.hazard_collision.disabled, "Crusher1 hazard collision disabled in IDLE state")
+
+	# Trigger Crusher 1
+	cr1.trigger_crusher()
+	assert_eq(cr1.current_state, CeilingCrusherClass.State.TRIGGERED, "Crusher1 transitions to State.TRIGGERED")
+
+	# Slam down
+	cr1._start_descending()
+	assert_eq(cr1.current_state, CeilingCrusherClass.State.DESCENDING, "Crusher1 transitions to State.DESCENDING")
+	assert_true(not cr1.hazard_collision.disabled, "Crusher1 hazard collision enabled during descent")
+
+	# Active collision test: kills player
+	player._is_alive = true
+	cr1._kill_player(player)
+	assert_true(not player._is_alive, "Crusher1 kills player upon crushing collision")
+
+	# Reach bottom
+	cr1._on_slam_reached()
+	assert_eq(cr1.current_state, CeilingCrusherClass.State.ACTIVE, "Crusher1 transitions to State.ACTIVE")
+
+	# Retract
+	cr1._start_retracting()
+	assert_eq(cr1.current_state, CeilingCrusherClass.State.RETRACTING, "Crusher1 transitions to State.RETRACTING")
+	assert_true(cr1.hazard_collision.disabled, "Crusher1 hazard collision disabled during retraction")
+
+	# Reset
+	cr1._on_retract_reached()
+	assert_eq(cr1.current_state, CeilingCrusherClass.State.RESET, "Crusher1 transitions to State.RESET")
+
+	# Full reset
+	cr1.reset()
+	assert_eq(cr1.current_state, CeilingCrusherClass.State.IDLE, "Crusher1 reset returns to State.IDLE")
+	assert_eq(cr1.crusher_body.position.y, cr1._retracted_pos.y, "Crusher1 position restored to retracted position")
+
+	# Validate all 10 distinct Coin Encounters
+	print("  Validating 10 Distinct Coin Encounters in Level 4...")
+	var c1 = coins.get_node("Coin1")
+	assert_eq(c1.position, Vector2(420, 380), "Coin 1 positioned past Crusher 1")
+
+	var cr2 = traps.get_node("Crusher2")
+	var c2 = coins.get_node("Coin2")
+	assert_eq(cr2.position.x, c2.position.x, "Coin 2 placed directly inside Crusher 2 danger zone (X=630)")
+
+	var cr3 = traps.get_node("Crusher3")
+	var c3 = coins.get_node("Coin3")
+	assert_true(cr3.position.x > c3.position.x, "Coin 3 in mid-air (X=755) requires considering Crusher 3 landing (X=840)")
+
+	var cr4 = traps.get_node("Crusher4")
+	var c4 = coins.get_node("Coin4")
+	assert_eq(cr4.position.x, c4.position.x, "Coin 4 on elevated platform under fast-trigger Crusher 4 (X=1110)")
+
+	var cr5 = traps.get_node("Crusher5")
+	var c5 = coins.get_node("Coin5")
+	assert_true(c5.position.x < cr5.position.x, "Coin 5 on stepping pillar before chasm-guarding Crusher 5")
+
+	var cr6 = traps.get_node("Crusher6")
+	var sp6 = traps.get_node("FloorSpike6")
+	var c6 = coins.get_node("Coin6")
+	assert_true(c6.position.x < cr6.position.x, "Coin 6 before Crusher 6")
+	assert_true(sp6.position.x > cr6.position.x, "FloorSpike6 punishes rushing past Crusher 6")
+
+	var cr7a = traps.get_node("Crusher7A")
+	var cr7b = traps.get_node("Crusher7B")
+	var c7 = coins.get_node("Coin7")
+	assert_true(cr7a.auto_cycle and cr7b.auto_cycle, "Crushers 7A and 7B are auto-cycling alternating hazards")
+	assert_true(c7.position.x > cr7a.position.x and c7.position.x < cr7b.position.x, "Coin 7 is placed in the safe pocket between 7A and 7B")
+
+	var cr8 = traps.get_node("Crusher8")
+	var c8 = coins.get_node("Coin8")
+	var p8_high = platforms.get_node("Platform8_High")
+	assert_true(p8_high.position.y < cr8.position.y + 120, "Platform8_High provides high-jump safe landing for Coin 8")
+
+	var cr9 = traps.get_node("Crusher9")
+	var sp9 = traps.get_node("FloorSpike9")
+	var c9 = coins.get_node("Coin9")
+	assert_true(cr9.position.x < c9.position.x, "Crusher 9 is positioned behind Coin 9 to punish retreat")
+	assert_true(sp9.position.x > c9.position.x, "FloorSpike9 is positioned past Coin 9")
+
+	var cr10a = traps.get_node("Crusher10A")
+	var cr10b = traps.get_node("Crusher10B")
+	var c10 = coins.get_node("Coin10")
+	assert_true(c10.position.x > cr10a.position.x and c10.position.x < cr10b.position.x, "Coin 10 centered between climax dual crushers 10A and 10B")
+
+	# Collect all 10 coins and unlock exit gate
+	print("  Validating Coin Collection & Level 4 Completion...")
+	GameManager.current_level_id = 4
+	GameManager.total_coins_required = 10
+	GameManager.reset_coins()
+	for i in range(1, 11):
+		coins.get_node("Coin%d" % i).collect()
+	assert_eq(GameManager.current_coins, 10, "All 10 coins collected in Level 4")
+	assert_true(exit_gate._is_open, "ExitGate unlocks automatically after collecting 10th coin")
+	assert_eq(exit_gate.status_label.text, "EXIT OPEN!", "ExitGate displays 'EXIT OPEN!'")
+
+	# Complete Level 4
+	GameManager.is_gameplay_active = true
+	exit_gate._on_body_entered(player)
+	assert_true(exit_gate._completion_triggered, "Level 4 completion triggered upon entering exit gate")
+	assert_true(SaveManager.is_level_completed(4), "Level 4 marked completed in SaveManager")
+	assert_true(SaveManager.is_level_unlocked(5), "Level 5 is unlocked after Level 4 completion")
+
+	# Next Level button shows Level 5 unimplemented modal
+	var complete_overlay = lvl.get_node("HUD/LevelCompleteOverlay")
+	complete_overlay.open(10, 10)
+	complete_overlay._on_next_level_pressed()
+	var complete_modal_label: Label = complete_overlay.get_node("MessageModal/Panel/VBox/MessageLabel")
+	assert_eq(complete_modal_label.text, "Level 5 is unlocked, but it's still being built. Replay Level 1 for now.", "Level 4 Next Level shows safe unimplemented Level 5 modal")
+
+	# Reset Level 4
+	lvl._on_retry()
+	assert_eq(GameManager.current_coins, 0, "Level 4 retry resets coins to 0")
+	assert_eq(cr1.current_state, CeilingCrusherClass.State.IDLE, "Crusher 1 resets to IDLE on level retry")
 	assert_true(not exit_gate._completion_triggered, "ExitGate completion flag reset")
 
 	lvl.queue_free()

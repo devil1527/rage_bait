@@ -11,22 +11,22 @@ An automated test suite is implemented in [`scripts/tests/test_runner.gd`](file:
 godot --headless "res://scenes/tests/test_runner.tscn"
 ```
 
-### Automated Coverage Matrix (429 Assertions)
+### Automated Coverage Matrix (477 Assertions)
 
 | Category | Test Case | Expected Result | Status |
 | :--- | :--- | :--- | :---: |
 | **Save / Persistence** | Fresh save defaults | Highest unlocked = 1, completed = 0 | **PASS** |
-| **Save / Persistence** | Sequential unlock | Completing Level 1 unlocks 2, completing 2 unlocks 3, completing 3 unlocks 4 | **PASS** |
+| **Save / Persistence** | Sequential unlock | Completing Level 1 unlocks 2, completing 2 unlocks 3, completing 3 unlocks 4, completing 4 unlocks 5 | **PASS** |
 | **Save / Persistence** | Disk persistence | Progress survives save file reload | **PASS** |
 | **Save / Persistence** | Corrupt save resilience | Graceful fallback to safe defaults without crash | **PASS** |
 | **Game Data** | 20 planned levels | All 20 levels cataloged with official names | **PASS** |
-| **Game Data** | Playable state | Levels 1, 2, and 3 playable; Levels 4-20 unimplemented | **PASS** |
+| **Game Data** | Playable state | Levels 1, 2, 3, and 4 playable; Levels 5-20 unimplemented | **PASS** |
 | **Game Data** | Coin counter clamp | Counter never exceeds configured total (10 per level) | **PASS** |
 | **Main Menu** | Card availability | All 4 arcade cards present | **PASS** |
 | **Main Menu** | Coming soon modals | Modal shows exact spec message when locked card clicked | **PASS** |
 | **Level Select** | 20 level tiles | Responsive grid contains all 20 tiles | **PASS** |
 | **Level Select** | Locked tile modal | Tapping locked tile shows spec message | **PASS** |
-| **Level Select** | Unimplemented modal | Tapping unlocked Level 4 shows "still being built" message | **PASS** |
+| **Level Select** | Unimplemented modal | Tapping unlocked Level 5 shows "still being built" message | **PASS** |
 | **Level 1 Gameplay** | Entity instantiation | Player, 10 coins, hazards, exit gate present | **PASS** |
 | **Level 1 Gameplay** | Exit gate locked state | Gate begins locked with "COINS REQUIRED" | **PASS** |
 | **Level 1 Gameplay** | Gate feedback | Approaching gate early shows remaining coins toast | **PASS** |
@@ -42,6 +42,10 @@ godot --headless "res://scenes/tests/test_runner.tscn"
 | **Level 3 Overhaul** | Concealed Inferno Gate | Zero visual telegraphing (emitters hidden, no markings, flames hidden); sudden 100px floor-to-ceiling eruption | **PASS** |
 | **Level 3 Overhaul** | Fire Cycle & Traversal | Active fire lethal; safe 1.3s retracted opening allows crossing; clean reset on death/retry | **PASS** |
 | **Level 3 Section F** | Finale & Level Completion | SpikeTrap_Finale guards exit; collecting 10 coins unlocks exit gate; completing unlocks Level 4 | **PASS** |
+| **Level 4 Mechanics** | Ceiling Crusher State Machine | 6 states: IDLE -> TRIGGERED -> DESCENDING -> ACTIVE -> RETRACTING -> RESET; clean reset | **PASS** |
+| **Level 4 Mechanics** | Crusher Lethality & Collision | Lethal collision matches moving body; harmless when retracted; kills upon active/slam impact | **PASS** |
+| **Level 4 Encounters**| 10 Distinct Coin Encounters | Individually designed encounters: approach, danger zone, chasm landing, offset trigger, pillar jump, rushing trap, alternating pair, high bypass, anti-retreat, dual climax | **PASS** |
+| **Level 4 Progression**| 10 Coins, Exit & Unlock | Exactly 10 coins; collecting 10 unlocks exit ("EXIT OPEN!"); entering completes Level 4 and unlocks Level 5 | **PASS** |
 
 ---
 

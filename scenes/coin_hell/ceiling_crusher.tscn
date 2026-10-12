@@ -1,0 +1,47 @@
+[gd_scene load_steps=6 format=3 uid="uid://crusher001lvl4"]
+
+[ext_resource type="Script" path="res://scripts/coin_hell/ceiling_crusher.gd" id="1_crush"]
+[ext_resource type="Texture2D" path="res://assets/sprites/crusher_stem.png" id="2_cstem"]
+[ext_resource type="Texture2D" path="res://assets/sprites/crusher_block.png" id="3_cblok"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(44, 44)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hazard"]
+size = Vector2(42, 42)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_trigger"]
+size = Vector2(60, 140)
+
+[node name="CeilingCrusher" type="Node2D"]
+script = ExtResource("1_crush")
+
+[node name="StemSprite" type="Sprite2D" parent="."]
+position = Vector2(0, -16)
+texture = ExtResource("2_cstem")
+
+[node name="CrusherBody" type="AnimatableBody2D" parent="."]
+collision_layer = 2
+collision_mask = 0
+
+[node name="BlockSprite" type="Sprite2D" parent="CrusherBody"]
+texture = ExtResource("3_cblok")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CrusherBody"]
+shape = SubResource("RectangleShape2D_body")
+
+[node name="HazardArea" type="Area2D" parent="CrusherBody"]
+collision_layer = 4
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CrusherBody/HazardArea"]
+shape = SubResource("RectangleShape2D_hazard")
+disabled = true
+
+[node name="TriggerArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerArea"]
+position = Vector2(0, 70)
+shape = SubResource("RectangleShape2D_trigger")
