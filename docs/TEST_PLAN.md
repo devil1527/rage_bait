@@ -11,7 +11,7 @@ An automated test suite is implemented in [`scripts/tests/test_runner.gd`](file:
 godot --headless "res://scenes/tests/test_runner.tscn"
 ```
 
-### Automated Coverage Matrix (419 Assertions)
+### Automated Coverage Matrix (421 Assertions)
 
 | Category | Test Case | Expected Result | Status |
 | :--- | :--- | :--- | :---: |
@@ -21,7 +21,7 @@ godot --headless "res://scenes/tests/test_runner.tscn"
 | **Save / Persistence** | Corrupt save resilience | Graceful fallback to safe defaults without crash | **PASS** |
 | **Game Data** | 20 planned levels | All 20 levels cataloged with official names | **PASS** |
 | **Game Data** | Playable state | Levels 1, 2, and 3 playable; Levels 4-20 unimplemented | **PASS** |
-| **Game Data** | Coin counter clamp | Counter never exceeds configured total | **PASS** |
+| **Game Data** | Coin counter clamp | Counter never exceeds configured total (10 per level) | **PASS** |
 | **Main Menu** | Card availability | All 4 arcade cards present | **PASS** |
 | **Main Menu** | Coming soon modals | Modal shows exact spec message when locked card clicked | **PASS** |
 | **Level Select** | 20 level tiles | Responsive grid contains all 20 tiles | **PASS** |
@@ -34,19 +34,16 @@ godot --headless "res://scenes/tests/test_runner.tscn"
 | **Level 1 Gameplay** | Exit completion | Touching open gate triggers completion exactly once | **PASS** |
 | **Level 1 Gameplay** | Retry reset | Resets player position, resets coins (0/10), locks gate | **PASS** |
 | **Level 1 Gameplay** | Hazard & Death | Hazard triggers death overlay without soft lock | **PASS** |
-| **Level 2 Fix 1** | Player Visibility & Touch Controls | Camera headroom (offset.y -45, limit_bottom 600), semi-transparent touch buttons, comfortable thumb offsets | **PASS** |
-| **Level 2 Fix 2** | Falling Platforms Standardization | All 3 crumbling bridge sections use identical platform_ruins texture, 110x24 size, shake/fall/collision disabled | **PASS** |
-| **Level 2 Fix 3** | Coin Platform Unexpected Death Fix | Replaced invalid spike PackedScene texture with spikes.png, eliminated safe platform trigger overlap, raised ceiling headroom | **PASS** |
-| **Level 2 Fix 4** | Moving Wall Spike Trap | Wall crossing triggers rapid floor spikes without warning text, lethal hitbox, safe ruin block reaction landing | **PASS** |
-| **Level 2 Fix 5** | Fake Exit at Pit Edge | Fake exit positioned at platform edge above death pit; drops upon coin approach; real exit revealed on high ledge | **PASS** |
-| **Level 2 Part 2**| Removed Explanatory Text | Removed all explanatory labels ("FAKED!", "DECEIVED!", "REAL EXIT!"); displays standard clean states | **PASS** |
-| **Level 2 Fix 6** | Comprehensive Retry Reset | Clean reset of player spawn, 10 coins, 3 bridge sections, greedy platform, spike floor, moving wall, spike trap, exits | **PASS** |
-| **Level 3 Section A**| Safe Start & Controls | Safe spawn at X=100, Y=380, ample headroom, responsive touch controls | **PASS** |
-| **Level 3 Section B**| Spike Gauntlet | 5 spike popup encounters, reaction window < 1s, lethal hitboxes, clean resets | **PASS** |
-| **Level 3 Section C**| First 10 Coins Distribution | First 10 coins placed strictly before InfernoGate1 (X < 1500) | **PASS** |
-| **Level 3 Section D**| Inferno Gate Proximity & Seal | Gate dormant before trigger; erupts full-height wall of fire floor-to-ceiling; cannot jump over | **PASS** |
-| **Level 3 Section E**| Fire Timing Cycle & Twist | 1.3s lethal active fire; 1.3s safe retracted opening; safe to cross while retracted; jumping into fire kills | **PASS** |
-| **Level 3 Section F**| Gauntlet Finale & Completion | Coins 11 & 12 in final gauntlet; InfernoGate2 timing; 12 coins unlocks exit; completing unlocks Level 4 | **PASS** |
+| **Level 2 Fixes** | Player Visibility & Touch Controls | Camera headroom (offset.y -45, limit_bottom 600), semi-transparent touch buttons, comfortable thumb offsets | **PASS** |
+| **Level 2 Fixes** | Falling Platforms & Traps | Uniform crumbling textures, lethal wall spikes, fake exit at pit edge, clean resets, no explanatory text | **PASS** |
+| **Level 3 Section A** | Safe Start & Controls | Safe spawn at X=100, Y=380, ample headroom, responsive touch controls | **PASS** |
+| **Level 3 Section B** | Impossible 3rd Coin Fix | PlatformRun extended to X=585; safe landing zone (X=480-560); jump gap to Platform3 reduced to 70px | **PASS** |
+| **Level 3 Section B** | Last-Moment Spike Traps | Spikes concealed until proximity trigger; instant emergence; ~0.2-0.8s reaction; lethal when active, harmless retracted | **PASS** |
+| **Level 3 Section C** | Deceptive Coin Traps | Coins 3, 4, 7, and 10 placed over concealed spikes; collectible with proper timing; survivable | **PASS** |
+| **Level 3 Section D** | 10-Coin Standardization | Exactly 10 coins in Level 3 scene; all 10 coins placed before Inferno Gate (X < 1650); HUD displays 0/10 | **PASS** |
+| **Level 3 Section E** | Concealed Inferno Gate | Dormant stone emitters (completely concealed); sudden eruption floor-to-ceiling (100px); lethal active fire; 1.3s safe opening | **PASS** |
+| **Level 3 Section E** | Fire Trap Lethality & Safety | Active fire is lethal; retracted fire has disabled collision (safe passage); clean reset on death/retry | **PASS** |
+| **Level 3 Section F** | Post-Fire Finale & Exit | SpikeTrap5 finale; ExitGate unlocked by 10th coin; completing Level 3 unlocks Level 4 | **PASS** |
 
 ---
 

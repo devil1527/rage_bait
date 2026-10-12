@@ -8,7 +8,7 @@
 size = Vector2(28, 116)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_trigger"]
-size = Vector2(100, 120)
+size = Vector2(50, 120)
 
 [node name="InfernoGate" type="Node2D"]
 script = ExtResource("1_infgt")
@@ -39,5 +39,5 @@ collision_layer = 0
 collision_mask = 1
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerArea"]
-position = Vector2(-40, 0)
+position = Vector2(-30, 0)
 shape = SubResource("RectangleShape2D_trigger")

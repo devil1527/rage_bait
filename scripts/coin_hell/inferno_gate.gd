@@ -63,6 +63,10 @@ func _setup_initial_state() -> void:
 		flame_sprite.scale = Vector2(1.0, 1.0)
 	if flame_collision:
 		flame_collision.disabled = true
+	if top_emitter:
+		top_emitter.modulate = Color(0.55, 0.55, 0.6, 0.8)
+	if bottom_emitter:
+		bottom_emitter.modulate = Color(0.55, 0.55, 0.6, 0.8)
 
 func _physics_process(delta: float) -> void:
 	if not _is_triggered:
@@ -99,6 +103,11 @@ func _erupt_flames() -> void:
 	if flame_collision:
 		flame_collision.disabled = false
 		
+	if top_emitter:
+		top_emitter.modulate = Color(1.3, 0.8, 0.5, 1.0)
+	if bottom_emitter:
+		bottom_emitter.modulate = Color(1.3, 0.8, 0.5, 1.0)
+
 	if flame_sprite:
 		flame_sprite.visible = true
 		flame_sprite.modulate.a = 1.0
@@ -123,6 +132,11 @@ func _retract_flames() -> void:
 	if flame_collision:
 		flame_collision.disabled = true
 		
+	if top_emitter:
+		top_emitter.modulate = Color(0.7, 0.6, 0.65, 0.85)
+	if bottom_emitter:
+		bottom_emitter.modulate = Color(0.7, 0.6, 0.65, 0.85)
+
 	if flame_sprite:
 		if _tween and _tween.is_valid():
 			_tween.kill()
