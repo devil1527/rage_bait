@@ -1,4 +1,4 @@
-[gd_scene load_steps=38 format=3 uid="uid://d5e6f7a8b9c0d"]
+[gd_scene load_steps=53 format=3 uid="uid://d5e6f7a8b9c0d"]
 
 [ext_resource type="Script" path="res://scripts/coin_hell/level_5.gd" id="1_lev5"]
 [ext_resource type="PackedScene" path="res://scenes/coin_hell/player.tscn" id="2_play"]
@@ -19,120 +19,141 @@
 [ext_resource type="Script" path="res://scripts/coin_hell/touch_button.gd" id="17_tbtn"]
 [ext_resource type="PackedScene" path="res://scenes/coin_hell/spikes.tscn" id="18_spik"]
 [ext_resource type="Script" path="res://scripts/coin_hell/crumbling_bridge_section.gd" id="19_cbrg"]
+[ext_resource type="Script" path="res://scripts/coin_hell/fake_safe_platform.gd" id="20_fplat"]
+[ext_resource type="Script" path="res://scripts/coin_hell/moving_wall.gd" id="21_mwall"]
+[ext_resource type="Texture2D" path="res://assets/sprites/moving_wall.png" id="22_mwtex"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/inferno_gate.tscn" id="23_infg"]
+[ext_resource type="Script" path="res://scripts/coin_hell/fake_exit_gate.gd" id="24_fexit"]
+[ext_resource type="Texture2D" path="res://assets/sprites/exit_locked.png" id="25_exloc"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_groundspawn"]
-size = Vector2(240, 80)
+size = Vector2(220, 80)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_plat1_coll"]
-size = Vector2(140, 24)
+size = Vector2(130, 24)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_plat1_step"]
-size = Vector2(136, 12)
+size = Vector2(126, 12)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat1_rest"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat2_body"]
+size = Vector2(110, 24)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat2_trig"]
+size = Vector2(50, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat2_spikes"]
+size = Vector2(34, 18)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat2_rest"]
 size = Vector2(100, 80)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat2a_coll"]
-size = Vector2(120, 24)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat2a_step"]
-size = Vector2(116, 12)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat2b_coll"]
-size = Vector2(100, 24)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat2b_step"]
-size = Vector2(96, 12)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_plat3_coll"]
-size = Vector2(80, 24)
+size = Vector2(100, 24)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_plat3_step"]
-size = Vector2(76, 12)
+size = Vector2(96, 12)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat3_rest"]
-size = Vector2(100, 80)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat4_ground"]
+size = Vector2(160, 80)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_bridge_coll"]
-size = Vector2(90, 24)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_mwall1_shape"]
+size = Vector2(36, 64)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_bridge_step"]
-size = Vector2(86, 12)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat4_coll"]
+size = Vector2(100, 24)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat4_rest"]
-size = Vector2(110, 80)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat4_step"]
+size = Vector2(96, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_safe_high_ledge"]
+size = Vector2(90, 80)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_plat5_coll"]
-size = Vector2(140, 24)
+size = Vector2(100, 24)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_plat5_step"]
-size = Vector2(136, 12)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat5_rest"]
-size = Vector2(100, 80)
+size = Vector2(96, 12)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_plat6_coll"]
-size = Vector2(120, 24)
+size = Vector2(80, 24)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_plat6_step"]
-size = Vector2(116, 12)
+size = Vector2(76, 12)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_plat6_rest"]
 size = Vector2(110, 80)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat7_coll"]
-size = Vector2(70, 24)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bridge7a_coll"]
+size = Vector2(80, 24)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat7_step"]
-size = Vector2(66, 12)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bridge7a_step"]
+size = Vector2(76, 12)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat7_rest"]
-size = Vector2(100, 80)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bridge7b_coll"]
+size = Vector2(80, 24)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat8_coll"]
-size = Vector2(90, 24)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bridge7b_step"]
+size = Vector2(76, 12)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat8_step"]
-size = Vector2(86, 12)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat8_ruin"]
+size = Vector2(130, 80)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_plat8_rest"]
 size = Vector2(110, 80)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat9_coll"]
-size = Vector2(80, 24)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat9a_body"]
+size = Vector2(100, 24)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat9_step"]
-size = Vector2(76, 12)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat9a_trig"]
+size = Vector2(60, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat9a_spikes"]
+size = Vector2(34, 18)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_mwall9_shape"]
+size = Vector2(36, 64)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat9b_coll"]
+size = Vector2(90, 24)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat9b_step"]
+size = Vector2(86, 12)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_plat9_rest"]
-size = Vector2(100, 80)
+size = Vector2(110, 80)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat10_coll"]
-size = Vector2(85, 24)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat10a_coll"]
+size = Vector2(80, 24)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat10_step"]
-size = Vector2(81, 12)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat10a_step"]
+size = Vector2(76, 12)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat10_rest"]
-size = Vector2(90, 80)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat10b_coll"]
+size = Vector2(80, 24)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_finale_bridge_coll"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat10b_step"]
+size = Vector2(76, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat_fake_exit"]
+size = Vector2(150, 80)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_fakeshape"]
+size = Vector2(32, 48)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat_finale_coll"]
 size = Vector2(65, 24)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_finale_bridge_step"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat_finale_step"]
 size = Vector2(61, 12)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_platexit"]
-size = Vector2(140, 80)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_ceiling_sec"]
-size = Vector2(160, 24)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat_real_exit"]
+size = Vector2(90, 80)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
 size = Vector2(40, 600)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_pit"]
-size = Vector2(4200, 80)
+size = Vector2(3500, 80)
 
 [node name="CoinHellLevel5" type="Node2D"]
 script = ExtResource("1_lev5")
@@ -160,13 +181,13 @@ position_smoothing_enabled = true
 position_smoothing_speed = 6.0
 limit_left = 0
 limit_top = 0
-limit_right = 3850
+limit_right = 3200
 limit_bottom = 600
 
 [node name="Platforms" type="Node2D" parent="."]
 
 [node name="GroundSpawn" type="StaticBody2D" parent="Platforms"]
-position = Vector2(130, 460)
+position = Vector2(120, 460)
 collision_layer = 2
 collision_mask = 0
 
@@ -174,9 +195,9 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_groundspawn")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/GroundSpawn"]
-offset_left = -120.0
+offset_left = -110.0
 offset_top = -40.0
-offset_right = 120.0
+offset_right = 110.0
 offset_bottom = 40.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -187,19 +208,19 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Plat1_Collapsing" type="StaticBody2D" parent="Platforms"]
-position = Vector2(360, 420)
+position = Vector2(350, 420)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("19_cbrg")
-collapse_delay = 0.85
+collapse_delay = 0.80
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat1_Collapsing"]
 shape = SubResource("RectangleShape2D_plat1_coll")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat1_Collapsing"]
-offset_left = -70.0
+offset_left = -65.0
 offset_top = -12.0
-offset_right = 70.0
+offset_right = 65.0
 offset_bottom = 12.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -217,15 +238,58 @@ collision_mask = 1
 position = Vector2(0, -12)
 shape = SubResource("RectangleShape2D_plat1_step")
 
-[node name="Plat1_Rest" type="StaticBody2D" parent="Platforms"]
-position = Vector2(490, 460)
+[node name="Plat2_FakeSafe" type="StaticBody2D" parent="Platforms"]
+position = Vector2(490, 420)
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("20_fplat")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat2_FakeSafe"]
+shape = SubResource("RectangleShape2D_plat2_body")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat2_FakeSafe"]
+offset_left = -55.0
+offset_top = -12.0
+offset_right = 55.0
+offset_bottom = 12.0
+texture = ExtResource("9_pruin")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="TriggerArea" type="Area2D" parent="Platforms/Plat2_FakeSafe"]
+position = Vector2(-25, -16)
+collision_layer = 0
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat2_FakeSafe/TriggerArea"]
+shape = SubResource("RectangleShape2D_plat2_trig")
+
+[node name="SpikesArea" type="Area2D" parent="Platforms/Plat2_FakeSafe"]
+position = Vector2(-25, -6)
+collision_layer = 4
+collision_mask = 1
+
+[node name="Sprite2D" type="Sprite2D" parent="Platforms/Plat2_FakeSafe/SpikesArea"]
+position = Vector2(0, 8)
+texture = ExtResource("10_sspr")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat2_FakeSafe/SpikesArea"]
+position = Vector2(0, -14)
+shape = SubResource("RectangleShape2D_plat2_spikes")
+
+[node name="Plat2_Rest" type="StaticBody2D" parent="Platforms"]
+position = Vector2(630, 460)
 collision_layer = 2
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat1_Rest"]
-shape = SubResource("RectangleShape2D_plat1_rest")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat2_Rest"]
+shape = SubResource("RectangleShape2D_plat2_rest")
 
-[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat1_Rest"]
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat2_Rest"]
 offset_left = -50.0
 offset_top = -40.0
 offset_right = 50.0
@@ -238,82 +302,20 @@ patch_margin_bottom = 4
 axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
-[node name="Plat2A_Collapsing" type="StaticBody2D" parent="Platforms"]
-position = Vector2(640, 420)
-collision_layer = 2
-collision_mask = 0
-script = ExtResource("19_cbrg")
-collapse_delay = 0.60
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat2A_Collapsing"]
-shape = SubResource("RectangleShape2D_plat2a_coll")
-
-[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat2A_Collapsing"]
-offset_left = -60.0
-offset_top = -12.0
-offset_right = 60.0
-offset_bottom = 12.0
-texture = ExtResource("9_pruin")
-patch_margin_left = 4
-patch_margin_top = 4
-patch_margin_right = 4
-patch_margin_bottom = 4
-axis_stretch_horizontal = 1
-axis_stretch_vertical = 1
-
-[node name="StepArea" type="Area2D" parent="Platforms/Plat2A_Collapsing"]
-collision_layer = 0
-collision_mask = 1
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat2A_Collapsing/StepArea"]
-position = Vector2(0, -12)
-shape = SubResource("RectangleShape2D_plat2a_step")
-
-[node name="Plat2B_Collapsing" type="StaticBody2D" parent="Platforms"]
-position = Vector2(790, 420)
-collision_layer = 2
-collision_mask = 0
-script = ExtResource("19_cbrg")
-collapse_delay = 0.65
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat2B_Collapsing"]
-shape = SubResource("RectangleShape2D_plat2b_coll")
-
-[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat2B_Collapsing"]
-offset_left = -50.0
-offset_top = -12.0
-offset_right = 50.0
-offset_bottom = 12.0
-texture = ExtResource("9_pruin")
-patch_margin_left = 4
-patch_margin_top = 4
-patch_margin_right = 4
-patch_margin_bottom = 4
-axis_stretch_horizontal = 1
-axis_stretch_vertical = 1
-
-[node name="StepArea" type="Area2D" parent="Platforms/Plat2B_Collapsing"]
-collision_layer = 0
-collision_mask = 1
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat2B_Collapsing/StepArea"]
-position = Vector2(0, -12)
-shape = SubResource("RectangleShape2D_plat2b_step")
-
 [node name="Plat3_Collapsing" type="StaticBody2D" parent="Platforms"]
-position = Vector2(970, 420)
+position = Vector2(740, 420)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("19_cbrg")
-collapse_delay = 0.45
+collapse_delay = 0.70
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat3_Collapsing"]
 shape = SubResource("RectangleShape2D_plat3_coll")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat3_Collapsing"]
-offset_left = -40.0
+offset_left = -50.0
 offset_top = -12.0
-offset_right = 40.0
+offset_right = 50.0
 offset_bottom = 12.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -331,18 +333,18 @@ collision_mask = 1
 position = Vector2(0, -12)
 shape = SubResource("RectangleShape2D_plat3_step")
 
-[node name="Plat3_Rest" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1070, 460)
+[node name="Plat4_Ground" type="StaticBody2D" parent="Platforms"]
+position = Vector2(880, 460)
 collision_layer = 2
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat3_Rest"]
-shape = SubResource("RectangleShape2D_plat3_rest")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat4_Ground"]
+shape = SubResource("RectangleShape2D_plat4_ground")
 
-[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat3_Rest"]
-offset_left = -50.0
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat4_Ground"]
+offset_left = -80.0
 offset_top = -40.0
-offset_right = 50.0
+offset_right = 80.0
 offset_bottom = 40.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -352,22 +354,20 @@ patch_margin_bottom = 4
 axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
-[node name="Bridge4A" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1175, 420)
+[node name="Plat4_Collapsing" type="StaticBody2D" parent="Platforms"]
+position = Vector2(990, 420)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("19_cbrg")
-collapse_delay = 0.50
-next_section_path = NodePath("../Bridge4B")
-next_section_cascade_delay = 0.18
+collapse_delay = 0.65
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Bridge4A"]
-shape = SubResource("RectangleShape2D_bridge_coll")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat4_Collapsing"]
+shape = SubResource("RectangleShape2D_plat4_coll")
 
-[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Bridge4A"]
-offset_left = -45.0
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat4_Collapsing"]
+offset_left = -50.0
 offset_top = -12.0
-offset_right = 45.0
+offset_right = 50.0
 offset_bottom = 12.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -377,90 +377,26 @@ patch_margin_bottom = 4
 axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
-[node name="StepArea" type="Area2D" parent="Platforms/Bridge4A"]
+[node name="StepArea" type="Area2D" parent="Platforms/Plat4_Collapsing"]
 collision_layer = 0
 collision_mask = 1
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Bridge4A/StepArea"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat4_Collapsing/StepArea"]
 position = Vector2(0, -12)
-shape = SubResource("RectangleShape2D_bridge_step")
+shape = SubResource("RectangleShape2D_plat4_step")
 
-[node name="Bridge4B" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1275, 420)
+[node name="SafeHighLedge" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1080, 400)
 collision_layer = 2
 collision_mask = 0
-script = ExtResource("19_cbrg")
-collapse_delay = 0.45
-next_section_path = NodePath("../Bridge4C")
-next_section_cascade_delay = 0.18
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Bridge4B"]
-shape = SubResource("RectangleShape2D_bridge_coll")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/SafeHighLedge"]
+shape = SubResource("RectangleShape2D_safe_high_ledge")
 
-[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Bridge4B"]
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/SafeHighLedge"]
 offset_left = -45.0
-offset_top = -12.0
-offset_right = 45.0
-offset_bottom = 12.0
-texture = ExtResource("9_pruin")
-patch_margin_left = 4
-patch_margin_top = 4
-patch_margin_right = 4
-patch_margin_bottom = 4
-axis_stretch_horizontal = 1
-axis_stretch_vertical = 1
-
-[node name="StepArea" type="Area2D" parent="Platforms/Bridge4B"]
-collision_layer = 0
-collision_mask = 1
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Bridge4B/StepArea"]
-position = Vector2(0, -12)
-shape = SubResource("RectangleShape2D_bridge_step")
-
-[node name="Bridge4C" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1375, 420)
-collision_layer = 2
-collision_mask = 0
-script = ExtResource("19_cbrg")
-collapse_delay = 0.40
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Bridge4C"]
-shape = SubResource("RectangleShape2D_bridge_coll")
-
-[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Bridge4C"]
-offset_left = -45.0
-offset_top = -12.0
-offset_right = 45.0
-offset_bottom = 12.0
-texture = ExtResource("9_pruin")
-patch_margin_left = 4
-patch_margin_top = 4
-patch_margin_right = 4
-patch_margin_bottom = 4
-axis_stretch_horizontal = 1
-axis_stretch_vertical = 1
-
-[node name="StepArea" type="Area2D" parent="Platforms/Bridge4C"]
-collision_layer = 0
-collision_mask = 1
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Bridge4C/StepArea"]
-position = Vector2(0, -12)
-shape = SubResource("RectangleShape2D_bridge_step")
-
-[node name="Plat4_Rest" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1485, 460)
-collision_layer = 2
-collision_mask = 0
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat4_Rest"]
-shape = SubResource("RectangleShape2D_plat4_rest")
-
-[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat4_Rest"]
-offset_left = -55.0
 offset_top = -40.0
-offset_right = 55.0
+offset_right = 45.0
 offset_bottom = 40.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -471,19 +407,19 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Plat5_Collapsing" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1650, 420)
+position = Vector2(1190, 420)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("19_cbrg")
-collapse_delay = 0.65
+collapse_delay = 0.75
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat5_Collapsing"]
 shape = SubResource("RectangleShape2D_plat5_coll")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat5_Collapsing"]
-offset_left = -70.0
+offset_left = -50.0
 offset_top = -12.0
-offset_right = 70.0
+offset_right = 50.0
 offset_bottom = 12.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -501,41 +437,20 @@ collision_mask = 1
 position = Vector2(0, -12)
 shape = SubResource("RectangleShape2D_plat5_step")
 
-[node name="Plat5_Rest" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1780, 460)
-collision_layer = 2
-collision_mask = 0
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat5_Rest"]
-shape = SubResource("RectangleShape2D_plat5_rest")
-
-[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat5_Rest"]
-offset_left = -50.0
-offset_top = -40.0
-offset_right = 50.0
-offset_bottom = 40.0
-texture = ExtResource("9_pruin")
-patch_margin_left = 4
-patch_margin_top = 4
-patch_margin_right = 4
-patch_margin_bottom = 4
-axis_stretch_horizontal = 1
-axis_stretch_vertical = 1
-
 [node name="Plat6_Collapsing" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1940, 420)
+position = Vector2(1370, 420)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("19_cbrg")
-collapse_delay = 0.75
+collapse_delay = 0.60
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat6_Collapsing"]
 shape = SubResource("RectangleShape2D_plat6_coll")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat6_Collapsing"]
-offset_left = -60.0
+offset_left = -40.0
 offset_top = -12.0
-offset_right = 60.0
+offset_right = 40.0
 offset_bottom = 12.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -554,7 +469,7 @@ position = Vector2(0, -12)
 shape = SubResource("RectangleShape2D_plat6_step")
 
 [node name="Plat6_Rest" type="StaticBody2D" parent="Platforms"]
-position = Vector2(2065, 460)
+position = Vector2(1480, 460)
 collision_layer = 2
 collision_mask = 0
 
@@ -574,20 +489,22 @@ patch_margin_bottom = 4
 axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
-[node name="Plat7A_Collapsing" type="StaticBody2D" parent="Platforms"]
-position = Vector2(2175, 420)
+[node name="Bridge7A" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1590, 420)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("19_cbrg")
 collapse_delay = 0.50
+next_section_path = NodePath("../Bridge7B")
+next_section_cascade_delay = 0.15
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat7A_Collapsing"]
-shape = SubResource("RectangleShape2D_plat7_coll")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Bridge7A"]
+shape = SubResource("RectangleShape2D_bridge7a_coll")
 
-[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat7A_Collapsing"]
-offset_left = -35.0
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Bridge7A"]
+offset_left = -40.0
 offset_top = -12.0
-offset_right = 35.0
+offset_right = 40.0
 offset_bottom = 12.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -597,28 +514,28 @@ patch_margin_bottom = 4
 axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
-[node name="StepArea" type="Area2D" parent="Platforms/Plat7A_Collapsing"]
+[node name="StepArea" type="Area2D" parent="Platforms/Bridge7A"]
 collision_layer = 0
 collision_mask = 1
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat7A_Collapsing/StepArea"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Bridge7A/StepArea"]
 position = Vector2(0, -12)
-shape = SubResource("RectangleShape2D_plat7_step")
+shape = SubResource("RectangleShape2D_bridge7a_step")
 
-[node name="Plat7B_Collapsing" type="StaticBody2D" parent="Platforms"]
-position = Vector2(2270, 395)
+[node name="Bridge7B" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1680, 420)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("19_cbrg")
-collapse_delay = 0.50
+collapse_delay = 0.45
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat7B_Collapsing"]
-shape = SubResource("RectangleShape2D_plat7_coll")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Bridge7B"]
+shape = SubResource("RectangleShape2D_bridge7b_coll")
 
-[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat7B_Collapsing"]
-offset_left = -35.0
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Bridge7B"]
+offset_left = -40.0
 offset_top = -12.0
-offset_right = 35.0
+offset_right = 40.0
 offset_bottom = 12.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -628,26 +545,26 @@ patch_margin_bottom = 4
 axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
-[node name="StepArea" type="Area2D" parent="Platforms/Plat7B_Collapsing"]
+[node name="StepArea" type="Area2D" parent="Platforms/Bridge7B"]
 collision_layer = 0
 collision_mask = 1
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat7B_Collapsing/StepArea"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Bridge7B/StepArea"]
 position = Vector2(0, -12)
-shape = SubResource("RectangleShape2D_plat7_step")
+shape = SubResource("RectangleShape2D_bridge7b_step")
 
-[node name="Plat7_Rest" type="StaticBody2D" parent="Platforms"]
-position = Vector2(2370, 435)
+[node name="Plat8_Ruin" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1800, 460)
 collision_layer = 2
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat7_Rest"]
-shape = SubResource("RectangleShape2D_plat7_rest")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat8_Ruin"]
+shape = SubResource("RectangleShape2D_plat8_ruin")
 
-[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat7_Rest"]
-offset_left = -50.0
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat8_Ruin"]
+offset_left = -65.0
 offset_top = -40.0
-offset_right = 50.0
+offset_right = 65.0
 offset_bottom = 40.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -657,70 +574,8 @@ patch_margin_bottom = 4
 axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
-[node name="Plat8A_Collapsing" type="StaticBody2D" parent="Platforms"]
-position = Vector2(2480, 420)
-collision_layer = 2
-collision_mask = 0
-script = ExtResource("19_cbrg")
-collapse_delay = 0.85
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat8A_Collapsing"]
-shape = SubResource("RectangleShape2D_plat8_coll")
-
-[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat8A_Collapsing"]
-offset_left = -45.0
-offset_top = -12.0
-offset_right = 45.0
-offset_bottom = 12.0
-texture = ExtResource("9_pruin")
-patch_margin_left = 4
-patch_margin_top = 4
-patch_margin_right = 4
-patch_margin_bottom = 4
-axis_stretch_horizontal = 1
-axis_stretch_vertical = 1
-
-[node name="StepArea" type="Area2D" parent="Platforms/Plat8A_Collapsing"]
-collision_layer = 0
-collision_mask = 1
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat8A_Collapsing/StepArea"]
-position = Vector2(0, -12)
-shape = SubResource("RectangleShape2D_plat8_step")
-
-[node name="Plat8B_Collapsing" type="StaticBody2D" parent="Platforms"]
-position = Vector2(2580, 420)
-collision_layer = 2
-collision_mask = 0
-script = ExtResource("19_cbrg")
-collapse_delay = 0.35
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat8B_Collapsing"]
-shape = SubResource("RectangleShape2D_plat8_coll")
-
-[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat8B_Collapsing"]
-offset_left = -45.0
-offset_top = -12.0
-offset_right = 45.0
-offset_bottom = 12.0
-texture = ExtResource("9_pruin")
-patch_margin_left = 4
-patch_margin_top = 4
-patch_margin_right = 4
-patch_margin_bottom = 4
-axis_stretch_horizontal = 1
-axis_stretch_vertical = 1
-
-[node name="StepArea" type="Area2D" parent="Platforms/Plat8B_Collapsing"]
-collision_layer = 0
-collision_mask = 1
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat8B_Collapsing/StepArea"]
-position = Vector2(0, -12)
-shape = SubResource("RectangleShape2D_plat8_step")
-
 [node name="Plat8_Rest" type="StaticBody2D" parent="Platforms"]
-position = Vector2(2690, 460)
+position = Vector2(1940, 460)
 collision_layer = 2
 collision_mask = 0
 
@@ -740,20 +595,19 @@ patch_margin_bottom = 4
 axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
-[node name="Plat9A_Collapsing" type="StaticBody2D" parent="Platforms"]
-position = Vector2(2800, 420)
+[node name="Plat9A_FakeSafe" type="StaticBody2D" parent="Platforms"]
+position = Vector2(2070, 420)
 collision_layer = 2
 collision_mask = 0
-script = ExtResource("19_cbrg")
-collapse_delay = 0.55
+script = ExtResource("20_fplat")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat9A_Collapsing"]
-shape = SubResource("RectangleShape2D_plat9_coll")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat9A_FakeSafe"]
+shape = SubResource("RectangleShape2D_plat9a_body")
 
-[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat9A_Collapsing"]
-offset_left = -40.0
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat9A_FakeSafe"]
+offset_left = -50.0
 offset_top = -12.0
-offset_right = 40.0
+offset_right = 50.0
 offset_bottom = 12.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -763,28 +617,41 @@ patch_margin_bottom = 4
 axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
-[node name="StepArea" type="Area2D" parent="Platforms/Plat9A_Collapsing"]
+[node name="TriggerArea" type="Area2D" parent="Platforms/Plat9A_FakeSafe"]
+position = Vector2(0, -16)
 collision_layer = 0
 collision_mask = 1
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat9A_Collapsing/StepArea"]
-position = Vector2(0, -12)
-shape = SubResource("RectangleShape2D_plat9_step")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat9A_FakeSafe/TriggerArea"]
+shape = SubResource("RectangleShape2D_plat9a_trig")
+
+[node name="SpikesArea" type="Area2D" parent="Platforms/Plat9A_FakeSafe"]
+position = Vector2(0, -6)
+collision_layer = 4
+collision_mask = 1
+
+[node name="Sprite2D" type="Sprite2D" parent="Platforms/Plat9A_FakeSafe/SpikesArea"]
+position = Vector2(0, 8)
+texture = ExtResource("10_sspr")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat9A_FakeSafe/SpikesArea"]
+position = Vector2(0, -14)
+shape = SubResource("RectangleShape2D_plat9a_spikes")
 
 [node name="Plat9B_Collapsing" type="StaticBody2D" parent="Platforms"]
-position = Vector2(2930, 420)
+position = Vector2(2190, 420)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("19_cbrg")
-collapse_delay = 0.55
+collapse_delay = 0.60
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat9B_Collapsing"]
-shape = SubResource("RectangleShape2D_plat9_coll")
+shape = SubResource("RectangleShape2D_plat9b_coll")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat9B_Collapsing"]
-offset_left = -40.0
+offset_left = -45.0
 offset_top = -12.0
-offset_right = 40.0
+offset_right = 45.0
 offset_bottom = 12.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -800,10 +667,10 @@ collision_mask = 1
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat9B_Collapsing/StepArea"]
 position = Vector2(0, -12)
-shape = SubResource("RectangleShape2D_plat9_step")
+shape = SubResource("RectangleShape2D_plat9b_step")
 
 [node name="Plat9_Rest" type="StaticBody2D" parent="Platforms"]
-position = Vector2(3030, 460)
+position = Vector2(2320, 460)
 collision_layer = 2
 collision_mask = 0
 
@@ -811,9 +678,9 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_plat9_rest")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat9_Rest"]
-offset_left = -50.0
+offset_left = -55.0
 offset_top = -40.0
-offset_right = 50.0
+offset_right = 55.0
 offset_bottom = 40.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -824,19 +691,19 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Plat10A_Collapsing" type="StaticBody2D" parent="Platforms"]
-position = Vector2(3140, 420)
+position = Vector2(2450, 420)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("19_cbrg")
-collapse_delay = 0.50
+collapse_delay = 0.55
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat10A_Collapsing"]
-shape = SubResource("RectangleShape2D_plat10_coll")
+shape = SubResource("RectangleShape2D_plat10a_coll")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat10A_Collapsing"]
-offset_left = -42.5
+offset_left = -40.0
 offset_top = -12.0
-offset_right = 42.5
+offset_right = 40.0
 offset_bottom = 12.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -852,22 +719,22 @@ collision_mask = 1
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat10A_Collapsing/StepArea"]
 position = Vector2(0, -12)
-shape = SubResource("RectangleShape2D_plat10_step")
+shape = SubResource("RectangleShape2D_plat10a_step")
 
 [node name="Plat10B_Collapsing" type="StaticBody2D" parent="Platforms"]
-position = Vector2(3280, 420)
+position = Vector2(2630, 420)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("19_cbrg")
-collapse_delay = 0.50
+collapse_delay = 0.55
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat10B_Collapsing"]
-shape = SubResource("RectangleShape2D_plat10_coll")
+shape = SubResource("RectangleShape2D_plat10b_coll")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat10B_Collapsing"]
-offset_left = -42.5
+offset_left = -40.0
 offset_top = -12.0
-offset_right = 42.5
+offset_right = 40.0
 offset_bottom = 12.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -883,20 +750,20 @@ collision_mask = 1
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat10B_Collapsing/StepArea"]
 position = Vector2(0, -12)
-shape = SubResource("RectangleShape2D_plat10_step")
+shape = SubResource("RectangleShape2D_plat10b_step")
 
-[node name="Plat10_Rest" type="StaticBody2D" parent="Platforms"]
-position = Vector2(3380, 460)
+[node name="PlatformFakeExit" type="StaticBody2D" parent="Platforms"]
+position = Vector2(2800, 460)
 collision_layer = 2
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat10_Rest"]
-shape = SubResource("RectangleShape2D_plat10_rest")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/PlatformFakeExit"]
+shape = SubResource("RectangleShape2D_plat_fake_exit")
 
-[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat10_Rest"]
-offset_left = -45.0
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/PlatformFakeExit"]
+offset_left = -75.0
 offset_top = -40.0
-offset_right = 45.0
+offset_right = 75.0
 offset_bottom = 40.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -906,19 +773,17 @@ patch_margin_bottom = 4
 axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
-[node name="FinaleBridge1" type="StaticBody2D" parent="Platforms"]
-position = Vector2(3475, 420)
+[node name="PlatFinale_Collapsing" type="StaticBody2D" parent="Platforms"]
+position = Vector2(2940, 420)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("19_cbrg")
-collapse_delay = 0.55
-next_section_path = NodePath("../FinaleBridge2")
-next_section_cascade_delay = 0.05
+collapse_delay = 0.50
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/FinaleBridge1"]
-shape = SubResource("RectangleShape2D_finale_bridge_coll")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/PlatFinale_Collapsing"]
+shape = SubResource("RectangleShape2D_plat_finale_coll")
 
-[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/FinaleBridge1"]
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/PlatFinale_Collapsing"]
 offset_left = -32.5
 offset_top = -12.0
 offset_right = 32.5
@@ -931,88 +796,26 @@ patch_margin_bottom = 4
 axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
-[node name="StepArea" type="Area2D" parent="Platforms/FinaleBridge1"]
+[node name="StepArea" type="Area2D" parent="Platforms/PlatFinale_Collapsing"]
 collision_layer = 0
 collision_mask = 1
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/FinaleBridge1/StepArea"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/PlatFinale_Collapsing/StepArea"]
 position = Vector2(0, -12)
-shape = SubResource("RectangleShape2D_finale_bridge_step")
+shape = SubResource("RectangleShape2D_plat_finale_step")
 
-[node name="FinaleBridge2" type="StaticBody2D" parent="Platforms"]
-position = Vector2(3550, 420)
-collision_layer = 2
-collision_mask = 0
-script = ExtResource("19_cbrg")
-collapse_delay = 0.25
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/FinaleBridge2"]
-shape = SubResource("RectangleShape2D_finale_bridge_coll")
-
-[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/FinaleBridge2"]
-offset_left = -32.5
-offset_top = -12.0
-offset_right = 32.5
-offset_bottom = 12.0
-texture = ExtResource("9_pruin")
-patch_margin_left = 4
-patch_margin_top = 4
-patch_margin_right = 4
-patch_margin_bottom = 4
-axis_stretch_horizontal = 1
-axis_stretch_vertical = 1
-
-[node name="StepArea" type="Area2D" parent="Platforms/FinaleBridge2"]
-collision_layer = 0
-collision_mask = 1
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/FinaleBridge2/StepArea"]
-position = Vector2(0, -12)
-shape = SubResource("RectangleShape2D_finale_bridge_step")
-
-[node name="FinaleBridge3" type="StaticBody2D" parent="Platforms"]
-position = Vector2(3625, 420)
-collision_layer = 2
-collision_mask = 0
-script = ExtResource("19_cbrg")
-collapse_delay = 0.55
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/FinaleBridge3"]
-shape = SubResource("RectangleShape2D_finale_bridge_coll")
-
-[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/FinaleBridge3"]
-offset_left = -32.5
-offset_top = -12.0
-offset_right = 32.5
-offset_bottom = 12.0
-texture = ExtResource("9_pruin")
-patch_margin_left = 4
-patch_margin_top = 4
-patch_margin_right = 4
-patch_margin_bottom = 4
-axis_stretch_horizontal = 1
-axis_stretch_vertical = 1
-
-[node name="StepArea" type="Area2D" parent="Platforms/FinaleBridge3"]
-collision_layer = 0
-collision_mask = 1
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/FinaleBridge3/StepArea"]
-position = Vector2(0, -12)
-shape = SubResource("RectangleShape2D_finale_bridge_step")
-
-[node name="PlatformExit" type="StaticBody2D" parent="Platforms"]
-position = Vector2(3730, 460)
+[node name="PlatformRealExit" type="StaticBody2D" parent="Platforms"]
+position = Vector2(3030, 420)
 collision_layer = 2
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/PlatformExit"]
-shape = SubResource("RectangleShape2D_platexit")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/PlatformRealExit"]
+shape = SubResource("RectangleShape2D_plat_real_exit")
 
-[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/PlatformExit"]
-offset_left = -70.0
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/PlatformRealExit"]
+offset_left = -45.0
 offset_top = -40.0
-offset_right = 70.0
+offset_right = 45.0
 offset_bottom = 40.0
 texture = ExtResource("9_pruin")
 patch_margin_left = 4
@@ -1031,7 +834,7 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_wall")
 
 [node name="WallRight" type="StaticBody2D" parent="Platforms"]
-position = Vector2(3820, 300)
+position = Vector2(3180, 300)
 collision_layer = 2
 collision_mask = 0
 
@@ -1040,68 +843,164 @@ shape = SubResource("RectangleShape2D_wall")
 
 [node name="Traps" type="Node2D" parent="."]
 
-[node name="Crusher6" parent="Traps" instance=ExtResource("5_crush")]
-position = Vector2(1940, 180)
-travel_distance = 150.0
+[node name="MovingWall1" type="AnimatableBody2D" parent="Traps"]
+position = Vector2(880, 390)
+collision_layer = 2
+collision_mask = 1
+script = ExtResource("21_mwall")
+move_distance = 110.0
+move_speed = 85.0
+patrol = true
+pause_at_ends = 0.5
+
+[node name="Sprite2D" type="Sprite2D" parent="Traps/MovingWall1"]
+texture = ExtResource("22_mwtex")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Traps/MovingWall1"]
+shape = SubResource("RectangleShape2D_mwall1_shape")
+
+[node name="Crusher5" parent="Traps" instance=ExtResource("5_crush")]
+position = Vector2(1190, 180)
+travel_distance = 140.0
 trigger_delay = 0.15
 slam_duration = 0.15
-active_duration = 0.70
-retract_duration = 0.70
+active_duration = 0.65
+retract_duration = 0.65
+
+[node name="InfernoGate1" parent="Traps" instance=ExtResource("23_infg")]
+position = Vector2(1290, 360)
+active_duration = 1.2
+safe_duration = 1.2
+
+[node name="Crusher7A" parent="Traps" instance=ExtResource("5_crush")]
+position = Vector2(1590, 180)
+travel_distance = 140.0
+trigger_delay = 0.15
+slam_duration = 0.15
+active_duration = 0.65
+retract_duration = 0.65
+auto_cycle = true
+auto_cycle_offset = 0.0
+
+[node name="Crusher8" parent="Traps" instance=ExtResource("5_crush")]
+position = Vector2(1835, 180)
+travel_distance = 140.0
+trigger_delay = 0.15
+slam_duration = 0.15
+active_duration = 0.65
+retract_duration = 0.65
+auto_cycle = true
+auto_cycle_offset = 0.75
+
+[node name="MovingWall9" type="AnimatableBody2D" parent="Traps"]
+position = Vector2(2190, 390)
+collision_layer = 2
+collision_mask = 1
+script = ExtResource("21_mwall")
+move_distance = 80.0
+move_speed = 80.0
+patrol = true
+pause_at_ends = 0.4
+
+[node name="Sprite2D" type="Sprite2D" parent="Traps/MovingWall9"]
+texture = ExtResource("22_mwtex")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Traps/MovingWall9"]
+shape = SubResource("RectangleShape2D_mwall9_shape")
 
 [node name="Crusher10" parent="Traps" instance=ExtResource("5_crush")]
-position = Vector2(3210, 180)
-travel_distance = 150.0
+position = Vector2(2540, 180)
+travel_distance = 140.0
 trigger_delay = 0.15
 slam_duration = 0.15
-active_duration = 0.70
-retract_duration = 0.70
+active_duration = 0.65
+retract_duration = 0.65
+
+[node name="InfernoGate10" parent="Traps" instance=ExtResource("23_infg")]
+position = Vector2(2540, 360)
+active_duration = 1.2
+safe_duration = 1.2
+
+[node name="FakeExitGate" type="Area2D" parent="Traps"]
+position = Vector2(2840, 400)
+collision_layer = 4
+collision_mask = 1
+script = ExtResource("24_fexit")
+real_exit_path = NodePath("../../ExitGate")
+
+[node name="Sprite2D" type="Sprite2D" parent="Traps/FakeExitGate"]
+texture = ExtResource("25_exloc")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Traps/FakeExitGate"]
+shape = SubResource("RectangleShape2D_fakeshape")
+
+[node name="StatusLabel" type="Label" parent="Traps/FakeExitGate"]
+offset_left = -70.0
+offset_top = -42.0
+offset_right = 70.0
+offset_bottom = -26.0
+theme_override_colors/font_color = Color(1, 0.35, 0.35, 1)
+theme_override_font_sizes/font_size = 10
+text = "COINS REQUIRED"
+horizontal_alignment = 1
+
+[node name="ToastLabel" type="Label" parent="Traps/FakeExitGate"]
+offset_left = -110.0
+offset_top = -62.0
+offset_right = 110.0
+offset_bottom = -44.0
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 12
+text = ""
+horizontal_alignment = 1
 
 [node name="Hazards" type="Node2D" parent="."]
 
-[node name="FloorSpike5" parent="Hazards" instance=ExtResource("18_spik")]
-position = Vector2(1690, 402)
-
-[node name="AirSpikes9" parent="Hazards" instance=ExtResource("18_spik")]
-position = Vector2(2865, 320)
+[node name="AirSpikes3" parent="Hazards" instance=ExtResource("18_spik")]
+position = Vector2(810, 310)
 rotation = 3.14159
+
+[node name="FloorSpike8" parent="Hazards" instance=ExtResource("18_spik")]
+position = Vector2(1835, 412)
 
 [node name="Coins" type="Node2D" parent="."]
 
 [node name="Coin1" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(360, 370)
+position = Vector2(350, 365)
 
 [node name="Coin2" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(640, 370)
+position = Vector2(515, 365)
 
 [node name="Coin3" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(900, 335)
+position = Vector2(740, 365)
 
 [node name="Coin4" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1275, 370)
+position = Vector2(990, 365)
 
 [node name="Coin5" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1615, 370)
+position = Vector2(1190, 365)
 
 [node name="Coin6" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1940, 370)
+position = Vector2(1370, 365)
 
 [node name="Coin7" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(2220, 345)
+position = Vector2(1680, 365)
 
 [node name="Coin8" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(2580, 370)
+position = Vector2(1760, 365)
 
 [node name="Coin9" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(2865, 385)
+position = Vector2(2070, 340)
 
 [node name="Coin10" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(3210, 370)
+position = Vector2(2540, 365)
 
 [node name="ExitGate" parent="." instance=ExtResource("4_exit")]
-position = Vector2(3730, 400)
+position = Vector2(3030, 360)
+hidden_initially = true
 
 [node name="PitHazardArea" type="Area2D" parent="."]
-position = Vector2(1900, 560)
+position = Vector2(1600, 560)
 collision_layer = 4
 collision_mask = 1
 
@@ -1131,7 +1030,7 @@ mouse_filter = 2
 [node name="LevelName" type="Label" parent="HUD/MarginContainer/TopBar"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.2, 0.4, 1)
-text = "LEVEL 5: THE LAST LAUGH"
+text = "LEVEL 5: THE PERFECT TRAP"
 
 [node name="Spacer1" type="Control" parent="HUD/MarginContainer/TopBar"]
 layout_mode = 2

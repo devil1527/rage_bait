@@ -8,6 +8,7 @@ const FakeExitGateClass = preload("res://scripts/coin_hell/fake_exit_gate.gd")
 const WallSpikeTrapClass = preload("res://scripts/coin_hell/wall_spike_trap.gd")
 const InfernoGateClass = preload("res://scripts/coin_hell/inferno_gate.gd")
 const CeilingCrusherClass = preload("res://scripts/coin_hell/ceiling_crusher.gd")
+const FakeSafePlatformClass = preload("res://scripts/coin_hell/fake_safe_platform.gd")
 
 var passed_count: int = 0
 var failed_count: int = 0
@@ -113,7 +114,7 @@ func test_game_manager_level_definitions() -> void:
 	assert_true(GameManager.can_play_level(4), "Level 4 is playable")
 
 	var lvl5: Dictionary = GameManager.get_level_info(5)
-	assert_eq(lvl5.get("name"), "The Last Laugh", "Level 5 name is 'The Last Laugh'")
+	assert_eq(lvl5.get("name"), "The Perfect Trap", "Level 5 name is 'The Perfect Trap'")
 	assert_true(lvl5.get("implemented"), "Level 5 is marked implemented")
 	assert_true(GameManager.can_play_level(5), "Level 5 is playable")
 	
@@ -1248,7 +1249,7 @@ func test_level_4_gameplay_mechanics() -> void:
 	lvl.queue_free()
 
 func test_level_5_gameplay_mechanics() -> void:
-	print("\n--- TEST: Level 5 Gameplay Mechanics (The Last Laugh Finale) ---")
+	print("\n--- TEST: Level 5 Gameplay Mechanics (The Perfect Trap Redesign) ---")
 	var lvl5_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_5.tscn")
 	assert_true(lvl5_scene != null, "Level 5 scene loads successfully")
 	var lvl = lvl5_scene.instantiate()
@@ -1265,6 +1266,7 @@ func test_level_5_gameplay_mechanics() -> void:
 	assert_eq(coins.get_child_count(), 10, "Test 1: Level 5 contains exactly 10 coins")
 	assert_true(exit_gate != null, "ExitGate exists in Level 5")
 	assert_true(not exit_gate._is_open, "ExitGate starts locked requiring coins")
+	assert_true(not exit_gate.visible, "Real ExitGate is initially hidden pending deception")
 
 	# Validate safe spawn & camera
 	assert_eq(player.position.x, 100.0, "Player spawns safely at X=100")
@@ -1273,34 +1275,8 @@ func test_level_5_gameplay_mechanics() -> void:
 	assert_eq(cam.limit_bottom, 600, "Camera2D limit_bottom is 600")
 	assert_eq(cam.offset.y, -45.0, "Camera2D negative offset ensures landing visibility")
 
-	# Validate Collapsing Platform Mechanics & State Machine
-	print("  Validating Collapsing Platform 1 Mechanics...")
-	var plat1 = platforms.get_node("Plat1_Collapsing")
-	assert_true(plat1 is CrumblingBridgeSectionClass, "Plat1 uses CrumblingBridgeSection class")
-	assert_true(not plat1._is_triggered, "Plat1 starts untriggered")
-	assert_true(not plat1._is_falling, "Plat1 starts not falling")
-	assert_true(not plat1.collision_shape.disabled, "Plat1 collision shape is enabled initially")
-	assert_eq(plat1.collapse_delay, 0.85, "Plat1 has generous 0.85s delay (The Invitation)")
-
-	# Trigger collapse
-	plat1.trigger_collapse()
-	assert_true(plat1._is_triggered, "Plat1 is marked triggered after trigger_collapse()")
-	assert_eq(plat1._timer, 0.85, "Plat1 timer matches collapse_delay")
-
-	# Advance physics to collapse
-	plat1._physics_process(0.85)
-	assert_true(plat1._is_falling, "Plat1 starts falling after collapse delay expires")
-	assert_true(plat1.collision_shape.disabled, "Plat1 collision shape is disabled immediately upon collapse")
-
-	# Reset platform
-	plat1.reset()
-	assert_true(not plat1._is_triggered, "Plat1 is reset to untriggered state")
-	assert_true(not plat1._is_falling, "Plat1 is reset to not falling")
-	assert_true(not plat1.collision_shape.disabled, "Plat1 collision shape re-enabled on reset")
-	assert_eq(plat1.global_position, plat1._initial_pos, "Plat1 position restored to initial position")
-
-	# Validate all 10 distinct Coin Encounters
-	print("  Validating 10 Distinct Coin Encounters in Level 5...")
+	# Validate all 10 distinct Coin Encounters & Trap Combinations
+	print("  Validating 10 Distinct Coin Encounters & Trap Combinations in Level 5...")
 	var c1 = coins.get_node("Coin1")
 	var c2 = coins.get_node("Coin2")
 	var c3 = coins.get_node("Coin3")
@@ -1315,99 +1291,100 @@ func test_level_5_gameplay_mechanics() -> void:
 	assert_true(c1 != null and c2 != null and c3 != null and c4 != null and c5 != null, "Coins 1 to 5 exist")
 	assert_true(c6 != null and c7 != null and c8 != null and c9 != null and c10 != null, "Coins 6 to 10 exist")
 
-	# Coin 1: The Invitation
-	assert_eq(c1.position, Vector2(360, 370), "Coin 1 is positioned at X=360, Y=370 above Plat1")
+	# Coins 1-2: Combination of Collapsing Platform + Fake Safe Pop-up Spikes
+	print("  Validating Encounter 1-2 (Collapsing + Pop-Up Spikes)...")
+	var plat1 = platforms.get_node("Plat1_Collapsing")
+	var plat2 = platforms.get_node("Plat2_FakeSafe")
+	assert_true(plat1 is CrumblingBridgeSectionClass, "Plat1 uses CrumblingBridgeSection")
+	assert_true(plat2 is FakeSafePlatformClass, "Plat2 uses FakeSafePlatform")
+	assert_eq(c1.position, Vector2(350, 365), "Coin 1 is positioned above Plat1")
+	assert_eq(c2.position, Vector2(515, 365), "Coin 2 is positioned above safe back half of Plat2")
+	assert_true(not plat2.spikes_sprite.visible, "Plat2 spikes are concealed initially")
+	plat2.trigger_trap()
+	assert_true(plat2._active_spikes, "Plat2 spikes pop up on trigger")
+	assert_true(plat2.spikes_sprite.visible, "Plat2 spikes become visible")
 
-	# Coin 2: No Standing Still
-	var plat2a = platforms.get_node("Plat2A_Collapsing")
-	var plat2b = platforms.get_node("Plat2B_Collapsing")
-	assert_eq(plat2a.collapse_delay, 0.60, "Plat2A has 0.60s collapse delay")
-	assert_eq(plat2b.collapse_delay, 0.65, "Plat2B forward platform has 0.65s delay")
-	assert_eq(c2.position, Vector2(640, 370), "Coin 2 placed over Plat2A requiring immediate forward planning")
-
-	# Coin 3: The Greedy Jump
+	# Coins 3-4: Moving Wall + Collapsing Platforms + Overhead Air Spikes
+	print("  Validating Encounter 3-4 (Moving Wall + Collapsing + Air Spikes)...")
 	var plat3 = platforms.get_node("Plat3_Collapsing")
-	assert_eq(c3.position, Vector2(900, 335), "Coin 3 suspended in mid-air (Y=335) for high leap")
-	assert_eq(plat3.collapse_delay, 0.45, "Plat3 landing ledge collapses quickly (0.45s)")
-	assert_eq(plat3.collision_shape.shape.size.x, 80.0, "Plat3 is a narrow landing target (80px)")
+	var mwall1 = traps.get_node("MovingWall1")
+	var air_spikes3 = hazards.get_node("AirSpikes3")
+	var plat4 = platforms.get_node("Plat4_Collapsing")
+	var safe_high_ledge = platforms.get_node("SafeHighLedge")
+	assert_true(mwall1 is MovingWallClass, "MovingWall1 uses MovingWall")
+	assert_eq(c3.position, Vector2(740, 365), "Coin 3 is positioned above Plat3")
+	assert_eq(c4.position, Vector2(990, 365), "Coin 4 is positioned above Plat4")
+	assert_true(air_spikes3.position.y < c3.position.y, "AirSpikes3 overhead (Y=310) constrains jump height over MovingWall1")
+	assert_true(safe_high_ledge.position.y < plat4.position.y, "SafeHighLedge is elevated safe landing after Coin 4")
 
-	# Coin 4: The Broken Bridge
-	var br4a = platforms.get_node("Bridge4A")
-	var br4b = platforms.get_node("Bridge4B")
-	var br4c = platforms.get_node("Bridge4C")
-	assert_eq(br4a.next_section_path, NodePath("../Bridge4B"), "Bridge4A cascades to Bridge4B")
-	assert_eq(br4b.next_section_path, NodePath("../Bridge4C"), "Bridge4B cascades to Bridge4C")
-	assert_eq(c4.position, Vector2(1275, 370), "Coin 4 positioned on Bridge4B within the cascading bridge")
-
-	# Coin 5: The Wrong Landing
+	# Coins 5-6: Ceiling Crusher + Collapsing Platform + Inferno Gate
+	print("  Validating Encounter 5-6 (Crusher + Collapsing + Inferno Gate)...")
 	var plat5 = platforms.get_node("Plat5_Collapsing")
-	var fspike5 = hazards.get_node("FloorSpike5")
-	assert_true(fspike5 != null, "FloorSpike5 hazard exists")
-	assert_eq(c5.position, Vector2(1615, 370), "Coin 5 placed over safe left pocket of Plat5")
-	assert_true(fspike5.position.x > c5.position.x, "FloorSpike5 (X=1690) guards right edge of Plat5 (X=1650) against careless landings")
-
-	# Coin 6: The Crusher Crossing
+	var cr5 = traps.get_node("Crusher5")
+	var inf1 = traps.get_node("InfernoGate1")
 	var plat6 = platforms.get_node("Plat6_Collapsing")
-	var cr6 = traps.get_node("Crusher6")
-	assert_true(cr6 != null, "Crusher6 exists above Coin 6")
-	assert_eq(c6.position, Vector2(1940, 370), "Coin 6 placed beneath Crusher6 on collapsing Plat6")
-	assert_eq(plat6.collapse_delay, 0.75, "Plat6 has 0.75s collapse delay requiring timing both hazards")
+	assert_true(cr5 is CeilingCrusherClass, "Crusher5 uses CeilingCrusher")
+	assert_true(inf1 is InfernoGateClass, "InfernoGate1 uses InfernoGate")
+	assert_eq(c5.position, Vector2(1190, 365), "Coin 5 is positioned directly under Crusher5 on Plat5")
+	assert_eq(c6.position, Vector2(1370, 365), "Coin 6 is positioned past InfernoGate1 on Plat6")
+	assert_true(cr5.position.x < inf1.position.x and inf1.position.x < plat6.position.x, "Encounter 5-6 sequences Crusher5 -> InfernoGate1 -> Plat6")
 
-	# Coin 7: The Commitment
-	var plat7a = platforms.get_node("Plat7A_Collapsing")
-	var plat7b = platforms.get_node("Plat7B_Collapsing")
-	assert_eq(c7.position, Vector2(2220, 345), "Coin 7 placed between narrow stepping stones 7A and 7B")
-	assert_eq(plat7a.collapse_delay, 0.50, "Plat7A has 0.50s delay")
-	assert_eq(plat7b.collapse_delay, 0.50, "Plat7B has 0.50s delay")
+	# Coins 7-8: Alternating Dual Crushers + Cascading Bridge + Floor Spikes
+	print("  Validating Encounter 7-8 (Alternating Crushers + Cascading + Spikes)...")
+	var br7a = platforms.get_node("Bridge7A")
+	var br7b = platforms.get_node("Bridge7B")
+	var cr7a = traps.get_node("Crusher7A")
+	var cr8 = traps.get_node("Crusher8")
+	var fspike8 = hazards.get_node("FloorSpike8")
+	var plat8 = platforms.get_node("Plat8_Ruin")
+	assert_eq(br7a.next_section_path, NodePath("../Bridge7B"), "Bridge7A cascades into Bridge7B")
+	assert_true(cr7a.auto_cycle and cr8.auto_cycle, "Crushers 7A and 8 auto-cycle with offset timing")
+	assert_eq(c7.position, Vector2(1680, 365), "Coin 7 is positioned on Bridge7B under Crusher7A zone")
+	assert_eq(c8.position, Vector2(1760, 365), "Coin 8 is positioned in safe front pocket of Plat8_Ruin")
+	assert_true(fspike8.position.x > c8.position.x, "FloorSpike8 guards back half of Plat8_Ruin under Crusher8 slam")
 
-	# Coin 8: The False Rhythm
-	var plat8a = platforms.get_node("Plat8A_Collapsing")
-	var plat8b = platforms.get_node("Plat8B_Collapsing")
-	assert_eq(plat8a.collapse_delay, 0.85, "Plat8A has slow 0.85s delay lulling the player")
-	assert_eq(plat8b.collapse_delay, 0.35, "Plat8B has fast 0.35s delay punishing repeated rhythm")
-	assert_eq(c8.position, Vector2(2580, 370), "Coin 8 placed on fast Plat8B")
-
-	# Coin 9: The Last Mistake
-	var plat9a = platforms.get_node("Plat9A_Collapsing")
+	# Coin 9: Pop-Up Spikes + Moving Wall + Collapsing Ledge
+	print("  Validating Encounter 9 (Pop-Up Spikes + Moving Wall + Collapsing)...")
+	var plat9a = platforms.get_node("Plat9A_FakeSafe")
+	var mwall9 = traps.get_node("MovingWall9")
 	var plat9b = platforms.get_node("Plat9B_Collapsing")
-	var air_spikes9 = hazards.get_node("AirSpikes9")
-	assert_true(air_spikes9 != null, "AirSpikes9 exists above Coin 9")
-	assert_eq(air_spikes9.position.y, 320.0, "AirSpikes9 placed overhead at Y=320")
-	assert_eq(c9.position, Vector2(2865, 385), "Coin 9 placed low at Y=385 beneath air spikes")
+	assert_true(plat9a is FakeSafePlatformClass, "Plat9A uses FakeSafePlatform")
+	assert_true(mwall9 is MovingWallClass, "MovingWall9 uses MovingWall")
+	assert_eq(c9.position, Vector2(2070, 340), "Coin 9 suspended above Plat9A requiring leap-over")
 
-	# Coin 10: The Last Laugh (World 1 Climax Exam)
+	# Coin 10 & Finale: Crusher + Inferno Gate + Dual Collapsing + Fake Exit Deception
+	print("  Validating Encounter 10 & Finale Deception...")
 	var plat10a = platforms.get_node("Plat10A_Collapsing")
 	var plat10b = platforms.get_node("Plat10B_Collapsing")
 	var cr10 = traps.get_node("Crusher10")
-	assert_true(cr10 != null, "Crusher10 exists at climax encounter")
-	assert_eq(c10.position, Vector2(3210, 370), "Coin 10 centered under Crusher10 between dual collapsing platforms 10A and 10B")
+	var inf10 = traps.get_node("InfernoGate10")
+	var fake_exit = traps.get_node("FakeExitGate")
+	var plat_finale = platforms.get_node("PlatFinale_Collapsing")
+	assert_true(cr10 is CeilingCrusherClass, "Crusher10 uses CeilingCrusher")
+	assert_true(inf10 is InfernoGateClass, "InfernoGate10 uses InfernoGate")
+	assert_true(fake_exit is FakeExitGateClass, "FakeExitGate uses FakeExitGate")
+	assert_eq(c10.position, Vector2(2540, 365), "Coin 10 centered between Plat10A and Plat10B under Crusher10/Inferno10")
 
-	# Validate Signature Finale Sequence
-	print("  Validating Signature Finale Sequence...")
-	var fbr1 = platforms.get_node("FinaleBridge1")
-	var fbr2 = platforms.get_node("FinaleBridge2")
-	var fbr3 = platforms.get_node("FinaleBridge3")
-	assert_true(fbr1 != null and fbr2 != null and fbr3 != null, "Finale bridge sections 1, 2, 3 exist")
-	assert_eq(fbr1.next_section_path, NodePath("../FinaleBridge2"), "FinaleBridge1 cascades to FinaleBridge2")
-	assert_eq(fbr1.next_section_cascade_delay, 0.05, "FinaleBridge1 triggers FinaleBridge2 with instant 0.05s cascade")
-	assert_eq(fbr2.collapse_delay, 0.25, "FinaleBridge2 has rapid 0.25s collapse delay (middle section drops out first)")
-	assert_true(exit_gate.position.x > fbr3.position.x, "ExitGate is positioned past FinaleBridge3 at X=3730")
-
-	# Validate Coin Collection & Level 5 Completion
-	print("  Validating Coin Collection & Level 5 Completion...")
+	# Validate Coin Collection & Finale Deception Trigger
+	print("  Validating Coin Collection & Finale Deception Trigger...")
 	GameManager.current_level_id = 5
 	GameManager.total_coins_required = 10
 	GameManager.reset_coins()
 	for i in range(1, 11):
 		coins.get_node("Coin%d" % i).collect()
 	assert_eq(GameManager.current_coins, 10, "All 10 coins collected in Level 5")
-	assert_true(exit_gate._is_open, "ExitGate unlocks automatically after collecting 10th coin")
-	assert_eq(exit_gate.status_label.text, "EXIT OPEN!", "ExitGate displays 'EXIT OPEN!'")
+	assert_eq(fake_exit.status_label.text, "EXIT OPEN!", "FakeExitGate displays 'EXIT OPEN!' once all 10 coins collected")
 
-	# Complete Level 5
+	# Player approaches Fake Exit Gate: deception triggers, revealing Real Exit Gate
+	fake_exit._on_body_entered(player)
+	assert_true(fake_exit._has_tricked, "FakeExitGate triggers deception sequence upon approach")
+	assert_true(exit_gate.visible, "Real ExitGate is revealed upon FakeExitGate deception")
+	assert_true(exit_gate._is_open, "Real ExitGate is unlocked once revealed")
+
+	# Complete Level 5 via Real Exit Gate
 	GameManager.is_gameplay_active = true
 	exit_gate._on_body_entered(player)
-	assert_true(exit_gate._completion_triggered, "Level 5 completion triggered upon entering exit gate")
+	assert_true(exit_gate._completion_triggered, "Level 5 completion triggered upon entering real exit gate")
 	assert_true(SaveManager.is_level_completed(5), "Level 5 marked completed in SaveManager")
 	assert_true(SaveManager.is_level_unlocked(6), "Level 6 is unlocked after Level 5 completion")
 
@@ -1418,12 +1395,21 @@ func test_level_5_gameplay_mechanics() -> void:
 	var complete_modal_label: Label = complete_overlay.get_node("MessageModal/Panel/VBox/MessageLabel")
 	assert_eq(complete_modal_label.text, "Level 6 is unlocked, but it's still being built. Replay Level 1 for now.", "Level 5 Next Level shows safe unimplemented Level 6 modal")
 
-	# Reset Level 5
+	# Reset Level 5 & verify clean restoration of all trap states
+	print("  Validating Clean Trap Reset on Level Retry...")
 	lvl._on_retry()
 	assert_eq(GameManager.current_coins, 0, "Level 5 retry resets coins to 0")
-	assert_true(not plat1._is_triggered, "Collapsing platforms reset cleanly on level retry")
-	assert_eq(cr6.current_state, CeilingCrusherClass.State.IDLE, "Crusher 6 resets to IDLE on level retry")
-	assert_true(not exit_gate._completion_triggered, "ExitGate completion flag reset")
+	assert_true(not fake_exit._has_tricked, "FakeExitGate untricked on level retry")
+	assert_true(not exit_gate.visible, "Real ExitGate hidden again on reset")
+	assert_true(not exit_gate._completion_triggered, "Real ExitGate completion flag reset")
+	assert_true(not plat1._is_triggered, "Collapsing platforms reset cleanly")
+	assert_true(not plat2._active_spikes, "Plat2 pop-up spikes reset cleanly")
+	assert_true(not plat9a._active_spikes, "Plat9A pop-up spikes reset cleanly")
+	assert_eq(cr5.current_state, CeilingCrusherClass.State.IDLE, "Crusher 5 reset to IDLE")
+	assert_eq(cr10.current_state, CeilingCrusherClass.State.IDLE, "Crusher 10 reset to IDLE")
+	assert_true(not inf1._is_active, "InfernoGate 1 inactive on reset")
+	assert_true(not inf10._is_active, "InfernoGate 10 inactive on reset")
+	assert_true(not mwall1._is_active, "MovingWall 1 inactive on reset")
 
 	lvl.queue_free()
 

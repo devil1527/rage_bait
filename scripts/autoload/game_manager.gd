@@ -18,7 +18,7 @@ var levels: Dictionary = {
 	2: {"id": 2, "name": "Trust Nothing", "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_2.tscn", "coin_count": 10},
 	3: {"id": 3, "name": "Fire & Fury", "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_3.tscn", "coin_count": 10},
 	4: {"id": 4, "name": "Crushing Silence", "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_4.tscn", "coin_count": 10},
-	5: {"id": 5, "name": "The Last Laugh", "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_5.tscn", "coin_count": 10},
+	5: {"id": 5, "name": "The Perfect Trap", "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_5.tscn", "coin_count": 10},
 	6: {"id": 6, "name": "Coin Thief", "implemented": false, "scene": "", "coin_count": 12},
 	7: {"id": 7, "name": "The Vanishing Path", "implemented": false, "scene": "", "coin_count": 16},
 	8: {"id": 8, "name": "Greed Trap", "implemented": false, "scene": "", "coin_count": 10},

@@ -1,9 +1,9 @@
 extends Node2D
 
-## Level 5 ("The Last Laugh" - Neon Ruins World 1 Finale) logic controller.
+## Level 5 ("The Perfect Trap" - Neon Ruins World 1 Finale) logic controller.
 ## Manages HUD updates, player spawn/death/retry, pause, touch controls, and exit flows.
-## Signature mechanic: Collapsing Platforms (crumbling stone bridge sections with varying collapse delays).
-## Supporting hazards: Ceiling Crushers and Spikes.
+## Culmination of World 1 featuring clever combinations of all existing trap systems:
+## Collapsing Platforms, Pop-Up Spikes, Ceiling Crushers, Inferno Gates, Moving Walls, and Fake Exit.
 
 @onready var player: CharacterBody2D = $Player
 @onready var spawn_point: Marker2D = $SpawnPoint
