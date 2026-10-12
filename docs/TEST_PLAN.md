@@ -10,7 +10,7 @@ An automated test suite is implemented in [`scripts/tests/test_runner.gd`](file:
 ```bash
 godot --headless "res://scenes/tests/test_runner.tscn"
 ```
-### Automated Coverage Matrix (543 Assertions)
+### Automated Coverage Matrix (554 Assertions)
 
 | Category | Test Case | Expected Result | Status |
 | :--- | :--- | :--- | :--- |
@@ -45,9 +45,10 @@ godot --headless "res://scenes/tests/test_runner.tscn"
 | **Level 4 Mechanics** | Crusher Lethality & Collision | Lethal collision matches moving body; harmless when retracted; kills upon active/slam impact | **PASS** |
 | **Level 4 Encounters**| 10 Distinct Coin Encounters | Individually designed encounters: approach, danger zone, chasm landing, offset trigger, pillar jump, rushing trap, alternating pair, high bypass, anti-retreat, dual climax | **PASS** |
 | **Level 4 Progression**| 10 Coins, Exit & Unlock | Exactly 10 coins; collecting 10 unlocks exit ("EXIT OPEN!"); entering completes Level 4 and unlocks Level 5 | **PASS** |
-| **Level 5 Combinations**| 10 Distinct Trap Combinations | Coins 1-10 combine existing traps: (1-2) Crumbling platform into Fake Safe pop-up spikes; (3-4) Patrolling Moving Wall under Air Spikes over crumbling ledges; (5-6) Ceiling Crusher and synchronized Inferno Gate; (7-8) Alternating auto-cycling Crushers with cascading bridge and floor spikes; (9) Fake Safe pop-up spikes leap-over into Moving Wall; (10) Ceiling Crusher + Inferno Gate crucible | **PASS** |
-| **Level 5 Finale**    | The Perfect Trap Deception | Collecting 10 coins unlocks Fake Exit Gate ('EXIT OPEN!'); approaching triggers drop deception, revealing true Exit Gate on elevated ledge across crumbling stepping stone | **PASS** |
-| **Level 5 Reset**     | Multi-Trap Clean Reset | Retrying resets player, coins (0/10), all 4 crushers to IDLE, both inferno gates to dormant, both moving walls, all pop-up spikes, all collapsing platforms, and fake/real exit gates | **PASS** |
+| **Level 5 4-Phase Architecture** | The Final Betrayal (Coins 1-10) | Phase A (Coins 1-2: False Confidence); Phase B (Coins 3-5: The Trap Chain); Phase C (Coins 6-8: No Easy Way Out); Phase D (Coins 9-10: The Final Betrayal Gauntlet) | **PASS** |
+| **Level 5 Combinations**| Verified Multi-Trap Synergies | (1) Collapsing platform guarded by floor spikes; (2) Pop-up spikes with required forward escape; (3) Proximity crusher over collapsing platform; (4) Moving wall under air spikes triggering concealed wall spike trap; (5) Cascading crumbling bridge under overhead spikes; (6) Crusher synchronized with Inferno Gate; (7) Alternating offset crushers over cascading ledges into safe back pocket; (8) Pop-up spikes under moving wall; (9) Crusher + air spikes dual collapsing leap; (10) Central crusher + Inferno Gate crucible | **PASS** |
+| **Level 5 Finale**    | The Final Betrayal Deception | Collecting 10 coins unlocks Fake Exit Gate ('EXIT OPEN!'); approaching triggers drop deception, revealing true Exit Gate on elevated ledge across collapsing stepping stone | **PASS** |
+| **Level 5 Reset**     | Multi-Trap Clean Reset | Retrying resets player, coins (0/10), all 4 crushers to IDLE, both inferno gates to dormant, both moving walls, all pop-up spikes, wall spike trap, all collapsing platforms, and fake/real exit gates | **PASS** |
 | **Level 5 Progression**| World 1 Finale Completion | Exactly 10 coins; completing Level 5 marks World 1 finale complete, unlocks Level 6; Next Level modal informs player Level 6 is in progress | **PASS** |
 
 ---

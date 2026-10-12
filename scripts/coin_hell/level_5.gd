@@ -1,9 +1,9 @@
 extends Node2D
 
-## Level 5 ("The Perfect Trap" - Neon Ruins World 1 Finale) logic controller.
+## Level 5 ("The Final Betrayal" - Neon Ruins World 1 Finale) logic controller.
 ## Manages HUD updates, player spawn/death/retry, pause, touch controls, and exit flows.
-## Culmination of World 1 featuring clever combinations of all existing trap systems:
-## Collapsing Platforms, Pop-Up Spikes, Ceiling Crushers, Inferno Gates, Moving Walls, and Fake Exit.
+## Culmination of World 1 featuring 4 distinct phases of multi-trap interactions:
+## Phase A: False Confidence, Phase B: The Trap Chain, Phase C: No Easy Way Out, Phase D: The Final Betrayal.
 
 @onready var player: CharacterBody2D = $Player
 @onready var spawn_point: Marker2D = $SpawnPoint
