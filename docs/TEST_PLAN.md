@@ -10,23 +10,22 @@ An automated test suite is implemented in [`scripts/tests/test_runner.gd`](file:
 ```bash
 godot --headless "res://scenes/tests/test_runner.tscn"
 ```
-
-### Automated Coverage Matrix (477 Assertions)
+### Automated Coverage Matrix (548 Assertions)
 
 | Category | Test Case | Expected Result | Status |
-| :--- | :--- | :--- | :---: |
+| :--- | :--- | :--- | :--- |
 | **Save / Persistence** | Fresh save defaults | Highest unlocked = 1, completed = 0 | **PASS** |
-| **Save / Persistence** | Sequential unlock | Completing Level 1 unlocks 2, completing 2 unlocks 3, completing 3 unlocks 4, completing 4 unlocks 5 | **PASS** |
+| **Save / Persistence** | Sequential unlock | Completing Level 1 unlocks 2, completing 2 unlocks 3, completing 3 unlocks 4, completing 4 unlocks 5, completing 5 unlocks 6 | **PASS** |
 | **Save / Persistence** | Disk persistence | Progress survives save file reload | **PASS** |
 | **Save / Persistence** | Corrupt save resilience | Graceful fallback to safe defaults without crash | **PASS** |
 | **Game Data** | 20 planned levels | All 20 levels cataloged with official names | **PASS** |
-| **Game Data** | Playable state | Levels 1, 2, 3, and 4 playable; Levels 5-20 unimplemented | **PASS** |
+| **Game Data** | Playable state | Levels 1, 2, 3, 4, and 5 playable; Levels 6-20 unimplemented | **PASS** |
 | **Game Data** | Coin counter clamp | Counter never exceeds configured total (10 per level) | **PASS** |
 | **Main Menu** | Card availability | All 4 arcade cards present | **PASS** |
 | **Main Menu** | Coming soon modals | Modal shows exact spec message when locked card clicked | **PASS** |
 | **Level Select** | 20 level tiles | Responsive grid contains all 20 tiles | **PASS** |
 | **Level Select** | Locked tile modal | Tapping locked tile shows spec message | **PASS** |
-| **Level Select** | Unimplemented modal | Tapping unlocked Level 5 shows "still being built" message | **PASS** |
+| **Level Select** | Unimplemented modal | Tapping unlocked Level 6 shows "still being built" message | **PASS** |
 | **Level 1 Gameplay** | Entity instantiation | Player, 10 coins, hazards, exit gate present | **PASS** |
 | **Level 1 Gameplay** | Exit gate locked state | Gate begins locked with "COINS REQUIRED" | **PASS** |
 | **Level 1 Gameplay** | Gate feedback | Approaching gate early shows remaining coins toast | **PASS** |
@@ -46,6 +45,10 @@ godot --headless "res://scenes/tests/test_runner.tscn"
 | **Level 4 Mechanics** | Crusher Lethality & Collision | Lethal collision matches moving body; harmless when retracted; kills upon active/slam impact | **PASS** |
 | **Level 4 Encounters**| 10 Distinct Coin Encounters | Individually designed encounters: approach, danger zone, chasm landing, offset trigger, pillar jump, rushing trap, alternating pair, high bypass, anti-retreat, dual climax | **PASS** |
 | **Level 4 Progression**| 10 Coins, Exit & Unlock | Exactly 10 coins; collecting 10 unlocks exit ("EXIT OPEN!"); entering completes Level 4 and unlocks Level 5 | **PASS** |
+| **Level 5 Mechanics** | Collapsing Platform State Machine | Starts intact; step triggers countdown, shake tremor & fissure flash; collapses and disables collision immediately; clean retry reset | **PASS** |
+| **Level 5 Encounters**| 10 Distinct Coin Encounters | Coins 1-10 individually designed: The Invitation (0.85s delay), No Standing Still (0.60s delay), The Greedy Jump (0.45s narrow ledge), The Broken Bridge (3-section cascade), The Wrong Landing (floor spikes on right edge), The Crusher Crossing (overhead crusher & 0.75s platform), The Commitment (stepping stones 7A & 7B), The False Rhythm (0.85s vs 0.35s collapse), The Last Mistake (overhead ceiling spikes), The Last Laugh (dual collapsing ledges flanking central crusher) | **PASS** |
+| **Level 5 Finale**    | The Last Laugh Signature Twist | 3-section finale bridge; stepping on Bridge 1 triggers Bridge 2 via 0.05s cascade; Bridge 2 drops out first (0.25s delay); decisive power jump clears gap to legitimate Exit Gate | **PASS** |
+| **Level 5 Progression**| World 1 Finale Completion | Exactly 10 coins; collecting 10 unlocks Exit Gate; completing Level 5 marks World 1 finale complete, unlocks Level 6; Next Level modal informs player Level 6 is in progress | **PASS** |
 
 ---
 

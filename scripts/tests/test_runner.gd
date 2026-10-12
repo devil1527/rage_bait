@@ -57,6 +57,7 @@ func run_all_tests() -> void:
 	test_level_2_gameplay_mechanics()
 	test_level_3_gameplay_mechanics()
 	test_level_4_gameplay_mechanics()
+	test_level_5_gameplay_mechanics()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -110,8 +111,13 @@ func test_game_manager_level_definitions() -> void:
 	assert_eq(lvl4.get("name"), "Crushing Silence", "Level 4 name is 'Crushing Silence'")
 	assert_true(lvl4.get("implemented"), "Level 4 is marked implemented")
 	assert_true(GameManager.can_play_level(4), "Level 4 is playable")
+
+	var lvl5: Dictionary = GameManager.get_level_info(5)
+	assert_eq(lvl5.get("name"), "The Last Laugh", "Level 5 name is 'The Last Laugh'")
+	assert_true(lvl5.get("implemented"), "Level 5 is marked implemented")
+	assert_true(GameManager.can_play_level(5), "Level 5 is playable")
 	
-	for lvl_id in range(5, 21):
+	for lvl_id in range(6, 21):
 		assert_true(not GameManager.can_play_level(lvl_id), "Level %d is marked not implemented" % lvl_id)
 		
 	# Test coin counter clamping
@@ -184,13 +190,19 @@ func test_level_select_logic_and_states() -> void:
 	assert_true(SaveManager.is_level_unlocked(4), "Level 4 is unlocked after completing Level 3")
 	assert_true(GameManager.can_play_level(4), "Level 4 is playable")
 
-	# Complete level 4 to unlock level 5 and test unimplemented level press
+	# Complete level 4 to unlock level 5 and verify Level 5 is playable
 	SaveManager.complete_level(4)
 	lsel._update_ui()
 	assert_true(SaveManager.is_level_unlocked(5), "Level 5 is unlocked after completing Level 4")
-	lsel._on_level_tile_pressed(5)
+	assert_true(GameManager.can_play_level(5), "Level 5 is playable")
+
+	# Complete level 5 to unlock level 6 and test unimplemented level press
+	SaveManager.complete_level(5)
+	lsel._update_ui()
+	assert_true(SaveManager.is_level_unlocked(6), "Level 6 is unlocked after completing Level 5")
+	lsel._on_level_tile_pressed(6)
 	assert_true(modal.visible, "Pressing unlocked but unimplemented level shows modal")
-	assert_eq(modal_label.text, "Level 5 is unlocked, but it's still being built. Replay Level 1 for now.", "Modal shows exact unimplemented level message")
+	assert_eq(modal_label.text, "Level 6 is unlocked, but it's still being built. Replay Level 1 for now.", "Modal shows exact unimplemented level message")
 	
 	lsel.queue_free()
 
@@ -1222,12 +1234,10 @@ func test_level_4_gameplay_mechanics() -> void:
 	assert_true(SaveManager.is_level_completed(4), "Level 4 marked completed in SaveManager")
 	assert_true(SaveManager.is_level_unlocked(5), "Level 5 is unlocked after Level 4 completion")
 
-	# Next Level button shows Level 5 unimplemented modal
+	# Next Level button verifies Level 5 is ready to start
 	var complete_overlay = lvl.get_node("HUD/LevelCompleteOverlay")
 	complete_overlay.open(10, 10)
-	complete_overlay._on_next_level_pressed()
-	var complete_modal_label: Label = complete_overlay.get_node("MessageModal/Panel/VBox/MessageLabel")
-	assert_eq(complete_modal_label.text, "Level 5 is unlocked, but it's still being built. Replay Level 1 for now.", "Level 4 Next Level shows safe unimplemented Level 5 modal")
+	assert_true(GameManager.can_play_level(5), "Level 5 is playable after Level 4 completion")
 
 	# Reset Level 4
 	lvl._on_retry()
@@ -1236,3 +1246,184 @@ func test_level_4_gameplay_mechanics() -> void:
 	assert_true(not exit_gate._completion_triggered, "ExitGate completion flag reset")
 
 	lvl.queue_free()
+
+func test_level_5_gameplay_mechanics() -> void:
+	print("\n--- TEST: Level 5 Gameplay Mechanics (The Last Laugh Finale) ---")
+	var lvl5_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_5.tscn")
+	assert_true(lvl5_scene != null, "Level 5 scene loads successfully")
+	var lvl = lvl5_scene.instantiate()
+	add_child(lvl)
+
+	var player = lvl.get_node("Player")
+	var coins = lvl.get_node("Coins")
+	var exit_gate = lvl.get_node("ExitGate")
+	var platforms = lvl.get_node("Platforms")
+	var traps = lvl.get_node("Traps")
+	var hazards = lvl.get_node("Hazards")
+
+	assert_true(player != null, "Player exists in Level 5")
+	assert_eq(coins.get_child_count(), 10, "Test 1: Level 5 contains exactly 10 coins")
+	assert_true(exit_gate != null, "ExitGate exists in Level 5")
+	assert_true(not exit_gate._is_open, "ExitGate starts locked requiring coins")
+
+	# Validate safe spawn & camera
+	assert_eq(player.position.x, 100.0, "Player spawns safely at X=100")
+	assert_eq(player.position.y, 380.0, "Player spawns safely at Y=380")
+	var cam: Camera2D = player.get_node("Camera2D")
+	assert_eq(cam.limit_bottom, 600, "Camera2D limit_bottom is 600")
+	assert_eq(cam.offset.y, -45.0, "Camera2D negative offset ensures landing visibility")
+
+	# Validate Collapsing Platform Mechanics & State Machine
+	print("  Validating Collapsing Platform 1 Mechanics...")
+	var plat1 = platforms.get_node("Plat1_Collapsing")
+	assert_true(plat1 is CrumblingBridgeSectionClass, "Plat1 uses CrumblingBridgeSection class")
+	assert_true(not plat1._is_triggered, "Plat1 starts untriggered")
+	assert_true(not plat1._is_falling, "Plat1 starts not falling")
+	assert_true(not plat1.collision_shape.disabled, "Plat1 collision shape is enabled initially")
+	assert_eq(plat1.collapse_delay, 0.85, "Plat1 has generous 0.85s delay (The Invitation)")
+
+	# Trigger collapse
+	plat1.trigger_collapse()
+	assert_true(plat1._is_triggered, "Plat1 is marked triggered after trigger_collapse()")
+	assert_eq(plat1._timer, 0.85, "Plat1 timer matches collapse_delay")
+
+	# Advance physics to collapse
+	plat1._physics_process(0.85)
+	assert_true(plat1._is_falling, "Plat1 starts falling after collapse delay expires")
+	assert_true(plat1.collision_shape.disabled, "Plat1 collision shape is disabled immediately upon collapse")
+
+	# Reset platform
+	plat1.reset()
+	assert_true(not plat1._is_triggered, "Plat1 is reset to untriggered state")
+	assert_true(not plat1._is_falling, "Plat1 is reset to not falling")
+	assert_true(not plat1.collision_shape.disabled, "Plat1 collision shape re-enabled on reset")
+	assert_eq(plat1.global_position, plat1._initial_pos, "Plat1 position restored to initial position")
+
+	# Validate all 10 distinct Coin Encounters
+	print("  Validating 10 Distinct Coin Encounters in Level 5...")
+	var c1 = coins.get_node("Coin1")
+	var c2 = coins.get_node("Coin2")
+	var c3 = coins.get_node("Coin3")
+	var c4 = coins.get_node("Coin4")
+	var c5 = coins.get_node("Coin5")
+	var c6 = coins.get_node("Coin6")
+	var c7 = coins.get_node("Coin7")
+	var c8 = coins.get_node("Coin8")
+	var c9 = coins.get_node("Coin9")
+	var c10 = coins.get_node("Coin10")
+
+	assert_true(c1 != null and c2 != null and c3 != null and c4 != null and c5 != null, "Coins 1 to 5 exist")
+	assert_true(c6 != null and c7 != null and c8 != null and c9 != null and c10 != null, "Coins 6 to 10 exist")
+
+	# Coin 1: The Invitation
+	assert_eq(c1.position, Vector2(360, 370), "Coin 1 is positioned at X=360, Y=370 above Plat1")
+
+	# Coin 2: No Standing Still
+	var plat2a = platforms.get_node("Plat2A_Collapsing")
+	var plat2b = platforms.get_node("Plat2B_Collapsing")
+	assert_eq(plat2a.collapse_delay, 0.60, "Plat2A has 0.60s collapse delay")
+	assert_eq(plat2b.collapse_delay, 0.65, "Plat2B forward platform has 0.65s delay")
+	assert_eq(c2.position, Vector2(640, 370), "Coin 2 placed over Plat2A requiring immediate forward planning")
+
+	# Coin 3: The Greedy Jump
+	var plat3 = platforms.get_node("Plat3_Collapsing")
+	assert_eq(c3.position, Vector2(900, 335), "Coin 3 suspended in mid-air (Y=335) for high leap")
+	assert_eq(plat3.collapse_delay, 0.45, "Plat3 landing ledge collapses quickly (0.45s)")
+	assert_eq(plat3.collision_shape.shape.size.x, 80.0, "Plat3 is a narrow landing target (80px)")
+
+	# Coin 4: The Broken Bridge
+	var br4a = platforms.get_node("Bridge4A")
+	var br4b = platforms.get_node("Bridge4B")
+	var br4c = platforms.get_node("Bridge4C")
+	assert_eq(br4a.next_section_path, NodePath("../Bridge4B"), "Bridge4A cascades to Bridge4B")
+	assert_eq(br4b.next_section_path, NodePath("../Bridge4C"), "Bridge4B cascades to Bridge4C")
+	assert_eq(c4.position, Vector2(1275, 370), "Coin 4 positioned on Bridge4B within the cascading bridge")
+
+	# Coin 5: The Wrong Landing
+	var plat5 = platforms.get_node("Plat5_Collapsing")
+	var fspike5 = hazards.get_node("FloorSpike5")
+	assert_true(fspike5 != null, "FloorSpike5 hazard exists")
+	assert_eq(c5.position, Vector2(1615, 370), "Coin 5 placed over safe left pocket of Plat5")
+	assert_true(fspike5.position.x > c5.position.x, "FloorSpike5 (X=1690) guards right edge of Plat5 (X=1650) against careless landings")
+
+	# Coin 6: The Crusher Crossing
+	var plat6 = platforms.get_node("Plat6_Collapsing")
+	var cr6 = traps.get_node("Crusher6")
+	assert_true(cr6 != null, "Crusher6 exists above Coin 6")
+	assert_eq(c6.position, Vector2(1940, 370), "Coin 6 placed beneath Crusher6 on collapsing Plat6")
+	assert_eq(plat6.collapse_delay, 0.75, "Plat6 has 0.75s collapse delay requiring timing both hazards")
+
+	# Coin 7: The Commitment
+	var plat7a = platforms.get_node("Plat7A_Collapsing")
+	var plat7b = platforms.get_node("Plat7B_Collapsing")
+	assert_eq(c7.position, Vector2(2220, 345), "Coin 7 placed between narrow stepping stones 7A and 7B")
+	assert_eq(plat7a.collapse_delay, 0.50, "Plat7A has 0.50s delay")
+	assert_eq(plat7b.collapse_delay, 0.50, "Plat7B has 0.50s delay")
+
+	# Coin 8: The False Rhythm
+	var plat8a = platforms.get_node("Plat8A_Collapsing")
+	var plat8b = platforms.get_node("Plat8B_Collapsing")
+	assert_eq(plat8a.collapse_delay, 0.85, "Plat8A has slow 0.85s delay lulling the player")
+	assert_eq(plat8b.collapse_delay, 0.35, "Plat8B has fast 0.35s delay punishing repeated rhythm")
+	assert_eq(c8.position, Vector2(2580, 370), "Coin 8 placed on fast Plat8B")
+
+	# Coin 9: The Last Mistake
+	var plat9a = platforms.get_node("Plat9A_Collapsing")
+	var plat9b = platforms.get_node("Plat9B_Collapsing")
+	var air_spikes9 = hazards.get_node("AirSpikes9")
+	assert_true(air_spikes9 != null, "AirSpikes9 exists above Coin 9")
+	assert_eq(air_spikes9.position.y, 320.0, "AirSpikes9 placed overhead at Y=320")
+	assert_eq(c9.position, Vector2(2865, 385), "Coin 9 placed low at Y=385 beneath air spikes")
+
+	# Coin 10: The Last Laugh (World 1 Climax Exam)
+	var plat10a = platforms.get_node("Plat10A_Collapsing")
+	var plat10b = platforms.get_node("Plat10B_Collapsing")
+	var cr10 = traps.get_node("Crusher10")
+	assert_true(cr10 != null, "Crusher10 exists at climax encounter")
+	assert_eq(c10.position, Vector2(3210, 370), "Coin 10 centered under Crusher10 between dual collapsing platforms 10A and 10B")
+
+	# Validate Signature Finale Sequence
+	print("  Validating Signature Finale Sequence...")
+	var fbr1 = platforms.get_node("FinaleBridge1")
+	var fbr2 = platforms.get_node("FinaleBridge2")
+	var fbr3 = platforms.get_node("FinaleBridge3")
+	assert_true(fbr1 != null and fbr2 != null and fbr3 != null, "Finale bridge sections 1, 2, 3 exist")
+	assert_eq(fbr1.next_section_path, NodePath("../FinaleBridge2"), "FinaleBridge1 cascades to FinaleBridge2")
+	assert_eq(fbr1.next_section_cascade_delay, 0.05, "FinaleBridge1 triggers FinaleBridge2 with instant 0.05s cascade")
+	assert_eq(fbr2.collapse_delay, 0.25, "FinaleBridge2 has rapid 0.25s collapse delay (middle section drops out first)")
+	assert_true(exit_gate.position.x > fbr3.position.x, "ExitGate is positioned past FinaleBridge3 at X=3730")
+
+	# Validate Coin Collection & Level 5 Completion
+	print("  Validating Coin Collection & Level 5 Completion...")
+	GameManager.current_level_id = 5
+	GameManager.total_coins_required = 10
+	GameManager.reset_coins()
+	for i in range(1, 11):
+		coins.get_node("Coin%d" % i).collect()
+	assert_eq(GameManager.current_coins, 10, "All 10 coins collected in Level 5")
+	assert_true(exit_gate._is_open, "ExitGate unlocks automatically after collecting 10th coin")
+	assert_eq(exit_gate.status_label.text, "EXIT OPEN!", "ExitGate displays 'EXIT OPEN!'")
+
+	# Complete Level 5
+	GameManager.is_gameplay_active = true
+	exit_gate._on_body_entered(player)
+	assert_true(exit_gate._completion_triggered, "Level 5 completion triggered upon entering exit gate")
+	assert_true(SaveManager.is_level_completed(5), "Level 5 marked completed in SaveManager")
+	assert_true(SaveManager.is_level_unlocked(6), "Level 6 is unlocked after Level 5 completion")
+
+	# Next Level button shows Level 6 unimplemented modal
+	var complete_overlay = lvl.get_node("HUD/LevelCompleteOverlay")
+	complete_overlay.open(10, 10)
+	complete_overlay._on_next_level_pressed()
+	var complete_modal_label: Label = complete_overlay.get_node("MessageModal/Panel/VBox/MessageLabel")
+	assert_eq(complete_modal_label.text, "Level 6 is unlocked, but it's still being built. Replay Level 1 for now.", "Level 5 Next Level shows safe unimplemented Level 6 modal")
+
+	# Reset Level 5
+	lvl._on_retry()
+	assert_eq(GameManager.current_coins, 0, "Level 5 retry resets coins to 0")
+	assert_true(not plat1._is_triggered, "Collapsing platforms reset cleanly on level retry")
+	assert_eq(cr6.current_state, CeilingCrusherClass.State.IDLE, "Crusher 6 resets to IDLE on level retry")
+	assert_true(not exit_gate._completion_triggered, "ExitGate completion flag reset")
+
+	lvl.queue_free()
+
