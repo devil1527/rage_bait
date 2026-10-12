@@ -1261,6 +1261,7 @@ func test_level_5_gameplay_mechanics() -> void:
 	var platforms = lvl.get_node("Platforms")
 	var traps = lvl.get_node("Traps")
 	var hazards = lvl.get_node("Hazards")
+	var hud = lvl.get_node("HUD")
 
 	assert_true(player != null, "Player exists in Level 5")
 	assert_eq(coins.get_child_count(), 10, "Test 1: Level 5 contains exactly 10 coins")
@@ -1275,6 +1276,47 @@ func test_level_5_gameplay_mechanics() -> void:
 	assert_eq(cam.limit_bottom, 600, "Camera2D limit_bottom is 600")
 	assert_eq(cam.limit_right, 3500, "Camera2D limit_right is 3500")
 	assert_eq(cam.offset.y, -45.0, "Camera2D negative offset ensures landing visibility")
+
+	# Validate Mobile Controls exact sizing and offsets matching Levels 1-4
+	print("  Validating Level 5 Mobile Controls sizing matching Levels 1-4...")
+	var left_btn: TextureButton = hud.get_node("TouchControls/LeftBtn")
+	var right_btn: TextureButton = hud.get_node("TouchControls/RightBtn")
+	var jump_btn: TextureButton = hud.get_node("TouchControls/JumpBtn")
+	assert_true(left_btn != null and right_btn != null and jump_btn != null, "TouchControls buttons exist")
+	assert_eq(left_btn.offset_left, 20.0, "LeftBtn offset_left matches Levels 1-4 (20.0)")
+	assert_eq(left_btn.offset_right, 124.0, "LeftBtn offset_right matches Levels 1-4 (124.0)")
+	assert_eq(left_btn.offset_top, -120.0, "LeftBtn offset_top matches Levels 1-4 (-120.0)")
+	assert_eq(left_btn.offset_bottom, -16.0, "LeftBtn offset_bottom matches Levels 1-4 (-16.0)")
+	assert_eq(left_btn.offset_right - left_btn.offset_left, 104.0, "LeftBtn width is 104px (matches Levels 1-4)")
+	assert_eq(left_btn.offset_bottom - left_btn.offset_top, 104.0, "LeftBtn height is 104px (matches Levels 1-4)")
+
+	assert_eq(right_btn.offset_left, 144.0, "RightBtn offset_left matches Levels 1-4 (144.0)")
+	assert_eq(right_btn.offset_right, 248.0, "RightBtn offset_right matches Levels 1-4 (248.0)")
+	assert_eq(right_btn.offset_top, -120.0, "RightBtn offset_top matches Levels 1-4 (-120.0)")
+	assert_eq(right_btn.offset_bottom, -16.0, "RightBtn offset_bottom matches Levels 1-4 (-16.0)")
+	assert_eq(right_btn.offset_right - right_btn.offset_left, 104.0, "RightBtn width is 104px (matches Levels 1-4)")
+	assert_eq(right_btn.offset_bottom - right_btn.offset_top, 104.0, "RightBtn height is 104px (matches Levels 1-4)")
+
+	assert_eq(jump_btn.offset_left, -140.0, "JumpBtn offset_left matches Levels 1-4 (-140.0)")
+	assert_eq(jump_btn.offset_right, -16.0, "JumpBtn offset_right matches Levels 1-4 (-16.0)")
+	assert_eq(jump_btn.offset_top, -140.0, "JumpBtn offset_top matches Levels 1-4 (-140.0)")
+	assert_eq(jump_btn.offset_bottom, -16.0, "JumpBtn offset_bottom matches Levels 1-4 (-16.0)")
+	assert_eq(jump_btn.offset_right - jump_btn.offset_left, 124.0, "JumpBtn width is 124px (matches Levels 1-4)")
+	assert_eq(jump_btn.offset_bottom - jump_btn.offset_top, 124.0, "JumpBtn height is 124px (matches Levels 1-4)")
+
+	assert_eq(left_btn.touch_margin, 8.0, "LeftBtn touch_margin matches Levels 1-4")
+	assert_eq(right_btn.touch_margin, 8.0, "RightBtn touch_margin matches Levels 1-4")
+	assert_eq(jump_btn.touch_margin, 16.0, "JumpBtn touch_margin matches Levels 1-4")
+
+	# Validate Fire Barrier Complete Removal from Level 5
+	print("  Validating Fire Barrier Complete Removal from Level 5...")
+	assert_true(traps.get_node_or_null("InfernoGate6") == null, "InfernoGate6 completely removed from Level 5")
+	assert_true(traps.get_node_or_null("InfernoGate10") == null, "InfernoGate10 completely removed from Level 5")
+	var has_inferno_in_level_5: bool = false
+	for t in traps.get_children():
+		if t is InfernoGateClass:
+			has_inferno_in_level_5 = true
+	assert_true(not has_inferno_in_level_5, "Zero InfernoGate instances exist in Level 5 Traps")
 
 	# Validate all 10 distinct Coin Encounters & Trap Combinations across 4 Phases
 	print("  Validating 10 Distinct Coin Encounters & Trap Combinations in Level 5...")
@@ -1341,13 +1383,13 @@ func test_level_5_gameplay_mechanics() -> void:
 	print("  Validating Phase C: No Easy Way Out (Coins 6-8)...")
 	var plat6 = platforms.get_node("Plat6_Collapsing")
 	var cr6 = traps.get_node("Crusher6")
-	var inf6 = traps.get_node("InfernoGate6")
+	var air_spikes6 = hazards.get_node("AirSpikes6")
 	var plat6_exit = platforms.get_node("Plat6_Exit")
 	var rest6 = platforms.get_node("Rest6")
 	assert_true(cr6 is CeilingCrusherClass, "Crusher6 uses CeilingCrusher")
-	assert_true(inf6 is InfernoGateClass, "InfernoGate6 uses InfernoGate")
-	assert_eq(c6.position, Vector2(1565, 345), "Coin 6 positioned under Crusher6 before InfernoGate6")
-	assert_true(cr6.position.x < inf6.position.x and inf6.position.x < plat6_exit.position.x, "Encounter 6 sequences Crusher6 -> InfernoGate6 -> Plat6_Exit")
+	assert_true(air_spikes6 != null, "AirSpikes6 guards overhead above Plat6_Exit")
+	assert_eq(c6.position, Vector2(1565, 345), "Coin 6 positioned under Crusher6 on Plat6_Collapsing")
+	assert_true(plat6.position.x < plat6_exit.position.x and plat6_exit.position.x < rest6.position.x, "Encounter 6 sequences Crusher6 -> Plat6_Exit (under AirSpikes6) -> Rest6")
 
 	var plat7a = platforms.get_node("Plat7A")
 	var plat7b = platforms.get_node("Plat7B")
@@ -1379,15 +1421,13 @@ func test_level_5_gameplay_mechanics() -> void:
 
 	var plat10a = platforms.get_node("Plat10A_Collapsing")
 	var cr10 = traps.get_node("Crusher10")
-	var inf10 = traps.get_node("InfernoGate10")
 	var plat10b = platforms.get_node("Plat10B_Collapsing")
 	var fake_exit = traps.get_node("FakeExitGate")
 	var plat_finale = platforms.get_node("PlatFinale_Collapsing")
 	var plat_real_exit = platforms.get_node("PlatformRealExit")
 	assert_true(cr10 is CeilingCrusherClass, "Crusher10 uses CeilingCrusher")
-	assert_true(inf10 is InfernoGateClass, "InfernoGate10 uses InfernoGate")
 	assert_true(fake_exit is FakeExitGateClass, "FakeExitGate uses FakeExitGate")
-	assert_eq(c10.position, Vector2(2990, 350), "Coin 10 centered under Crusher10 and InfernoGate10")
+	assert_eq(c10.position, Vector2(2990, 350), "Coin 10 centered under Crusher10 between Plat10A and Plat10B")
 
 	# Validate Coin Collection & Finale Deception Trigger
 	print("  Validating Coin Collection & Finale Deception Trigger...")
@@ -1433,8 +1473,6 @@ func test_level_5_gameplay_mechanics() -> void:
 	assert_eq(cr6.current_state, CeilingCrusherClass.State.IDLE, "Crusher 6 reset to IDLE")
 	assert_eq(cr9.current_state, CeilingCrusherClass.State.IDLE, "Crusher 9 reset to IDLE")
 	assert_eq(cr10.current_state, CeilingCrusherClass.State.IDLE, "Crusher 10 reset to IDLE")
-	assert_true(not inf6._is_active, "InfernoGate 6 inactive on reset")
-	assert_true(not inf10._is_active, "InfernoGate 10 inactive on reset")
 	assert_true(not mwall4._is_active, "MovingWall 4 inactive on reset")
 	assert_true(not mwall8._is_active, "MovingWall 8 inactive on reset")
 	assert_true(not wspik4._is_active, "WallSpikeTrap 4 inactive on reset")

@@ -1,4 +1,4 @@
-[gd_scene load_steps=58 format=3 uid="uid://d5e6f7a8b9c0d"]
+[gd_scene load_steps=57 format=3 uid="uid://d5e6f7a8b9c0d"]
 
 [ext_resource type="Script" path="res://scripts/coin_hell/level_5.gd" id="1_lev5"]
 [ext_resource type="PackedScene" path="res://scenes/coin_hell/player.tscn" id="2_play"]
@@ -22,10 +22,9 @@
 [ext_resource type="Script" path="res://scripts/coin_hell/fake_safe_platform.gd" id="20_fplat"]
 [ext_resource type="Script" path="res://scripts/coin_hell/moving_wall.gd" id="21_mwall"]
 [ext_resource type="Texture2D" path="res://assets/sprites/moving_wall.png" id="22_mwtex"]
-[ext_resource type="PackedScene" path="res://scenes/coin_hell/inferno_gate.tscn" id="23_infg"]
-[ext_resource type="Script" path="res://scripts/coin_hell/fake_exit_gate.gd" id="24_fexit"]
-[ext_resource type="Texture2D" path="res://assets/sprites/exit_locked.png" id="25_exloc"]
-[ext_resource type="Script" path="res://scripts/coin_hell/wall_spike_trap.gd" id="26_wspik"]
+[ext_resource type="Script" path="res://scripts/coin_hell/fake_exit_gate.gd" id="23_fexit"]
+[ext_resource type="Texture2D" path="res://assets/sprites/exit_locked.png" id="24_exloc"]
+[ext_resource type="Script" path="res://scripts/coin_hell/wall_spike_trap.gd" id="25_wspik"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_groundspawn"]
 size = Vector2(220, 80)
@@ -620,7 +619,7 @@ position = Vector2(0, -12)
 shape = SubResource("RectangleShape2D_plat6_step")
 
 [node name="Plat6_Exit" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1730, 400)
+position = Vector2(1700, 400)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("19_cbrg")
@@ -1121,7 +1120,7 @@ shape = SubResource("RectangleShape2D_wspiktrig")
 position = Vector2(1015, 420)
 collision_layer = 4
 collision_mask = 1
-script = ExtResource("26_wspik")
+script = ExtResource("25_wspik")
 trigger_area_path = NodePath("../WallSpikeTrigger4")
 
 [node name="Sprite2D" type="Sprite2D" parent="Traps/WallSpikeTrap4"]
@@ -1140,11 +1139,6 @@ trigger_delay = 0.15
 slam_duration = 0.15
 active_duration = 0.60
 retract_duration = 0.60
-
-[node name="InfernoGate6" parent="Traps" instance=ExtResource("23_infg")]
-position = Vector2(1650, 340)
-active_duration = 1.2
-safe_duration = 1.2
 
 [node name="Crusher7A" parent="Traps" instance=ExtResource("5_crush")]
 position = Vector2(1930, 180)
@@ -1198,20 +1192,15 @@ slam_duration = 0.15
 active_duration = 0.60
 retract_duration = 0.60
 
-[node name="InfernoGate10" parent="Traps" instance=ExtResource("23_infg")]
-position = Vector2(2990, 340)
-active_duration = 1.2
-safe_duration = 1.2
-
 [node name="FakeExitGate" type="Area2D" parent="Traps"]
 position = Vector2(3210, 380)
 collision_layer = 4
 collision_mask = 1
-script = ExtResource("24_fexit")
+script = ExtResource("23_fexit")
 real_exit_path = NodePath("../../ExitGate")
 
 [node name="Sprite2D" type="Sprite2D" parent="Traps/FakeExitGate"]
-texture = ExtResource("25_exloc")
+texture = ExtResource("24_exloc")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Traps/FakeExitGate"]
 shape = SubResource("RectangleShape2D_fakeshape")
@@ -1247,6 +1236,10 @@ rotation = 3.14159
 
 [node name="AirSpikes5" parent="Hazards" instance=ExtResource("18_spik")]
 position = Vector2(1265, 280)
+rotation = 3.14159
+
+[node name="AirSpikes6" parent="Hazards" instance=ExtResource("18_spik")]
+position = Vector2(1700, 290)
 rotation = 3.14159
 
 [node name="FloorSpikes7" parent="Hazards" instance=ExtResource("18_spik")]
@@ -1301,19 +1294,16 @@ collision_mask = 1
 shape = SubResource("RectangleShape2D_pit")
 
 [node name="HUD" type="CanvasLayer" parent="."]
-layer = 10
 
 [node name="MarginContainer" type="MarginContainer" parent="HUD"]
-anchors_preset = 15
+anchors_preset = 10
 anchor_right = 1.0
-anchor_bottom = 1.0
+offset_bottom = 44.0
 grow_horizontal = 2
-grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 16
+theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 16
 
 [node name="TopBar" type="HBoxContainer" parent="HUD/MarginContainer"]
 layout_mode = 2
@@ -1353,10 +1343,9 @@ mouse_filter = 2
 [node name="PauseBtn" type="Button" parent="HUD/MarginContainer/TopBar"]
 custom_minimum_size = Vector2(80, 36)
 layout_mode = 2
-text = "PAUSE"
+text = "⏸ PAUSE"
 
 [node name="TouchControls" type="Control" parent="HUD"]
-modulate = Color(1, 1, 1, 0.75)
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -1366,15 +1355,15 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="LeftBtn" type="TextureButton" parent="HUD/TouchControls"]
-custom_minimum_size = Vector2(64, 64)
+modulate = Color(1, 1, 1, 0.75)
 layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = 32.0
-offset_top = -96.0
-offset_right = 96.0
-offset_bottom = -32.0
+offset_left = 20.0
+offset_top = -120.0
+offset_right = 124.0
+offset_bottom = -16.0
 grow_vertical = 0
 texture_normal = ExtResource("11_bleft")
 texture_pressed = ExtResource("14_bleft_p")
@@ -1382,17 +1371,19 @@ ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("17_tbtn")
 action_name = "move_left"
+touch_margin = 8.0
+drag_margin = 32.0
 
 [node name="RightBtn" type="TextureButton" parent="HUD/TouchControls"]
-custom_minimum_size = Vector2(64, 64)
+modulate = Color(1, 1, 1, 0.75)
 layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = 112.0
-offset_top = -96.0
-offset_right = 176.0
-offset_bottom = -32.0
+offset_left = 144.0
+offset_top = -120.0
+offset_right = 248.0
+offset_bottom = -16.0
 grow_vertical = 0
 texture_normal = ExtResource("12_bright")
 texture_pressed = ExtResource("15_bright_p")
@@ -1400,19 +1391,21 @@ ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("17_tbtn")
 action_name = "move_right"
+touch_margin = 8.0
+drag_margin = 32.0
 
 [node name="JumpBtn" type="TextureButton" parent="HUD/TouchControls"]
-custom_minimum_size = Vector2(64, 64)
+modulate = Color(1, 1, 1, 0.75)
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -96.0
-offset_top = -96.0
-offset_right = -32.0
-offset_bottom = -32.0
+offset_left = -140.0
+offset_top = -140.0
+offset_right = -16.0
+offset_bottom = -16.0
 grow_horizontal = 0
 grow_vertical = 0
 texture_normal = ExtResource("13_bjump")
@@ -1421,6 +1414,8 @@ ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("17_tbtn")
 action_name = "jump"
+touch_margin = 16.0
+drag_margin = 40.0
 
 [node name="PauseOverlay" parent="HUD" instance=ExtResource("6_paus")]
 visible = false
