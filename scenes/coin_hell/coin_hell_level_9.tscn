@@ -1,0 +1,608 @@
+[gd_scene load_steps=37 format=3 uid="uid://coin_hell_level_9_chains_damned"]
+
+[ext_resource type="Script" path="res://scripts/coin_hell/level_9.gd" id="1_lev9"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/player.tscn" id="2_play"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/coin.tscn" id="3_coin"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/exit_gate.tscn" id="4_exit"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/phantom_platform.tscn" id="5_pplat"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/swinging_chain.tscn" id="6_chain"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/spikes.tscn" id="7_spik"]
+[ext_resource type="PackedScene" path="res://scenes/shared/pause_overlay.tscn" id="8_paus"]
+[ext_resource type="PackedScene" path="res://scenes/shared/death_overlay.tscn" id="9_deat"]
+[ext_resource type="PackedScene" path="res://scenes/shared/level_complete_overlay.tscn" id="10_comp"]
+[ext_resource type="PackedScene" path="res://scenes/shared/haunted_hall_environment.tscn" id="11_henv"]
+[ext_resource type="Texture2D" path="res://assets/sprites/haunted_stone_platform.png" id="12_pstone"]
+[ext_resource type="Texture2D" path="res://assets/sprites/gothic_arch.png" id="13_garch"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ghostly_wisp.png" id="14_gwisp"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_left.png" id="15_bleft"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_right.png" id="16_bright"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_jump.png" id="17_bjump"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_left_pressed.png" id="18_bleft_p"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_right_pressed.png" id="19_bright_p"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_jump_pressed.png" id="20_bjump_p"]
+[ext_resource type="Script" path="res://scripts/coin_hell/touch_button.gd" id="21_tbtn"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_spawn_ground"]
+size = Vector2(180, 80)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat1_stone"]
+size = Vector2(120, 80)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_restA"]
+size = Vector2(130, 80)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_step_stone"]
+size = Vector2(120, 80)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_stoneB"]
+size = Vector2(120, 80)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_restB"]
+size = Vector2(130, 80)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_restC"]
+size = Vector2(130, 80)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pier"]
+size = Vector2(120, 80)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_restD"]
+size = Vector2(130, 80)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_stone_islet"]
+size = Vector2(120, 80)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_exit_sanctuary"]
+size = Vector2(220, 80)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pit"]
+size = Vector2(3600, 120)
+
+[sub_resource type="Gradient" id="Gradient_wisp_lvl9"]
+colors = PackedColorArray(0.35, 0.8, 1, 0.6, 0.55, 0.2, 0.9, 0)
+
+[node name="CoinHellLevel9" type="Node2D"]
+script = ExtResource("1_lev9")
+
+[node name="HauntedHallEnvironment" parent="." instance=ExtResource("11_henv")]
+stage_width = 3000.0
+stage_height = 600.0
+ghost_count = 10
+fog_intensity = 0.45
+
+[node name="AtmosphereParticles" type="CPUParticles2D" parent="."]
+position = Vector2(1500, 500)
+amount = 36
+lifetime = 4.2
+preprocess = 2.0
+texture = ExtResource("14_gwisp")
+emission_shape = 3
+emission_rect_extents = Vector2(1500, 20)
+direction = Vector2(0, -1)
+spread = 26.0
+gravity = Vector2(0, -18)
+initial_velocity_min = 15.0
+initial_velocity_max = 35.0
+scale_amount_min = 0.8
+scale_amount_max = 1.6
+color_ramp = SubResource("Gradient_wisp_lvl9")
+
+[node name="Decorations" type="Node2D" parent="."]
+
+[node name="ArchSpawn" type="Sprite2D" parent="Decorations"]
+position = Vector2(100, 335)
+texture = ExtResource("13_garch")
+
+[node name="ArchSec2" type="Sprite2D" parent="Decorations"]
+position = Vector2(1020, 285)
+texture = ExtResource("13_garch")
+
+[node name="ArchSec4" type="Sprite2D" parent="Decorations"]
+position = Vector2(1840, 275)
+texture = ExtResource("13_garch")
+
+[node name="ArchExit" type="Sprite2D" parent="Decorations"]
+position = Vector2(2740, 252)
+texture = ExtResource("13_garch")
+
+[node name="SpawnPoint" type="Marker2D" parent="."]
+position = Vector2(100, 380)
+
+[node name="Player" parent="." instance=ExtResource("2_play")]
+position = Vector2(100, 380)
+
+[node name="Camera2D" type="Camera2D" parent="Player"]
+offset = Vector2(0, -40)
+limit_left = 0
+limit_top = 0
+limit_right = 3000
+limit_bottom = 600
+position_smoothing_enabled = true
+position_smoothing_speed = 8.0
+
+[node name="Chains" type="Node2D" parent="."]
+
+[node name="Chain1_Single" parent="Chains" instance=ExtResource("6_chain")]
+position = Vector2(415, 140)
+chain_length = 150.0
+max_angle_degrees = 45.0
+swing_speed = 1.9
+phase_offset = 0.0
+
+[node name="Chain2_Wide" parent="Chains" instance=ExtResource("6_chain")]
+position = Vector2(785, 120)
+chain_length = 160.0
+max_angle_degrees = 52.0
+swing_speed = 2.1
+phase_offset = 0.5
+
+[node name="Chain3_Phantom" parent="Chains" instance=ExtResource("6_chain")]
+position = Vector2(1220, 110)
+chain_length = 160.0
+max_angle_degrees = 42.0
+swing_speed = 1.8
+phase_offset = 0.0
+
+[node name="Chain4_CorridorA" parent="Chains" instance=ExtResource("6_chain")]
+position = Vector2(1730, 110)
+chain_length = 160.0
+max_angle_degrees = 46.0
+swing_speed = 2.0
+phase_offset = 0.0
+
+[node name="Chain5_CorridorB" parent="Chains" instance=ExtResource("6_chain")]
+position = Vector2(1950, 110)
+chain_length = 160.0
+max_angle_degrees = 46.0
+swing_speed = 2.0
+phase_offset = 3.14159
+
+[node name="Chain6_Final" parent="Chains" instance=ExtResource("6_chain")]
+position = Vector2(2360, 100)
+chain_length = 170.0
+max_angle_degrees = 48.0
+swing_speed = 2.0
+phase_offset = 1.2
+
+[node name="Chain7_ExitGuard" parent="Chains" instance=ExtResource("6_chain")]
+position = Vector2(2560, 100)
+chain_length = 160.0
+max_angle_degrees = 42.0
+swing_speed = 1.9
+phase_offset = 2.6
+
+[node name="Platforms" type="Node2D" parent="."]
+
+[node name="Plat_SpawnGround" type="StaticBody2D" parent="Platforms"]
+position = Vector2(100, 420)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat_SpawnGround"]
+shape = SubResource("RectangleShape2D_spawn_ground")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat_SpawnGround"]
+offset_left = -90.0
+offset_top = -40.0
+offset_right = 90.0
+offset_bottom = 40.0
+texture = ExtResource("12_pstone")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="Plat1_Stone" type="StaticBody2D" parent="Platforms"]
+position = Vector2(320, 390)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat1_Stone"]
+shape = SubResource("RectangleShape2D_plat1_stone")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat1_Stone"]
+offset_left = -60.0
+offset_top = -40.0
+offset_right = 60.0
+offset_bottom = 40.0
+texture = ExtResource("12_pstone")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="Plat2_RestA" type="StaticBody2D" parent="Platforms"]
+position = Vector2(510, 380)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat2_RestA"]
+shape = SubResource("RectangleShape2D_restA")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat2_RestA"]
+offset_left = -65.0
+offset_top = -40.0
+offset_right = 65.0
+offset_bottom = 40.0
+texture = ExtResource("12_pstone")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="Plat3_StepStone" type="StaticBody2D" parent="Platforms"]
+position = Vector2(700, 360)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat3_StepStone"]
+shape = SubResource("RectangleShape2D_step_stone")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat3_StepStone"]
+offset_left = -60.0
+offset_top = -40.0
+offset_right = 60.0
+offset_bottom = 40.0
+texture = ExtResource("12_pstone")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="Plat4_StoneB" type="StaticBody2D" parent="Platforms"]
+position = Vector2(870, 350)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat4_StoneB"]
+shape = SubResource("RectangleShape2D_stoneB")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat4_StoneB"]
+offset_left = -60.0
+offset_top = -40.0
+offset_right = 60.0
+offset_bottom = 40.0
+texture = ExtResource("12_pstone")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="Plat4_RestB" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1020, 370)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat4_RestB"]
+shape = SubResource("RectangleShape2D_restB")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat4_RestB"]
+offset_left = -65.0
+offset_top = -40.0
+offset_right = 65.0
+offset_bottom = 40.0
+texture = ExtResource("12_pstone")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="Plat5_PhantomTimed" parent="Platforms" instance=ExtResource("5_pplat")]
+position = Vector2(1220, 330)
+width = 110.0
+height = 24.0
+solid_duration = 3.4
+phantom_duration = 1.3
+warning_duration = 0.8
+cycle_offset = 0.0
+
+[node name="Plat6_RestC" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1420, 360)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat6_RestC"]
+shape = SubResource("RectangleShape2D_restC")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat6_RestC"]
+offset_left = -65.0
+offset_top = -40.0
+offset_right = 65.0
+offset_bottom = 40.0
+texture = ExtResource("12_pstone")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="Plat7_StonePier" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1620, 350)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat7_StonePier"]
+shape = SubResource("RectangleShape2D_pier")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat7_StonePier"]
+offset_left = -60.0
+offset_top = -40.0
+offset_right = 60.0
+offset_bottom = 40.0
+texture = ExtResource("12_pstone")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="Plat8_MovingPhantom" parent="Platforms" instance=ExtResource("5_pplat")]
+position = Vector2(1840, 340)
+width = 110.0
+height = 24.0
+solid_duration = 3.6
+phantom_duration = 1.2
+warning_duration = 0.8
+move_distance = 60.0
+move_speed = 40.0
+move_axis = Vector2(1, 0)
+pause_at_ends = 0.4
+
+[node name="Plat8_RestD" type="StaticBody2D" parent="Platforms"]
+position = Vector2(2060, 360)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat8_RestD"]
+shape = SubResource("RectangleShape2D_restD")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat8_RestD"]
+offset_left = -65.0
+offset_top = -40.0
+offset_right = 65.0
+offset_bottom = 40.0
+texture = ExtResource("12_pstone")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="Plat9_StoneIslet" type="StaticBody2D" parent="Platforms"]
+position = Vector2(2260, 340)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat9_StoneIslet"]
+shape = SubResource("RectangleShape2D_stone_islet")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat9_StoneIslet"]
+offset_left = -60.0
+offset_top = -40.0
+offset_right = 60.0
+offset_bottom = 40.0
+texture = ExtResource("12_pstone")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="Plat10_TriggeredPhantom" parent="Platforms" instance=ExtResource("5_pplat")]
+position = Vector2(2460, 330)
+platform_type = 1
+trigger_delay = 1.4
+phantom_recovery_time = 2.0
+width = 110.0
+height = 24.0
+
+[node name="Plat_ExitSanctuary" type="StaticBody2D" parent="Platforms"]
+position = Vector2(2740, 340)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Plat_ExitSanctuary"]
+shape = SubResource("RectangleShape2D_exit_sanctuary")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat_ExitSanctuary"]
+offset_left = -110.0
+offset_top = -40.0
+offset_right = 110.0
+offset_bottom = 40.0
+texture = ExtResource("12_pstone")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="Coins" type="Node2D" parent="."]
+
+[node name="Coin1" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(260, 310)
+
+[node name="Coin2" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(415, 260)
+
+[node name="Coin3" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(700, 280)
+
+[node name="Coin4" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(785, 240)
+
+[node name="Coin5" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(1150, 280)
+
+[node name="Coin6" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(1290, 270)
+
+[node name="Coin7" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(1620, 270)
+
+[node name="Coin8" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(1840, 260)
+
+[node name="Coin9" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(2260, 260)
+
+[node name="Coin10" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(2460, 250)
+
+[node name="ExitGate" parent="." instance=ExtResource("4_exit")]
+position = Vector2(2740, 272)
+
+[node name="HazardSpikes" type="Node2D" parent="."]
+
+[node name="SpikesSec1" parent="HazardSpikes" instance=ExtResource("7_spik")]
+position = Vector2(415, 440)
+
+[node name="SpikesSec2" parent="HazardSpikes" instance=ExtResource("7_spik")]
+position = Vector2(785, 440)
+
+[node name="SpikesSec3" parent="HazardSpikes" instance=ExtResource("7_spik")]
+position = Vector2(1220, 440)
+
+[node name="SpikesSec4" parent="HazardSpikes" instance=ExtResource("7_spik")]
+position = Vector2(1840, 440)
+
+[node name="SpikesSec5" parent="HazardSpikes" instance=ExtResource("7_spik")]
+position = Vector2(2360, 440)
+
+[node name="PitHazardArea" type="Area2D" parent="."]
+position = Vector2(1500, 560)
+collision_layer = 4
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PitHazardArea"]
+shape = SubResource("RectangleShape2D_pit")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="MarginContainer" type="MarginContainer" parent="HUD"]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 56.0
+grow_horizontal = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 6
+
+[node name="TopBar" type="HBoxContainer" parent="HUD/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="PauseBtn" type="Button" parent="HUD/MarginContainer/TopBar"]
+custom_minimum_size = Vector2(80, 36)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 14
+text = "PAUSE"
+
+[node name="LevelName" type="Label" parent="HUD/MarginContainer/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 15
+text = "WORLD 2 · STAGE 9: CHAINS OF THE DAMNED"
+vertical_alignment = 1
+
+[node name="CoinCounter" type="Label" parent="HUD/MarginContainer/TopBar"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 16
+text = "COINS: 0 / 10"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="TouchControls" type="Control" parent="HUD"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="LeftBtn" type="TextureButton" parent="HUD/TouchControls"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -120.0
+offset_right = 120.0
+offset_bottom = -16.0
+grow_vertical = 0
+focus_mode = 0
+texture_normal = ExtResource("15_bleft")
+texture_pressed = ExtResource("18_bleft_p")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("21_tbtn")
+action_name = "move_left"
+
+[node name="RightBtn" type="TextureButton" parent="HUD/TouchControls"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 136.0
+offset_top = -120.0
+offset_right = 240.0
+offset_bottom = -16.0
+grow_vertical = 0
+focus_mode = 0
+texture_normal = ExtResource("16_bright")
+texture_pressed = ExtResource("19_bright_p")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("21_tbtn")
+action_name = "move_right"
+
+[node name="JumpBtn" type="TextureButton" parent="HUD/TouchControls"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -144.0
+offset_top = -140.0
+offset_right = -20.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 0
+focus_mode = 0
+texture_normal = ExtResource("17_bjump")
+texture_pressed = ExtResource("20_bjump_p")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("21_tbtn")
+action_name = "jump"
+
+[node name="PauseOverlay" parent="HUD" instance=ExtResource("8_paus")]
+visible = false
+
+[node name="DeathOverlay" parent="HUD" instance=ExtResource("9_deat")]
+visible = false
+
+[node name="LevelCompleteOverlay" parent="HUD" instance=ExtResource("10_comp")]
+visible = false

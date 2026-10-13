@@ -13,6 +13,7 @@ const PhantomPlatformClass = preload("res://scripts/coin_hell/phantom_platform.g
 const StageIntroCardClass = preload("res://scripts/shared/stage_intro_card.gd")
 const HauntedHallEnvironmentClass = preload("res://scripts/shared/haunted_hall_environment.gd")
 const CursedWindZoneClass = preload("res://scripts/coin_hell/cursed_wind_zone.gd")
+const SwingingChainClass = preload("res://scripts/coin_hell/swinging_chain.gd")
 
 var passed_count: int = 0
 var failed_count: int = 0
@@ -72,6 +73,8 @@ func run_all_tests() -> void:
 	test_level_7_bug_fixes()
 	test_cursed_wind_zone_mechanics()
 	test_level_8_gameplay_mechanics()
+	test_swinging_chain_mechanics()
+	test_level_9_gameplay_mechanics()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -151,7 +154,14 @@ func test_game_manager_level_definitions() -> void:
 	assert_true(GameManager.can_play_level(8), "Level 8 is playable")
 	assert_eq(lvl8.get("coin_count"), 10, "Level 8 coin count is 10")
 	
-	for lvl_id in range(9, 21):
+	var lvl9: Dictionary = GameManager.get_level_info(9)
+	assert_eq(lvl9.get("name"), "Chains of the Damned", "Level 9 name is 'Chains of the Damned'")
+	assert_eq(GameManager.get_world_name_for_stage(9), "THE HAUNTED HALL", "Level 9 world is 'THE HAUNTED HALL'")
+	assert_true(lvl9.get("implemented"), "Level 9 is marked implemented")
+	assert_true(GameManager.can_play_level(9), "Level 9 is playable")
+	assert_eq(lvl9.get("coin_count"), 10, "Level 9 coin count is 10")
+	
+	for lvl_id in range(10, 21):
 		assert_true(not GameManager.can_play_level(lvl_id), "Level %d is marked not implemented" % lvl_id)
 		
 	# Test coin counter clamping
@@ -309,13 +319,19 @@ func test_level_select_logic_and_states() -> void:
 	assert_true(SaveManager.is_level_unlocked(8), "Level 8 is unlocked after completing Level 7")
 	assert_true(GameManager.can_play_level(8), "Level 8 is playable")
 
-	# Complete level 8 to unlock level 9 and test unimplemented level press
+	# Complete level 8 to unlock level 9 and verify Level 9 is playable
 	SaveManager.complete_level(8)
 	lsel._update_ui()
 	assert_true(SaveManager.is_level_unlocked(9), "Level 9 is unlocked after completing Level 8")
-	lsel._on_level_tile_pressed(9)
+	assert_true(GameManager.can_play_level(9), "Level 9 is playable")
+
+	# Complete level 9 to unlock level 10 and test unimplemented level press
+	SaveManager.complete_level(9)
+	lsel._update_ui()
+	assert_true(SaveManager.is_level_unlocked(10), "Level 10 is unlocked after completing Level 9")
+	lsel._on_level_tile_pressed(10)
 	assert_true(modal.visible, "Pressing unlocked but unimplemented level shows modal")
-	assert_eq(modal_label.text, "Level 9 is still being built. Replay an earlier level for now.", "Modal shows exact unimplemented level message")
+	assert_eq(modal_label.text, "Level 10 is still being built. Replay an earlier level for now.", "Modal shows exact unimplemented level message")
 	
 	lsel.queue_free()
 
@@ -1663,12 +1679,12 @@ func test_developer_only_level_access() -> void:
 	assert_true(lsel.message_modal.visible, "Locked modal dialog displayed")
 	assert_eq(lsel.modal_title.text, "LEVEL 6 IS LOCKED", "Modal explains Level 6 is locked")
 	
-	# Unimplemented level (e.g. Level 9) cannot be launched even with dev mode on
+	# Unimplemented level (e.g. Level 10) cannot be launched even with dev mode on
 	lsel._on_dev_toggle_pressed()
 	assert_true(lsel.dev_bypass_active, "Dev bypass toggled on")
-	lsel._on_level_tile_pressed(9)
-	assert_true(lsel.message_modal.visible, "Unimplemented Level 9 displays in-progress modal")
-	assert_eq(lsel.modal_title.text, "LEVEL 9 IN PROGRESS", "Modal indicates Level 9 is in progress")
+	lsel._on_level_tile_pressed(10)
+	assert_true(lsel.message_modal.visible, "Unimplemented Level 10 displays in-progress modal")
+	assert_eq(lsel.modal_title.text, "LEVEL 10 IN PROGRESS", "Modal indicates Level 10 is in progress")
 	
 	lsel.queue_free()
 
@@ -2361,12 +2377,11 @@ func test_level_8_gameplay_mechanics() -> void:
 	assert_true(SaveManager.is_level_completed(8), "Level 8 marked completed in SaveManager")
 	assert_true(SaveManager.is_level_unlocked(9), "Level 9 is unlocked after Level 8 completion")
 	
-	# Next Level button on LevelCompleteOverlay displays in-progress modal for Level 9
+	# Next Level button transitions to Level 9 (now implemented)
 	var complete_overlay = lvl.get_node("HUD/LevelCompleteOverlay")
 	complete_overlay.open(10, 10)
 	complete_overlay._on_next_level_pressed()
-	var complete_modal_label: Label = complete_overlay.get_node("MessageModal/Panel/VBox/MessageLabel")
-	assert_eq(complete_modal_label.text, "Level 9 is unlocked, but it's still being built. Replay Level 1 for now.", "Level 8 Next Level shows safe unimplemented Level 9 modal")
+	assert_eq(GameManager.current_level_id, 9, "Level 8 Next Level transitions directly to implemented Level 9")
 	
 	# Test clean retry reset
 	print("  Validating Clean Trap Reset on Level 8 Retry...")
@@ -2375,6 +2390,238 @@ func test_level_8_gameplay_mechanics() -> void:
 	assert_true(not exit_gate._is_open, "ExitGate re-locks on retry")
 	assert_true(not exit_gate._completion_triggered, "ExitGate completion flag reset")
 	assert_eq(wz5.is_bursting, false, "Zone 5 reset to not bursting on retry")
+	
+	lvl.queue_free()
+
+func test_swinging_chain_mechanics() -> void:
+	print("\n--- TEST: Swinging Ghost Chain Mechanics ---")
+	var chain_scene: PackedScene = load("res://scenes/coin_hell/swinging_chain.tscn")
+	assert_true(chain_scene != null, "SwingingChain scene loads successfully")
+	var chain = chain_scene.instantiate()
+	add_child(chain)
+	
+	# Verify default exports and node structure
+	assert_eq(chain.chain_length, 140.0, "Default chain length is 140.0px")
+	assert_eq(chain.max_angle_degrees, 50.0, "Default max swing angle is 50.0 deg")
+	assert_eq(chain.swing_speed, 2.0, "Default swing speed is 2.0 rad/s")
+	assert_eq(chain.phase_offset, 0.0, "Default phase offset is 0.0 rad")
+	assert_true(chain.is_lethal, "Chain is lethal by default")
+	
+	assert_true(chain.mount_sprite != null, "MountSprite exists on SwingingChain")
+	assert_true(chain.pivot != null, "Pivot exists on SwingingChain")
+	assert_true(chain.chain_line != null, "ChainLine exists under Pivot")
+	assert_true(chain.weight_sprite != null, "WeightSprite exists under Pivot")
+	assert_true(chain.hazard_area != null, "HazardArea exists under Pivot")
+	assert_true(chain.weight_collision != null, "WeightCollision exists in HazardArea")
+	assert_true(chain.chain_collision != null, "ChainCollision exists in HazardArea")
+	
+	# Verify pendulum harmonic motion at key timestamps (theta(t) = max_angle * sin(t * w + phi))
+	print("  Validating Pendulum Harmonic Motion math...")
+	chain.reset()
+	assert_eq(chain.get_current_angle_degrees(), 0.0, "At t=0, chain hangs straight down (angle = 0 deg)")
+	
+	# At t = (PI/2) / 2.0 = 0.25 * PI (~0.785398s), sin(t * 2.0) = sin(PI/2) = 1.0 -> angle = +50 deg
+	var peak_right_time: float = (PI / 2.0) / chain.swing_speed
+	chain._physics_process(peak_right_time)
+	assert_true(is_equal_approx(chain.get_current_angle_degrees(), 50.0), "At peak right turnaround, angle = +50 deg")
+	
+	# Advance another half period (PI / 2.0 = 1.570796s): sin(3*PI/2) = -1.0 -> angle = -50 deg
+	var half_period: float = PI / chain.swing_speed
+	chain._physics_process(half_period)
+	assert_true(is_equal_approx(chain.get_current_angle_degrees(), -50.0), "At peak left turnaround, angle = -50 deg")
+	
+	# Verify counter-phase offset (e.g. antiphase double chain corridor, phi = PI)
+	print("  Validating Counter-phase offset behavior...")
+	chain.reset()
+	chain.phase_offset = PI
+	chain.reset()
+	assert_true(is_equal_approx(chain.get_current_angle_degrees(), 0.0), "Antiphase chain at t=0 has angle = 0 deg")
+	chain._physics_process(peak_right_time)
+	# sin(PI/2 + PI) = sin(3*PI/2) = -1.0 -> angle = -50 deg
+	assert_true(is_equal_approx(chain.get_current_angle_degrees(), -50.0), "Antiphase chain swings in exact opposition (-50 deg)")
+	
+	# Verify dynamic geometry update when chain_length is changed
+	print("  Validating geometry and collision updates...")
+	chain.chain_length = 180.0
+	assert_eq(chain.weight_sprite.position.y, 180.0, "Weight sprite updates to Y=180 when chain_length changed")
+	assert_eq(chain.weight_collision.position.y, 180.0, "Weight collision updates to Y=180")
+	assert_eq(chain.chain_line.points[1].y, 180.0, "ChainLine endpoint updates to Y=180")
+	
+	# Verify hazard collision lethality
+	print("  Validating Hazard Collision & Player Death...")
+	var player_scene = load("res://scenes/coin_hell/player.tscn")
+	var test_player = player_scene.instantiate()
+	add_child(test_player)
+	
+	var death_data := {"triggered": false}
+	var death_cb := func(): death_data["triggered"] = true
+	GameManager.player_died.connect(death_cb)
+	
+	chain.is_lethal = true
+	chain._on_hazard_body_entered(test_player)
+	assert_true(not test_player._is_alive, "Touching lethal chain kills the player")
+	assert_true(death_data["triggered"], "Touching lethal chain triggers GameManager.player_died")
+	GameManager.player_died.disconnect(death_cb)
+	
+	# Non-lethal toggle
+	death_data["triggered"] = false
+	test_player.revive()
+	GameManager.player_died.connect(death_cb)
+	chain.is_lethal = false
+	chain._on_hazard_body_entered(test_player)
+	assert_true(test_player._is_alive, "Non-lethal chain does not kill the player")
+	assert_true(not death_data["triggered"], "Non-lethal chain does not trigger death signal")
+	GameManager.player_died.disconnect(death_cb)
+	test_player.queue_free()
+	
+	# Verify clean retry reset
+	chain.reset()
+	assert_eq(chain._time, 0.0, "Reset restores _time to 0.0")
+	
+	chain.queue_free()
+
+func test_level_9_gameplay_mechanics() -> void:
+	print("\n--- TEST: Level 9 Gameplay Mechanics (Chains of the Damned) ---")
+	var lvl_scene = load("res://scenes/coin_hell/coin_hell_level_9.tscn")
+	assert_true(lvl_scene != null, "Level 9 scene loads successfully")
+	
+	var lvl = lvl_scene.instantiate()
+	add_child(lvl)
+	
+	var player = lvl.get_node_or_null("Player")
+	assert_true(player != null, "Player exists in Level 9")
+	assert_eq(player.position, Vector2(100, 380), "Player spawns safely at X=100, Y=380")
+	
+	var cam: Camera2D = player.get_node_or_null("Camera2D")
+	assert_true(cam != null, "Camera2D exists on player")
+	assert_eq(cam.limit_bottom, 600, "Camera2D limit_bottom is 600")
+	assert_eq(cam.limit_right, 3000, "Camera2D limit_right is 3000")
+	
+	# Mobile controls standardized dimensions
+	print("  Validating Level 9 Mobile Controls standardized dimensions...")
+	var touch_controls = lvl.get_node_or_null("HUD/TouchControls")
+	assert_true(touch_controls != null, "TouchControls exists in Level 9")
+	var lbtn: TextureButton = touch_controls.get_node("LeftBtn")
+	var rbtn: TextureButton = touch_controls.get_node("RightBtn")
+	var jbtn: TextureButton = touch_controls.get_node("JumpBtn")
+	assert_eq(lbtn.offset_right - lbtn.offset_left, 104.0, "LeftBtn width is 104px")
+	assert_eq(lbtn.offset_bottom - lbtn.offset_top, 104.0, "LeftBtn height is 104px")
+	assert_eq(rbtn.offset_right - rbtn.offset_left, 104.0, "RightBtn width is 104px")
+	assert_eq(rbtn.offset_bottom - rbtn.offset_top, 104.0, "RightBtn height is 104px")
+	assert_eq(jbtn.offset_right - jbtn.offset_left, 124.0, "JumpBtn width is 124px")
+	assert_eq(jbtn.offset_bottom - jbtn.offset_top, 124.0, "JumpBtn height is 124px")
+	
+	# Haunted Hall visual environment
+	assert_true(lvl.has_node("HauntedHallEnvironment"), "HauntedHallEnvironment exists in Level 9")
+	
+	# HUD World / Stage display
+	var hud_level_label: Label = lvl.get_node("HUD/MarginContainer/TopBar/LevelName")
+	assert_eq(hud_level_label.text, "WORLD 2 · STAGE 9: CHAINS OF THE DAMNED", "HUD displays correct World 2 Stage 9 label")
+	
+	# Exactly 10 coins
+	print("  Validating Exactly 10 Coins across 5 Sections...")
+	var coins = lvl.get_node("Coins")
+	assert_eq(coins.get_child_count(), 10, "Level 9 contains exactly 10 coins")
+	for i in range(1, 11):
+		assert_true(coins.has_node("Coin%d" % i), "Coin %d exists" % i)
+		
+	# Swinging Ghost Chains across sections
+	print("  Validating Swinging Ghost Chains across sections...")
+	var chains = lvl.get_node("Chains")
+	assert_eq(chains.get_child_count(), 7, "Level 9 contains 7 swinging chains")
+	
+	var ch1 = chains.get_node("Chain1_Single")
+	var ch2 = chains.get_node("Chain2_Wide")
+	var ch3 = chains.get_node("Chain3_Phantom")
+	var ch4 = chains.get_node("Chain4_CorridorA")
+	var ch5 = chains.get_node("Chain5_CorridorB")
+	var ch6 = chains.get_node("Chain6_Final")
+	var ch7 = chains.get_node("Chain7_ExitGuard")
+	
+	assert_true(ch1 is SwingingChainClass, "Chain 1 is SwingingChain")
+	assert_true(ch2 is SwingingChainClass, "Chain 2 is SwingingChain")
+	assert_true(ch3 is SwingingChainClass, "Chain 3 is SwingingChain")
+	assert_true(ch4 is SwingingChainClass, "Chain 4 is SwingingChain")
+	assert_true(ch5 is SwingingChainClass, "Chain 5 is SwingingChain")
+	assert_true(ch6 is SwingingChainClass, "Chain 6 is SwingingChain")
+	assert_true(ch7 is SwingingChainClass, "Chain 7 is SwingingChain")
+	
+	# Type B: Double-Chain Corridor alternating phase verification
+	assert_eq(ch4.swing_speed, ch5.swing_speed, "Corridor chains have matching swing speed")
+	assert_true(is_equal_approx(absf(ch5.phase_offset - ch4.phase_offset), PI), "Corridor chains swing in exact counter-phase (delta phi = PI)")
+	
+	# Medium Difficulty Platforms & Fair reaction times
+	print("  Validating Platform Widths & Phantom Platform Windows...")
+	var plat1 = lvl.get_node("Platforms/Plat1_Stone")
+	var plat2 = lvl.get_node("Platforms/Plat2_RestA")
+	var plat4_rest = lvl.get_node("Platforms/Plat4_RestB")
+	var plat5_phantom = lvl.get_node("Platforms/Plat5_PhantomTimed")
+	var plat6_rest = lvl.get_node("Platforms/Plat6_RestC")
+	var plat8_phantom = lvl.get_node("Platforms/Plat8_MovingPhantom")
+	var plat8_rest = lvl.get_node("Platforms/Plat8_RestD")
+	var plat10_phantom = lvl.get_node("Platforms/Plat10_TriggeredPhantom")
+	
+	var plat1_shape = plat1.get_node("CollisionShape2D").shape as RectangleShape2D
+	var plat2_shape = plat2.get_node("CollisionShape2D").shape as RectangleShape2D
+	var plat4_shape = plat4_rest.get_node("CollisionShape2D").shape as RectangleShape2D
+	var plat6_shape = plat6_rest.get_node("CollisionShape2D").shape as RectangleShape2D
+	var plat8_shape = plat8_rest.get_node("CollisionShape2D").shape as RectangleShape2D
+	
+	assert_true(plat1_shape.size.x >= 120.0, "Plat1 width >= 120px for reliable landing")
+	assert_true(plat2_shape.size.x >= 120.0, "Plat2 RestA width >= 120px")
+	assert_true(plat4_shape.size.x >= 120.0, "Plat4 RestB width >= 120px")
+	assert_true(plat6_shape.size.x >= 120.0, "Plat6 RestC width >= 120px")
+	assert_true(plat8_shape.size.x >= 120.0, "Plat8 RestD width >= 120px")
+	
+	# Phantom platform generous parameters
+	assert_true(plat5_phantom.width >= 100.0, "Plat5 Phantom width >= 100px")
+	assert_true(plat5_phantom.solid_duration >= 3.0, "Plat5 Phantom solid duration >= 3.0s")
+	assert_true(plat8_phantom.width >= 100.0, "Plat8 Moving Phantom width >= 100px")
+	assert_true(plat8_phantom.solid_duration >= 3.0, "Plat8 Moving Phantom solid duration >= 3.0s")
+	assert_true(plat10_phantom.width >= 100.0, "Plat10 Triggered Phantom width >= 100px")
+	assert_true(plat10_phantom.trigger_delay >= 1.2, "Plat10 Triggered Phantom reaction time >= 1.2s")
+	
+	# Exit gate locked state and positioning
+	var exit_gate = lvl.get_node("ExitGate")
+	var sanctuary_plat = lvl.get_node("Platforms/Plat_ExitSanctuary")
+	assert_true(not exit_gate._is_open, "ExitGate starts locked requiring all 10 coins")
+	assert_eq(exit_gate.position.y, 272.0, "Level 9 ExitGate rests at Y=272")
+	var plat_shape = sanctuary_plat.get_node("CollisionShape2D").shape as RectangleShape2D
+	var plat_top = sanctuary_plat.position.y - (plat_shape.size.y / 2.0)
+	assert_eq(exit_gate.position.y + 28.0, plat_top, "Level 9 ExitGate rests flush on sanctuary platform (Y=300)")
+	
+	# Collect all 10 coins
+	print("  Validating Coin Collection & Level 9 Completion...")
+	GameManager.current_level_id = 9
+	GameManager.total_coins_required = 10
+	GameManager.reset_coins()
+	for i in range(1, 11):
+		coins.get_node("Coin%d" % i).collect()
+	assert_eq(GameManager.current_coins, 10, "All 10 coins collected in Level 9")
+	assert_true(exit_gate._is_open, "ExitGate opens automatically when all 10 coins collected")
+	
+	# Enter exit gate to complete Level 9
+	GameManager.is_gameplay_active = true
+	exit_gate._on_body_entered(player)
+	assert_true(exit_gate._completion_triggered, "Level 9 completion triggered upon entering exit gate")
+	assert_true(SaveManager.is_level_completed(9), "Level 9 marked completed in SaveManager")
+	assert_true(SaveManager.is_level_unlocked(10), "Level 10 is unlocked after Level 9 completion")
+	
+	# Next Level button on LevelCompleteOverlay displays in-progress modal for Level 10
+	var complete_overlay = lvl.get_node("HUD/LevelCompleteOverlay")
+	complete_overlay.open(10, 10)
+	complete_overlay._on_next_level_pressed()
+	var complete_modal_label: Label = complete_overlay.get_node("MessageModal/Panel/VBox/MessageLabel")
+	assert_eq(complete_modal_label.text, "Level 10 is unlocked, but it's still being built. Replay Level 1 for now.", "Level 9 Next Level shows safe unimplemented Level 10 modal")
+	
+	# Test clean retry reset
+	print("  Validating Clean Trap Reset on Level 9 Retry...")
+	lvl._on_retry()
+	assert_eq(GameManager.current_coins, 0, "Level 9 retry resets coins to 0")
+	assert_true(not exit_gate._is_open, "ExitGate re-locks on retry")
+	assert_true(not exit_gate._completion_triggered, "ExitGate completion flag reset")
+	assert_eq(ch1._time, 0.0, "Chain 1 reset to t=0 on retry")
+	assert_eq(ch5._time, 0.0, "Chain 5 reset to t=0 on retry")
 	
 	lvl.queue_free()
 

@@ -30,7 +30,7 @@ var levels: Dictionary = {
 	6: {"id": 6, "name": "Phantom's Curse", "world_id": 2, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_6.tscn", "coin_count": 10},
 	7: {"id": 7, "name": "Hall of Illusions", "world_id": 2, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_7.tscn", "coin_count": 10},
 	8: {"id": 8, "name": "The Cursed Wind", "world_id": 2, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_8.tscn", "coin_count": 10},
-	9: {"id": 9, "name": "The Fake Exit", "world_id": 2, "implemented": false, "scene": "", "coin_count": 15},
+	9: {"id": 9, "name": "Chains of the Damned", "world_id": 2, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_9.tscn", "coin_count": 10},
 	10: {"id": 10, "name": "Just One More", "world_id": 2, "implemented": false, "scene": "", "coin_count": 18},
 	11: {"id": 11, "name": "The Long Way", "world_id": 3, "implemented": false, "scene": "", "coin_count": 20},
 	12: {"id": 12, "name": "Double Trouble", "world_id": 3, "implemented": false, "scene": "", "coin_count": 14},

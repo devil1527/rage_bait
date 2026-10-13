@@ -696,6 +696,75 @@ def create_wind_streak_asset():
     
     wind.save("assets/sprites/wind_streak.png")
 
+def create_swinging_chain_assets():
+    # 1. 24x16 chain_mount.png - Gothic iron ceiling mount bracket
+    mount = Image.new("RGBA", (24, 16), (0, 0, 0, 0))
+    dm = ImageDraw.Draw(mount)
+    # Ceiling flange / plate
+    dm.rectangle([2, 0, 21, 5], fill=(30, 25, 42, 255), outline=(18, 14, 26, 255))
+    # Mounting bolts
+    dm.point((4, 2), fill=(130, 115, 170, 255))
+    dm.point((19, 2), fill=(130, 115, 170, 255))
+    # Spectral cyan rim line along top ceiling contact
+    dm.line([(2, 0), (21, 0)], fill=(0, 220, 200, 180))
+    # Bracket clevis / downward hanger
+    dm.polygon([(6, 5), (17, 5), (15, 10), (8, 10)], fill=(38, 32, 54, 255), outline=(22, 17, 32, 255))
+    # Heavy pivot iron ring / loop
+    dm.ellipse([8, 8, 15, 15], outline=(48, 40, 68, 255), width=2)
+    dm.point((11, 14), fill=(0, 240, 220, 255)) # cursed glow highlight
+    mount.save("assets/sprites/chain_mount.png")
+
+    # 2. 12x16 chain_link.png - Interlocking spectral iron chain links (seamless tiling)
+    link = Image.new("RGBA", (12, 16), (0, 0, 0, 0))
+    dl = ImageDraw.Draw(link)
+    # Vertical link loop
+    dl.rectangle([3, 0, 8, 9], outline=(36, 30, 52, 255), width=2)
+    dl.line([(3, 1), (3, 8)], fill=(60, 50, 84, 255)) # highlight left
+    dl.point((4, 2), fill=(0, 220, 200, 200)) # spectral glint
+    # Horizontal interlocking connector loop (lower half)
+    dl.rectangle([2, 8, 9, 15], outline=(46, 38, 64, 255), width=2)
+    dl.line([(2, 9), (2, 14)], fill=(70, 60, 96, 255))
+    dl.point((8, 13), fill=(140, 120, 190, 220))
+    link.save("assets/sprites/chain_link.png")
+
+    # 3. 32x32 ghost_chain_weight.png - Cursed gothic spiked pendulum weight / mace head
+    weight = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+    dw = ImageDraw.Draw(weight)
+    # Spikes extending in 8 directions
+    # Cardinal spikes (sharp triangles)
+    dw.polygon([(16, 1), (13, 8), (18, 8)], fill=(28, 22, 40, 255), outline=(16, 12, 24, 255)) # Up
+    dw.polygon([(16, 30), (13, 23), (18, 23)], fill=(28, 22, 40, 255), outline=(16, 12, 24, 255)) # Down
+    dw.polygon([(1, 16), (8, 13), (8, 18)], fill=(28, 22, 40, 255), outline=(16, 12, 24, 255)) # Left
+    dw.polygon([(30, 16), (23, 13), (23, 18)], fill=(28, 22, 40, 255), outline=(16, 12, 24, 255)) # Right
+    # Diagonal corner spikes
+    dw.polygon([(4, 4), (10, 6), (6, 10)], fill=(32, 26, 46, 255), outline=(18, 14, 28, 255))
+    dw.polygon([(27, 4), (21, 6), (25, 10)], fill=(32, 26, 46, 255), outline=(18, 14, 28, 255))
+    dw.polygon([(4, 27), (10, 25), (6, 21)], fill=(32, 26, 46, 255), outline=(18, 14, 28, 255))
+    dw.polygon([(27, 27), (21, 25), (25, 21)], fill=(32, 26, 46, 255), outline=(18, 14, 28, 255))
+    # Spike tips glowing coral/spectral
+    dw.point((16, 2), fill=(0, 255, 220, 255))
+    dw.point((16, 29), fill=(0, 255, 220, 255))
+    dw.point((2, 16), fill=(0, 255, 220, 255))
+    dw.point((29, 16), fill=(0, 255, 220, 255))
+
+    # Main iron body sphere
+    dw.ellipse([7, 7, 24, 24], fill=(36, 30, 52, 255), outline=(20, 16, 30, 255))
+    # Inner iron core ring
+    dw.ellipse([9, 9, 22, 22], fill=(48, 40, 68, 255), outline=(28, 22, 40, 255))
+    # Iron rivets
+    for rx, ry in [(11, 11), (20, 11), (11, 20), (20, 20)]:
+        dw.point((rx, ry), fill=(140, 120, 180, 255))
+    # Cursed demon skull glyph in core
+    dw.polygon([(13, 13), (18, 13), (17, 18), (14, 18)], fill=(20, 16, 28, 255))
+    # Glowing spectral cyan eye slits
+    dw.rectangle([13, 14, 14, 15], fill=(0, 240, 220, 255))
+    dw.rectangle([17, 14, 18, 15], fill=(0, 240, 220, 255))
+    # Outer spectral aura / rim
+    dw.arc([6, 6, 25, 25], start=45, end=135, fill=(0, 220, 200, 160))
+    dw.arc([6, 6, 25, 25], start=225, end=315, fill=(160, 120, 220, 160))
+
+    weight.save("assets/sprites/ghost_chain_weight.png")
+
 if __name__ == "__main__":
     create_player()
     create_coin()
@@ -710,4 +779,5 @@ if __name__ == "__main__":
     create_phantom_platform_assets()
     create_haunted_hall_assets()
     create_wind_streak_asset()
+    create_swinging_chain_assets()
     print("All pixel assets generated successfully!")
