@@ -1,0 +1,74 @@
+[gd_scene load_steps=7 format=3 uid="uid://d3m5p7q9s1t2u"]
+
+[ext_resource type="Script" path="res://scripts/coin_hell/phantom_platform.gd" id="1_pplat"]
+[ext_resource type="Texture2D" path="res://assets/sprites/phantom_platform.png" id="2_psolid"]
+[ext_resource type="Texture2D" path="res://assets/sprites/phantom_spectral.png" id="3_pspec"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ghostly_wisp.png" id="4_pwisp"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(80, 24)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_step"]
+size = Vector2(74, 10)
+
+[sub_resource type="Gradient" id="Gradient_spectral"]
+colors = PackedColorArray(0.4, 0.8, 1, 0.7, 0.6, 0.3, 0.9, 0)
+
+[node name="PhantomPlatform" type="StaticBody2D"]
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("1_pplat")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_body")
+
+[node name="SolidVisual" type="NinePatchRect" parent="."]
+offset_left = -40.0
+offset_top = -12.0
+offset_right = 40.0
+offset_bottom = 12.0
+texture = ExtResource("2_psolid")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="SpectralVisual" type="NinePatchRect" parent="."]
+visible = false
+offset_left = -40.0
+offset_top = -12.0
+offset_right = 40.0
+offset_bottom = 12.0
+texture = ExtResource("3_pspec")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="StepArea" type="Area2D" parent="."]
+position = Vector2(0, -16)
+collision_layer = 0
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StepArea"]
+shape = SubResource("RectangleShape2D_step")
+
+[node name="SpectralParticles" type="CPUParticles2D" parent="."]
+emitting = false
+amount = 6
+lifetime = 0.8
+texture = ExtResource("4_pwisp")
+emission_shape = 3
+emission_rect_extents = Vector2(36, 4)
+direction = Vector2(0, -1)
+spread = 20.0
+gravity = Vector2(0, -25)
+initial_velocity_min = 10.0
+initial_velocity_max = 25.0
+scale_amount_min = 0.8
+scale_amount_max = 1.4
+color_ramp = SubResource("Gradient_spectral")

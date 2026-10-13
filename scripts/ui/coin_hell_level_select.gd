@@ -3,7 +3,7 @@ extends Control
 @onready var back_button: Button = $MarginContainer/VBox/HeaderBar/BackButton
 @onready var progress_label: Label = $MarginContainer/VBox/HeaderBar/ProgressBox/ProgressLabel
 @onready var progress_bar: ProgressBar = $MarginContainer/VBox/HeaderBar/ProgressBox/ProgressBar
-@onready var grid_container: GridContainer = $MarginContainer/VBox/ScrollContainer/LevelGrid
+@onready var worlds_container: VBoxContainer = $MarginContainer/VBox/ScrollContainer/WorldsContainer
 @onready var message_modal: Control = $MessageModal
 @onready var modal_title: Label = $MessageModal/Panel/VBox/TitleLabel
 @onready var modal_label: Label = $MessageModal/Panel/VBox/MessageLabel
@@ -127,69 +127,127 @@ func _update_ui() -> void:
 	progress_bar.value = float(cleared) / 20.0 * 100.0
 	_refresh_tile_states()
 
+func get_level_button(lvl_id: int) -> Button:
+	return find_child("LevelBtn_%d" % lvl_id, true, false) as Button
+
 func _build_level_tiles() -> void:
-	for child in grid_container.get_children():
+	for child in worlds_container.get_children():
 		child.queue_free()
 
-	for lvl_id in range(1, 21):
-		var info: Dictionary = GameManager.get_level_info(lvl_id)
-		var lvl_name: String = info.get("name", "Level %d" % lvl_id)
+	for wid in range(1, 5):
+		var w_info: Dictionary = GameManager.worlds.get(wid, {})
+		var w_name: String = str(w_info.get("name", "WORLD %d" % wid))
+		var stages: Array = w_info.get("stages", [])
 		
-		var btn := Button.new()
-		btn.custom_minimum_size = Vector2(170, 94)
-		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		btn.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		btn.name = "LevelBtn_%d" % lvl_id
+		# Section Container
+		var section := VBoxContainer.new()
+		section.name = "WorldSection_%d" % wid
+		section.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		section.add_theme_constant_override("separation", 8)
 		
-		var vbox := VBoxContainer.new()
-		vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
-		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		vbox.add_theme_constant_override("separation", 3)
+		# Header Bar
+		var header_bar := HBoxContainer.new()
+		header_bar.name = "WorldHeader_%d" % wid
+		header_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		
-		var header_box := HBoxContainer.new()
-		header_box.alignment = BoxContainer.ALIGNMENT_CENTER
-		header_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		header_box.add_theme_constant_override("separation", 6)
+		var title_label := Label.new()
+		title_label.name = "TitleLabel"
+		title_label.text = "WORLD %d — %s" % [wid, w_name]
+		title_label.add_theme_font_size_override("font_size", 14)
 		
-		var num_label := Label.new()
-		num_label.text = "LEVEL %d" % lvl_id
-		num_label.add_theme_font_size_override("font_size", 14)
-		num_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		header_box.add_child(num_label)
+		var header_color: Color = Color(0.0, 0.9, 1.0)
+		match wid:
+			1: header_color = Color(0.0, 0.9, 1.0) # Neon Cyan
+			2: header_color = Color(0.75, 0.55, 1.0) # Spectral Violet
+			3: header_color = Color(1.0, 0.75, 0.2) # Hazard Amber
+			4: header_color = Color(1.0, 0.35, 0.35) # Hellfire Red
+		title_label.add_theme_color_override("font_color", header_color)
+		header_bar.add_child(title_label)
 		
-		var status_icon := TextureRect.new()
-		status_icon.name = "StatusIcon"
-		status_icon.custom_minimum_size = Vector2(16, 16)
-		status_icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
-		status_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		header_box.add_child(status_icon)
+		var spacer := Control.new()
+		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		header_bar.add_child(spacer)
 		
-		vbox.add_child(header_box)
+		var stage_range_label := Label.new()
+		var s_start: int = stages.front() if stages.size() > 0 else (wid * 5 - 4)
+		var s_end: int = stages.back() if stages.size() > 0 else (wid * 5)
+		stage_range_label.text = "STAGES %d–%d" % [s_start, s_end]
+		stage_range_label.add_theme_font_size_override("font_size", 11)
+		stage_range_label.add_theme_color_override("font_color", Color(0.5, 0.55, 0.65))
+		header_bar.add_child(stage_range_label)
 		
-		var name_label := Label.new()
-		name_label.text = lvl_name
-		name_label.add_theme_font_size_override("font_size", 11)
-		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		vbox.add_child(name_label)
+		section.add_child(header_bar)
 		
-		var state_label := Label.new()
-		state_label.name = "StateLabel"
-		state_label.add_theme_font_size_override("font_size", 10)
-		state_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		state_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		vbox.add_child(state_label)
+		# Grid for this world's 5 stages
+		var grid := GridContainer.new()
+		grid.name = "WorldGrid_%d" % wid
+		grid.columns = 5
+		grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		grid.add_theme_constant_override("h_separation", 10)
+		grid.add_theme_constant_override("v_separation", 10)
 		
-		btn.add_child(vbox)
-		
-		# Connect button click
-		btn.pressed.connect(func(): _on_level_tile_pressed(lvl_id))
-		grid_container.add_child(btn)
+		for lvl_id in stages:
+			var info: Dictionary = GameManager.get_level_info(lvl_id)
+			var lvl_name: String = info.get("name", "Stage %d" % lvl_id)
+			
+			var btn := Button.new()
+			btn.custom_minimum_size = Vector2(170, 94)
+			btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			btn.size_flags_vertical = Control.SIZE_EXPAND_FILL
+			btn.name = "LevelBtn_%d" % lvl_id
+			
+			var vbox := VBoxContainer.new()
+			vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+			vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+			vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			vbox.add_theme_constant_override("separation", 3)
+			
+			var header_box := HBoxContainer.new()
+			header_box.alignment = BoxContainer.ALIGNMENT_CENTER
+			header_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			header_box.add_theme_constant_override("separation", 6)
+			
+			var num_label := Label.new()
+			num_label.text = "STAGE %d" % lvl_id
+			num_label.add_theme_font_size_override("font_size", 14)
+			num_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			header_box.add_child(num_label)
+			
+			var status_icon := TextureRect.new()
+			status_icon.name = "StatusIcon"
+			status_icon.custom_minimum_size = Vector2(16, 16)
+			status_icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+			status_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			header_box.add_child(status_icon)
+			
+			vbox.add_child(header_box)
+			
+			var name_label := Label.new()
+			name_label.text = lvl_name
+			name_label.add_theme_font_size_override("font_size", 11)
+			name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			vbox.add_child(name_label)
+			
+			var state_label := Label.new()
+			state_label.name = "StateLabel"
+			state_label.add_theme_font_size_override("font_size", 10)
+			state_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			state_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			vbox.add_child(state_label)
+			
+			btn.add_child(vbox)
+			
+			# Connect button click
+			btn.pressed.connect(func(): _on_level_tile_pressed(lvl_id))
+			grid.add_child(btn)
+			
+		section.add_child(grid)
+		worlds_container.add_child(section)
 
 func _refresh_tile_states() -> void:
 	for lvl_id in range(1, 21):
-		var btn: Button = grid_container.get_node_or_null("LevelBtn_%d" % lvl_id)
+		var btn: Button = get_level_button(lvl_id)
 		if not btn:
 			continue
 			

@@ -81,30 +81,27 @@ theme_override_constants/separation = 12
 alignment = 1
 
 [node name="BrandLabel" type="Label" parent="CenterContainer/VBox"]
+visible = false
 layout_mode = 2
-theme_override_colors/font_color = Color(0, 0.898039, 1, 1)
-theme_override_colors/font_shadow_color = Color(0, 0.3, 0.5, 0.6)
-theme_override_constants/shadow_offset_x = 0
-theme_override_constants/shadow_offset_y = 2
 theme_override_font_sizes/font_size = 14
 text = "RETRO RAGE ARCADE"
 horizontal_alignment = 1
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.819608, 0.14902, 1)
-theme_override_colors/font_shadow_color = Color(0.8, 0.4, 0, 0.8)
+theme_override_colors/font_color = Color(1, 0.843137, 0, 1)
+theme_override_colors/font_shadow_color = Color(0.85, 0.2, 0.3, 0.8)
 theme_override_constants/shadow_offset_x = 2
 theme_override_constants/shadow_offset_y = 3
-theme_override_font_sizes/font_size = 46
-text = "COIN HELL"
+theme_override_font_sizes/font_size = 36
+text = "RETRO RAGE ARCADE"
 horizontal_alignment = 1
 
 [node name="WelcomeLabel" type="Label" parent="CenterContainer/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.85, 0.85, 0.92, 1)
-theme_override_font_sizes/font_size = 15
-text = "WELCOME TO COIN HELL"
+theme_override_colors/font_color = Color(0, 0.898039, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "EVERY LEVEL BETRAYS YOU."
 horizontal_alignment = 1
 
 [node name="IconContainer" type="CenterContainer" parent="CenterContainer/VBox"]

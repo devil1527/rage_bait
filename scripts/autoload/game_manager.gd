@@ -12,29 +12,39 @@ var current_coins: int = 0
 var total_coins_required: int = 10
 var is_gameplay_active: bool = false
 
+# 4 Worlds definitions organizing all 20 planned stages
+var worlds: Dictionary = {
+	1: {"id": 1, "name": "NEON RUINS", "stages": [1, 2, 3, 4, 5]},
+	2: {"id": 2, "name": "THE HAUNTED HALL", "stages": [6, 7, 8, 9, 10]},
+	3: {"id": 3, "name": "RAGE FACTORY", "stages": [11, 12, 13, 14, 15]},
+	4: {"id": 4, "name": "FINAL HELL", "stages": [16, 17, 18, 19, 20]}
+}
+
 # 20 planned levels definitions as specified in section 7
 var levels: Dictionary = {
-	1: {"id": 1, "name": "The Warm-Up", "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_1.tscn", "coin_count": 10},
-	2: {"id": 2, "name": "Trust Nothing", "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_2.tscn", "coin_count": 10},
-	3: {"id": 3, "name": "Fire & Fury", "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_3.tscn", "coin_count": 10},
-	4: {"id": 4, "name": "Crushing Silence", "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_4.tscn", "coin_count": 10},
-	5: {"id": 5, "name": "The Final Betrayal", "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_5.tscn", "coin_count": 10},
-	6: {"id": 6, "name": "The Haunted Hall", "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_6.tscn", "coin_count": 10},
-	7: {"id": 7, "name": "The Vanishing Path", "implemented": false, "scene": "", "coin_count": 16},
-	8: {"id": 8, "name": "Greed Trap", "implemented": false, "scene": "", "coin_count": 10},
-	9: {"id": 9, "name": "The Fake Exit", "implemented": false, "scene": "", "coin_count": 15},
-	10: {"id": 10, "name": "Just One More", "implemented": false, "scene": "", "coin_count": 18},
-	11: {"id": 11, "name": "The Long Way", "implemented": false, "scene": "", "coin_count": 20},
-	12: {"id": 12, "name": "Double Trouble", "implemented": false, "scene": "", "coin_count": 14},
-	13: {"id": 13, "name": "The Coin Switch", "implemented": false, "scene": "", "coin_count": 12},
-	14: {"id": 14, "name": "Nothing Is Safe", "implemented": false, "scene": "", "coin_count": 16},
-	15: {"id": 15, "name": "The Betrayal", "implemented": false, "scene": "", "coin_count": 15},
-	16: {"id": 16, "name": "Chaos Theory", "implemented": false, "scene": "", "coin_count": 18},
-	17: {"id": 17, "name": "No Turning Back", "implemented": false, "scene": "", "coin_count": 20},
-	18: {"id": 18, "name": "The Developer Laughs", "implemented": false, "scene": "", "coin_count": 15},
-	19: {"id": 19, "name": "Dragon's Doorstep", "implemented": false, "scene": "", "coin_count": 22},
-	20: {"id": 20, "name": "Dragon's Den", "implemented": false, "scene": "", "coin_count": 25}
+	1: {"id": 1, "name": "The Warm-Up", "world_id": 1, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_1.tscn", "coin_count": 10},
+	2: {"id": 2, "name": "Trust Nothing", "world_id": 1, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_2.tscn", "coin_count": 10},
+	3: {"id": 3, "name": "Fire & Fury", "world_id": 1, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_3.tscn", "coin_count": 10},
+	4: {"id": 4, "name": "Crushing Silence", "world_id": 1, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_4.tscn", "coin_count": 10},
+	5: {"id": 5, "name": "The Final Betrayal", "world_id": 1, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_5.tscn", "coin_count": 10},
+	6: {"id": 6, "name": "Phantom's Curse", "world_id": 2, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_6.tscn", "coin_count": 10},
+	7: {"id": 7, "name": "The Vanishing Path", "world_id": 2, "implemented": false, "scene": "", "coin_count": 16},
+	8: {"id": 8, "name": "Greed Trap", "world_id": 2, "implemented": false, "scene": "", "coin_count": 10},
+	9: {"id": 9, "name": "The Fake Exit", "world_id": 2, "implemented": false, "scene": "", "coin_count": 15},
+	10: {"id": 10, "name": "Just One More", "world_id": 2, "implemented": false, "scene": "", "coin_count": 18},
+	11: {"id": 11, "name": "The Long Way", "world_id": 3, "implemented": false, "scene": "", "coin_count": 20},
+	12: {"id": 12, "name": "Double Trouble", "world_id": 3, "implemented": false, "scene": "", "coin_count": 14},
+	13: {"id": 13, "name": "The Coin Switch", "world_id": 3, "implemented": false, "scene": "", "coin_count": 12},
+	14: {"id": 14, "name": "Nothing Is Safe", "world_id": 3, "implemented": false, "scene": "", "coin_count": 16},
+	15: {"id": 15, "name": "The Betrayal", "world_id": 3, "implemented": false, "scene": "", "coin_count": 15},
+	16: {"id": 16, "name": "Chaos Theory", "world_id": 4, "implemented": false, "scene": "", "coin_count": 18},
+	17: {"id": 17, "name": "No Turning Back", "world_id": 4, "implemented": false, "scene": "", "coin_count": 20},
+	18: {"id": 18, "name": "The Developer Laughs", "world_id": 4, "implemented": false, "scene": "", "coin_count": 15},
+	19: {"id": 19, "name": "Dragon's Doorstep", "world_id": 4, "implemented": false, "scene": "", "coin_count": 22},
+	20: {"id": 20, "name": "Dragon's Den", "world_id": 4, "implemented": false, "scene": "", "coin_count": 25}
 }
+
+var shown_stage_intros: Dictionary = {}
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -129,3 +139,77 @@ func trigger_level_complete() -> void:
 func trigger_player_death() -> void:
 	AudioManager.play_sfx("death")
 	player_died.emit()
+
+func get_world_id_for_stage(stage_id: int) -> int:
+	if stage_id <= 5:
+		return 1
+	elif stage_id <= 10:
+		return 2
+	elif stage_id <= 15:
+		return 3
+	else:
+		return 4
+
+func get_world_name(world_id: int) -> String:
+	if worlds.has(world_id):
+		return str(worlds[world_id].get("name", ""))
+	return ""
+
+func get_world_name_for_stage(stage_id: int) -> String:
+	return get_world_name(get_world_id_for_stage(stage_id))
+
+func get_stage_hud_label(stage_id: int) -> String:
+	var wid := get_world_id_for_stage(stage_id)
+	return "WORLD %d · STAGE %d" % [wid, stage_id]
+
+func get_stage_title(stage_id: int) -> String:
+	var info: Dictionary = get_level_info(stage_id)
+	return str(info.get("name", "STAGE %d" % stage_id))
+
+func should_show_stage_intro(stage_id: int) -> bool:
+	return not shown_stage_intros.get(stage_id, false)
+
+func mark_stage_intro_shown(stage_id: int) -> void:
+	shown_stage_intros[stage_id] = true
+
+func reset_stage_intros() -> void:
+	shown_stage_intros.clear()
+
+func present_stage_intro(parent: Node, stage_id: int) -> Node:
+	if not should_show_stage_intro(stage_id):
+		return null
+	mark_stage_intro_shown(stage_id)
+	var intro_scene: PackedScene = load("res://scenes/shared/stage_intro_card.tscn")
+	if not intro_scene:
+		return null
+	var card = intro_scene.instantiate()
+	parent.add_child(card)
+	var wid := get_world_id_for_stage(stage_id)
+	var wname := get_world_name(wid)
+	var sname := get_stage_title(stage_id)
+	if card.has_method("setup"):
+		card.setup(wid, wname, stage_id, sname)
+	return card
+
+func setup_level_hud(level_root: Node, stage_id: int) -> void:
+	var top_bar: Node = level_root.get_node_or_null("HUD/MarginContainer/TopBar")
+	if top_bar:
+		var world_stage_text := get_stage_hud_label(stage_id)
+		var target_lbl: Label = null
+		if top_bar.has_node("WorldName"):
+			target_lbl = top_bar.get_node("WorldName")
+		elif top_bar.has_node("LevelInfoBox/WorldTitle"):
+			target_lbl = top_bar.get_node("LevelInfoBox/WorldTitle")
+		elif top_bar.has_node("LevelName"):
+			target_lbl = top_bar.get_node("LevelName")
+		elif top_bar.has_node("LevelTitle"):
+			target_lbl = top_bar.get_node("LevelTitle")
+		elif top_bar.has_node("LevelInfoBox/LevelTitle"):
+			target_lbl = top_bar.get_node("LevelInfoBox/LevelTitle")
+			
+		if target_lbl:
+			target_lbl.text = world_stage_text
+
+	present_stage_intro(level_root, stage_id)
+
+

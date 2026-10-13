@@ -47,6 +47,8 @@ func _ready() -> void:
 	death_overlay.visible = false
 	level_complete_overlay.visible = false
 	
+	GameManager.setup_level_hud(self, 5)
+	
 	_reset_level()
 
 func _setup_touch_controls() -> void:

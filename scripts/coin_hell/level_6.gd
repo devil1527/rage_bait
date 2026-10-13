@@ -1,8 +1,9 @@
 extends Node2D
 
-## Level 6 ("The Haunted Hall" - Cursed Castle World 2 Entrance) logic controller.
-## Manages HUD updates, player spawn/death/retry, pause, touch controls, and exit flows.
-## First level of World 2: Cursed Castle, featuring dark gothic atmosphere and 10 deliberate coin encounters.
+## Level 6 ("Phantom's Curse" - World 2: The Haunted Hall) logic controller.
+## Manages HUD updates, world/stage transition card, player spawn/death/retry,
+## touch controls, and exit flows.
+## Features new Timed and Triggered Phantom Platform mechanics across 5 distinct sections with exactly 10 coins.
 
 @onready var player: CharacterBody2D = $Player
 @onready var spawn_point: Marker2D = $SpawnPoint
@@ -11,6 +12,7 @@ extends Node2D
 
 # HUD nodes
 @onready var coin_counter_label: Label = $HUD/MarginContainer/TopBar/CoinCounter
+@onready var level_name_label: Label = $HUD/MarginContainer/TopBar/LevelName
 @onready var pause_button: Button = $HUD/MarginContainer/TopBar/PauseBtn
 
 # Touch Controls
@@ -45,6 +47,12 @@ func _ready() -> void:
 	pause_overlay.visible = false
 	death_overlay.visible = false
 	level_complete_overlay.visible = false
+	
+	# Update HUD world/stage label
+	level_name_label.text = "WORLD 2 · STAGE 6: PHANTOM'S CURSE"
+	
+	# Present brief transition card if first entry in this gameplay session
+	GameManager.present_stage_intro(self, 6)
 	
 	_reset_level()
 

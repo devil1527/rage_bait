@@ -9,6 +9,8 @@ const WallSpikeTrapClass = preload("res://scripts/coin_hell/wall_spike_trap.gd")
 const InfernoGateClass = preload("res://scripts/coin_hell/inferno_gate.gd")
 const CeilingCrusherClass = preload("res://scripts/coin_hell/ceiling_crusher.gd")
 const FakeSafePlatformClass = preload("res://scripts/coin_hell/fake_safe_platform.gd")
+const PhantomPlatformClass = preload("res://scripts/coin_hell/phantom_platform.gd")
+const StageIntroCardClass = preload("res://scripts/shared/stage_intro_card.gd")
 
 var passed_count: int = 0
 var failed_count: int = 0
@@ -48,6 +50,7 @@ func assert_eq(actual, expected, test_name: String) -> void:
 func run_all_tests() -> void:
 	test_save_manager_and_persistence()
 	test_game_manager_level_definitions()
+	test_world_and_stage_system()
 	test_main_menu_logic_and_modals()
 	test_level_select_logic_and_states()
 	test_level_1_gameplay_mechanics()
@@ -122,7 +125,8 @@ func test_game_manager_level_definitions() -> void:
 	assert_true(GameManager.can_play_level(5), "Level 5 is playable")
 	
 	var lvl6: Dictionary = GameManager.get_level_info(6)
-	assert_eq(lvl6.get("name"), "The Haunted Hall", "Level 6 name is 'The Haunted Hall'")
+	assert_eq(lvl6.get("name"), "Phantom's Curse", "Level 6 name is 'Phantom's Curse'")
+	assert_eq(GameManager.get_world_name_for_stage(6), "THE HAUNTED HALL", "Level 6 world is 'THE HAUNTED HALL'")
 	assert_true(lvl6.get("implemented"), "Level 6 is marked implemented")
 	assert_true(GameManager.can_play_level(6), "Level 6 is playable")
 	
@@ -137,6 +141,53 @@ func test_game_manager_level_definitions() -> void:
 	for i in range(15):
 		GameManager.collect_coin()
 	assert_eq(GameManager.current_coins, 10, "Coin counter clamps at configured total (10) and does not overflow")
+
+func test_world_and_stage_system() -> void:
+	print("\n--- TEST: World and Stage System (4 Worlds & Intro Cards) ---")
+	assert_eq(GameManager.worlds.size(), 4, "GameManager defines exactly 4 worlds")
+	assert_eq(GameManager.get_world_name(1), "NEON RUINS", "World 1 name is NEON RUINS")
+	assert_eq(GameManager.get_world_name(2), "THE HAUNTED HALL", "World 2 name is THE HAUNTED HALL")
+	assert_eq(GameManager.get_world_name(3), "RAGE FACTORY", "World 3 name is RAGE FACTORY")
+	assert_eq(GameManager.get_world_name(4), "FINAL HELL", "World 4 name is FINAL HELL")
+	
+	# Verify stage to world mapping
+	for s in range(1, 6):
+		assert_eq(GameManager.get_world_id_for_stage(s), 1, "Stage %d is in World 1" % s)
+	for s in range(6, 11):
+		assert_eq(GameManager.get_world_id_for_stage(s), 2, "Stage %d is in World 2" % s)
+	for s in range(11, 16):
+		assert_eq(GameManager.get_world_id_for_stage(s), 3, "Stage %d is in World 3" % s)
+	for s in range(16, 21):
+		assert_eq(GameManager.get_world_id_for_stage(s), 4, "Stage %d is in World 4" % s)
+		
+	# Verify HUD label formatting
+	assert_eq(GameManager.get_stage_hud_label(1), "WORLD 1 · STAGE 1", "HUD label formatted as 'WORLD 1 · STAGE 1'")
+	assert_eq(GameManager.get_stage_hud_label(3), "WORLD 1 · STAGE 3", "HUD label formatted as 'WORLD 1 · STAGE 3'")
+	assert_eq(GameManager.get_stage_hud_label(6), "WORLD 2 · STAGE 6", "HUD label formatted as 'WORLD 2 · STAGE 6'")
+	
+	# Verify Stage Intro session tracking (does NOT re-show on retry/death)
+	GameManager.reset_stage_intros()
+	assert_true(GameManager.should_show_stage_intro(1), "Stage 1 intro is shown on first query in session")
+	GameManager.mark_stage_intro_shown(1)
+	assert_true(not GameManager.should_show_stage_intro(1), "Stage 1 intro is suppressed after first showing (no retry repetition)")
+	assert_true(GameManager.should_show_stage_intro(6), "Stage 6 intro is shown on first query in session")
+	GameManager.mark_stage_intro_shown(6)
+	assert_true(not GameManager.should_show_stage_intro(6), "Stage 6 intro is suppressed on retry/death")
+	
+	# Test StageIntroCard UI node
+	var card_scene: PackedScene = load("res://scenes/shared/stage_intro_card.tscn")
+	assert_true(card_scene != null, "StageIntroCard scene loads successfully")
+	var card = card_scene.instantiate()
+	add_child(card)
+	card.setup(2, "THE HAUNTED HALL", 6, "PHANTOM'S CURSE")
+	assert_eq(card.world_num_label.text, "WORLD 2", "Intro card displays WORLD 2")
+	assert_eq(card.world_name_label.text, "THE HAUNTED HALL", "Intro card displays THE HAUNTED HALL")
+	assert_eq(card.stage_label.text, "STAGE 6: PHANTOM'S CURSE", "Intro card displays STAGE 6: PHANTOM'S CURSE")
+	
+	# Test skippable transition
+	card.dismiss()
+	assert_true(card._is_dismissing, "Intro card is dismissed/skipped on input")
+	card.queue_free()
 
 func test_main_menu_logic_and_modals() -> void:
 	print("\n--- TEST: Main Menu Scene ---")
@@ -173,8 +224,21 @@ func test_level_select_logic_and_states() -> void:
 	add_child(lsel)
 	lsel.dev_bypass_active = false
 	
-	var grid = lsel.get_node("MarginContainer/VBox/ScrollContainer/LevelGrid")
-	assert_eq(grid.get_child_count(), 20, "Level grid contains 20 level tiles")
+	var worlds_container = lsel.get_node("MarginContainer/VBox/ScrollContainer/WorldsContainer")
+	assert_true(worlds_container != null, "WorldsContainer exists in Level Select")
+	assert_eq(worlds_container.get_child_count(), 4, "Level select displays exactly 4 world sections")
+	
+	var w1_header: Label = worlds_container.get_node("WorldSection_1/WorldHeader_1/TitleLabel")
+	var w2_header: Label = worlds_container.get_node("WorldSection_2/WorldHeader_2/TitleLabel")
+	var w3_header: Label = worlds_container.get_node("WorldSection_3/WorldHeader_3/TitleLabel")
+	var w4_header: Label = worlds_container.get_node("WorldSection_4/WorldHeader_4/TitleLabel")
+	assert_eq(w1_header.text, "WORLD 1 — NEON RUINS", "World 1 header is 'WORLD 1 — NEON RUINS'")
+	assert_eq(w2_header.text, "WORLD 2 — THE HAUNTED HALL", "World 2 header is 'WORLD 2 — THE HAUNTED HALL'")
+	assert_eq(w3_header.text, "WORLD 3 — RAGE FACTORY", "World 3 header is 'WORLD 3 — RAGE FACTORY'")
+	assert_eq(w4_header.text, "WORLD 4 — FINAL HELL", "World 4 header is 'WORLD 4 — FINAL HELL'")
+	
+	for lvl_id in range(1, 21):
+		assert_true(lsel.get_level_button(lvl_id) != null, "LevelBtn_%d exists in level select" % lvl_id)
 	
 	# Test locked level press
 	lsel._on_level_tile_pressed(5)
@@ -1509,11 +1573,12 @@ func test_welcome_and_startup_screen() -> void:
 	
 	assert_true(welcome_screen.has_node("CenterContainer/VBox/TitleLabel"), "Title label exists")
 	var title_label: Label = welcome_screen.get_node("CenterContainer/VBox/TitleLabel")
-	assert_eq(title_label.text, "COIN HELL", "Title text is 'COIN HELL'")
+	assert_eq(title_label.text, "RETRO RAGE ARCADE", "Title text is 'RETRO RAGE ARCADE'")
+	assert_true(not title_label.text.contains("COIN HELL"), "COIN HELL is not the main title on the loading screen")
 	
-	assert_true(welcome_screen.has_node("CenterContainer/VBox/WelcomeLabel"), "Welcome label exists")
+	assert_true(welcome_screen.has_node("CenterContainer/VBox/WelcomeLabel"), "Welcome/Subtitle label exists")
 	var welcome_label: Label = welcome_screen.get_node("CenterContainer/VBox/WelcomeLabel")
-	assert_eq(welcome_label.text, "WELCOME TO COIN HELL", "Welcome text is 'WELCOME TO COIN HELL'")
+	assert_eq(welcome_label.text, "EVERY LEVEL BETRAYS YOU.", "Subtitle text is 'EVERY LEVEL BETRAYS YOU.'")
 	
 	assert_true(welcome_screen.has_node("CenterContainer/VBox/IconContainer/CoinIcon"), "Coin icon exists")
 	assert_true(welcome_screen.has_node("CenterContainer/VBox/LoadingBox/ProgressBar"), "Loading ProgressBar exists")
@@ -1575,9 +1640,10 @@ func test_developer_only_level_access() -> void:
 	lsel.queue_free()
 
 func test_level_6_gameplay_mechanics() -> void:
-	print("\n--- TEST: Level 6 Gameplay Mechanics (The Haunted Hall - Cursed Castle) ---")
+	print("\n--- TEST: Level 6 Gameplay Mechanics (World 2: The Haunted Hall - Phantom's Curse) ---")
 	var lvl_info: Dictionary = GameManager.get_level_info(6)
-	assert_eq(lvl_info.get("name"), "The Haunted Hall", "Level 6 name is 'The Haunted Hall'")
+	assert_eq(lvl_info.get("name"), "Phantom's Curse", "Level 6 name is 'Phantom's Curse'")
+	assert_eq(GameManager.get_world_name_for_stage(6), "THE HAUNTED HALL", "Level 6 world is 'THE HAUNTED HALL'")
 	assert_true(lvl_info.get("implemented"), "Level 6 is marked implemented")
 	assert_eq(lvl_info.get("coin_count"), 10, "Level 6 has exactly 10 required coins")
 	
@@ -1610,14 +1676,27 @@ func test_level_6_gameplay_mechanics() -> void:
 	assert_eq(jbtn.offset_right - jbtn.offset_left, 124.0, "JumpBtn width is 124px")
 	assert_eq(jbtn.offset_bottom - jbtn.offset_top, 124.0, "JumpBtn height is 124px")
 	
+	# Visual identity of World 2: The Haunted Hall
+	print("  Validating World 2 Haunted Castle Visual Identity...")
+	var decos = lvl.get_node_or_null("Decorations")
+	assert_true(decos != null, "Decorations node exists in Level 6")
+	assert_true(decos.has_node("ArchSpawn"), "Gothic Arch at spawn exists")
+	assert_true(decos.has_node("ArchMilestone1"), "Gothic Arch milestone 1 exists")
+	assert_true(decos.has_node("ArchMilestone2"), "Gothic Arch milestone 2 exists")
+	assert_true(decos.has_node("ArchExit"), "Gothic Arch at exit sanctuary exists")
+	assert_true(lvl.has_node("AtmosphereParticles"), "Ghostly wisp atmosphere particles exist")
+	
+	# HUD World / Stage display
+	var hud_level_label: Label = lvl.get_node("HUD/MarginContainer/TopBar/LevelName")
+	assert_eq(hud_level_label.text, "WORLD 2 · STAGE 6: PHANTOM'S CURSE", "HUD displays correct World 2 Stage 6 label")
+	
 	# Coins count and placement
-	print("  Validating Exactly 10 Coins and Castle Encounters...")
+	print("  Validating Exactly 10 Coins across 5 Sections...")
 	var coins = lvl.get_node("Coins")
 	assert_eq(coins.get_child_count(), 10, "Level 6 contains exactly 10 coins")
 	for i in range(1, 11):
 		assert_true(coins.has_node("Coin%d" % i), "Coin %d exists" % i)
 	
-	# Validate encounters
 	var c1 = coins.get_node("Coin1")
 	var c2 = coins.get_node("Coin2")
 	var c3 = coins.get_node("Coin3")
@@ -1629,38 +1708,76 @@ func test_level_6_gameplay_mechanics() -> void:
 	var c9 = coins.get_node("Coin9")
 	var c10 = coins.get_node("Coin10")
 	
-	assert_eq(c1.position, Vector2(280, 330), "Coin 1 positioned above collapsing flagstone 1")
-	assert_eq(c2.position, Vector2(480, 300), "Coin 2 arched over FloorSpikes2 gap")
-	assert_eq(c3.position, Vector2(770, 330), "Coin 3 positioned before MovingWall3")
-	assert_eq(c4.position, Vector2(1050, 270), "Coin 4 on elevated Parapet4 under AirSpikes4")
-	assert_eq(c5.position, Vector2(1300, 330), "Coin 5 under Crusher5 on crumbling Plat5")
-	assert_eq(c6.position, Vector2(1540, 310), "Coin 6 above Plat6_FakeSafe with pop-up gargoyle spikes")
-	assert_eq(c7.position, Vector2(1900, 300), "Coin 7 suspended between alternating Crushers 7A & 7B")
-	assert_eq(c8.position, Vector2(2170, 330), "Coin 8 on crumbling Plat8 before MovingWall8")
-	assert_eq(c9.position, Vector2(2480, 260), "Coin 9 on deceptive high castle ledge under Crusher9")
-	assert_eq(c10.position, Vector2(2700, 320), "Coin 10 centered over climax cascading Bridge 10")
+	assert_eq(c1.position, Vector2(290, 320), "Coin 1 on Section 1 Timed Phantom Platform")
+	assert_eq(c2.position, Vector2(370, 300), "Coin 2 arched over pit gap into Parapet")
+	assert_eq(c3.position, Vector2(610, 290), "Coin 3 on Section 2 Staggered Timed Plat 3A")
+	assert_eq(c4.position, Vector2(830, 250), "Coin 4 in jump ascent to Balcony 4")
+	assert_eq(c5.position, Vector2(1070, 250), "Coin 5 on Section 3 Triggered Plat 5")
+	assert_eq(c6.position, Vector2(1380, 260), "Coin 6 on Section 3 Triggered Plat 6 under AirSpikes")
+	assert_eq(c7.position, Vector2(1700, 270), "Coin 7 on Section 4 Triggered Plat 7A")
+	assert_eq(c8.position, Vector2(1850, 250), "Coin 8 on Section 4 Timed Plat 7B")
+	assert_eq(c9.position, Vector2(2240, 240), "Coin 9 on Section 5 climax combination")
+	assert_eq(c10.position, Vector2(2480, 210), "Coin 10 before Exit Sanctuary")
 	
-	# Traps validation
-	var plat1 = lvl.get_node("Platforms/Plat1_Collapsing")
-	var plat6 = lvl.get_node("Platforms/Plat6_FakeSafe")
-	var mwall3 = lvl.get_node("Traps/MovingWall3")
-	var cr5 = lvl.get_node("Traps/Crusher5")
-	var cr7a = lvl.get_node("Traps/Crusher7A")
-	var cr7b = lvl.get_node("Traps/Crusher7B")
-	var mwall8 = lvl.get_node("Traps/MovingWall8")
-	var cr9 = lvl.get_node("Traps/Crusher9")
-	var exit_gate = lvl.get_node("ExitGate")
+	# Phantom platform mechanics validation
+	print("  Validating Phantom Platform Mechanics (Timed & Triggered)...")
+	var plat1 = lvl.get_node("Platforms/Plat1_PhantomTimed")
+	var plat3a = lvl.get_node("Platforms/Plat3A_PhantomTimed")
+	var plat3b = lvl.get_node("Platforms/Plat3B_PhantomTimed")
+	var plat5 = lvl.get_node("Platforms/Plat5_PhantomTriggered")
+	var plat6 = lvl.get_node("Platforms/Plat6_PhantomTriggered")
+	var plat7a = lvl.get_node("Platforms/Plat7A_PhantomTriggered")
+	var plat7b = lvl.get_node("Platforms/Plat7B_PhantomTimed")
+	var plat9a = lvl.get_node("Platforms/Plat9A_PhantomTimed")
+	var plat9b = lvl.get_node("Platforms/Plat9B_PhantomTriggered")
+	var plat10 = lvl.get_node("Platforms/Plat10_PhantomTimed")
 	
-	assert_true(plat1 is CrumblingBridgeSectionClass, "Plat1 uses CrumblingBridgeSection")
-	assert_true(plat6 is FakeSafePlatformClass, "Plat6 uses FakeSafePlatform")
-	assert_true(mwall3 is MovingWallClass, "MovingWall3 uses MovingWall")
-	assert_true(cr5 is CeilingCrusherClass, "Crusher5 uses CeilingCrusher")
-	assert_true(cr7a.auto_cycle, "Crusher7A auto-cycles")
-	assert_true(cr7b.auto_cycle, "Crusher7B auto-cycles with offset")
-	assert_true(mwall8 is MovingWallClass, "MovingWall8 uses MovingWall")
-	assert_true(cr9 is CeilingCrusherClass, "Crusher9 uses CeilingCrusher")
+	# Verify types
+	assert_true(plat1 is PhantomPlatformClass, "Plat1 is PhantomPlatform")
+	assert_eq(plat1.platform_type, PhantomPlatformClass.PlatformType.TIMED, "Plat1 uses TIMED variant")
+	assert_true(plat5 is PhantomPlatformClass, "Plat5 is PhantomPlatform")
+	assert_eq(plat5.platform_type, PhantomPlatformClass.PlatformType.TRIGGERED, "Plat5 uses TRIGGERED variant")
+	
+	# Staggered cycles test in Section 2
+	assert_true(plat3a.cycle_offset != plat3b.cycle_offset, "Plat3A and Plat3B have staggered cycles")
+	
+	# Timed platform state sync test: visual and collision match
+	plat1._set_state(PhantomPlatformClass.PlatformState.SOLID)
+	assert_true(not plat1.collision_shape.disabled, "SOLID state has collision enabled")
+	assert_true(plat1.solid_visual.visible, "SOLID state displays solid visuals")
+	
+	plat1._set_state(PhantomPlatformClass.PlatformState.WARNING)
+	assert_true(not plat1.collision_shape.disabled, "WARNING state maintains collision so player can safely jump")
+	assert_true(plat1.solid_visual.visible, "WARNING state keeps visuals visible with pulse")
+	
+	plat1._set_state(PhantomPlatformClass.PlatformState.PHANTOM)
+	assert_true(plat1.collision_shape.disabled, "PHANTOM state disables collision")
+	assert_true(not plat1.solid_visual.visible, "PHANTOM state hides solid visual")
+	assert_true(plat1.spectral_visual.visible, "PHANTOM state shows spectral visual")
+	
+	# Triggered platform mechanic sequence test
+	plat5.reset()
+	assert_eq(plat5.current_state, PhantomPlatformClass.PlatformState.SOLID, "Triggered platform starts SOLID")
+	assert_true(not plat5._is_triggered, "Triggered platform starts untriggered")
+	
+	# Step on platform
+	plat5._on_step_area_body_entered(player)
+	assert_true(plat5._is_triggered, "Stepping on platform triggers it")
+	assert_eq(plat5.current_state, PhantomPlatformClass.PlatformState.WARNING, "Transitions to WARNING state on trigger")
+	assert_true(not plat5.collision_shape.disabled, "Collision remains enabled during warning cue")
+	
+	# Advance warning time to transition to PHANTOM
+	plat5._process_triggered_state(plat5.trigger_delay + 0.05)
+	assert_eq(plat5.current_state, PhantomPlatformClass.PlatformState.PHANTOM, "Transitions to PHANTOM after warning")
+	assert_true(plat5.collision_shape.disabled, "Collision disabled in PHANTOM state")
+	
+	# Advance recovery time to restore to SOLID
+	plat5._process_triggered_state(plat5.phantom_recovery_time + 0.05)
+	assert_eq(plat5.current_state, PhantomPlatformClass.PlatformState.SOLID, "Recovers to SOLID after predictable interval")
+	assert_true(not plat5.collision_shape.disabled, "Collision re-enabled upon recovery")
 	
 	# Exit gate locked state
+	var exit_gate = lvl.get_node("ExitGate")
 	assert_true(not exit_gate._is_open, "ExitGate starts locked requiring all 10 coins")
 	
 	# Collect all 10 coins
@@ -1693,12 +1810,9 @@ func test_level_6_gameplay_mechanics() -> void:
 	assert_eq(GameManager.current_coins, 0, "Level 6 retry resets coins to 0")
 	assert_true(not exit_gate._is_open, "ExitGate re-locks on retry")
 	assert_true(not exit_gate._completion_triggered, "ExitGate completion flag reset")
-	assert_true(not plat1._is_triggered, "Plat1 reset on retry")
-	assert_true(not plat6._active_spikes, "Plat6 fake safe platform reset on retry")
-	assert_true(not mwall3._is_active, "MovingWall3 reset on retry")
-	assert_true(not mwall8._is_active, "MovingWall8 reset on retry")
-	assert_eq(cr5.current_state, CeilingCrusherClass.State.IDLE, "Crusher 5 reset to IDLE")
-	assert_eq(cr9.current_state, CeilingCrusherClass.State.IDLE, "Crusher 9 reset to IDLE")
+	assert_eq(plat1.current_state, PhantomPlatformClass.PlatformState.SOLID, "Plat1 reset to initial state")
+	assert_eq(plat5.current_state, PhantomPlatformClass.PlatformState.SOLID, "Plat5 reset to initial state")
+	assert_true(not plat5._is_triggered, "Plat5 trigger reset on retry")
 	
 	lvl.queue_free()
 

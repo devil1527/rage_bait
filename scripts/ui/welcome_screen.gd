@@ -118,7 +118,7 @@ func _start_transition() -> void:
 	
 	progress_bar.value = 100.0
 	percent_label.text = "100%"
-	status_label.text = "WELCOME TO COIN HELL!"
+	status_label.text = "READY!"
 	
 	var tween := create_tween()
 	tween.tween_property(fade_overlay, "modulate:a", 1.0, 0.28)

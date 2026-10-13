@@ -415,6 +415,90 @@ def create_inferno_gate_assets():
 
     flame.save("assets/sprites/inferno_flame.png")
 
+def create_phantom_platform_assets():
+    import math
+    # 1. 48x24 phantom_platform.png - Gothic stone flagstone with spectral rune veins
+    plat = Image.new("RGBA", (48, 24), (0, 0, 0, 0))
+    dp = ImageDraw.Draw(plat)
+    
+    # Outer stone body
+    dp.rectangle([1, 1, 46, 22], fill=(26, 22, 44, 255), outline=(50, 44, 78, 255))
+    # Stone top bevel highlight
+    dp.line([(2, 2), (45, 2)], fill=(75, 68, 110, 255))
+    dp.line([(2, 3), (45, 3)], fill=(55, 48, 85, 255))
+    # Stone bottom shadow
+    dp.line([(2, 21), (45, 21)], fill=(14, 12, 26, 255))
+    dp.line([(2, 22), (45, 22)], fill=(10, 8, 18, 255))
+    
+    # Brick division grooves
+    dp.line([(16, 3), (16, 21)], fill=(16, 13, 30, 255))
+    dp.line([(32, 3), (32, 21)], fill=(16, 13, 30, 255))
+    
+    # Intricate glowing spectral rune veins (cold cyan / pale green)
+    # Horizontal rune channels
+    dp.line([(6, 8), (14, 8)], fill=(0, 220, 210, 255))
+    dp.line([(10, 8), (10, 16)], fill=(0, 240, 220, 255))
+    dp.line([(20, 14), (28, 14)], fill=(80, 255, 190, 255))
+    dp.line([(24, 7), (24, 14)], fill=(0, 230, 215, 255))
+    dp.line([(34, 10), (42, 10)], fill=(0, 220, 210, 255))
+    dp.line([(38, 10), (38, 18)], fill=(100, 255, 200, 255))
+    
+    # Rune nodes / glowing gems
+    dp.rectangle([9, 7, 11, 9], fill=(200, 255, 245, 255))
+    dp.rectangle([23, 13, 25, 15], fill=(220, 255, 230, 255))
+    dp.rectangle([37, 9, 39, 11], fill=(200, 255, 245, 255))
+    
+    plat.save("assets/sprites/phantom_platform.png")
+
+    # 2. 48x24 phantom_spectral.png - Ghostly ethereal form
+    spec = Image.new("RGBA", (48, 24), (0, 0, 0, 0))
+    ds = ImageDraw.Draw(spec)
+    
+    # Ethereal translucent body wash
+    ds.rectangle([2, 2, 45, 21], fill=(15, 30, 50, 70))
+    
+    # Ghostly glowing dashed border
+    for x in range(2, 46, 4):
+        ds.line([(x, 2), (min(x+2, 45), 2)], fill=(0, 240, 230, 190))
+        ds.line([(x, 21), (min(x+2, 45), 21)], fill=(0, 200, 230, 130))
+    for y in range(2, 22, 4):
+        ds.line([(2, y), (2, min(y+2, 21))], fill=(0, 230, 230, 160))
+        ds.line([(45, y), (45, min(y+2, 21))], fill=(0, 230, 230, 160))
+        
+    # Ethereal floating glyphs
+    ds.line([(8, 12), (14, 12)], fill=(0, 255, 230, 140))
+    ds.line([(21, 10), (27, 10)], fill=(60, 255, 200, 150))
+    ds.line([(34, 13), (40, 13)], fill=(0, 255, 230, 140))
+    
+    spec.save("assets/sprites/phantom_spectral.png")
+
+    # 3. 64x96 gothic_arch.png - Ruined gothic castle arch silhouette
+    arch = Image.new("RGBA", (64, 96), (0, 0, 0, 0))
+    da = ImageDraw.Draw(arch)
+    
+    # Left column
+    da.rectangle([4, 28, 16, 95], fill=(20, 16, 32, 220), outline=(36, 30, 55, 255))
+    # Right column
+    da.rectangle([48, 28, 60, 95], fill=(20, 16, 32, 220), outline=(36, 30, 55, 255))
+    
+    # Pointed gothic arch polygon
+    arch_pts = [(4, 30), (32, 4), (60, 30), (48, 30), (32, 16), (16, 30)]
+    da.polygon(arch_pts, fill=(24, 20, 38, 230), outline=(42, 36, 65, 255))
+    
+    # Capital bands
+    da.rectangle([2, 26, 18, 30], fill=(45, 38, 70, 255))
+    da.rectangle([46, 26, 62, 30], fill=(45, 38, 70, 255))
+    
+    arch.save("assets/sprites/gothic_arch.png")
+
+    # 4. 16x16 ghostly_wisp.png - Ethereal particle
+    wisp = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    dw = ImageDraw.Draw(wisp)
+    dw.ellipse([1, 1, 14, 14], fill=(0, 180, 220, 60))
+    dw.ellipse([3, 3, 12, 12], fill=(0, 240, 210, 140))
+    dw.ellipse([5, 5, 10, 10], fill=(160, 255, 240, 240))
+    wisp.save("assets/sprites/ghostly_wisp.png")
+
 if __name__ == "__main__":
     create_player()
     create_coin()
@@ -426,4 +510,5 @@ if __name__ == "__main__":
     create_ui_icons()
     create_neon_ruins_assets()
     create_inferno_gate_assets()
+    create_phantom_platform_assets()
     print("All pixel assets generated successfully!")

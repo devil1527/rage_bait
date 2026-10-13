@@ -104,13 +104,11 @@ layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="LevelGrid" type="GridContainer" parent="MarginContainer/VBox/ScrollContainer"]
+[node name="WorldsContainer" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/h_separation = 10
-theme_override_constants/v_separation = 10
-columns = 5
+theme_override_constants/separation = 18
 
 [node name="MessageModal" type="ColorRect" parent="."]
 visible = false
