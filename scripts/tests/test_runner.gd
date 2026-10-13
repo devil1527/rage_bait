@@ -14,6 +14,10 @@ const StageIntroCardClass = preload("res://scripts/shared/stage_intro_card.gd")
 const HauntedHallEnvironmentClass = preload("res://scripts/shared/haunted_hall_environment.gd")
 const CursedWindZoneClass = preload("res://scripts/coin_hell/cursed_wind_zone.gd")
 const SwingingChainClass = preload("res://scripts/coin_hell/swinging_chain.gd")
+const SurvivalArenaPlatformClass = preload("res://scripts/coin_hell/survival_arena_platform.gd")
+const SurpriseGhostChainClass = preload("res://scripts/coin_hell/surprise_ghost_chain.gd")
+const BossIntroOverlayClass = preload("res://scripts/coin_hell/boss_intro_overlay.gd")
+const BossVictoryOverlayClass = preload("res://scripts/coin_hell/boss_victory_overlay.gd")
 
 var passed_count: int = 0
 var failed_count: int = 0
@@ -75,6 +79,8 @@ func run_all_tests() -> void:
 	test_level_8_gameplay_mechanics()
 	test_swinging_chain_mechanics()
 	test_level_9_gameplay_mechanics()
+	test_survival_arena_platform_and_hazards()
+	test_level_10_haunted_survival_gameplay()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -161,7 +167,14 @@ func test_game_manager_level_definitions() -> void:
 	assert_true(GameManager.can_play_level(9), "Level 9 is playable")
 	assert_eq(lvl9.get("coin_count"), 10, "Level 9 coin count is 10")
 	
-	for lvl_id in range(10, 21):
+	var lvl10: Dictionary = GameManager.get_level_info(10)
+	assert_eq(lvl10.get("name"), "Haunted Survival", "Level 10 name is 'Haunted Survival'")
+	assert_eq(GameManager.get_world_name_for_stage(10), "THE HAUNTED HALL", "Level 10 world is 'THE HAUNTED HALL'")
+	assert_true(lvl10.get("implemented"), "Level 10 is marked implemented")
+	assert_true(GameManager.can_play_level(10), "Level 10 is playable")
+	assert_eq(lvl10.get("coin_count"), 10, "Level 10 coin count is 10")
+	
+	for lvl_id in range(11, 21):
 		assert_true(not GameManager.can_play_level(lvl_id), "Level %d is marked not implemented" % lvl_id)
 		
 	# Test coin counter clamping
@@ -325,13 +338,19 @@ func test_level_select_logic_and_states() -> void:
 	assert_true(SaveManager.is_level_unlocked(9), "Level 9 is unlocked after completing Level 8")
 	assert_true(GameManager.can_play_level(9), "Level 9 is playable")
 
-	# Complete level 9 to unlock level 10 and test unimplemented level press
+	# Complete level 9 to unlock level 10 and verify Level 10 is playable
 	SaveManager.complete_level(9)
 	lsel._update_ui()
 	assert_true(SaveManager.is_level_unlocked(10), "Level 10 is unlocked after completing Level 9")
-	lsel._on_level_tile_pressed(10)
+	assert_true(GameManager.can_play_level(10), "Level 10 is playable")
+
+	# Complete level 10 to unlock level 11 (World 3) and test unimplemented level press
+	SaveManager.complete_level(10)
+	lsel._update_ui()
+	assert_true(SaveManager.is_level_unlocked(11), "Level 11 is unlocked after completing Level 10")
+	lsel._on_level_tile_pressed(11)
 	assert_true(modal.visible, "Pressing unlocked but unimplemented level shows modal")
-	assert_eq(modal_label.text, "Level 10 is still being built. Replay an earlier level for now.", "Modal shows exact unimplemented level message")
+	assert_eq(modal_label.text, "Level 11 is still being built. Replay an earlier level for now.", "Modal shows exact unimplemented level message")
 	
 	lsel.queue_free()
 
@@ -1679,12 +1698,12 @@ func test_developer_only_level_access() -> void:
 	assert_true(lsel.message_modal.visible, "Locked modal dialog displayed")
 	assert_eq(lsel.modal_title.text, "LEVEL 6 IS LOCKED", "Modal explains Level 6 is locked")
 	
-	# Unimplemented level (e.g. Level 10) cannot be launched even with dev mode on
+	# Unimplemented level (e.g. Level 11) cannot be launched even with dev mode on
 	lsel._on_dev_toggle_pressed()
 	assert_true(lsel.dev_bypass_active, "Dev bypass toggled on")
-	lsel._on_level_tile_pressed(10)
-	assert_true(lsel.message_modal.visible, "Unimplemented Level 10 displays in-progress modal")
-	assert_eq(lsel.modal_title.text, "LEVEL 10 IN PROGRESS", "Modal indicates Level 10 is in progress")
+	lsel._on_level_tile_pressed(11)
+	assert_true(lsel.message_modal.visible, "Unimplemented Level 11 displays in-progress modal")
+	assert_eq(lsel.modal_title.text, "LEVEL 11 IN PROGRESS", "Modal indicates Level 11 is in progress")
 	
 	lsel.queue_free()
 
@@ -2514,7 +2533,11 @@ func test_level_9_gameplay_mechanics() -> void:
 	# Haunted Hall visual environment
 	assert_true(lvl.has_node("HauntedHallEnvironment"), "HauntedHallEnvironment exists in Level 9")
 	
-	# HUD World / Stage display
+	# HUD World / Stage display & Layout Order
+	var top_bar = lvl.get_node("HUD/MarginContainer/TopBar")
+	assert_eq(top_bar.get_child(0).name, "CoinCounter", "Level 9 TopBar child 0 is CoinCounter (top-left corner)")
+	assert_eq(top_bar.get_child(1).name, "LevelName", "Level 9 TopBar child 1 is LevelName (center)")
+	assert_eq(top_bar.get_child(2).name, "PauseBtn", "Level 9 TopBar child 2 is PauseBtn (top-right corner)")
 	var hud_level_label: Label = lvl.get_node("HUD/MarginContainer/TopBar/LevelName")
 	assert_eq(hud_level_label.text, "WORLD 2 · STAGE 9: CHAINS OF THE DAMNED", "HUD displays correct World 2 Stage 9 label")
 	
@@ -2607,12 +2630,11 @@ func test_level_9_gameplay_mechanics() -> void:
 	assert_true(SaveManager.is_level_completed(9), "Level 9 marked completed in SaveManager")
 	assert_true(SaveManager.is_level_unlocked(10), "Level 10 is unlocked after Level 9 completion")
 	
-	# Next Level button on LevelCompleteOverlay displays in-progress modal for Level 10
+	# Next Level button transitions to Level 10 (now implemented)
 	var complete_overlay = lvl.get_node("HUD/LevelCompleteOverlay")
 	complete_overlay.open(10, 10)
 	complete_overlay._on_next_level_pressed()
-	var complete_modal_label: Label = complete_overlay.get_node("MessageModal/Panel/VBox/MessageLabel")
-	assert_eq(complete_modal_label.text, "Level 10 is unlocked, but it's still being built. Replay Level 1 for now.", "Level 9 Next Level shows safe unimplemented Level 10 modal")
+	assert_eq(GameManager.current_level_id, 10, "Level 9 Next Level transitions directly to implemented Level 10")
 	
 	# Test clean retry reset
 	print("  Validating Clean Trap Reset on Level 9 Retry...")
@@ -2622,6 +2644,233 @@ func test_level_9_gameplay_mechanics() -> void:
 	assert_true(not exit_gate._completion_triggered, "ExitGate completion flag reset")
 	assert_eq(ch1._time, 0.0, "Chain 1 reset to t=0 on retry")
 	assert_eq(ch5._time, 0.0, "Chain 5 reset to t=0 on retry")
+	
+	lvl.queue_free()
+
+func test_survival_arena_platform_and_hazards() -> void:
+	print("\n--- TEST: Survival Arena Platform & Hazard Types ---")
+	var saplat_scene = load("res://scenes/coin_hell/survival_arena_platform.tscn")
+	var schain_scene = load("res://scenes/coin_hell/surprise_ghost_chain.tscn")
+	assert_true(saplat_scene != null, "SurvivalArenaPlatform scene loads")
+	assert_true(schain_scene != null, "SurpriseGhostChain scene loads")
+	
+	# 1. Test Spikes Platform (HazardType.SPIKES)
+	print("  Testing Platform 1: Spikes...")
+	var plat_spikes = saplat_scene.instantiate()
+	plat_spikes.hazard_type = SurvivalArenaPlatformClass.HazardType.SPIKES
+	add_child(plat_spikes)
+	assert_true(plat_spikes.is_platform_safe(), "Spikes platform starts safe")
+	assert_true(not plat_spikes.spikes_area.monitoring, "Spikes collision initially disabled")
+	
+	plat_spikes.trigger_hazard(0.1, 0.2)
+	assert_eq(plat_spikes.current_state, SurvivalArenaPlatformClass.PlatformState.WARNING, "Enters WARNING state")
+	assert_true(plat_spikes.is_hazard_active(), "Hazard is active during warning")
+	plat_spikes._physics_process(0.12)
+	assert_eq(plat_spikes.current_state, SurvivalArenaPlatformClass.PlatformState.HAZARDOUS, "Enters HAZARDOUS state")
+	assert_true(plat_spikes.spikes_area.monitoring, "Spikes collision monitoring enabled")
+	plat_spikes._physics_process(0.22)
+	assert_eq(plat_spikes.current_state, SurvivalArenaPlatformClass.PlatformState.SAFE, "Recovers to SAFE state")
+	assert_true(plat_spikes.is_platform_safe(), "Platform safe again after spikes retract")
+	plat_spikes.queue_free()
+	
+	# 2. Test Phantom Platform (HazardType.PHANTOM)
+	print("  Testing Platform 2: Phantom...")
+	var plat_phantom = saplat_scene.instantiate()
+	plat_phantom.hazard_type = SurvivalArenaPlatformClass.HazardType.PHANTOM
+	add_child(plat_phantom)
+	assert_true(not plat_phantom.collision_shape.disabled, "Phantom platform starts solid")
+	plat_phantom.trigger_hazard(0.1, 0.2)
+	plat_phantom._physics_process(0.12)
+	assert_true(plat_phantom.collision_shape.disabled, "Phantom platform collision disabled when hazardous")
+	plat_phantom._physics_process(0.22)
+	assert_true(not plat_phantom.collision_shape.disabled, "Phantom platform collision re-enabled on recovery")
+	plat_phantom.queue_free()
+	
+	# 3. Test Crumbling Platform (HazardType.CRUMBLING)
+	print("  Testing Platform 3: Crumbling...")
+	var plat_crumb = saplat_scene.instantiate()
+	plat_crumb.hazard_type = SurvivalArenaPlatformClass.HazardType.CRUMBLING
+	add_child(plat_crumb)
+	var orig_y = plat_crumb.position.y
+	plat_crumb.trigger_hazard(0.1, 0.2)
+	plat_crumb._physics_process(0.12)
+	assert_true(plat_crumb.collision_shape.disabled, "Crumbling platform collision disabled while falling")
+	plat_crumb._physics_process(0.22)
+	assert_true(not plat_crumb.collision_shape.disabled, "Crumbling platform collision re-enabled on recovery")
+	assert_eq(plat_crumb.position.y, orig_y, "Crumbling platform returns to original position")
+	plat_crumb.queue_free()
+	
+	# 4. Test Surprise Ghost Chain
+	print("  Testing Platform 4: Surprise Ghost Chains...")
+	var schain = schain_scene.instantiate()
+	add_child(schain)
+	assert_eq(schain.current_state, SurpriseGhostChainClass.ChainState.DORMANT, "Surprise chain starts DORMANT")
+	assert_true(not schain.visible, "Surprise chain invisible when dormant")
+	assert_true(not schain.hazard_area.monitoring, "HazardArea monitoring disabled when dormant")
+	
+	schain.trigger_attack(0.1, 0.2)
+	assert_eq(schain.current_state, SurpriseGhostChainClass.ChainState.WARNING, "Enters WARNING state")
+	assert_true(schain.visible, "Visible during warning")
+	schain._physics_process(0.12)
+	assert_eq(schain.current_state, SurpriseGhostChainClass.ChainState.EMERGING, "Emerges from ceiling")
+	schain._physics_process(0.3)
+	assert_eq(schain.current_state, SurpriseGhostChainClass.ChainState.ATTACKING, "Swings through attack arc")
+	assert_true(schain.hazard_area.monitoring, "HazardArea monitoring active during attack")
+	schain._physics_process(0.22)
+	assert_eq(schain.current_state, SurpriseGhostChainClass.ChainState.RETRACTING, "Retracts into ceiling")
+	schain._physics_process(0.35)
+	assert_eq(schain.current_state, SurpriseGhostChainClass.ChainState.DORMANT, "Returns to DORMANT")
+	assert_true(not schain.hazard_area.monitoring, "No collision when dormant")
+	schain.queue_free()
+	
+	# 5. Test Countdown Platform (HazardType.COUNTDOWN)
+	print("  Testing Platform 5: Countdown...")
+	var plat_count = saplat_scene.instantiate()
+	plat_count.hazard_type = SurvivalArenaPlatformClass.HazardType.COUNTDOWN
+	add_child(plat_count)
+	plat_count.trigger_hazard(0.15, 0.2)
+	plat_count._physics_process(0.05)
+	assert_true(plat_count.countdown_badge.visible, "Countdown badge visible during warning")
+	plat_count._physics_process(0.12)
+	assert_true(plat_count.collision_shape.disabled, "Countdown platform collision disabled after countdown reaches 0")
+	plat_count._physics_process(0.22)
+	assert_true(not plat_count.collision_shape.disabled, "Countdown platform recovers to solid")
+	plat_count.queue_free()
+
+func test_level_10_haunted_survival_gameplay() -> void:
+	print("\n--- TEST: Level 10 Gameplay Mechanics (Haunted Survival Boss Stage) ---")
+	var lvl_scene = load("res://scenes/coin_hell/coin_hell_level_10.tscn")
+	assert_true(lvl_scene != null, "Level 10 scene loads successfully")
+	
+	var lvl = lvl_scene.instantiate()
+	add_child(lvl)
+	
+	var player = lvl.get_node_or_null("Player")
+	assert_true(player != null, "Player exists in Level 10")
+	assert_eq(player.position, Vector2(200, 350), "Player spawns safely on Platform 1 at X=200, Y=350")
+	
+	# Fixed camera validation (no scrolling, 960x540 arena)
+	var cam: Camera2D = player.get_node_or_null("Camera2D")
+	assert_true(cam != null, "Camera2D exists on player")
+	assert_eq(cam.limit_left, 0, "Camera2D limit_left is 0")
+	assert_eq(cam.limit_top, 0, "Camera2D limit_top is 0")
+	assert_eq(cam.limit_right, 960, "Camera2D limit_right is 960 (fixed arena)")
+	assert_eq(cam.limit_bottom, 540, "Camera2D limit_bottom is 540 (fixed arena)")
+	assert_true(not cam.position_smoothing_enabled, "Camera smoothing disabled for fixed arena")
+	
+	# Standardized mobile controls
+	print("  Validating Level 10 Mobile Controls standardized dimensions...")
+	var touch_controls = lvl.get_node_or_null("HUD/TouchControls")
+	assert_true(touch_controls != null, "TouchControls exists in Level 10")
+	var lbtn: TextureButton = touch_controls.get_node("LeftBtn")
+	var rbtn: TextureButton = touch_controls.get_node("RightBtn")
+	var jbtn: TextureButton = touch_controls.get_node("JumpBtn")
+	assert_eq(lbtn.offset_right - lbtn.offset_left, 104.0, "LeftBtn width is 104px")
+	assert_eq(lbtn.offset_bottom - lbtn.offset_top, 104.0, "LeftBtn height is 104px")
+	assert_eq(rbtn.offset_right - rbtn.offset_left, 104.0, "RightBtn width is 104px")
+	assert_eq(rbtn.offset_bottom - rbtn.offset_top, 104.0, "RightBtn height is 104px")
+	assert_eq(jbtn.offset_right - jbtn.offset_left, 124.0, "JumpBtn width is 124px")
+	assert_eq(jbtn.offset_bottom - jbtn.offset_top, 124.0, "JumpBtn height is 124px")
+	
+	# TopBar HUD layout order validation
+	var top_bar = lvl.get_node("HUD/MarginContainer/TopBar")
+	assert_eq(top_bar.get_child(0).name, "CoinCounter", "TopBar child 0 is CoinCounter (top-left)")
+	assert_eq(top_bar.get_child(1).name, "LevelName", "TopBar child 1 is LevelName (center)")
+	assert_eq(top_bar.get_child(2).name, "TimerContainer", "TopBar child 2 is TimerContainer")
+	assert_eq(top_bar.get_child(3).name, "PauseBtn", "TopBar child 3 is PauseBtn (top-right)")
+	
+	var hud_level_label: Label = lvl.get_node("HUD/MarginContainer/TopBar/LevelName")
+	assert_eq(hud_level_label.text, "WORLD 2 · BOSS: HAUNTED SURVIVAL", "HUD displays correct Boss stage label")
+	
+	# Exactly 5 arena platforms
+	print("  Validating Exactly 5 Connected Arena Platforms...")
+	var platforms = lvl.get_node("Platforms")
+	assert_eq(platforms.get_child_count(), 5, "Arena contains exactly 5 main platforms")
+	var p1 = platforms.get_node("Platform1_Spikes")
+	var p2 = platforms.get_node("Platform2_Phantom")
+	var p3 = platforms.get_node("Platform3_Crumbling")
+	var p4 = platforms.get_node("Platform4_Chains")
+	var p5 = platforms.get_node("Platform5_Countdown")
+	assert_eq(p1.hazard_type, SurvivalArenaPlatformClass.HazardType.SPIKES, "Platform 1 hazard is SPIKES")
+	assert_eq(p2.hazard_type, SurvivalArenaPlatformClass.HazardType.PHANTOM, "Platform 2 hazard is PHANTOM")
+	assert_eq(p3.hazard_type, SurvivalArenaPlatformClass.HazardType.CRUMBLING, "Platform 3 hazard is CRUMBLING")
+	assert_eq(p4.hazard_type, SurvivalArenaPlatformClass.HazardType.CHAINS, "Platform 4 hazard is CHAINS")
+	assert_eq(p5.hazard_type, SurvivalArenaPlatformClass.HazardType.COUNTDOWN, "Platform 5 hazard is COUNTDOWN")
+	
+	# Exactly 10 coins
+	print("  Validating Exactly 10 Coins across Arena...")
+	var coins = lvl.get_node("Coins")
+	assert_eq(coins.get_child_count(), 10, "Level 10 contains exactly 10 coins")
+	for i in range(1, 11):
+		assert_true(coins.has_node("Coin%d" % i), "Coin %d exists" % i)
+		
+	# Boss Intro Overlay validation
+	print("  Validating Boss Stage Intro Flow...")
+	var intro_overlay = lvl.get_node("HUD/BossIntroOverlay")
+	assert_true(intro_overlay.is_playing, "Boss intro starts playing on level load")
+	assert_true(player._input_disabled, "Player movement input disabled during boss intro")
+	assert_true(not lvl._is_surviving, "Survival countdown does not run during intro")
+	assert_eq(lvl.survival_timer_label.text, "SURVIVE: 60s", "Survival timer stopped at 60s during intro")
+	
+	# Intro contains prominent text
+	assert_eq(intro_overlay.objective_label.text, "SURVIVE FOR 1 MINUTE!", "Intro displays 'SURVIVE FOR 1 MINUTE!'")
+	assert_eq(intro_overlay.instruction_label.text, "Dodge the cursed hazards. Keep moving. Survive until the timer reaches zero!", "Intro displays required instruction")
+	
+	# Skip/complete intro
+	intro_overlay.skip()
+	assert_true(not intro_overlay.is_playing, "Intro dismisses cleanly on skip")
+	assert_true(not player._input_disabled, "Player movement restored after intro")
+	assert_true(lvl._is_surviving, "Survival gameplay active after intro")
+	
+	# Collect all 10 coins
+	print("  Validating Coin Collection during Survival...")
+	for i in range(1, 11):
+		coins.get_node("Coin%d" % i).collect()
+	assert_eq(GameManager.current_coins, 10, "All 10 coins collected in Level 10")
+	assert_eq(lvl.coin_counter_label.text, "COINS: 10 / 10", "Coin counter displays 10 / 10")
+	
+	# Test survival time progression & alerts
+	print("  Validating 60-Second Survival Progression & Alerts...")
+	# Advance to 50 seconds elapsed (10s remaining)
+	lvl._physics_process(50.1)
+	assert_true(lvl._shown_10s_alert, "10-second alert displayed at 50s elapsed")
+	assert_true(lvl.alert_banner.text.contains("10 SECONDS LEFT!"), "Alert text contains '10 SECONDS LEFT!'")
+	
+	# Advance to 55 seconds elapsed (5s remaining)
+	lvl._physics_process(5.0)
+	assert_eq(lvl._last_5s_announced, 5, "Final 5 seconds countdown triggered at 55s elapsed")
+	assert_true(lvl.alert_banner.text.contains("FINAL 5 SECONDS!"), "Alert displays 'FINAL 5 SECONDS!'")
+	
+	# Advance to 60.0s elapsed -> VICTORY!
+	lvl._physics_process(5.0)
+	assert_true(lvl._is_victory, "Victory triggered when timer reaches 60s")
+	assert_true(not lvl._is_surviving, "Survival loop finishes at 60s")
+	assert_true(SaveManager.is_level_completed(10), "Level 10 marked completed in SaveManager")
+	assert_true(SaveManager.is_level_unlocked(11), "Level 11 (World 3) unlocked after Level 10 completion")
+	
+	var victory_overlay = lvl.get_node("HUD/BossVictoryOverlay")
+	assert_true(victory_overlay.visible, "BossVictoryOverlay displayed upon completing 60 seconds")
+	assert_eq(victory_overlay.survived_title.text, "SURVIVED!", "Victory displays 'SURVIVED!'")
+	assert_eq(victory_overlay.subtitle_label.text, "60 SECONDS IN HELL!", "Victory displays '60 SECONDS IN HELL!'")
+	assert_eq(victory_overlay.world_complete_label.text, "WORLD 2 COMPLETE!", "Victory displays 'WORLD 2 COMPLETE!'")
+	
+	# Pressing World 3 on victory overlay displays in-progress modal for Level 11
+	victory_overlay._on_next_level_pressed()
+	assert_true(victory_overlay.message_modal.visible, "Next Level button shows World 3 in-progress modal")
+	
+	# Test clean retry reset
+	print("  Validating Clean Reset on Death / Retry...")
+	lvl._on_retry()
+	assert_eq(GameManager.current_coins, 0, "Coins reset to 0 on retry")
+	assert_eq(lvl._survival_elapsed, 0.0, "Survival elapsed reset to 0.0s")
+	assert_true(not lvl._is_victory, "Victory flag reset on retry")
+	assert_true(lvl._is_surviving, "Survival active on retry")
+	assert_true(p1.is_platform_safe(), "Platform 1 reset to safe")
+	assert_true(p2.is_platform_safe(), "Platform 2 reset to safe")
+	assert_true(p3.is_platform_safe(), "Platform 3 reset to safe")
+	assert_true(p4.is_platform_safe(), "Platform 4 reset to safe")
+	assert_true(p5.is_platform_safe(), "Platform 5 reset to safe")
+	assert_eq(lvl.surprise_chain.current_state, SurpriseGhostChainClass.ChainState.DORMANT, "Surprise chain reset to DORMANT")
 	
 	lvl.queue_free()
 

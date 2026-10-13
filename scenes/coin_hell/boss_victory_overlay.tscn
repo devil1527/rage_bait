@@ -1,0 +1,174 @@
+[gd_scene load_steps=3 format=3 uid="uid://boss_victory_overlay"]
+
+[ext_resource type="Script" path="res://scripts/coin_hell/boss_victory_overlay.gd" id="1_vic"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.08, 0.05, 0.14, 0.95)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.8, 0.65, 0.1, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.8, 0.6, 0.1, 0.3)
+shadow_size = 12
+
+[node name="BossVictoryOverlay" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_vic")
+
+[node name="DarkBackground" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.04, 0.02, 0.08, 0.82)
+
+[node name="Panel" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(460, 320)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -230.0
+offset_top = -160.0
+offset_right = 230.0
+offset_bottom = 160.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="SurvivedTitle" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.15, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 3
+theme_override_constants/shadow_offset_y = 3
+theme_override_font_sizes/font_size = 40
+text = "SURVIVED!"
+horizontal_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.3, 0.4, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 20
+text = "60 SECONDS IN HELL!"
+horizontal_alignment = 1
+
+[node name="WorldCompleteLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.55, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 24
+text = "WORLD 2 COMPLETE!"
+horizontal_alignment = 1
+
+[node name="CoinsSummaryLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 15
+text = "COINS COLLECTED: 10 / 10"
+horizontal_alignment = 1
+
+[node name="ButtonContainer" type="HBoxContainer" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="NextLevelBtn" type="Button" parent="Panel/VBox/ButtonContainer"]
+custom_minimum_size = Vector2(130, 42)
+layout_mode = 2
+text = "WORLD 3"
+
+[node name="ReplayBtn" type="Button" parent="Panel/VBox/ButtonContainer"]
+custom_minimum_size = Vector2(100, 42)
+layout_mode = 2
+text = "REPLAY"
+
+[node name="LevelSelectBtn" type="Button" parent="Panel/VBox/ButtonContainer"]
+custom_minimum_size = Vector2(130, 42)
+layout_mode = 2
+text = "LEVEL SELECT"
+
+[node name="MessageModal" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ColorRect" type="ColorRect" parent="MessageModal"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.75)
+
+[node name="Panel" type="PanelContainer" parent="MessageModal"]
+custom_minimum_size = Vector2(380, 200)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -190.0
+offset_top = -100.0
+offset_right = 190.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="VBox" type="VBoxContainer" parent="MessageModal/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="MessageModal/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 18
+text = "WORLD 3 IN PROGRESS"
+horizontal_alignment = 1
+
+[node name="MessageLabel" type="Label" parent="MessageModal/Panel/VBox"]
+custom_minimum_size = Vector2(340, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.95, 1)
+theme_override_font_sizes/font_size = 14
+text = "World 2 is Complete! World 3: Rage Factory is currently under construction. Replay earlier stages for now!"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="OkButton" type="Button" parent="MessageModal/Panel/VBox"]
+custom_minimum_size = Vector2(100, 36)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "OK"

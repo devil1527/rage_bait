@@ -1,0 +1,130 @@
+[gd_scene load_steps=2 format=3 uid="uid://boss_intro_overlay"]
+
+[ext_resource type="Script" path="res://scripts/coin_hell/boss_intro_overlay.gd" id="1_intro"]
+
+[node name="BossIntroOverlay" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_intro")
+
+[node name="DarkBackground" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.06, 0.04, 0.1, 0.88)
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ContentBox" type="VBoxContainer" parent="CenterContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="WorldLabel" type="Label" parent="CenterContainer/ContentBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.55, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 14
+text = "WORLD 2
+THE HAUNTED HALL"
+horizontal_alignment = 1
+
+[node name="BossStageLabel" type="Label" parent="CenterContainer/ContentBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.25, 0.35, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 18
+text = "BOSS STAGE"
+horizontal_alignment = 1
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/ContentBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.95, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_offset_x = 3
+theme_override_constants/shadow_offset_y = 3
+theme_override_font_sizes/font_size = 26
+text = "HAUNTED SURVIVAL"
+horizontal_alignment = 1
+
+[node name="ObjectiveLabel" type="Label" parent="CenterContainer/ContentBox"]
+layout_mode = 2
+pivot_offset = Vector2(250, 20)
+theme_override_colors/font_color = Color(1, 0.85, 0.15, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 3
+theme_override_constants/shadow_offset_y = 3
+theme_override_font_sizes/font_size = 32
+text = "SURVIVE FOR 1 MINUTE!"
+horizontal_alignment = 1
+
+[node name="InstructionLabel" type="Label" parent="CenterContainer/ContentBox"]
+custom_minimum_size = Vector2(500, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.95, 0.9)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 13
+text = "Dodge the cursed hazards. Keep moving. Survive until the timer reaches zero!"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="SurviveBanner" type="Label" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -40.0
+offset_right = 200.0
+offset_bottom = 40.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(200, 40)
+theme_override_colors/font_color = Color(1, 0.2, 0.35, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 4
+theme_override_constants/shadow_offset_y = 4
+theme_override_font_sizes/font_size = 54
+text = "SURVIVE!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SkipHint" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -200.0
+offset_top = -45.0
+offset_right = 200.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.6, 0.65, 0.75, 0.8)
+theme_override_font_sizes/font_size = 12
+text = "TAP OR PRESS JUMP TO START"
+horizontal_alignment = 1
+vertical_alignment = 1

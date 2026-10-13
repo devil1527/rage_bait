@@ -1,0 +1,348 @@
+[gd_scene load_steps=36 format=3 uid="uid://coin_hell_level_10_haunted_survival"]
+
+[ext_resource type="Script" path="res://scripts/coin_hell/level_10.gd" id="1_lev10"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/player.tscn" id="2_play"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/coin.tscn" id="3_coin"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/survival_arena_platform.tscn" id="4_saplat"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/surprise_ghost_chain.tscn" id="5_schain"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/spikes.tscn" id="6_spik"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/boss_intro_overlay.tscn" id="7_bintro"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/boss_victory_overlay.tscn" id="8_bvic"]
+[ext_resource type="PackedScene" path="res://scenes/shared/pause_overlay.tscn" id="9_paus"]
+[ext_resource type="PackedScene" path="res://scenes/shared/death_overlay.tscn" id="10_deat"]
+[ext_resource type="PackedScene" path="res://scenes/shared/haunted_hall_environment.tscn" id="11_henv"]
+[ext_resource type="Texture2D" path="res://assets/sprites/haunted_stone_platform.png" id="12_pstone"]
+[ext_resource type="Texture2D" path="res://assets/sprites/gothic_arch.png" id="13_garch"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ghostly_wisp.png" id="14_gwisp"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_left.png" id="15_bleft"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_right.png" id="16_bright"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_jump.png" id="17_bjump"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_left_pressed.png" id="18_bleft_p"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_right_pressed.png" id="19_bright_p"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_jump_pressed.png" id="20_bjump_p"]
+[ext_resource type="Script" path="res://scripts/coin_hell/touch_button.gd" id="21_tbtn"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_v"]
+size = Vector2(40, 540)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_h"]
+size = Vector2(960, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pit"]
+size = Vector2(960, 50)
+
+[sub_resource type="Gradient" id="Gradient_wisp_lvl10"]
+colors = PackedColorArray(0.8, 0.4, 1, 0.7, 0.2, 0.9, 1, 0)
+
+[node name="CoinHellLevel10" type="Node2D"]
+script = ExtResource("1_lev10")
+
+[node name="HauntedHallEnvironment" parent="." instance=ExtResource("11_henv")]
+stage_width = 960.0
+stage_height = 540.0
+ghost_count = 8
+fog_intensity = 0.5
+
+[node name="AtmosphereParticles" type="CPUParticles2D" parent="."]
+position = Vector2(480, 500)
+amount = 28
+lifetime = 3.6
+preprocess = 2.0
+texture = ExtResource("14_gwisp")
+emission_shape = 3
+emission_rect_extents = Vector2(480, 15)
+direction = Vector2(0, -1)
+spread = 24.0
+gravity = Vector2(0, -18)
+initial_velocity_min = 15.0
+initial_velocity_max = 35.0
+scale_amount_min = 0.8
+scale_amount_max = 1.6
+color_ramp = SubResource("Gradient_wisp_lvl10")
+
+[node name="Decorations" type="Node2D" parent="."]
+
+[node name="ArchLeft" type="Sprite2D" parent="Decorations"]
+position = Vector2(100, 260)
+texture = ExtResource("13_garch")
+
+[node name="ArchRight" type="Sprite2D" parent="Decorations"]
+position = Vector2(860, 260)
+texture = ExtResource("13_garch")
+
+[node name="ArenaBoundaries" type="Node2D" parent="."]
+
+[node name="LeftWall" type="StaticBody2D" parent="ArenaBoundaries"]
+position = Vector2(20, 270)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ArenaBoundaries/LeftWall"]
+shape = SubResource("RectangleShape2D_wall_v")
+
+[node name="RightWall" type="StaticBody2D" parent="ArenaBoundaries"]
+position = Vector2(940, 270)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ArenaBoundaries/RightWall"]
+shape = SubResource("RectangleShape2D_wall_v")
+
+[node name="Ceiling" type="StaticBody2D" parent="ArenaBoundaries"]
+position = Vector2(480, 20)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ArenaBoundaries/Ceiling"]
+shape = SubResource("RectangleShape2D_wall_h")
+
+[node name="Platforms" type="Node2D" parent="."]
+
+[node name="Platform1_Spikes" parent="Platforms" instance=ExtResource("4_saplat")]
+position = Vector2(200, 400)
+platform_width = 160.0
+
+[node name="Platform2_Phantom" parent="Platforms" instance=ExtResource("4_saplat")]
+position = Vector2(340, 310)
+hazard_type = 1
+platform_width = 140.0
+
+[node name="Platform3_Crumbling" parent="Platforms" instance=ExtResource("4_saplat")]
+position = Vector2(480, 220)
+hazard_type = 2
+platform_width = 160.0
+
+[node name="Platform4_Chains" parent="Platforms" instance=ExtResource("4_saplat")]
+position = Vector2(620, 310)
+hazard_type = 3
+platform_width = 140.0
+
+[node name="Platform5_Countdown" parent="Platforms" instance=ExtResource("4_saplat")]
+position = Vector2(760, 400)
+hazard_type = 4
+platform_width = 160.0
+
+[node name="SurpriseGhostChain" parent="." instance=ExtResource("5_schain")]
+position = Vector2(620, 50)
+chain_length = 145.0
+max_swing_angle = 46.0
+swing_speed = 2.4
+
+[node name="SpawnPoint" type="Marker2D" parent="."]
+position = Vector2(200, 350)
+
+[node name="Player" parent="." instance=ExtResource("2_play")]
+position = Vector2(200, 350)
+
+[node name="Camera2D" type="Camera2D" parent="Player"]
+offset = Vector2(0, -40)
+limit_left = 0
+limit_top = 0
+limit_right = 960
+limit_bottom = 540
+position_smoothing_enabled = false
+
+[node name="PitHazardArea" type="Area2D" parent="."]
+position = Vector2(480, 520)
+collision_layer = 4
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PitHazardArea"]
+shape = SubResource("RectangleShape2D_pit")
+
+[node name="SpikesVisual" type="Node2D" parent="."]
+
+[node name="Spikes1" parent="SpikesVisual" instance=ExtResource("6_spik")]
+position = Vector2(300, 500)
+
+[node name="Spikes2" parent="SpikesVisual" instance=ExtResource("6_spik")]
+position = Vector2(480, 500)
+
+[node name="Spikes3" parent="SpikesVisual" instance=ExtResource("6_spik")]
+position = Vector2(660, 500)
+
+[node name="Coins" type="Node2D" parent="."]
+
+[node name="Coin1" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(160, 340)
+
+[node name="Coin2" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(240, 340)
+
+[node name="Coin3" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(270, 280)
+
+[node name="Coin4" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(340, 250)
+
+[node name="Coin5" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(410, 190)
+
+[node name="Coin6" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(480, 160)
+
+[node name="Coin7" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(550, 190)
+
+[node name="Coin8" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(620, 250)
+
+[node name="Coin9" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(690, 280)
+
+[node name="Coin10" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(760, 340)
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="MarginContainer" type="MarginContainer" parent="HUD"]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 56.0
+grow_horizontal = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 6
+
+[node name="TopBar" type="HBoxContainer" parent="HUD/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="CoinCounter" type="Label" parent="HUD/MarginContainer/TopBar"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 16
+text = "COINS: 0 / 10"
+vertical_alignment = 1
+
+[node name="LevelName" type="Label" parent="HUD/MarginContainer/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "WORLD 2 · BOSS: HAUNTED SURVIVAL"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TimerContainer" type="HBoxContainer" parent="HUD/MarginContainer/TopBar"]
+layout_mode = 2
+
+[node name="SurvivalTimer" type="Label" parent="HUD/MarginContainer/TopBar/TimerContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.15, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 18
+text = "SURVIVE: 60s"
+vertical_alignment = 1
+
+[node name="PauseBtn" type="Button" parent="HUD/MarginContainer/TopBar"]
+custom_minimum_size = Vector2(80, 36)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 14
+text = "PAUSE"
+
+[node name="AlertBanner" type="Label" parent="HUD"]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -140.0
+offset_right = 250.0
+offset_bottom = -60.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(250, 40)
+theme_override_colors/font_color = Color(1, 0.25, 0.35, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 3
+theme_override_constants/shadow_offset_y = 3
+theme_override_font_sizes/font_size = 32
+text = "10 SECONDS LEFT!
+DON'T DIE NOW!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TouchControls" type="Control" parent="HUD"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="LeftBtn" type="TextureButton" parent="HUD/TouchControls"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -120.0
+offset_right = 120.0
+offset_bottom = -16.0
+grow_vertical = 0
+focus_mode = 0
+texture_normal = ExtResource("15_bleft")
+texture_pressed = ExtResource("18_bleft_p")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("21_tbtn")
+action_name = "move_left"
+
+[node name="RightBtn" type="TextureButton" parent="HUD/TouchControls"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 136.0
+offset_top = -120.0
+offset_right = 240.0
+offset_bottom = -16.0
+grow_vertical = 0
+focus_mode = 0
+texture_normal = ExtResource("16_bright")
+texture_pressed = ExtResource("19_bright_p")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("21_tbtn")
+action_name = "move_right"
+
+[node name="JumpBtn" type="TextureButton" parent="HUD/TouchControls"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -144.0
+offset_top = -140.0
+offset_right = -20.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 0
+focus_mode = 0
+texture_normal = ExtResource("17_bjump")
+texture_pressed = ExtResource("20_bjump_p")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("21_tbtn")
+action_name = "jump"
+
+[node name="BossIntroOverlay" parent="HUD" instance=ExtResource("7_bintro")]
+visible = false
+
+[node name="BossVictoryOverlay" parent="HUD" instance=ExtResource("8_bvic")]
+visible = false
+
+[node name="PauseOverlay" parent="HUD" instance=ExtResource("9_paus")]
+visible = false
+
+[node name="DeathOverlay" parent="HUD" instance=ExtResource("10_deat")]
+visible = false
