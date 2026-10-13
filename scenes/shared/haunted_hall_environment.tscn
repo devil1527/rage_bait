@@ -1,0 +1,100 @@
+[gd_scene load_steps=6 format=3 uid="uid://haunted_env_shared_001"]
+
+[ext_resource type="Script" path="res://scripts/shared/haunted_hall_environment.gd" id="1_henv"]
+[ext_resource type="Texture2D" path="res://assets/sprites/castle_towers_backdrop.png" id="2_ctow"]
+[ext_resource type="Texture2D" path="res://assets/sprites/gothic_window.png" id="3_gwin"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ghostly_wisp.png" id="4_gwisp"]
+
+[sub_resource type="Gradient" id="Gradient_wisps"]
+colors = PackedColorArray(0.4, 0.75, 1, 0.55, 0.6, 0.25, 0.9, 0)
+
+[node name="HauntedHallEnvironment" type="Node2D"]
+z_as_relative = false
+z_index = -10
+script = ExtResource("1_henv")
+
+[node name="ParallaxBackground" type="ParallaxBackground" parent="."]
+layer = -20
+
+[node name="SkyBackdrop" type="ColorRect" parent="ParallaxBackground"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0470588, 0.0352941, 0.0862745, 1)
+
+[node name="WallGrad" type="ColorRect" parent="ParallaxBackground"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0862745, 0.0627451, 0.14902, 0.5)
+
+[node name="ParallaxTowers" type="ParallaxLayer" parent="ParallaxBackground"]
+motion_scale = Vector2(0.18, 0.08)
+motion_mirroring = Vector2(1024, 0)
+
+[node name="Tower1" type="Sprite2D" parent="ParallaxBackground/ParallaxTowers"]
+position = Vector2(128, 140)
+texture = ExtResource("2_ctow")
+
+[node name="Tower2" type="Sprite2D" parent="ParallaxBackground/ParallaxTowers"]
+position = Vector2(384, 140)
+texture = ExtResource("2_ctow")
+
+[node name="Tower3" type="Sprite2D" parent="ParallaxBackground/ParallaxTowers"]
+position = Vector2(640, 140)
+texture = ExtResource("2_ctow")
+
+[node name="Tower4" type="Sprite2D" parent="ParallaxBackground/ParallaxTowers"]
+position = Vector2(896, 140)
+texture = ExtResource("2_ctow")
+
+[node name="ParallaxWindows" type="ParallaxLayer" parent="ParallaxBackground"]
+motion_scale = Vector2(0.38, 0.15)
+motion_mirroring = Vector2(800, 0)
+
+[node name="Win1" type="Sprite2D" parent="ParallaxBackground/ParallaxWindows"]
+position = Vector2(160, 220)
+texture = ExtResource("3_gwin")
+
+[node name="Win2" type="Sprite2D" parent="ParallaxBackground/ParallaxWindows"]
+position = Vector2(480, 200)
+texture = ExtResource("3_gwin")
+
+[node name="Win3" type="Sprite2D" parent="ParallaxBackground/ParallaxWindows"]
+position = Vector2(720, 230)
+texture = ExtResource("3_gwin")
+
+[node name="MistLayer" type="Node2D" parent="."]
+z_index = -2
+
+[node name="GroundMist" type="ColorRect" parent="MistLayer"]
+offset_left = -200.0
+offset_top = 450.0
+offset_right = 3200.0
+offset_bottom = 610.0
+color = Color(0.117647, 0.0784314, 0.219608, 0.4)
+
+[node name="SpectralWisps" type="CPUParticles2D" parent="."]
+z_index = -2
+position = Vector2(1500, 520)
+amount = 36
+lifetime = 4.2
+preprocess = 2.0
+texture = ExtResource("4_gwisp")
+emission_shape = 3
+emission_rect_extents = Vector2(1500, 20)
+direction = Vector2(0, -1)
+spread = 28.0
+gravity = Vector2(0, -16)
+initial_velocity_min = 14.0
+initial_velocity_max = 32.0
+scale_amount_min = 0.8
+scale_amount_max = 1.5
+color_ramp = SubResource("Gradient_wisps")
+
+[node name="CastleArches" type="Node2D" parent="."]
+z_index = -3

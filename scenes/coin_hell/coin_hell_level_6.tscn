@@ -8,7 +8,7 @@
 [ext_resource type="PackedScene" path="res://scenes/shared/pause_overlay.tscn" id="6_paus"]
 [ext_resource type="PackedScene" path="res://scenes/shared/death_overlay.tscn" id="7_deat"]
 [ext_resource type="PackedScene" path="res://scenes/shared/level_complete_overlay.tscn" id="8_comp"]
-[ext_resource type="Texture2D" path="res://assets/sprites/platform_ruins.png" id="9_pruin"]
+[ext_resource type="Texture2D" path="res://assets/sprites/haunted_stone_platform.png" id="9_pruin"]
 [ext_resource type="Texture2D" path="res://assets/sprites/spikes.png" id="10_sspr"]
 [ext_resource type="Texture2D" path="res://assets/sprites/btn_left.png" id="11_bleft"]
 [ext_resource type="Texture2D" path="res://assets/sprites/btn_right.png" id="12_bright"]
@@ -20,6 +20,7 @@
 [ext_resource type="PackedScene" path="res://scenes/coin_hell/spikes.tscn" id="18_spik"]
 [ext_resource type="Texture2D" path="res://assets/sprites/gothic_arch.png" id="19_garch"]
 [ext_resource type="Texture2D" path="res://assets/sprites/ghostly_wisp.png" id="20_gwisp"]
+[ext_resource type="PackedScene" path="res://scenes/shared/haunted_hall_environment.tscn" id="21_henv"]
 
 [sub_resource type="Gradient" id="Gradient_wisp"]
 colors = PackedColorArray(0.3, 0.8, 1, 0.6, 0.6, 0.2, 0.9, 0)
@@ -51,24 +52,11 @@ size = Vector2(3600, 120)
 [node name="CoinHellLevel6" type="Node2D"]
 script = ExtResource("1_lev6")
 
-[node name="Background" type="CanvasLayer" parent="."]
-layer = -10
-
-[node name="ColorRect" type="ColorRect" parent="Background"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.0313726, 0.0235294, 0.0784314, 1)
-
-[node name="CastleFog" type="ColorRect" parent="Background"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.0784314, 0.054902, 0.160784, 0.4)
+[node name="HauntedHallEnvironment" parent="." instance=ExtResource("21_henv")]
+stage_width = 2900.0
+stage_height = 600.0
+ghost_count = 10
+fog_intensity = 0.42
 
 [node name="AtmosphereParticles" type="CPUParticles2D" parent="."]
 position = Vector2(1400, 500)

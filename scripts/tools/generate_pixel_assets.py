@@ -499,6 +499,185 @@ def create_phantom_platform_assets():
     dw.ellipse([5, 5, 10, 10], fill=(160, 255, 240, 240))
     wisp.save("assets/sprites/ghostly_wisp.png")
 
+def create_haunted_hall_assets():
+    # 1. 48x24 haunted_stone_platform.png - Ancient cracked stone slab
+    plat = Image.new("RGBA", (48, 24), (0, 0, 0, 0))
+    dp = ImageDraw.Draw(plat)
+    
+    # Outer stone block
+    dp.rectangle([0, 0, 47, 23], fill=(28, 24, 44, 255), outline=(18, 14, 30, 255))
+    # Weathered top slab
+    dp.rectangle([2, 1, 45, 6], fill=(62, 53, 90, 255))
+    dp.line([(2, 1), (45, 1)], fill=(110, 96, 150, 255)) # highlight rim
+    
+    # Lower stone bricks
+    dp.rectangle([2, 8, 22, 15], fill=(42, 35, 64, 255), outline=(22, 18, 36, 255))
+    dp.rectangle([24, 8, 45, 15], fill=(48, 40, 72, 255), outline=(22, 18, 36, 255))
+    dp.rectangle([2, 16, 14, 22], fill=(36, 30, 56, 255), outline=(22, 18, 36, 255))
+    dp.rectangle([16, 16, 32, 22], fill=(42, 35, 64, 255), outline=(22, 18, 36, 255))
+    dp.rectangle([34, 16, 45, 22], fill=(36, 30, 56, 255), outline=(22, 18, 36, 255))
+    
+    # Ancient cracks and weathering
+    dp.line([(10, 2), (12, 6)], fill=(20, 16, 32, 255))
+    dp.line([(12, 6), (9, 10)], fill=(16, 12, 26, 255))
+    dp.line([(32, 3), (35, 7)], fill=(20, 16, 32, 255))
+    dp.line([(35, 7), (38, 12)], fill=(16, 12, 26, 255))
+    dp.line([(20, 14), (23, 20)], fill=(16, 12, 26, 255))
+    
+    # Subtle eerie spectral moss flecks in stone crevices
+    dp.point((11, 5), fill=(60, 210, 170, 220))
+    dp.point((33, 4), fill=(70, 220, 180, 220))
+    dp.point((24, 15), fill=(50, 180, 150, 200))
+    dp.point((5, 18), fill=(60, 190, 160, 180))
+    dp.point((40, 18), fill=(70, 210, 175, 190))
+    
+    plat.save("assets/sprites/haunted_stone_platform.png")
+
+    # 2. 24x24 ghost_decor.png - Decorative background ghost silhouette
+    ghost = Image.new("RGBA", (24, 24), (0, 0, 0, 0))
+    dg = ImageDraw.Draw(ghost)
+    
+    # Outer ethereal halo (faint blue glow)
+    dg.ellipse([3, 1, 20, 18], fill=(60, 170, 240, 50))
+    dg.polygon([(4, 12), (19, 12), (21, 22), (2, 22)], fill=(60, 170, 240, 40))
+    
+    # Ghost body (soft spectral blue-white)
+    dg.ellipse([5, 3, 18, 16], fill=(195, 235, 255, 190))
+    # Body lower drape
+    dg.polygon([(6, 10), (17, 10), (19, 20), (4, 20)], fill=(180, 225, 250, 180))
+    
+    # Wispy scalloped tail at bottom
+    dg.polygon([(4, 18), (6, 23), (8, 18)], fill=(160, 215, 245, 160))
+    dg.polygon([(8, 18), (11, 22), (14, 18)], fill=(170, 225, 250, 170))
+    dg.polygon([(14, 18), (17, 23), (19, 18)], fill=(160, 215, 245, 160))
+    
+    # Eerie dark eye hollows
+    dg.ellipse([8, 7, 10, 11], fill=(20, 26, 48, 220))
+    dg.ellipse([13, 7, 15, 11], fill=(20, 26, 48, 220))
+    # Faint spectral eye glow centers
+    dg.point((9, 8), fill=(140, 240, 255, 240))
+    dg.point((14, 8), fill=(140, 240, 255, 240))
+    
+    ghost.save("assets/sprites/ghost_decor.png")
+
+    # 3. 32x56 gothic_window.png - Broken gothic lancet window with faint moonlight
+    win = Image.new("RGBA", (32, 56), (0, 0, 0, 0))
+    dw = ImageDraw.Draw(win)
+    
+    # Dark stone frame
+    dw.polygon([(2, 20), (16, 2), (29, 20), (29, 54), (2, 54)], fill=(24, 20, 36, 240), outline=(38, 32, 54, 255))
+    # Inner opening
+    dw.polygon([(5, 21), (16, 6), (26, 21), (26, 51), (5, 51)], fill=(14, 11, 24, 255))
+    
+    # Moonlight glow in window panes
+    dw.polygon([(6, 22), (15, 8), (25, 22), (25, 50), (6, 50)], fill=(45, 65, 95, 160))
+    # Pale moonlight beam
+    dw.polygon([(10, 16), (22, 28), (20, 48), (8, 48)], fill=(120, 175, 215, 140))
+    dw.polygon([(12, 20), (18, 28), (17, 44), (10, 44)], fill=(180, 220, 245, 180))
+    
+    # Stone tracery / mullions
+    dw.line([(16, 6), (16, 51)], fill=(28, 24, 40, 255))
+    dw.line([(5, 34), (26, 34)], fill=(28, 24, 40, 255))
+    
+    # Broken glass cracks
+    dw.line([(16, 20), (22, 16)], fill=(18, 14, 28, 255))
+    dw.line([(8, 40), (14, 38)], fill=(18, 14, 28, 255))
+    
+    win.save("assets/sprites/gothic_window.png")
+
+    # 4. 256x128 castle_towers_backdrop.png - Distant gothic castle towers silhouette
+    towers = Image.new("RGBA", (256, 128), (0, 0, 0, 0))
+    dt = ImageDraw.Draw(towers)
+    
+    # Deep background atmospheric wall silhouette
+    dt.rectangle([0, 60, 255, 127], fill=(16, 13, 28, 240))
+    
+    # Left tower 1 (spire)
+    dt.rectangle([14, 34, 42, 127], fill=(20, 16, 34, 255))
+    dt.polygon([(10, 34), (28, 6), (46, 34)], fill=(24, 19, 40, 255))
+    # Left battlement notches
+    dt.rectangle([12, 30, 18, 34], fill=(24, 19, 40, 255))
+    dt.rectangle([24, 30, 30, 34], fill=(24, 19, 40, 255))
+    dt.rectangle([36, 30, 42, 34], fill=(24, 19, 40, 255))
+    # Lit narrow slit window
+    dt.rectangle([26, 50, 29, 62], fill=(180, 140, 220, 180))
+    
+    # Mid-left ruined tower
+    dt.rectangle([60, 48, 95, 127], fill=(18, 14, 30, 255))
+    # Broken parapet
+    dt.polygon([(58, 48), (72, 42), (85, 48), (95, 52)], fill=(22, 17, 36, 255))
+    dt.rectangle([74, 68, 80, 82], fill=(120, 160, 210, 140))
+    
+    # Central grand gothic keep
+    dt.rectangle([115, 24, 165, 127], fill=(22, 17, 38, 255))
+    dt.polygon([(112, 24), (140, 0), (168, 24)], fill=(26, 21, 44, 255))
+    # Grand window
+    dt.polygon([(134, 38), (140, 30), (146, 38), (146, 56), (134, 56)], fill=(150, 180, 230, 160))
+    # Side pinnacles
+    dt.polygon([(110, 28), (114, 16), (118, 28)], fill=(28, 22, 46, 255))
+    dt.polygon([(162, 28), (166, 16), (170, 28)], fill=(28, 22, 46, 255))
+    
+    # Mid-right ruined wall & arch
+    dt.rectangle([180, 52, 215, 127], fill=(19, 15, 32, 255))
+    dt.rectangle([190, 70, 204, 95], fill=(12, 9, 20, 255)) # broken breach
+    
+    # Right tower
+    dt.rectangle([225, 36, 250, 127], fill=(21, 17, 35, 255))
+    dt.polygon([(222, 36), (237, 10), (253, 36)], fill=(25, 20, 42, 255))
+    dt.rectangle([234, 54, 238, 66], fill=(160, 130, 210, 180))
+    
+    towers.save("assets/sprites/castle_towers_backdrop.png")
+
+    # 5. 48x48 haunted_crusher_block.png - Ancient heavy carved stone crusher block
+    crush = Image.new("RGBA", (48, 48), (0, 0, 0, 0))
+    dc = ImageDraw.Draw(crush)
+    
+    # Main stone body
+    dc.rectangle([2, 2, 45, 41], fill=(36, 30, 54, 255), outline=(20, 16, 30, 255))
+    # Inner carved panel
+    dc.rectangle([6, 6, 41, 37], fill=(46, 38, 68, 255), outline=(26, 21, 40, 255))
+    
+    # Heavy iron reinforcement rim
+    dc.rectangle([2, 18, 45, 24], fill=(30, 26, 42, 255), outline=(16, 12, 24, 255))
+    # Rivets on iron rim
+    dc.point((6, 21), fill=(130, 115, 170, 255))
+    dc.point((16, 21), fill=(130, 115, 170, 255))
+    dc.point((24, 21), fill=(130, 115, 170, 255))
+    dc.point((32, 21), fill=(130, 115, 170, 255))
+    dc.point((42, 21), fill=(130, 115, 170, 255))
+    
+    # Eerie carved demon skull / crest glyph in upper panel
+    dc.polygon([(18, 10), (24, 7), (30, 10), (28, 16), (20, 16)], fill=(18, 14, 28, 255))
+    # Glowing violet/spectral eye slits
+    dc.rectangle([20, 11, 22, 13], fill=(0, 240, 210, 255))
+    dc.rectangle([26, 11, 28, 13], fill=(0, 240, 210, 255))
+    
+    # Weathering cracks
+    dc.line([(10, 28), (14, 34)], fill=(18, 14, 28, 255))
+    dc.line([(36, 26), (33, 33)], fill=(18, 14, 28, 255))
+    
+    # Vicious carved stone teeth on bottom
+    for i in range(5):
+        tx = 4 + (i * 8)
+        dc.polygon([(tx, 41), (tx + 4, 47), (tx + 8, 41)], fill=(22, 18, 34, 255), outline=(14, 10, 22, 255))
+        # Blood/spectral stain tip
+        dc.point((tx + 4, 46), fill=(200, 60, 90, 220))
+        
+    crush.save("assets/sprites/haunted_crusher_block.png")
+
+    # 6. 16x32 haunted_crusher_stem.png - Heavy stone shaft with carved links
+    stem = Image.new("RGBA", (16, 32), (0, 0, 0, 0))
+    ds = ImageDraw.Draw(stem)
+    ds.rectangle([3, 0, 12, 31], fill=(28, 23, 42, 255), outline=(16, 12, 26, 255))
+    # Central rib
+    ds.line([(7, 0), (7, 31)], fill=(44, 36, 64, 255))
+    ds.line([(8, 0), (8, 31)], fill=(56, 46, 80, 255))
+    # Horizontal links/bands
+    for y in [4, 12, 20, 28]:
+        ds.line([(3, y), (12, y)], fill=(14, 10, 22, 255))
+        ds.point((5, y-1), fill=(90, 78, 120, 255))
+    stem.save("assets/sprites/haunted_crusher_stem.png")
+
 if __name__ == "__main__":
     create_player()
     create_coin()
@@ -511,4 +690,5 @@ if __name__ == "__main__":
     create_neon_ruins_assets()
     create_inferno_gate_assets()
     create_phantom_platform_assets()
+    create_haunted_hall_assets()
     print("All pixel assets generated successfully!")

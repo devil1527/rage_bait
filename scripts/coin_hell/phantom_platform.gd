@@ -1,11 +1,12 @@
 class_name PhantomPlatform
-extends StaticBody2D
+extends AnimatableBody2D
 
-## PhantomPlatform provides two distinct variants of spectral platforms
-## for World 2: The Haunted Hall:
-## 1. TIMED: Deterministic cycle between SOLID and PHANTOM with clear visual warning.
+## PhantomPlatform provides spectral platforms for World 2: The Haunted Hall:
+## 1. TIMED: Deterministic cycle between SOLID, WARNING, and PHANTOM.
 ## 2. TRIGGERED: Reacts when player steps on it, displaying a clear warning cue,
 ##    then transitioning to PHANTOM, and recovering to SOLID after a predictable interval.
+## 3. MOVING PHANTOM BARS: Combines cyclic/triggered phantom phasing with deterministic
+##    path movement along move_axis.
 ## Collision and visual states are strictly synchronized at all times.
 
 enum PlatformType { TIMED, TRIGGERED }
@@ -30,6 +31,13 @@ signal platform_triggered
 @export var width: float = 80.0
 @export var height: float = 24.0
 
+# Movement parameters (Moving Phantom Bar variant)
+@export var move_distance: float = 0.0
+@export var move_speed: float = 60.0
+@export var move_axis: Vector2 = Vector2.RIGHT
+@export var pause_at_ends: float = 0.4
+@export var move_start_offset: float = 0.0 # 0.0 to 1.0 along the travel path
+
 var current_state: PlatformState = PlatformState.SOLID
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
@@ -45,7 +53,12 @@ var _is_triggered: bool = false
 var _shake_tween: Tween = null
 var _original_pos: Vector2 = Vector2.ZERO
 
+var _travelled_distance: float = 0.0
+var _move_direction: float = 1.0
+var _endpoint_pause_timer: float = 0.0
+
 func _ready() -> void:
+	sync_to_physics = false
 	collision_layer = 2
 	collision_mask = 0
 	_original_pos = position
@@ -79,11 +92,34 @@ func _update_dimensions() -> void:
 		step_shape.position = Vector2(0.0, -height / 2.0 - 4.0)
 
 func _physics_process(delta: float) -> void:
+	if move_distance > 0.0:
+		_process_movement(delta)
+		
 	match platform_type:
 		PlatformType.TIMED:
 			_process_timed_cycle(delta)
 		PlatformType.TRIGGERED:
 			_process_triggered_state(delta)
+
+func _process_movement(delta: float) -> void:
+	if _endpoint_pause_timer > 0.0:
+		_endpoint_pause_timer -= delta
+		return
+		
+	var step: float = move_speed * delta
+	_travelled_distance += step * _move_direction
+	
+	if _travelled_distance >= move_distance:
+		_travelled_distance = move_distance
+		_move_direction = -1.0
+		_endpoint_pause_timer = pause_at_ends
+	elif _travelled_distance <= 0.0:
+		_travelled_distance = 0.0
+		_move_direction = 1.0
+		_endpoint_pause_timer = pause_at_ends
+		
+	var norm_axis: Vector2 = move_axis.normalized() if move_axis != Vector2.ZERO else Vector2.RIGHT
+	position = _original_pos + (norm_axis * _travelled_distance)
 
 func _process_timed_cycle(delta: float) -> void:
 	var total_period := solid_duration + phantom_duration
@@ -170,10 +206,18 @@ func reset() -> void:
 	_elapsed_cycle = 0.0
 	_triggered_timer = 0.0
 	_is_triggered = false
-	position = _original_pos
 	
 	if _shake_tween and _shake_tween.is_valid():
 		_shake_tween.kill()
+		
+	if move_distance > 0.0:
+		_travelled_distance = move_distance * clampf(move_start_offset, 0.0, 1.0)
+		_move_direction = 1.0
+		_endpoint_pause_timer = 0.0
+		var norm_axis: Vector2 = move_axis.normalized() if move_axis != Vector2.ZERO else Vector2.RIGHT
+		position = _original_pos + (norm_axis * _travelled_distance)
+	else:
+		position = _original_pos
 		
 	if platform_type == PlatformType.TIMED:
 		# Set initial state according to cycle offset

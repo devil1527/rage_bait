@@ -28,7 +28,7 @@ var levels: Dictionary = {
 	4: {"id": 4, "name": "Crushing Silence", "world_id": 1, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_4.tscn", "coin_count": 10},
 	5: {"id": 5, "name": "The Final Betrayal", "world_id": 1, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_5.tscn", "coin_count": 10},
 	6: {"id": 6, "name": "Phantom's Curse", "world_id": 2, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_6.tscn", "coin_count": 10},
-	7: {"id": 7, "name": "The Vanishing Path", "world_id": 2, "implemented": false, "scene": "", "coin_count": 16},
+	7: {"id": 7, "name": "Hall of Illusions", "world_id": 2, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_7.tscn", "coin_count": 10},
 	8: {"id": 8, "name": "Greed Trap", "world_id": 2, "implemented": false, "scene": "", "coin_count": 10},
 	9: {"id": 9, "name": "The Fake Exit", "world_id": 2, "implemented": false, "scene": "", "coin_count": 15},
 	10: {"id": 10, "name": "Just One More", "world_id": 2, "implemented": false, "scene": "", "coin_count": 18},

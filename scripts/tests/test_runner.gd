@@ -11,6 +11,7 @@ const CeilingCrusherClass = preload("res://scripts/coin_hell/ceiling_crusher.gd"
 const FakeSafePlatformClass = preload("res://scripts/coin_hell/fake_safe_platform.gd")
 const PhantomPlatformClass = preload("res://scripts/coin_hell/phantom_platform.gd")
 const StageIntroCardClass = preload("res://scripts/shared/stage_intro_card.gd")
+const HauntedHallEnvironmentClass = preload("res://scripts/shared/haunted_hall_environment.gd")
 
 var passed_count: int = 0
 var failed_count: int = 0
@@ -64,7 +65,9 @@ func run_all_tests() -> void:
 	test_level_5_gameplay_mechanics()
 	test_welcome_and_startup_screen()
 	test_developer_only_level_access()
+	test_haunted_hall_environment_and_ghosts()
 	test_level_6_gameplay_mechanics()
+	test_level_7_gameplay_mechanics()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -130,7 +133,14 @@ func test_game_manager_level_definitions() -> void:
 	assert_true(lvl6.get("implemented"), "Level 6 is marked implemented")
 	assert_true(GameManager.can_play_level(6), "Level 6 is playable")
 	
-	for lvl_id in range(7, 21):
+	var lvl7: Dictionary = GameManager.get_level_info(7)
+	assert_eq(lvl7.get("name"), "Hall of Illusions", "Level 7 name is 'Hall of Illusions'")
+	assert_eq(GameManager.get_world_name_for_stage(7), "THE HAUNTED HALL", "Level 7 world is 'THE HAUNTED HALL'")
+	assert_true(lvl7.get("implemented"), "Level 7 is marked implemented")
+	assert_true(GameManager.can_play_level(7), "Level 7 is playable")
+	assert_eq(lvl7.get("coin_count"), 10, "Level 7 coin count is 10")
+	
+	for lvl_id in range(8, 21):
 		assert_true(not GameManager.can_play_level(lvl_id), "Level %d is marked not implemented" % lvl_id)
 		
 	# Test coin counter clamping
@@ -276,13 +286,19 @@ func test_level_select_logic_and_states() -> void:
 	assert_true(SaveManager.is_level_unlocked(6), "Level 6 is unlocked after completing Level 5")
 	assert_true(GameManager.can_play_level(6), "Level 6 is playable")
 
-	# Complete level 6 to unlock level 7 and test unimplemented level press
+	# Complete level 6 to unlock level 7 and verify Level 7 is playable
 	SaveManager.complete_level(6)
 	lsel._update_ui()
 	assert_true(SaveManager.is_level_unlocked(7), "Level 7 is unlocked after completing Level 6")
-	lsel._on_level_tile_pressed(7)
+	assert_true(GameManager.can_play_level(7), "Level 7 is playable")
+
+	# Complete level 7 to unlock level 8 and test unimplemented level press
+	SaveManager.complete_level(7)
+	lsel._update_ui()
+	assert_true(SaveManager.is_level_unlocked(8), "Level 8 is unlocked after completing Level 7")
+	lsel._on_level_tile_pressed(8)
 	assert_true(modal.visible, "Pressing unlocked but unimplemented level shows modal")
-	assert_eq(modal_label.text, "Level 7 is still being built. Replay an earlier level for now.", "Modal shows exact unimplemented level message")
+	assert_eq(modal_label.text, "Level 8 is still being built. Replay an earlier level for now.", "Modal shows exact unimplemented level message")
 	
 	lsel.queue_free()
 
@@ -1630,14 +1646,65 @@ func test_developer_only_level_access() -> void:
 	assert_true(lsel.message_modal.visible, "Locked modal dialog displayed")
 	assert_eq(lsel.modal_title.text, "LEVEL 6 IS LOCKED", "Modal explains Level 6 is locked")
 	
-	# Unimplemented level (e.g. Level 7) cannot be launched even with dev mode on
+	# Unimplemented level (e.g. Level 8) cannot be launched even with dev mode on
 	lsel._on_dev_toggle_pressed()
 	assert_true(lsel.dev_bypass_active, "Dev bypass toggled on")
-	lsel._on_level_tile_pressed(7)
-	assert_true(lsel.message_modal.visible, "Unimplemented Level 7 displays in-progress modal")
-	assert_eq(lsel.modal_title.text, "LEVEL 7 IN PROGRESS", "Modal indicates Level 7 is in progress")
+	lsel._on_level_tile_pressed(8)
+	assert_true(lsel.message_modal.visible, "Unimplemented Level 8 displays in-progress modal")
+	assert_eq(lsel.modal_title.text, "LEVEL 8 IN PROGRESS", "Modal indicates Level 8 is in progress")
 	
 	lsel.queue_free()
+
+func test_haunted_hall_environment_and_ghosts() -> void:
+	print("\n--- TEST: Reusable Haunted Hall Environment & Decorative Flying Ghosts ---")
+	var env_scene = preload("res://scenes/shared/haunted_hall_environment.tscn")
+	assert_true(env_scene != null, "HauntedHallEnvironment scene loads successfully")
+	
+	var env = env_scene.instantiate()
+	add_child(env)
+	
+	assert_true(env.has_node("ParallaxBackground"), "ParallaxBackground layer exists")
+	assert_true(env.has_node("ParallaxBackground/ParallaxTowers"), "Parallax castle towers backdrop exists")
+	assert_true(env.has_node("ParallaxBackground/ParallaxWindows"), "Parallax gothic lancet windows exist")
+	assert_true(env.has_node("MistLayer/GroundMist"), "GroundMist color rect exists")
+	assert_true(env.has_node("SpectralWisps"), "Spectral wisps particle emitter exists")
+	assert_true(env.has_node("CastleArches"), "Castle arches container exists")
+	assert_true(env.has_node("GhostsPool"), "GhostsPool container exists")
+	
+	# Verify ghost pool
+	var pool = env.get_node("GhostsPool")
+	assert_eq(pool.get_child_count(), env.ghost_count, "Ghost pool spawns exact configured ghost count (%d)" % env.ghost_count)
+	
+	# CRITICAL REQUIREMENTS:
+	# 1. Background ghosts are decorative only.
+	# 2. They must NOT damage the player.
+	# 3. They must NOT collide with the player.
+	# 4. Zero CollisionShape2D or Area2D nodes.
+	# 5. Travel behind castle arches.
+	var arches = env.get_node("CastleArches")
+	assert_true(pool.z_index < arches.z_index, "Ghosts (z=%d) travel behind castle arches (z=%d)" % [pool.z_index, arches.z_index])
+	
+	var all_decorative := true
+	var zero_collision := true
+	for ghost in pool.get_children():
+		if not (ghost is Sprite2D):
+			all_decorative = false
+		if ghost is CollisionObject2D or ghost is Area2D:
+			zero_collision = false
+		for sub_child in ghost.get_children():
+			if sub_child is CollisionShape2D or sub_child is Area2D or sub_child is CollisionObject2D:
+				zero_collision = false
+				
+	assert_true(all_decorative, "All ghosts in pool are pure Sprite2D visual nodes")
+	assert_true(zero_collision, "Zero collision shapes or Area2D hazards on background ghosts (100% non-colliding/non-damaging)")
+	
+	# Process ghosts movement
+	var ghost0: Sprite2D = pool.get_child(0)
+	var initial_x := ghost0.position.x
+	env._process(0.2)
+	assert_true(ghost0.position.x != initial_x, "Ghosts move smoothly in background across time")
+	
+	env.queue_free()
 
 func test_level_6_gameplay_mechanics() -> void:
 	print("\n--- TEST: Level 6 Gameplay Mechanics (World 2: The Haunted Hall - Phantom's Curse) ---")
@@ -1797,12 +1864,10 @@ func test_level_6_gameplay_mechanics() -> void:
 	assert_true(SaveManager.is_level_completed(6), "Level 6 marked completed in SaveManager")
 	assert_true(SaveManager.is_level_unlocked(7), "Level 7 is unlocked after Level 6 completion")
 	
-	# Next Level button on LevelCompleteOverlay displays in-progress modal for Level 7
+	# Next Level button on LevelCompleteOverlay transitions to implemented Level 7
 	var complete_overlay = lvl.get_node("HUD/LevelCompleteOverlay")
 	complete_overlay.open(10, 10)
-	complete_overlay._on_next_level_pressed()
-	var complete_modal_label: Label = complete_overlay.get_node("MessageModal/Panel/VBox/MessageLabel")
-	assert_eq(complete_modal_label.text, "Level 7 is unlocked, but it's still being built. Replay Level 1 for now.", "Level 6 Next Level shows safe unimplemented Level 7 modal")
+	assert_true(GameManager.can_play_level(7), "Level 7 is playable so Level 6 Next Level advances to Level 7")
 	
 	# Test clean retry reset
 	print("  Validating Clean Trap Reset on Level 6 Retry...")
@@ -1813,6 +1878,150 @@ func test_level_6_gameplay_mechanics() -> void:
 	assert_eq(plat1.current_state, PhantomPlatformClass.PlatformState.SOLID, "Plat1 reset to initial state")
 	assert_eq(plat5.current_state, PhantomPlatformClass.PlatformState.SOLID, "Plat5 reset to initial state")
 	assert_true(not plat5._is_triggered, "Plat5 trigger reset on retry")
+	
+	lvl.queue_free()
+
+func test_level_7_gameplay_mechanics() -> void:
+	print("\n--- TEST: Level 7 Gameplay Mechanics (World 2: The Haunted Hall - Hall of Illusions) ---")
+	var lvl_info: Dictionary = GameManager.get_level_info(7)
+	assert_eq(lvl_info.get("name"), "Hall of Illusions", "Level 7 name is 'Hall of Illusions'")
+	assert_eq(GameManager.get_world_name_for_stage(7), "THE HAUNTED HALL", "Level 7 world is 'THE HAUNTED HALL'")
+	assert_true(lvl_info.get("implemented"), "Level 7 is marked implemented")
+	assert_eq(lvl_info.get("coin_count"), 10, "Level 7 has exactly 10 required coins")
+	
+	var lvl_scene = load(lvl_info.get("scene", ""))
+	assert_true(lvl_scene != null, "Level 7 scene loads successfully")
+	
+	var lvl = lvl_scene.instantiate()
+	add_child(lvl)
+	
+	var player = lvl.get_node_or_null("Player")
+	assert_true(player != null, "Player exists in Level 7")
+	assert_eq(player.position, Vector2(100, 380), "Player spawns safely at X=100, Y=380")
+	
+	var cam: Camera2D = player.get_node_or_null("Camera2D")
+	assert_true(cam != null, "Camera2D exists on player")
+	assert_eq(cam.limit_bottom, 600, "Camera2D limit_bottom is 600")
+	assert_eq(cam.limit_right, 3000, "Camera2D limit_right is 3000")
+	assert_true(cam.offset.y < 0, "Camera2D negative offset ensures landing visibility")
+	
+	# Mobile controls standardized dimensions
+	print("  Validating Level 7 Mobile Controls standardized dimensions...")
+	var touch_controls = lvl.get_node_or_null("HUD/TouchControls")
+	assert_true(touch_controls != null, "TouchControls exists in Level 7")
+	var lbtn: TextureButton = touch_controls.get_node("LeftBtn")
+	var rbtn: TextureButton = touch_controls.get_node("RightBtn")
+	var jbtn: TextureButton = touch_controls.get_node("JumpBtn")
+	assert_eq(lbtn.offset_right - lbtn.offset_left, 104.0, "LeftBtn width is 104px")
+	assert_eq(lbtn.offset_bottom - lbtn.offset_top, 104.0, "LeftBtn height is 104px")
+	assert_eq(rbtn.offset_right - rbtn.offset_left, 104.0, "RightBtn width is 104px")
+	assert_eq(rbtn.offset_bottom - rbtn.offset_top, 104.0, "RightBtn height is 104px")
+	assert_eq(jbtn.offset_right - jbtn.offset_left, 124.0, "JumpBtn width is 124px")
+	assert_eq(jbtn.offset_bottom - jbtn.offset_top, 124.0, "JumpBtn height is 124px")
+	
+	# Haunted Hall visual environment
+	assert_true(lvl.has_node("HauntedHallEnvironment"), "HauntedHallEnvironment instance exists in Level 7")
+	
+	# HUD World / Stage display
+	var hud_level_label: Label = lvl.get_node("HUD/MarginContainer/TopBar/LevelName")
+	assert_eq(hud_level_label.text, "WORLD 2 · STAGE 7: HALL OF ILLUSIONS", "HUD displays correct World 2 Stage 7 label")
+	
+	# Coins count and placement
+	print("  Validating Exactly 10 Coins across 5 Sections...")
+	var coins = lvl.get_node("Coins")
+	assert_eq(coins.get_child_count(), 10, "Level 7 contains exactly 10 coins")
+	for i in range(1, 11):
+		assert_true(coins.has_node("Coin%d" % i), "Coin %d exists" % i)
+		
+	# Section 1: Moving Phantom Bars
+	print("  Validating Section 1 (Coins 1-2): Moving Phantom Bars...")
+	var plat1: PhantomPlatform = lvl.get_node("Platforms/Plat1_MovingPhantom")
+	var plat2: PhantomPlatform = lvl.get_node("Platforms/Plat2_MovingPhantom")
+	assert_true(plat1 != null and plat2 != null, "Section 1 moving phantom bars exist")
+	assert_true(plat1.move_distance > 0.0, "Plat1 has move_distance > 0")
+	assert_true(plat2.move_distance > 0.0, "Plat2 has move_distance > 0")
+	
+	# Test movement mechanics
+	var initial_plat1_x := plat1.position.x
+	plat1._process_movement(0.5)
+	assert_true(plat1.position.x > initial_plat1_x, "Plat1 moves smoothly along X axis")
+	
+	# Section 2: Timed Phantom Platforms + Spikes
+	print("  Validating Section 2 (Coins 3-4): Timed Phantom Platforms + Spikes...")
+	var plat3: PhantomPlatform = lvl.get_node("Platforms/Plat3_PhantomTimedA")
+	var plat4: PhantomPlatform = lvl.get_node("Platforms/Plat4_PhantomTimedB")
+	assert_true(plat3 != null and plat4 != null, "Section 2 phantom platforms exist")
+	assert_true(lvl.has_node("Spikes/FloorSpikes2A"), "Section 2 floor spikes exist")
+	assert_true(lvl.has_node("Spikes/CeilingSpikes2"), "Section 2 ceiling spikes exist above islet")
+	
+	# Section 3: Falling Crushers
+	print("  Validating Section 3 (Coins 5-6): Falling Crushers...")
+	var crush1: CeilingCrusher = lvl.get_node("Crushers/Crusher1_Sec3")
+	var crush2: CeilingCrusher = lvl.get_node("Crushers/Crusher2_Sec3")
+	assert_true(crush1 != null and crush2 != null, "Section 3 falling crushers exist")
+	assert_eq(crush1.current_state, CeilingCrusherClass.State.IDLE, "Crusher1 starts IDLE")
+	
+	# Trigger Crusher1
+	crush1._on_trigger_body_entered(player)
+	assert_eq(crush1.current_state, CeilingCrusherClass.State.TRIGGERED, "Crusher1 transitions to TRIGGERED upon player approach")
+	assert_true(crush1.hazard_collision.disabled, "Crusher1 hazard disabled during warning tremor")
+	
+	# Advance warning to drop
+	crush1._physics_process(crush1.trigger_delay + 0.02)
+	assert_eq(crush1.current_state, CeilingCrusherClass.State.DESCENDING, "Crusher1 enters DESCENDING slam")
+	assert_true(not crush1.hazard_collision.disabled, "Crusher1 lethal collision active during descent")
+	
+	# Section 4: Combined Moving Phantom Bars, Spikes & Crushers
+	print("  Validating Section 4 (Coins 7-8): Combined Hazards...")
+	var plat7: PhantomPlatform = lvl.get_node("Platforms/Plat7_MovingPhantom")
+	var crush3: CeilingCrusher = lvl.get_node("Crushers/Crusher3_Sec4")
+	assert_true(plat7 != null and crush3 != null, "Section 4 moving bar and crusher exist")
+	assert_true(plat7.move_distance > 0.0, "Plat7 moves across hazard zone")
+	
+	# Section 5: Climax Combination
+	print("  Validating Section 5 (Coins 9-10): Climax Combination...")
+	var plat9: PhantomPlatform = lvl.get_node("Platforms/Plat9_MovingPhantom")
+	var plat10: PhantomPlatform = lvl.get_node("Platforms/Plat10_TriggeredPhantom")
+	var crush4: CeilingCrusher = lvl.get_node("Crushers/Crusher4_Sec5")
+	assert_true(plat9 != null and plat10 != null and crush4 != null, "Section 5 climax elements exist")
+	assert_eq(plat10.platform_type, PhantomPlatformClass.PlatformType.TRIGGERED, "Plat10 is TRIGGERED variant")
+	
+	# Exit gate and completion
+	var exit_gate = lvl.get_node("ExitGate")
+	assert_true(not exit_gate._is_open, "ExitGate starts locked requiring all 10 coins")
+	
+	# Collect all 10 coins
+	print("  Validating Coin Collection & Level 7 Completion...")
+	GameManager.current_level_id = 7
+	GameManager.total_coins_required = 10
+	GameManager.reset_coins()
+	for i in range(1, 11):
+		coins.get_node("Coin%d" % i).collect()
+	assert_eq(GameManager.current_coins, 10, "All 10 coins collected in Level 7")
+	assert_true(exit_gate._is_open, "ExitGate opens automatically when all 10 coins collected")
+	
+	# Enter exit gate to complete Level 7
+	GameManager.is_gameplay_active = true
+	exit_gate._on_body_entered(player)
+	assert_true(exit_gate._completion_triggered, "Level 7 completion triggered upon entering exit gate")
+	assert_true(SaveManager.is_level_completed(7), "Level 7 marked completed in SaveManager")
+	assert_true(SaveManager.is_level_unlocked(8), "Level 8 is unlocked after Level 7 completion")
+	
+	# Next Level button on LevelCompleteOverlay displays in-progress modal for Level 8
+	var complete_overlay = lvl.get_node("HUD/LevelCompleteOverlay")
+	complete_overlay.open(10, 10)
+	complete_overlay._on_next_level_pressed()
+	var complete_modal_label: Label = complete_overlay.get_node("MessageModal/Panel/VBox/MessageLabel")
+	assert_eq(complete_modal_label.text, "Level 8 is unlocked, but it's still being built. Replay Level 1 for now.", "Level 7 Next Level shows safe unimplemented Level 8 modal")
+	
+	# Test clean retry reset
+	print("  Validating Clean Trap Reset on Level 7 Retry...")
+	lvl._on_retry()
+	assert_eq(GameManager.current_coins, 0, "Level 7 retry resets coins to 0")
+	assert_true(not exit_gate._is_open, "ExitGate re-locks on retry")
+	assert_true(not exit_gate._completion_triggered, "ExitGate completion flag reset")
+	assert_eq(plat1.current_state, PhantomPlatformClass.PlatformState.SOLID, "Plat1 reset to initial state")
+	assert_eq(crush1.current_state, CeilingCrusherClass.State.IDLE, "Crusher1 reset to IDLE")
 	
 	lvl.queue_free()
 
