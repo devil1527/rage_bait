@@ -1,0 +1,168 @@
+[gd_scene load_steps=6 format=3 uid="uid://c5e8n8y2l1s4k"]
+
+[ext_resource type="Script" path="res://scripts/ui/welcome_screen.gd" id="1_wscr"]
+[ext_resource type="Texture2D" path="res://assets/sprites/coin.png" id="2_coin"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg_bar"]
+bg_color = Color(0.0705882, 0.054902, 0.141176, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.247059, 0.282353, 0.411765, 0.8)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fill_bar"]
+bg_color = Color(0, 0.898039, 1, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.5, 1, 1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0, 0.8, 1, 0.4)
+shadow_size = 4
+
+[sub_resource type="Gradient" id="Gradient_particles"]
+colors = PackedColorArray(0, 0.898039, 1, 0.8, 1, 0.819608, 0.14902, 0)
+
+[node name="WelcomeScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_wscr")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0470588, 0.0352941, 0.0901961, 1)
+
+[node name="RetroParticles" type="CPUParticles2D" parent="."]
+position = Vector2(480, 540)
+amount = 28
+lifetime = 3.5
+preprocess = 2.0
+emission_shape = 3
+emission_rect_extents = Vector2(480, 10)
+direction = Vector2(0, -1)
+spread = 15.0
+gravity = Vector2(0, -15)
+initial_velocity_min = 30.0
+initial_velocity_max = 75.0
+scale_amount_min = 2.0
+scale_amount_max = 4.0
+color_ramp = SubResource("Gradient_particles")
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="CenterContainer"]
+custom_minimum_size = Vector2(360, 0)
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="BrandLabel" type="Label" parent="CenterContainer/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0.898039, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0.3, 0.5, 0.6)
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 14
+text = "RETRO RAGE ARCADE"
+horizontal_alignment = 1
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.819608, 0.14902, 1)
+theme_override_colors/font_shadow_color = Color(0.8, 0.4, 0, 0.8)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 3
+theme_override_font_sizes/font_size = 46
+text = "COIN HELL"
+horizontal_alignment = 1
+
+[node name="WelcomeLabel" type="Label" parent="CenterContainer/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.85, 0.92, 1)
+theme_override_font_sizes/font_size = 15
+text = "WELCOME TO COIN HELL"
+horizontal_alignment = 1
+
+[node name="IconContainer" type="CenterContainer" parent="CenterContainer/VBox"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+
+[node name="CoinIcon" type="TextureRect" parent="CenterContainer/VBox/IconContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+pivot_offset = Vector2(20, 20)
+texture = ExtResource("2_coin")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Spacer" type="Control" parent="CenterContainer/VBox"]
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+
+[node name="LoadingBox" type="VBoxContainer" parent="CenterContainer/VBox"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="StatusLabel" type="Label" parent="CenterContainer/VBox/LoadingBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.72, 0.82, 1)
+theme_override_font_sizes/font_size = 12
+text = "INITIALIZING RETRO SYSTEMS..."
+horizontal_alignment = 1
+
+[node name="ProgressBar" type="ProgressBar" parent="CenterContainer/VBox/LoadingBox"]
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bg_bar")
+theme_override_styles/fill = SubResource("StyleBoxFlat_fill_bar")
+show_percentage = false
+
+[node name="PercentLabel" type="Label" parent="CenterContainer/VBox/LoadingBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0.898039, 1, 1)
+theme_override_font_sizes/font_size = 11
+text = "0%"
+horizontal_alignment = 1
+
+[node name="FooterLabel" type="Label" parent="CenterContainer/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.38, 0.42, 0.52, 0.8)
+theme_override_font_sizes/font_size = 10
+text = "TAP TO CONTINUE"
+horizontal_alignment = 1
+
+[node name="FadeOverlay" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.03, 0.02, 0.06, 1)

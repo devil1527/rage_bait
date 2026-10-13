@@ -59,6 +59,9 @@ func run_all_tests() -> void:
 	test_level_3_gameplay_mechanics()
 	test_level_4_gameplay_mechanics()
 	test_level_5_gameplay_mechanics()
+	test_welcome_and_startup_screen()
+	test_developer_only_level_access()
+	test_level_6_gameplay_mechanics()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -118,7 +121,12 @@ func test_game_manager_level_definitions() -> void:
 	assert_true(lvl5.get("implemented"), "Level 5 is marked implemented")
 	assert_true(GameManager.can_play_level(5), "Level 5 is playable")
 	
-	for lvl_id in range(6, 21):
+	var lvl6: Dictionary = GameManager.get_level_info(6)
+	assert_eq(lvl6.get("name"), "The Haunted Hall", "Level 6 name is 'The Haunted Hall'")
+	assert_true(lvl6.get("implemented"), "Level 6 is marked implemented")
+	assert_true(GameManager.can_play_level(6), "Level 6 is playable")
+	
+	for lvl_id in range(7, 21):
 		assert_true(not GameManager.can_play_level(lvl_id), "Level %d is marked not implemented" % lvl_id)
 		
 	# Test coin counter clamping
@@ -163,6 +171,7 @@ func test_level_select_logic_and_states() -> void:
 	assert_true(lsel_scene != null, "Level select scene loads successfully")
 	var lsel = lsel_scene.instantiate()
 	add_child(lsel)
+	lsel.dev_bypass_active = false
 	
 	var grid = lsel.get_node("MarginContainer/VBox/ScrollContainer/LevelGrid")
 	assert_eq(grid.get_child_count(), 20, "Level grid contains 20 level tiles")
@@ -197,13 +206,19 @@ func test_level_select_logic_and_states() -> void:
 	assert_true(SaveManager.is_level_unlocked(5), "Level 5 is unlocked after completing Level 4")
 	assert_true(GameManager.can_play_level(5), "Level 5 is playable")
 
-	# Complete level 5 to unlock level 6 and test unimplemented level press
+	# Complete level 5 to unlock level 6 and verify Level 6 is playable
 	SaveManager.complete_level(5)
 	lsel._update_ui()
 	assert_true(SaveManager.is_level_unlocked(6), "Level 6 is unlocked after completing Level 5")
-	lsel._on_level_tile_pressed(6)
+	assert_true(GameManager.can_play_level(6), "Level 6 is playable")
+
+	# Complete level 6 to unlock level 7 and test unimplemented level press
+	SaveManager.complete_level(6)
+	lsel._update_ui()
+	assert_true(SaveManager.is_level_unlocked(7), "Level 7 is unlocked after completing Level 6")
+	lsel._on_level_tile_pressed(7)
 	assert_true(modal.visible, "Pressing unlocked but unimplemented level shows modal")
-	assert_eq(modal_label.text, "Level 6 is unlocked, but it's still being built. Replay Level 1 for now.", "Modal shows exact unimplemented level message")
+	assert_eq(modal_label.text, "Level 7 is still being built. Replay an earlier level for now.", "Modal shows exact unimplemented level message")
 	
 	lsel.queue_free()
 
@@ -620,6 +635,8 @@ func test_full_level_1_gameplay_walkthrough() -> void:
 	assert_true(exit_gate._is_open, "Exit gate unlocked automatically after 10th coin")
 	
 	# Step 7: Enter unlocked stationary exit gate
+	GameManager.current_level_id = 1
+	GameManager.is_gameplay_active = true
 	exit_gate._on_body_entered(player)
 	assert_true(exit_gate._completion_triggered, "Level 1 completion triggered upon reaching exit")
 	assert_true(SaveManager.is_level_completed(1), "Level 1 marked completed in SaveManager")
@@ -1452,12 +1469,11 @@ func test_level_5_gameplay_mechanics() -> void:
 	assert_true(SaveManager.is_level_completed(5), "Level 5 marked completed in SaveManager")
 	assert_true(SaveManager.is_level_unlocked(6), "Level 6 is unlocked after Level 5 completion")
 
-	# Next Level button shows Level 6 unimplemented modal
+	# Next Level button transitions to Level 6 (now implemented)
 	var complete_overlay = lvl.get_node("HUD/LevelCompleteOverlay")
 	complete_overlay.open(10, 10)
 	complete_overlay._on_next_level_pressed()
-	var complete_modal_label: Label = complete_overlay.get_node("MessageModal/Panel/VBox/MessageLabel")
-	assert_eq(complete_modal_label.text, "Level 6 is unlocked, but it's still being built. Replay Level 1 for now.", "Level 5 Next Level shows safe unimplemented Level 6 modal")
+	assert_eq(GameManager.current_level_id, 6, "Level 5 Next Level transitions directly to implemented Level 6")
 
 	# Reset Level 5 & verify clean restoration of all trap states
 	print("  Validating Clean Trap Reset on Level Retry...")
@@ -1477,5 +1493,212 @@ func test_level_5_gameplay_mechanics() -> void:
 	assert_true(not mwall8._is_active, "MovingWall 8 inactive on reset")
 	assert_true(not wspik4._is_active, "WallSpikeTrap 4 inactive on reset")
 
+	lvl.queue_free()
+
+func test_welcome_and_startup_screen() -> void:
+	print("\n--- TEST: Welcome & Startup Screen ---")
+	var welcome_scene_res = load("res://scenes/ui/welcome_screen.tscn")
+	assert_true(welcome_scene_res != null, "WelcomeScreen scene exists and loads")
+	
+	var welcome_screen = welcome_scene_res.instantiate()
+	add_child(welcome_screen)
+	
+	assert_true(welcome_screen.has_node("CenterContainer/VBox/BrandLabel"), "Branding label exists")
+	var brand_label: Label = welcome_screen.get_node("CenterContainer/VBox/BrandLabel")
+	assert_eq(brand_label.text, "RETRO RAGE ARCADE", "Brand text is 'RETRO RAGE ARCADE'")
+	
+	assert_true(welcome_screen.has_node("CenterContainer/VBox/TitleLabel"), "Title label exists")
+	var title_label: Label = welcome_screen.get_node("CenterContainer/VBox/TitleLabel")
+	assert_eq(title_label.text, "COIN HELL", "Title text is 'COIN HELL'")
+	
+	assert_true(welcome_screen.has_node("CenterContainer/VBox/WelcomeLabel"), "Welcome label exists")
+	var welcome_label: Label = welcome_screen.get_node("CenterContainer/VBox/WelcomeLabel")
+	assert_eq(welcome_label.text, "WELCOME TO COIN HELL", "Welcome text is 'WELCOME TO COIN HELL'")
+	
+	assert_true(welcome_screen.has_node("CenterContainer/VBox/IconContainer/CoinIcon"), "Coin icon exists")
+	assert_true(welcome_screen.has_node("CenterContainer/VBox/LoadingBox/ProgressBar"), "Loading ProgressBar exists")
+	assert_true(welcome_screen.has_node("FadeOverlay"), "FadeOverlay exists")
+	
+	var config_main_scene = ProjectSettings.get_setting("application/run/main_scene")
+	assert_eq(config_main_scene, "res://scenes/ui/welcome_screen.tscn", "Project configured to start at welcome_screen.tscn")
+	
+	# Simulate process step without blocking
+	welcome_screen._process(0.2)
+	assert_true(welcome_screen._current_progress >= 0.0, "Progress smoothly advances")
+	
+	welcome_screen.queue_free()
+
+func test_developer_only_level_access() -> void:
+	print("\n--- TEST: Developer-Only Level Access ---")
+	var lsel_scene = load("res://scenes/ui/coin_hell_level_select.tscn")
+	var lsel = lsel_scene.instantiate()
+	add_child(lsel)
+	
+	# Reset player save to pristine state: only Level 1 is legitimately unlocked
+	SaveManager._apply_defaults()
+	SaveManager.save_data()
+	assert_eq(SaveManager.highest_unlocked_level, 1, "Save progress starts at Level 1")
+	assert_true(not SaveManager.is_level_unlocked(6), "Level 6 is legitimately locked")
+	
+	# In debug mode, dev toggle button exists
+	assert_true(lsel.is_debug_mode, "Debug build detected for developer tools")
+	assert_true(lsel.dev_toggle_btn != null, "Developer bypass toggle button exists in header bar")
+	assert_true(lsel.dev_bypass_active, "Developer bypass enabled by default in debug build")
+	
+	# With dev bypass active, Level 6 can be launched directly without completing Levels 1-5!
+	assert_true(GameManager.can_play_level(6), "Level 6 is implemented")
+	lsel._on_level_tile_pressed(6)
+	assert_eq(GameManager.current_level_id, 6, "Developer mode allows direct launch into Level 6")
+	
+	# Verify that legitimate progression was NOT overwritten
+	assert_eq(SaveManager.highest_unlocked_level, 1, "Legitimate highest_unlocked_level is preserved (not overwritten)")
+	assert_true(not SaveManager.is_level_unlocked(6), "SaveManager still records Level 6 as legitimately locked")
+	
+	# Toggle dev bypass off: simulate release / locked behavior
+	lsel._on_dev_toggle_pressed()
+	assert_true(not lsel.dev_bypass_active, "Dev bypass toggled off")
+	
+	# Pressing locked Level 6 now shows locked modal
+	GameManager.current_level_id = 1
+	lsel._on_level_tile_pressed(6)
+	assert_eq(GameManager.current_level_id, 1, "With dev bypass disabled, locked Level 6 does not launch")
+	assert_true(lsel.message_modal.visible, "Locked modal dialog displayed")
+	assert_eq(lsel.modal_title.text, "LEVEL 6 IS LOCKED", "Modal explains Level 6 is locked")
+	
+	# Unimplemented level (e.g. Level 7) cannot be launched even with dev mode on
+	lsel._on_dev_toggle_pressed()
+	assert_true(lsel.dev_bypass_active, "Dev bypass toggled on")
+	lsel._on_level_tile_pressed(7)
+	assert_true(lsel.message_modal.visible, "Unimplemented Level 7 displays in-progress modal")
+	assert_eq(lsel.modal_title.text, "LEVEL 7 IN PROGRESS", "Modal indicates Level 7 is in progress")
+	
+	lsel.queue_free()
+
+func test_level_6_gameplay_mechanics() -> void:
+	print("\n--- TEST: Level 6 Gameplay Mechanics (The Haunted Hall - Cursed Castle) ---")
+	var lvl_info: Dictionary = GameManager.get_level_info(6)
+	assert_eq(lvl_info.get("name"), "The Haunted Hall", "Level 6 name is 'The Haunted Hall'")
+	assert_true(lvl_info.get("implemented"), "Level 6 is marked implemented")
+	assert_eq(lvl_info.get("coin_count"), 10, "Level 6 has exactly 10 required coins")
+	
+	var lvl_scene = load(lvl_info.get("scene", ""))
+	assert_true(lvl_scene != null, "Level 6 scene loads successfully")
+	
+	var lvl = lvl_scene.instantiate()
+	add_child(lvl)
+	
+	var player = lvl.get_node_or_null("Player")
+	assert_true(player != null, "Player exists in Level 6")
+	assert_eq(player.position, Vector2(100, 380), "Player spawns safely at X=100, Y=380")
+	
+	var cam: Camera2D = player.get_node_or_null("Camera2D")
+	assert_true(cam != null, "Camera2D exists on player")
+	assert_eq(cam.limit_bottom, 600, "Camera2D limit_bottom is 600")
+	assert_true(cam.offset.y < 0, "Camera2D negative offset ensures landing visibility")
+	
+	# Mobile controls sizing
+	print("  Validating Level 6 Mobile Controls standardized dimensions...")
+	var touch_controls = lvl.get_node_or_null("HUD/TouchControls")
+	assert_true(touch_controls != null, "TouchControls exists in Level 6")
+	var lbtn: TextureButton = touch_controls.get_node("LeftBtn")
+	var rbtn: TextureButton = touch_controls.get_node("RightBtn")
+	var jbtn: TextureButton = touch_controls.get_node("JumpBtn")
+	assert_eq(lbtn.offset_right - lbtn.offset_left, 104.0, "LeftBtn width is 104px")
+	assert_eq(lbtn.offset_bottom - lbtn.offset_top, 104.0, "LeftBtn height is 104px")
+	assert_eq(rbtn.offset_right - rbtn.offset_left, 104.0, "RightBtn width is 104px")
+	assert_eq(rbtn.offset_bottom - rbtn.offset_top, 104.0, "RightBtn height is 104px")
+	assert_eq(jbtn.offset_right - jbtn.offset_left, 124.0, "JumpBtn width is 124px")
+	assert_eq(jbtn.offset_bottom - jbtn.offset_top, 124.0, "JumpBtn height is 124px")
+	
+	# Coins count and placement
+	print("  Validating Exactly 10 Coins and Castle Encounters...")
+	var coins = lvl.get_node("Coins")
+	assert_eq(coins.get_child_count(), 10, "Level 6 contains exactly 10 coins")
+	for i in range(1, 11):
+		assert_true(coins.has_node("Coin%d" % i), "Coin %d exists" % i)
+	
+	# Validate encounters
+	var c1 = coins.get_node("Coin1")
+	var c2 = coins.get_node("Coin2")
+	var c3 = coins.get_node("Coin3")
+	var c4 = coins.get_node("Coin4")
+	var c5 = coins.get_node("Coin5")
+	var c6 = coins.get_node("Coin6")
+	var c7 = coins.get_node("Coin7")
+	var c8 = coins.get_node("Coin8")
+	var c9 = coins.get_node("Coin9")
+	var c10 = coins.get_node("Coin10")
+	
+	assert_eq(c1.position, Vector2(280, 330), "Coin 1 positioned above collapsing flagstone 1")
+	assert_eq(c2.position, Vector2(480, 300), "Coin 2 arched over FloorSpikes2 gap")
+	assert_eq(c3.position, Vector2(770, 330), "Coin 3 positioned before MovingWall3")
+	assert_eq(c4.position, Vector2(1050, 270), "Coin 4 on elevated Parapet4 under AirSpikes4")
+	assert_eq(c5.position, Vector2(1300, 330), "Coin 5 under Crusher5 on crumbling Plat5")
+	assert_eq(c6.position, Vector2(1540, 310), "Coin 6 above Plat6_FakeSafe with pop-up gargoyle spikes")
+	assert_eq(c7.position, Vector2(1900, 300), "Coin 7 suspended between alternating Crushers 7A & 7B")
+	assert_eq(c8.position, Vector2(2170, 330), "Coin 8 on crumbling Plat8 before MovingWall8")
+	assert_eq(c9.position, Vector2(2480, 260), "Coin 9 on deceptive high castle ledge under Crusher9")
+	assert_eq(c10.position, Vector2(2700, 320), "Coin 10 centered over climax cascading Bridge 10")
+	
+	# Traps validation
+	var plat1 = lvl.get_node("Platforms/Plat1_Collapsing")
+	var plat6 = lvl.get_node("Platforms/Plat6_FakeSafe")
+	var mwall3 = lvl.get_node("Traps/MovingWall3")
+	var cr5 = lvl.get_node("Traps/Crusher5")
+	var cr7a = lvl.get_node("Traps/Crusher7A")
+	var cr7b = lvl.get_node("Traps/Crusher7B")
+	var mwall8 = lvl.get_node("Traps/MovingWall8")
+	var cr9 = lvl.get_node("Traps/Crusher9")
+	var exit_gate = lvl.get_node("ExitGate")
+	
+	assert_true(plat1 is CrumblingBridgeSectionClass, "Plat1 uses CrumblingBridgeSection")
+	assert_true(plat6 is FakeSafePlatformClass, "Plat6 uses FakeSafePlatform")
+	assert_true(mwall3 is MovingWallClass, "MovingWall3 uses MovingWall")
+	assert_true(cr5 is CeilingCrusherClass, "Crusher5 uses CeilingCrusher")
+	assert_true(cr7a.auto_cycle, "Crusher7A auto-cycles")
+	assert_true(cr7b.auto_cycle, "Crusher7B auto-cycles with offset")
+	assert_true(mwall8 is MovingWallClass, "MovingWall8 uses MovingWall")
+	assert_true(cr9 is CeilingCrusherClass, "Crusher9 uses CeilingCrusher")
+	
+	# Exit gate locked state
+	assert_true(not exit_gate._is_open, "ExitGate starts locked requiring all 10 coins")
+	
+	# Collect all 10 coins
+	print("  Validating Coin Collection & Level 6 Completion...")
+	GameManager.current_level_id = 6
+	GameManager.total_coins_required = 10
+	GameManager.reset_coins()
+	for i in range(1, 11):
+		coins.get_node("Coin%d" % i).collect()
+	assert_eq(GameManager.current_coins, 10, "All 10 coins collected in Level 6")
+	assert_true(exit_gate._is_open, "ExitGate opens automatically when all 10 coins collected")
+	
+	# Enter exit gate to complete Level 6
+	GameManager.is_gameplay_active = true
+	exit_gate._on_body_entered(player)
+	assert_true(exit_gate._completion_triggered, "Level 6 completion triggered upon entering exit gate")
+	assert_true(SaveManager.is_level_completed(6), "Level 6 marked completed in SaveManager")
+	assert_true(SaveManager.is_level_unlocked(7), "Level 7 is unlocked after Level 6 completion")
+	
+	# Next Level button on LevelCompleteOverlay displays in-progress modal for Level 7
+	var complete_overlay = lvl.get_node("HUD/LevelCompleteOverlay")
+	complete_overlay.open(10, 10)
+	complete_overlay._on_next_level_pressed()
+	var complete_modal_label: Label = complete_overlay.get_node("MessageModal/Panel/VBox/MessageLabel")
+	assert_eq(complete_modal_label.text, "Level 7 is unlocked, but it's still being built. Replay Level 1 for now.", "Level 6 Next Level shows safe unimplemented Level 7 modal")
+	
+	# Test clean retry reset
+	print("  Validating Clean Trap Reset on Level 6 Retry...")
+	lvl._on_retry()
+	assert_eq(GameManager.current_coins, 0, "Level 6 retry resets coins to 0")
+	assert_true(not exit_gate._is_open, "ExitGate re-locks on retry")
+	assert_true(not exit_gate._completion_triggered, "ExitGate completion flag reset")
+	assert_true(not plat1._is_triggered, "Plat1 reset on retry")
+	assert_true(not plat6._active_spikes, "Plat6 fake safe platform reset on retry")
+	assert_true(not mwall3._is_active, "MovingWall3 reset on retry")
+	assert_true(not mwall8._is_active, "MovingWall8 reset on retry")
+	assert_eq(cr5.current_state, CeilingCrusherClass.State.IDLE, "Crusher 5 reset to IDLE")
+	assert_eq(cr9.current_state, CeilingCrusherClass.State.IDLE, "Crusher 9 reset to IDLE")
+	
 	lvl.queue_free()
 

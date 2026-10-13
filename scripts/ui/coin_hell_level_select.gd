@@ -18,6 +18,12 @@ var _style_avail_normal: StyleBoxFlat
 var _style_avail_hover: StyleBoxFlat
 var _style_lock_normal: StyleBoxFlat
 var _style_lock_hover: StyleBoxFlat
+var _style_dev_normal: StyleBoxFlat
+var _style_dev_hover: StyleBoxFlat
+
+var is_debug_mode: bool = OS.is_debug_build()
+var dev_bypass_active: bool = true
+var dev_toggle_btn: Button = null
 
 func _init() -> void:
 	_init_styles()
@@ -63,13 +69,57 @@ func _init_styles() -> void:
 	_style_lock_hover.border_color = Color(0.32, 0.36, 0.48, 0.9)
 	_style_lock_hover.set_corner_radius_all(8)
 
+	_style_dev_normal = StyleBoxFlat.new()
+	_style_dev_normal.bg_color = Color(0.06, 0.14, 0.22, 0.95)
+	_style_dev_normal.set_border_width_all(2)
+	_style_dev_normal.border_color = Color(0.0, 0.75, 1.0, 1.0)
+	_style_dev_normal.set_corner_radius_all(8)
+	_style_dev_normal.shadow_color = Color(0.0, 0.6, 1.0, 0.3)
+	_style_dev_normal.shadow_size = 4
+
+	_style_dev_hover = StyleBoxFlat.new()
+	_style_dev_hover.bg_color = Color(0.10, 0.20, 0.32, 0.98)
+	_style_dev_hover.set_border_width_all(3)
+	_style_dev_hover.border_color = Color(0.3, 0.9, 1.0, 1.0)
+	_style_dev_hover.set_corner_radius_all(8)
+	_style_dev_hover.shadow_color = Color(0.0, 0.8, 1.0, 0.5)
+	_style_dev_hover.shadow_size = 6
+
 func _ready() -> void:
 	back_button.pressed.connect(_on_back_pressed)
 	modal_ok_btn.pressed.connect(_on_modal_close)
 	message_modal.visible = false
 	SaveManager.progress_updated.connect(_update_ui)
+
+	# Developer-only level access widget (strictly debug builds only)
+	if is_debug_mode:
+		var header_bar: HBoxContainer = $MarginContainer/VBox/HeaderBar
+		dev_toggle_btn = Button.new()
+		dev_toggle_btn.name = "DevBypassToggle"
+		dev_toggle_btn.custom_minimum_size = Vector2(130, 36)
+		dev_toggle_btn.add_theme_font_size_override("font_size", 11)
+		_update_dev_button_text()
+		dev_toggle_btn.pressed.connect(_on_dev_toggle_pressed)
+		header_bar.add_child(dev_toggle_btn)
+
 	_build_level_tiles()
 	_update_ui()
+
+func _update_dev_button_text() -> void:
+	if not dev_toggle_btn:
+		return
+	if dev_bypass_active:
+		dev_toggle_btn.text = "🛠 DEV: UNLOCKED"
+		dev_toggle_btn.modulate = Color(0.3, 1.0, 0.7)
+	else:
+		dev_toggle_btn.text = "🛠 DEV: LOCKED"
+		dev_toggle_btn.modulate = Color(0.7, 0.7, 0.7)
+
+func _on_dev_toggle_pressed() -> void:
+	dev_bypass_active = !dev_bypass_active
+	_update_dev_button_text()
+	_refresh_tile_states()
+	AudioManager.play_sfx("click")
 
 func _update_ui() -> void:
 	var cleared: int = SaveManager.get_completed_count()
@@ -152,7 +202,9 @@ func _refresh_tile_states() -> void:
 		
 		var is_unlocked: bool = SaveManager.is_level_unlocked(lvl_id)
 		var is_completed: bool = SaveManager.is_level_completed(lvl_id)
-		
+		var is_implemented: bool = GameManager.can_play_level(lvl_id)
+		var can_dev_access: bool = is_debug_mode and dev_bypass_active and is_implemented
+
 		if is_completed:
 			btn.add_theme_stylebox_override("normal", _style_comp_normal)
 			btn.add_theme_stylebox_override("hover", _style_comp_hover)
@@ -172,6 +224,15 @@ func _refresh_tile_states() -> void:
 			state_label.text = "AVAILABLE"
 			state_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2))
 			status_icon.visible = false
+		elif can_dev_access:
+			btn.add_theme_stylebox_override("normal", _style_dev_normal)
+			btn.add_theme_stylebox_override("hover", _style_dev_hover)
+			btn.add_theme_stylebox_override("focus", _style_dev_hover)
+			num_label.add_theme_color_override("font_color", Color(0.2, 0.85, 1.0))
+			name_label.add_theme_color_override("font_color", Color(0.7, 0.95, 1.0))
+			state_label.text = "DEV TEST"
+			state_label.add_theme_color_override("font_color", Color(0.2, 0.9, 1.0))
+			status_icon.visible = false
 		else:
 			btn.add_theme_stylebox_override("normal", _style_lock_normal)
 			btn.add_theme_stylebox_override("hover", _style_lock_hover)
@@ -184,21 +245,24 @@ func _refresh_tile_states() -> void:
 			status_icon.visible = true
 
 func _on_level_tile_pressed(level_id: int) -> void:
-	if not SaveManager.is_level_unlocked(level_id):
+	var is_unlocked: bool = SaveManager.is_level_unlocked(level_id)
+	var is_implemented: bool = GameManager.can_play_level(level_id)
+
+	if not is_unlocked and not (is_debug_mode and dev_bypass_active):
 		AudioManager.play_sfx("warning")
 		modal_title.text = "LEVEL %d IS LOCKED" % level_id
 		modal_label.text = "Locked! Beat the previous level first. The developer has enough problems already."
 		message_modal.visible = true
 		return
 
-	if not GameManager.can_play_level(level_id):
+	if not is_implemented:
 		AudioManager.play_sfx("warning")
 		modal_title.text = "LEVEL %d IN PROGRESS" % level_id
-		modal_label.text = "Level %d is unlocked, but it's still being built. Replay Level 1 for now." % level_id
+		modal_label.text = "Level %d is still being built. Replay an earlier level for now." % level_id
 		message_modal.visible = true
 		return
 
-	# Launch Level 1 gameplay
+	# Launch level gameplay directly without mutating legitimate save progression
 	AudioManager.play_sfx("click")
 	GameManager.start_level(level_id)
 

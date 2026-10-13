@@ -50,7 +50,20 @@ godot --headless "res://scenes/tests/test_runner.tscn"
 | **Level 5 Combinations**| Verified Multi-Trap Synergies | (1) Collapsing platform guarded by floor spikes; (2) Pop-up spikes with required forward escape; (3) Proximity crusher over collapsing platform; (4) Moving wall under air spikes triggering concealed wall spike trap; (5) Cascading crumbling bridge under overhead spikes; (6) Crusher with overhead AirSpikes6; (7) Alternating offset crushers over cascading ledges into safe back pocket; (8) Pop-up spikes under moving wall; (9) Crusher + air spikes dual collapsing leap; (10) Central crusher over chasm between collapsing ledges | **PASS** |
 | **Level 5 Finale**    | The Final Betrayal Deception | Collecting 10 coins unlocks Fake Exit Gate ('EXIT OPEN!'); approaching triggers drop deception, revealing true Exit Gate on elevated ledge across collapsing stepping stone | **PASS** |
 | **Level 5 Reset**     | Multi-Trap Clean Reset | Retrying resets player, coins (0/10), all 4 crushers to IDLE, both moving walls, all pop-up spikes, wall spike trap, all collapsing platforms, and fake/real exit gates | **PASS** |
-| **Level 5 Progression**| World 1 Finale Completion | Exactly 10 coins; completing Level 5 marks World 1 finale complete, unlocks Level 6; Next Level modal informs player Level 6 is in progress | **PASS** |
+| **Level 5 Progression**| World 1 Finale Completion | Exactly 10 coins; completing Level 5 marks World 1 finale complete, unlocks Level 6; Next Level button seamlessly transitions into Level 6 | **PASS** |
+| **Welcome Screen**    | Retro Startup & Loading | "RETRO RAGE ARCADE" branding, "COIN HELL" title, "WELCOME TO COIN HELL", pulsing coin, progress bar advancing 0..100%, smooth fade transition into main menu; failsafe timeout <2.5s | **PASS** |
+| **Dev Access**        | Developer Bypass in Debug | Active in debug builds (`OS.is_debug_build()`), subtle header pill `[DEV: UNLOCKED]`; direct launch of implemented Levels 1–6 without completing Levels 1–5 | **PASS** |
+| **Dev Access**        | Progression Protection | Developer launch does not overwrite `highest_unlocked_level`, completed levels, or saved settings in `user://retro_rage_save.json` | **PASS** |
+| **Dev Access**        | Release Build Security | Toggle button non-existent in release builds; locked levels strictly enforce completion of previous level | **PASS** |
+| **Level 6 Mechanics** | World 2 Castle Atmosphere | Cursed Castle dark stone theme, purple/blue ambient wisp particles, dark slate flagstones, high contrast for player, coins, and hazards | **PASS** |
+| **Level 6 Controls**  | Standardized Mobile Controls | Left/Right (104x104, offsets 20..124, 144..248), Jump (124x124, offsets -140..-16); touch margin 8/16; identical to Levels 1–5 | **PASS** |
+| **Level 6 Encounters**| 10 Castle Coin Encounters | (1) Collapsing flagstone 1; (2) Gap jump arched over floor spikes; (3) Portcullis moving wall timing; (4) Elevated parapet precision landing under air spikes; (5) Crusher over collapsing flagstone; (6) Fake safe platform with pop-up gargoyle spikes; (7) Dual synchronized alternating crushers; (8) Collapsing flagstone before moving wall portcullis; (9) Deceptive elevated sanctuary ledge with fast proximity crusher; (10) Climax cascading collapsing bridge over pit spikes | **PASS** |
+| **Level 6 Progression**| 10 Coins, Exit & Unlock | Exactly 10 coins; ExitGate opens upon collecting 10th coin; entering completes Level 6, unlocks Level 7 in SaveManager; Next Level shows safe Level 7 in-progress modal | **PASS** |
+| **Level 6 Reset**     | Castle Traps Clean Reset | Level retry resets coins (0/10), player position, ExitGate to locked, Plat1, Plat6 pop-up spikes, MovingWall3, MovingWall8, Crusher5, Crusher9 | **PASS** |
+| **Android Workflow**  | Keystore Persistence | CI restores keystore via repository secret or `actions/cache@v4` with key `android-debug-keystore-v1`, eliminating `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | **PASS** |
+| **Android Workflow**  | Version Code Increment | `version/code` bumped to 3, `version/name` to "0.3.0", `package/retain_data_on_uninstall` enabled for Android `hasFragileUserData` safety | **PASS** |
+
+### Automated Suite Result: **669 Passed, 0 Failed**
 
 ---
 

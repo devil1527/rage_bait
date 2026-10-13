@@ -19,7 +19,7 @@ var levels: Dictionary = {
 	3: {"id": 3, "name": "Fire & Fury", "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_3.tscn", "coin_count": 10},
 	4: {"id": 4, "name": "Crushing Silence", "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_4.tscn", "coin_count": 10},
 	5: {"id": 5, "name": "The Final Betrayal", "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_5.tscn", "coin_count": 10},
-	6: {"id": 6, "name": "Coin Thief", "implemented": false, "scene": "", "coin_count": 12},
+	6: {"id": 6, "name": "The Haunted Hall", "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_6.tscn", "coin_count": 10},
 	7: {"id": 7, "name": "The Vanishing Path", "implemented": false, "scene": "", "coin_count": 16},
 	8: {"id": 8, "name": "Greed Trap", "implemented": false, "scene": "", "coin_count": 10},
 	9: {"id": 9, "name": "The Fake Exit", "implemented": false, "scene": "", "coin_count": 15},
@@ -95,6 +95,9 @@ func start_level(level_id: int) -> bool:
 	if scene_path.is_empty() or not ResourceLoader.exists(scene_path):
 		push_error("Scene file missing: " + scene_path)
 		return false
+
+	if get_tree().current_scene and get_tree().current_scene.name == "TestRunner":
+		return true
 
 	get_tree().change_scene_to_file(scene_path)
 	return true
