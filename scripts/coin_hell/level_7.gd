@@ -130,11 +130,8 @@ func _reset_level() -> void:
 	coin_counter_label.text = "COINS: 0 / 10"
 	
 	# Spawn player safely
-	if player:
-		player.position = spawn_point.position
-		player.velocity = Vector2.ZERO
-		if player.has_method("revive"):
-			player.revive()
+	if player and spawn_point:
+		player.reset_to(spawn_point.global_position)
 			
 	# Reset all coins in level
 	var coins_container := get_node_or_null("Coins")

@@ -678,6 +678,24 @@ def create_haunted_hall_assets():
         ds.point((5, y-1), fill=(90, 78, 120, 255))
     stem.save("assets/sprites/haunted_crusher_stem.png")
 
+def create_wind_streak_asset():
+    # 24x8 pixel art spectral wind stream / particle
+    wind = Image.new("RGBA", (24, 8), (0, 0, 0, 0))
+    dw = ImageDraw.Draw(wind)
+    
+    # Tapered spectral stream blowing to the right
+    # Tail (left)
+    dw.line([(0, 4), (4, 4)], fill=(100, 220, 255, 60))
+    dw.line([(4, 3), (10, 3)], fill=(120, 230, 255, 110))
+    dw.line([(4, 4), (16, 4)], fill=(160, 240, 255, 180))
+    dw.line([(4, 5), (10, 5)], fill=(120, 230, 255, 110))
+    
+    # Head / core (right)
+    dw.ellipse([14, 2, 22, 6], fill=(210, 250, 255, 230))
+    dw.ellipse([16, 3, 20, 5], fill=(255, 255, 255, 255))
+    
+    wind.save("assets/sprites/wind_streak.png")
+
 if __name__ == "__main__":
     create_player()
     create_coin()
@@ -691,4 +709,5 @@ if __name__ == "__main__":
     create_inferno_gate_assets()
     create_phantom_platform_assets()
     create_haunted_hall_assets()
+    create_wind_streak_asset()
     print("All pixel assets generated successfully!")

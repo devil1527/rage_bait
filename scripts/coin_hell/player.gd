@@ -28,6 +28,9 @@ var touch_jump: bool = false
 var touch_jump_just_pressed: bool = false
 var touch_jump_just_released: bool = false
 
+# External environmental horizontal forces (e.g. Cursed Wind zones)
+var wind_velocity: float = 0.0
+
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
@@ -70,9 +73,10 @@ func _physics_process(delta: float) -> void:
 	elif move_dir > 0.0:
 		sprite.flip_h = false
 
-	# Horizontal acceleration and friction
-	if move_dir != 0.0:
-		velocity.x = move_toward(velocity.x, move_dir * move_speed, acceleration * delta)
+	# Horizontal acceleration and friction (integrated with localized wind force)
+	var target_speed: float = (move_dir * move_speed) + wind_velocity
+	if move_dir != 0.0 or wind_velocity != 0.0:
+		velocity.x = move_toward(velocity.x, target_speed, acceleration * delta)
 	else:
 		velocity.x = move_toward(velocity.x, 0.0, friction * delta)
 
@@ -100,6 +104,7 @@ func die() -> void:
 		return
 	_is_alive = false
 	_input_disabled = true
+	wind_velocity = 0.0
 	touch_left = false
 	touch_right = false
 	touch_jump = false
@@ -116,6 +121,7 @@ func die() -> void:
 
 func disable_input() -> void:
 	_input_disabled = true
+	wind_velocity = 0.0
 	touch_left = false
 	touch_right = false
 	touch_jump = false
@@ -126,11 +132,11 @@ func disable_input() -> void:
 	Input.action_release("jump")
 	velocity.x = 0.0
 
-func reset_to(spawn_position: Vector2) -> void:
-	global_position = spawn_position
-	velocity = Vector2.ZERO
+func revive() -> void:
 	_is_alive = true
 	_input_disabled = false
+	wind_velocity = 0.0
+	velocity = Vector2.ZERO
 	_coyote_timer = 0.0
 	_jump_buffer_timer = 0.0
 	touch_left = false
@@ -143,3 +149,7 @@ func reset_to(spawn_position: Vector2) -> void:
 	Input.action_release("jump")
 	if sprite:
 		sprite.flip_h = false
+
+func reset_to(spawn_position: Vector2) -> void:
+	global_position = spawn_position
+	revive()

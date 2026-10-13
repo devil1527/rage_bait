@@ -105,7 +105,7 @@ position = Vector2(1710, 265)
 texture = ExtResource("13_garch")
 
 [node name="ArchExit" type="Sprite2D" parent="Decorations"]
-position = Vector2(2780, 255)
+position = Vector2(2780, 252)
 texture = ExtResource("13_garch")
 
 [node name="SpawnPoint" type="Marker2D" parent="."]
@@ -573,7 +573,7 @@ position = Vector2(2410, 270)
 position = Vector2(2590, 240)
 
 [node name="ExitGate" parent="." instance=ExtResource("4_exit")]
-position = Vector2(2780, 300)
+position = Vector2(2780, 272)
 
 [node name="PitHazardArea" type="Area2D" parent="."]
 position = Vector2(1500, 560)

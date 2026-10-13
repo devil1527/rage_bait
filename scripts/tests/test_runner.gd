@@ -12,6 +12,7 @@ const FakeSafePlatformClass = preload("res://scripts/coin_hell/fake_safe_platfor
 const PhantomPlatformClass = preload("res://scripts/coin_hell/phantom_platform.gd")
 const StageIntroCardClass = preload("res://scripts/shared/stage_intro_card.gd")
 const HauntedHallEnvironmentClass = preload("res://scripts/shared/haunted_hall_environment.gd")
+const CursedWindZoneClass = preload("res://scripts/coin_hell/cursed_wind_zone.gd")
 
 var passed_count: int = 0
 var failed_count: int = 0
@@ -68,6 +69,9 @@ func run_all_tests() -> void:
 	test_haunted_hall_environment_and_ghosts()
 	test_level_6_gameplay_mechanics()
 	test_level_7_gameplay_mechanics()
+	test_level_7_bug_fixes()
+	test_cursed_wind_zone_mechanics()
+	test_level_8_gameplay_mechanics()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -140,7 +144,14 @@ func test_game_manager_level_definitions() -> void:
 	assert_true(GameManager.can_play_level(7), "Level 7 is playable")
 	assert_eq(lvl7.get("coin_count"), 10, "Level 7 coin count is 10")
 	
-	for lvl_id in range(8, 21):
+	var lvl8: Dictionary = GameManager.get_level_info(8)
+	assert_eq(lvl8.get("name"), "The Cursed Wind", "Level 8 name is 'The Cursed Wind'")
+	assert_eq(GameManager.get_world_name_for_stage(8), "THE HAUNTED HALL", "Level 8 world is 'THE HAUNTED HALL'")
+	assert_true(lvl8.get("implemented"), "Level 8 is marked implemented")
+	assert_true(GameManager.can_play_level(8), "Level 8 is playable")
+	assert_eq(lvl8.get("coin_count"), 10, "Level 8 coin count is 10")
+	
+	for lvl_id in range(9, 21):
 		assert_true(not GameManager.can_play_level(lvl_id), "Level %d is marked not implemented" % lvl_id)
 		
 	# Test coin counter clamping
@@ -292,13 +303,19 @@ func test_level_select_logic_and_states() -> void:
 	assert_true(SaveManager.is_level_unlocked(7), "Level 7 is unlocked after completing Level 6")
 	assert_true(GameManager.can_play_level(7), "Level 7 is playable")
 
-	# Complete level 7 to unlock level 8 and test unimplemented level press
+	# Complete level 7 to unlock level 8 and verify Level 8 is playable
 	SaveManager.complete_level(7)
 	lsel._update_ui()
 	assert_true(SaveManager.is_level_unlocked(8), "Level 8 is unlocked after completing Level 7")
-	lsel._on_level_tile_pressed(8)
+	assert_true(GameManager.can_play_level(8), "Level 8 is playable")
+
+	# Complete level 8 to unlock level 9 and test unimplemented level press
+	SaveManager.complete_level(8)
+	lsel._update_ui()
+	assert_true(SaveManager.is_level_unlocked(9), "Level 9 is unlocked after completing Level 8")
+	lsel._on_level_tile_pressed(9)
 	assert_true(modal.visible, "Pressing unlocked but unimplemented level shows modal")
-	assert_eq(modal_label.text, "Level 8 is still being built. Replay an earlier level for now.", "Modal shows exact unimplemented level message")
+	assert_eq(modal_label.text, "Level 9 is still being built. Replay an earlier level for now.", "Modal shows exact unimplemented level message")
 	
 	lsel.queue_free()
 
@@ -1646,12 +1663,12 @@ func test_developer_only_level_access() -> void:
 	assert_true(lsel.message_modal.visible, "Locked modal dialog displayed")
 	assert_eq(lsel.modal_title.text, "LEVEL 6 IS LOCKED", "Modal explains Level 6 is locked")
 	
-	# Unimplemented level (e.g. Level 8) cannot be launched even with dev mode on
+	# Unimplemented level (e.g. Level 9) cannot be launched even with dev mode on
 	lsel._on_dev_toggle_pressed()
 	assert_true(lsel.dev_bypass_active, "Dev bypass toggled on")
-	lsel._on_level_tile_pressed(8)
-	assert_true(lsel.message_modal.visible, "Unimplemented Level 8 displays in-progress modal")
-	assert_eq(lsel.modal_title.text, "LEVEL 8 IN PROGRESS", "Modal indicates Level 8 is in progress")
+	lsel._on_level_tile_pressed(9)
+	assert_true(lsel.message_modal.visible, "Unimplemented Level 9 displays in-progress modal")
+	assert_eq(lsel.modal_title.text, "LEVEL 9 IN PROGRESS", "Modal indicates Level 9 is in progress")
 	
 	lsel.queue_free()
 
@@ -2007,12 +2024,10 @@ func test_level_7_gameplay_mechanics() -> void:
 	assert_true(SaveManager.is_level_completed(7), "Level 7 marked completed in SaveManager")
 	assert_true(SaveManager.is_level_unlocked(8), "Level 8 is unlocked after Level 7 completion")
 	
-	# Next Level button on LevelCompleteOverlay displays in-progress modal for Level 8
+	# Next Level button on LevelCompleteOverlay transitions to implemented Level 8
 	var complete_overlay = lvl.get_node("HUD/LevelCompleteOverlay")
 	complete_overlay.open(10, 10)
-	complete_overlay._on_next_level_pressed()
-	var complete_modal_label: Label = complete_overlay.get_node("MessageModal/Panel/VBox/MessageLabel")
-	assert_eq(complete_modal_label.text, "Level 8 is unlocked, but it's still being built. Replay Level 1 for now.", "Level 7 Next Level shows safe unimplemented Level 8 modal")
+	assert_true(GameManager.can_play_level(8), "Level 8 is playable so Level 7 Next Level advances to Level 8")
 	
 	# Test clean retry reset
 	print("  Validating Clean Trap Reset on Level 7 Retry...")
@@ -2024,4 +2039,313 @@ func test_level_7_gameplay_mechanics() -> void:
 	assert_eq(crush1.current_state, CeilingCrusherClass.State.IDLE, "Crusher1 reset to IDLE")
 	
 	lvl.queue_free()
+
+func test_level_7_bug_fixes() -> void:
+	print("\n--- TEST: Level 7 Bug Fixes (Bug 1: Post-Death Input & Bug 2: Gate Alignment) ---")
+	var lvl_scene = load("res://scenes/coin_hell/coin_hell_level_7.tscn")
+	assert_true(lvl_scene != null, "Level 7 scene loads successfully")
+	var lvl = lvl_scene.instantiate()
+	add_child(lvl)
+	
+	var player = lvl.get_node("Player")
+	var spawn_point = lvl.get_node("SpawnPoint")
+	assert_true(player != null, "Player exists in Level 7")
+	assert_true(spawn_point != null, "SpawnPoint exists in Level 7")
+	
+	# BUG 1 VERIFICATION: Movement and jump stop working after death
+	print("  Validating Bug 1 Fix: Player revival and input restoration after death...")
+	
+	# Verify player is initially alive and accepting input
+	assert_true(player._is_alive, "Player is alive on spawn")
+	assert_true(not player._input_disabled, "Player input is enabled initially")
+	
+	# Loop through multiple death and retry cycles
+	for cycle in range(1, 4):
+		print("    Cycle %d: Player death -> retry..." % cycle)
+		# Player dies
+		player.die()
+		assert_true(not player._is_alive, "Player is marked dead after die()")
+		assert_true(player._input_disabled, "Player input is disabled upon death")
+		
+		# Retry triggered
+		lvl._on_retry()
+		
+		# Player must be restored
+		assert_true(player._is_alive, "Player _is_alive is restored to true after retry in cycle %d" % cycle)
+		assert_true(not player._input_disabled, "Player _input_disabled is restored to false after retry in cycle %d" % cycle)
+		assert_eq(player.global_position, spawn_point.global_position, "Player global_position is restored to spawn point in cycle %d" % cycle)
+		
+		# Simulate movement input to verify velocity updates
+		Input.action_press("move_right")
+		player._physics_process(0.016)
+		Input.action_release("move_right")
+		assert_true(player.velocity.x > 0.0, "Player responds to right movement input with positive velocity.x in cycle %d" % cycle)
+		
+		# Simulate jump input
+		player.velocity.y = 0.0
+		Input.action_press("jump")
+		if player.is_on_floor():
+			player._physics_process(0.016)
+			assert_true(player.velocity.y < 0.0, "Player responds to jump input with negative velocity.y in cycle %d" % cycle)
+		Input.action_release("jump")
+	
+	# Verify no duplicate player nodes exist in Level 7
+	var player_count := 0
+	for child in lvl.get_children():
+		if child.name == "Player":
+			player_count += 1
+	assert_eq(player_count, 1, "Exactly 1 player node exists in Level 7 (no duplicate node recreation)")
+	
+	# BUG 2 VERIFICATION: Level 7 exit gate is partially buried
+	print("  Validating Bug 2 Fix: Exit gate rests flush on platform...")
+	var exit_gate = lvl.get_node("ExitGate")
+	var sanctuary_plat = lvl.get_node("Platforms/Plat_ExitSanctuary")
+	assert_true(exit_gate != null, "ExitGate exists")
+	assert_true(sanctuary_plat != null, "Plat_ExitSanctuary exists")
+	
+	# Platform top surface: Y = position.y - (size.y / 2) = 340 - 40 = 300
+	var plat_shape = sanctuary_plat.get_node("CollisionShape2D").shape as RectangleShape2D
+	var plat_top_surface: float = sanctuary_plat.position.y - (plat_shape.size.y / 2.0)
+	assert_eq(plat_top_surface, 300.0, "Plat_ExitSanctuary top surface is at Y=300")
+	
+	# Gate sprite is 56px tall with centered origin (extending +/- 28px)
+	# At Y = 272, bottom edge is 272 + 28 = 300.0, resting exactly on top surface!
+	assert_eq(exit_gate.position.y, 272.0, "ExitGate Y position is 272 (elevated from 300 to avoid sinking into platform)")
+	var gate_bottom: float = exit_gate.position.y + 28.0
+	assert_eq(gate_bottom, plat_top_surface, "ExitGate bottom rests flush on Plat_ExitSanctuary top surface (not buried)")
+	
+	# Exit gate unlock logic & coin requirement still intact
+	assert_true(not exit_gate._is_open, "ExitGate starts locked")
+	assert_eq(lvl.get_node("Coins").get_child_count(), 10, "Level 7 retains exactly 10 coins")
+	
+	lvl.queue_free()
+
+func test_cursed_wind_zone_mechanics() -> void:
+	print("\n--- TEST: Cursed Wind Zone Mechanics (Sideways, Reversing, Burst) ---")
+	var player_scene = load("res://scenes/coin_hell/player.tscn")
+	var player = player_scene.instantiate()
+	add_child(player)
+	player.global_position = Vector2(100, 100)
+	
+	# Test baseline player physics values
+	var baseline_speed: float = player.move_speed
+	var baseline_jump: float = player.jump_velocity
+	var baseline_gravity: float = player.gravity
+	
+	var wind_zone_scene: PackedScene = load("res://scenes/coin_hell/cursed_wind_zone.tscn")
+	assert_true(wind_zone_scene != null, "CursedWindZone scene loads successfully")
+	
+	# Test 1: Sideways Gust
+	print("  Validating Sideways Gust Behavior...")
+	var sideways_zone = wind_zone_scene.instantiate()
+	sideways_zone.wind_type = CursedWindZoneClass.WindType.SIDEWAYS
+	sideways_zone.base_strength = 120.0
+	sideways_zone.direction = 1.0
+	add_child(sideways_zone)
+	
+	# Enter zone
+	sideways_zone._on_body_entered(player)
+	assert_true(sideways_zone._player == player, "Player registered in wind zone")
+	
+	# Step physics to ramp wind force
+	for i in range(10):
+		sideways_zone._physics_process(0.05)
+	assert_true(player.wind_velocity > 50.0, "Player experiences positive horizontal wind velocity")
+	
+	# Verify player control: player can resist wind by walking left
+	player.velocity = Vector2.ZERO
+	Input.action_press("move_left")
+	player._physics_process(0.016)
+	Input.action_release("move_left")
+	assert_true(player.velocity.x < 0.0, "Player retains control and can move against the wind")
+	
+	# Exit zone: force cleared immediately
+	sideways_zone._on_body_exited(player)
+	assert_true(sideways_zone._player == null, "Player cleared from wind zone")
+	assert_eq(player.wind_velocity, 0.0, "Player wind_velocity cleared to 0.0 upon exiting zone")
+	sideways_zone.queue_free()
+	
+	# Test 2: Reversing Gust
+	print("  Validating Reversing Gust Behavior...")
+	var reversing_zone = wind_zone_scene.instantiate()
+	reversing_zone.wind_type = CursedWindZoneClass.WindType.REVERSING
+	reversing_zone.base_strength = 100.0
+	reversing_zone.direction = 1.0
+	reversing_zone.cycle_duration = 2.0
+	reversing_zone.warning_duration = 0.5
+	add_child(reversing_zone)
+	
+	reversing_zone._on_body_entered(player)
+	reversing_zone._physics_process(0.05)
+	assert_eq(reversing_zone.current_direction, 1.0, "Reversing zone starts in forward direction (1.0)")
+	
+	# Advance time into warning period (cycle_duration - warning_duration = 1.5s)
+	reversing_zone._process_reversing(1.48)
+	assert_true(reversing_zone.is_warning, "Reversing zone triggers warning telegraph before direction change")
+	
+	# Advance time past cycle duration: direction flips
+	reversing_zone._process_reversing(0.6)
+	assert_eq(reversing_zone.current_direction, -1.0, "Reversing zone predictably flips direction to -1.0 (LEFT)")
+	assert_true(not reversing_zone.is_warning, "Warning clears after reversal")
+	
+	reversing_zone._on_body_exited(player)
+	reversing_zone.queue_free()
+	
+	# Test 3: Burst Gust
+	print("  Validating Burst Gust Behavior...")
+	var burst_zone = wind_zone_scene.instantiate()
+	burst_zone.wind_type = CursedWindZoneClass.WindType.BURST
+	burst_zone.base_strength = 60.0
+	burst_zone.burst_strength = 140.0
+	burst_zone.burst_interval = 2.0
+	burst_zone.burst_duration = 0.8
+	burst_zone.burst_warning_duration = 0.5
+	add_child(burst_zone)
+	
+	burst_zone._on_body_entered(player)
+	assert_true(not burst_zone.is_warning and not burst_zone.is_bursting, "Burst zone starts in normal idle state")
+	
+	# Advance time into warning state (burst_interval - burst_warning_duration = 1.5s)
+	burst_zone._process_burst(1.6)
+	assert_true(burst_zone.is_warning, "Burst zone enters warning state before activation")
+	assert_true(not burst_zone.is_bursting, "Burst zone is not yet bursting during warning")
+	
+	# Advance time into burst active state
+	burst_zone._process_burst(0.5)
+	assert_true(burst_zone.is_bursting, "Burst zone activates bursting state")
+	assert_true(not burst_zone.is_warning, "Warning state cleared during burst")
+	assert_eq(burst_zone.current_force, 140.0, "Burst force is amplified during burst window")
+	
+	# Step physics so player receives burst velocity
+	burst_zone._physics_process(0.1)
+	assert_true(player.wind_velocity > 0.0, "Player experiences strong wind velocity during burst")
+	
+	# Test 4: Death and Reset safety
+	print("  Validating Wind Reset on Death and Level Reset...")
+	player.die()
+	assert_eq(player.wind_velocity, 0.0, "Player wind_velocity resets immediately upon death")
+	
+	burst_zone.reset()
+	assert_true(not burst_zone.is_bursting, "Burst zone resets is_bursting to false on reset()")
+	assert_true(not burst_zone.is_warning, "Burst zone resets is_warning to false on reset()")
+	burst_zone.queue_free()
+	
+	# Verify global physics remained unmodified
+	assert_eq(player.move_speed, baseline_speed, "Player move_speed remains unchanged")
+	assert_eq(player.jump_velocity, baseline_jump, "Player jump_velocity remains unchanged")
+	assert_eq(player.gravity, baseline_gravity, "Player gravity remains unchanged")
+	
+	player.queue_free()
+
+func test_level_8_gameplay_mechanics() -> void:
+	print("\n--- TEST: Level 8 Gameplay Mechanics (World 2: Stage 8 - The Cursed Wind) ---")
+	var lvl_info: Dictionary = GameManager.get_level_info(8)
+	assert_eq(lvl_info.get("name"), "The Cursed Wind", "Level 8 name is 'The Cursed Wind'")
+	assert_eq(GameManager.get_world_name_for_stage(8), "THE HAUNTED HALL", "Level 8 world is 'THE HAUNTED HALL'")
+	assert_true(lvl_info.get("implemented"), "Level 8 is marked implemented")
+	assert_eq(lvl_info.get("coin_count"), 10, "Level 8 has exactly 10 required coins")
+	
+	var lvl_scene = load(lvl_info.get("scene", ""))
+	assert_true(lvl_scene != null, "Level 8 scene loads successfully")
+	
+	var lvl = lvl_scene.instantiate()
+	add_child(lvl)
+	
+	var player = lvl.get_node_or_null("Player")
+	assert_true(player != null, "Player exists in Level 8")
+	assert_eq(player.position, Vector2(100, 380), "Player spawns safely at X=100, Y=380")
+	
+	var cam: Camera2D = player.get_node_or_null("Camera2D")
+	assert_true(cam != null, "Camera2D exists on player")
+	assert_eq(cam.limit_bottom, 600, "Camera2D limit_bottom is 600")
+	assert_eq(cam.limit_right, 3000, "Camera2D limit_right is 3000")
+	
+	# Mobile controls standardized dimensions
+	print("  Validating Level 8 Mobile Controls standardized dimensions...")
+	var touch_controls = lvl.get_node_or_null("HUD/TouchControls")
+	assert_true(touch_controls != null, "TouchControls exists in Level 8")
+	var lbtn: TextureButton = touch_controls.get_node("LeftBtn")
+	var rbtn: TextureButton = touch_controls.get_node("RightBtn")
+	var jbtn: TextureButton = touch_controls.get_node("JumpBtn")
+	assert_eq(lbtn.offset_right - lbtn.offset_left, 104.0, "LeftBtn width is 104px")
+	assert_eq(lbtn.offset_bottom - lbtn.offset_top, 104.0, "LeftBtn height is 104px")
+	assert_eq(rbtn.offset_right - rbtn.offset_left, 104.0, "RightBtn width is 104px")
+	assert_eq(rbtn.offset_bottom - rbtn.offset_top, 104.0, "RightBtn height is 104px")
+	assert_eq(jbtn.offset_right - jbtn.offset_left, 124.0, "JumpBtn width is 124px")
+	assert_eq(jbtn.offset_bottom - jbtn.offset_top, 124.0, "JumpBtn height is 124px")
+	
+	# Haunted Hall visual environment
+	assert_true(lvl.has_node("HauntedHallEnvironment"), "HauntedHallEnvironment exists in Level 8")
+	
+	# HUD World / Stage display
+	var hud_level_label: Label = lvl.get_node("HUD/MarginContainer/TopBar/LevelName")
+	assert_eq(hud_level_label.text, "WORLD 2 · STAGE 8: THE CURSED WIND", "HUD displays correct World 2 Stage 8 label")
+	
+	# Exactly 10 coins
+	print("  Validating Exactly 10 Coins across 5 Sections...")
+	var coins = lvl.get_node("Coins")
+	assert_eq(coins.get_child_count(), 10, "Level 8 contains exactly 10 coins")
+	for i in range(1, 11):
+		assert_true(coins.has_node("Coin%d" % i), "Coin %d exists" % i)
+		
+	# Cursed Wind Zones validation
+	print("  Validating 5 Cursed Wind Zones across sections...")
+	var wind_zones = lvl.get_node("WindZones")
+	assert_eq(wind_zones.get_child_count(), 5, "Level 8 contains 5 wind zones")
+	
+	var wz1 = wind_zones.get_node("WindZone1_Sideways")
+	var wz2 = wind_zones.get_node("WindZone2_Headwind")
+	var wz3 = wind_zones.get_node("WindZone3_Reversing")
+	var wz4 = wind_zones.get_node("WindZone4_Crosswind")
+	var wz5 = wind_zones.get_node("WindZone5_Burst")
+	
+	assert_eq(wz1.wind_type, CursedWindZoneClass.WindType.SIDEWAYS, "Zone 1 is SIDEWAYS")
+	assert_eq(wz2.wind_type, CursedWindZoneClass.WindType.SIDEWAYS, "Zone 2 is SIDEWAYS")
+	assert_eq(wz3.wind_type, CursedWindZoneClass.WindType.REVERSING, "Zone 3 is REVERSING")
+	assert_eq(wz4.wind_type, CursedWindZoneClass.WindType.REVERSING, "Zone 4 is REVERSING")
+	assert_eq(wz5.wind_type, CursedWindZoneClass.WindType.BURST, "Zone 5 is BURST")
+	
+	# Exit gate locked state and positioning
+	var exit_gate = lvl.get_node("ExitGate")
+	var sanctuary_plat = lvl.get_node("Platforms/Plat_ExitSanctuary")
+	assert_true(not exit_gate._is_open, "ExitGate starts locked requiring all 10 coins")
+	assert_eq(exit_gate.position.y, 272.0, "Level 8 ExitGate rests at Y=272")
+	var plat_shape = sanctuary_plat.get_node("CollisionShape2D").shape as RectangleShape2D
+	var plat_top = sanctuary_plat.position.y - (plat_shape.size.y / 2.0)
+	assert_eq(exit_gate.position.y + 28.0, plat_top, "Level 8 ExitGate rests flush on sanctuary platform (Y=300)")
+	
+	# Collect all 10 coins
+	print("  Validating Coin Collection & Level 8 Completion...")
+	GameManager.current_level_id = 8
+	GameManager.total_coins_required = 10
+	GameManager.reset_coins()
+	for i in range(1, 11):
+		coins.get_node("Coin%d" % i).collect()
+	assert_eq(GameManager.current_coins, 10, "All 10 coins collected in Level 8")
+	assert_true(exit_gate._is_open, "ExitGate opens automatically when all 10 coins collected")
+	
+	# Enter exit gate to complete Level 8
+	GameManager.is_gameplay_active = true
+	exit_gate._on_body_entered(player)
+	assert_true(exit_gate._completion_triggered, "Level 8 completion triggered upon entering exit gate")
+	assert_true(SaveManager.is_level_completed(8), "Level 8 marked completed in SaveManager")
+	assert_true(SaveManager.is_level_unlocked(9), "Level 9 is unlocked after Level 8 completion")
+	
+	# Next Level button on LevelCompleteOverlay displays in-progress modal for Level 9
+	var complete_overlay = lvl.get_node("HUD/LevelCompleteOverlay")
+	complete_overlay.open(10, 10)
+	complete_overlay._on_next_level_pressed()
+	var complete_modal_label: Label = complete_overlay.get_node("MessageModal/Panel/VBox/MessageLabel")
+	assert_eq(complete_modal_label.text, "Level 9 is unlocked, but it's still being built. Replay Level 1 for now.", "Level 8 Next Level shows safe unimplemented Level 9 modal")
+	
+	# Test clean retry reset
+	print("  Validating Clean Trap Reset on Level 8 Retry...")
+	lvl._on_retry()
+	assert_eq(GameManager.current_coins, 0, "Level 8 retry resets coins to 0")
+	assert_true(not exit_gate._is_open, "ExitGate re-locks on retry")
+	assert_true(not exit_gate._completion_triggered, "ExitGate completion flag reset")
+	assert_eq(wz5.is_bursting, false, "Zone 5 reset to not bursting on retry")
+	
+	lvl.queue_free()
+
 
