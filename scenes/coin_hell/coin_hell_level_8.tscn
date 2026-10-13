@@ -26,28 +26,28 @@
 size = Vector2(180, 80)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_plat1_stone"]
-size = Vector2(100, 80)
+size = Vector2(120, 80)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_restA"]
-size = Vector2(90, 80)
+size = Vector2(130, 80)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_restB"]
-size = Vector2(90, 80)
+size = Vector2(130, 80)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_stone_islet"]
-size = Vector2(60, 80)
+size = Vector2(120, 80)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_restC"]
-size = Vector2(90, 80)
+size = Vector2(130, 80)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_pier"]
-size = Vector2(50, 80)
+size = Vector2(120, 80)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_restD"]
-size = Vector2(90, 80)
+size = Vector2(130, 80)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_exit_sanctuary"]
-size = Vector2(200, 80)
+size = Vector2(220, 80)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_pit"]
 size = Vector2(3600, 120)
@@ -88,15 +88,15 @@ position = Vector2(100, 335)
 texture = ExtResource("13_garch")
 
 [node name="ArchSec2" type="Sprite2D" parent="Decorations"]
-position = Vector2(940, 275)
+position = Vector2(1010, 285)
 texture = ExtResource("13_garch")
 
 [node name="ArchSec4" type="Sprite2D" parent="Decorations"]
-position = Vector2(1770, 245)
+position = Vector2(1850, 275)
 texture = ExtResource("13_garch")
 
 [node name="ArchExit" type="Sprite2D" parent="Decorations"]
-position = Vector2(2720, 252)
+position = Vector2(2680, 252)
 texture = ExtResource("13_garch")
 
 [node name="SpawnPoint" type="Marker2D" parent="."]
@@ -117,42 +117,42 @@ position_smoothing_speed = 8.0
 [node name="WindZones" type="Node2D" parent="."]
 
 [node name="WindZone1_Sideways" parent="WindZones" instance=ExtResource("6_cwind")]
-position = Vector2(320, 310)
-base_strength = 80.0
+position = Vector2(340, 310)
+base_strength = 50.0
 direction = 1.0
-zone_size = Vector2(240, 180)
+zone_size = Vector2(300, 200)
 
 [node name="WindZone2_Headwind" parent="WindZones" instance=ExtResource("6_cwind")]
-position = Vector2(730, 290)
-base_strength = 75.0
-direction = -1.0
-zone_size = Vector2(280, 180)
+position = Vector2(770, 290)
+base_strength = 60.0
+direction = 1.0
+zone_size = Vector2(340, 200)
 
 [node name="WindZone3_Reversing" parent="WindZones" instance=ExtResource("6_cwind")]
-position = Vector2(1180, 280)
+position = Vector2(1240, 280)
 wind_type = 1
-base_strength = 95.0
-cycle_duration = 2.6
-warning_duration = 0.7
-zone_size = Vector2(320, 200)
+base_strength = 60.0
+cycle_duration = 3.2
+warning_duration = 1.0
+zone_size = Vector2(360, 220)
 
 [node name="WindZone4_Crosswind" parent="WindZones" instance=ExtResource("6_cwind")]
-position = Vector2(1770, 270)
+position = Vector2(1800, 270)
 wind_type = 1
-base_strength = 90.0
-cycle_duration = 2.8
-warning_duration = 0.7
-zone_size = Vector2(380, 200)
+base_strength = 65.0
+cycle_duration = 3.4
+warning_duration = 1.0
+zone_size = Vector2(400, 220)
 
 [node name="WindZone5_Burst" parent="WindZones" instance=ExtResource("6_cwind")]
-position = Vector2(2380, 260)
+position = Vector2(2440, 260)
 wind_type = 2
-base_strength = 40.0
-burst_strength = 135.0
-burst_interval = 3.2
-burst_warning_duration = 0.75
-burst_duration = 1.2
-zone_size = Vector2(420, 220)
+base_strength = 35.0
+burst_strength = 80.0
+burst_interval = 3.6
+burst_warning_duration = 1.0
+burst_duration = 1.0
+zone_size = Vector2(400, 220)
 
 [node name="Platforms" type="Node2D" parent="."]
 
@@ -178,7 +178,7 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Plat1_Stone" type="StaticBody2D" parent="Platforms"]
-position = Vector2(320, 400)
+position = Vector2(320, 390)
 collision_layer = 2
 collision_mask = 0
 
@@ -186,9 +186,9 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_plat1_stone")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat1_Stone"]
-offset_left = -50.0
+offset_left = -60.0
 offset_top = -40.0
-offset_right = 50.0
+offset_right = 60.0
 offset_bottom = 40.0
 texture = ExtResource("12_pstone")
 patch_margin_left = 4
@@ -199,7 +199,7 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Plat2_RestA" type="StaticBody2D" parent="Platforms"]
-position = Vector2(500, 390)
+position = Vector2(510, 380)
 collision_layer = 2
 collision_mask = 0
 
@@ -207,9 +207,9 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_restA")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat2_RestA"]
-offset_left = -45.0
+offset_left = -65.0
 offset_top = -40.0
-offset_right = 45.0
+offset_right = 65.0
 offset_bottom = 40.0
 texture = ExtResource("12_pstone")
 patch_margin_left = 4
@@ -220,24 +220,24 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Plat3_PhantomTimedA" parent="Platforms" instance=ExtResource("5_pplat")]
-position = Vector2(660, 360)
-width = 80.0
+position = Vector2(700, 350)
+width = 100.0
 height = 24.0
-solid_duration = 2.4
-phantom_duration = 1.6
-warning_duration = 0.65
+solid_duration = 3.2
+phantom_duration = 1.3
+warning_duration = 0.8
 
 [node name="Plat4_PhantomTimedB" parent="Platforms" instance=ExtResource("5_pplat")]
-position = Vector2(800, 340)
-width = 80.0
+position = Vector2(860, 340)
+width = 100.0
 height = 24.0
-solid_duration = 2.4
-phantom_duration = 1.6
-warning_duration = 0.65
-cycle_offset = 2.0
+solid_duration = 3.2
+phantom_duration = 1.3
+warning_duration = 0.8
+cycle_offset = 0.6
 
 [node name="Plat4_RestB" type="StaticBody2D" parent="Platforms"]
-position = Vector2(940, 360)
+position = Vector2(1010, 370)
 collision_layer = 2
 collision_mask = 0
 
@@ -245,9 +245,9 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_restB")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat4_RestB"]
-offset_left = -45.0
+offset_left = -65.0
 offset_top = -40.0
-offset_right = 45.0
+offset_right = 65.0
 offset_bottom = 40.0
 texture = ExtResource("12_pstone")
 patch_margin_left = 4
@@ -258,7 +258,7 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Plat5_StoneIslet" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1100, 350)
+position = Vector2(1180, 360)
 collision_layer = 2
 collision_mask = 0
 
@@ -266,9 +266,9 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_stone_islet")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat5_StoneIslet"]
-offset_left = -30.0
+offset_left = -60.0
 offset_top = -40.0
-offset_right = 30.0
+offset_right = 60.0
 offset_bottom = 40.0
 texture = ExtResource("12_pstone")
 patch_margin_left = 4
@@ -279,15 +279,15 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Plat6_PhantomTimed" parent="Platforms" instance=ExtResource("5_pplat")]
-position = Vector2(1260, 330)
-width = 80.0
+position = Vector2(1350, 350)
+width = 100.0
 height = 24.0
-solid_duration = 2.2
-phantom_duration = 1.6
-warning_duration = 0.65
+solid_duration = 3.4
+phantom_duration = 1.2
+warning_duration = 0.8
 
 [node name="Plat6_RestC" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1420, 350)
+position = Vector2(1490, 370)
 collision_layer = 2
 collision_mask = 0
 
@@ -295,9 +295,9 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_restC")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat6_RestC"]
-offset_left = -45.0
+offset_left = -65.0
 offset_top = -40.0
-offset_right = 45.0
+offset_right = 65.0
 offset_bottom = 40.0
 texture = ExtResource("12_pstone")
 patch_margin_left = 4
@@ -308,19 +308,19 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Plat7_MovingPhantom" parent="Platforms" instance=ExtResource("5_pplat")]
-position = Vector2(1560, 340)
-width = 80.0
+position = Vector2(1660, 350)
+width = 100.0
 height = 24.0
-solid_duration = 2.6
-phantom_duration = 1.6
-warning_duration = 0.7
-move_distance = 120.0
-move_speed = 60.0
+solid_duration = 3.6
+phantom_duration = 1.2
+warning_duration = 0.8
+move_distance = 100.0
+move_speed = 45.0
 move_axis = Vector2(1, 0)
 pause_at_ends = 0.4
 
 [node name="Plat7_StonePier" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1770, 330)
+position = Vector2(1850, 360)
 collision_layer = 2
 collision_mask = 0
 
@@ -328,9 +328,9 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_pier")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat7_StonePier"]
-offset_left = -25.0
+offset_left = -60.0
 offset_top = -40.0
-offset_right = 25.0
+offset_right = 60.0
 offset_bottom = 40.0
 texture = ExtResource("12_pstone")
 patch_margin_left = 4
@@ -341,19 +341,19 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Plat8_MovingPhantom" parent="Platforms" instance=ExtResource("5_pplat")]
-position = Vector2(1860, 320)
-width = 80.0
+position = Vector2(1990, 340)
+width = 100.0
 height = 24.0
-solid_duration = 2.5
-phantom_duration = 1.6
-warning_duration = 0.7
-move_distance = 120.0
-move_speed = 60.0
+solid_duration = 3.6
+phantom_duration = 1.2
+warning_duration = 0.8
+move_distance = 80.0
+move_speed = 40.0
 move_axis = Vector2(1, 0)
 pause_at_ends = 0.4
 
 [node name="Plat8_RestD" type="StaticBody2D" parent="Platforms"]
-position = Vector2(2070, 340)
+position = Vector2(2150, 370)
 collision_layer = 2
 collision_mask = 0
 
@@ -361,9 +361,9 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_restD")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat8_RestD"]
-offset_left = -45.0
+offset_left = -65.0
 offset_top = -40.0
-offset_right = 45.0
+offset_right = 65.0
 offset_bottom = 40.0
 texture = ExtResource("12_pstone")
 patch_margin_left = 4
@@ -374,27 +374,27 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Plat9_MovingPhantom" parent="Platforms" instance=ExtResource("5_pplat")]
-position = Vector2(2200, 340)
-width = 80.0
+position = Vector2(2310, 350)
+width = 100.0
 height = 24.0
-solid_duration = 2.6
-phantom_duration = 1.6
-warning_duration = 0.7
-move_distance = 130.0
-move_speed = 65.0
+solid_duration = 3.6
+phantom_duration = 1.2
+warning_duration = 0.8
+move_distance = 80.0
+move_speed = 45.0
 move_axis = Vector2(1, 0)
 pause_at_ends = 0.4
 
 [node name="Plat10_TriggeredPhantom" parent="Platforms" instance=ExtResource("5_pplat")]
-position = Vector2(2460, 320)
+position = Vector2(2490, 330)
 platform_type = 1
-width = 70.0
+width = 110.0
 height = 24.0
-trigger_delay = 0.75
+trigger_delay = 1.4
 phantom_recovery_time = 2.0
 
 [node name="Plat_ExitSanctuary" type="StaticBody2D" parent="Platforms"]
-position = Vector2(2720, 340)
+position = Vector2(2680, 340)
 collision_layer = 2
 collision_mask = 0
 
@@ -402,9 +402,9 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_exit_sanctuary")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Plat_ExitSanctuary"]
-offset_left = -100.0
+offset_left = -110.0
 offset_top = -40.0
-offset_right = 100.0
+offset_right = 110.0
 offset_bottom = 40.0
 texture = ExtResource("12_pstone")
 patch_margin_left = 4
@@ -417,75 +417,75 @@ axis_stretch_vertical = 1
 [node name="Spikes" type="Node2D" parent="."]
 
 [node name="FloorSpikes2A" parent="Spikes" instance=ExtResource("7_spik")]
-position = Vector2(590, 422)
+position = Vector2(640, 440)
 
 [node name="FloorSpikes2B" parent="Spikes" instance=ExtResource("7_spik")]
-position = Vector2(730, 422)
+position = Vector2(780, 440)
 
 [node name="FloorSpikes3A" parent="Spikes" instance=ExtResource("7_spik")]
-position = Vector2(1020, 422)
+position = Vector2(1100, 440)
 
 [node name="FloorSpikes3B" parent="Spikes" instance=ExtResource("7_spik")]
-position = Vector2(1180, 422)
+position = Vector2(1270, 440)
 
 [node name="FloorSpikes3C" parent="Spikes" instance=ExtResource("7_spik")]
-position = Vector2(1340, 422)
+position = Vector2(1410, 440)
 
 [node name="FloorSpikes4A" parent="Spikes" instance=ExtResource("7_spik")]
-position = Vector2(1500, 422)
+position = Vector2(1600, 440)
 
 [node name="FloorSpikes4B" parent="Spikes" instance=ExtResource("7_spik")]
-position = Vector2(1700, 422)
+position = Vector2(1760, 440)
 
 [node name="FloorSpikes4C" parent="Spikes" instance=ExtResource("7_spik")]
-position = Vector2(1800, 422)
+position = Vector2(1930, 440)
 
 [node name="FloorSpikes4D" parent="Spikes" instance=ExtResource("7_spik")]
-position = Vector2(2000, 422)
+position = Vector2(2070, 440)
 
 [node name="FloorSpikes5A" parent="Spikes" instance=ExtResource("7_spik")]
-position = Vector2(2160, 422)
+position = Vector2(2240, 440)
 
 [node name="FloorSpikes5B" parent="Spikes" instance=ExtResource("7_spik")]
-position = Vector2(2340, 422)
+position = Vector2(2410, 440)
 
 [node name="FloorSpikes5C" parent="Spikes" instance=ExtResource("7_spik")]
-position = Vector2(2540, 422)
+position = Vector2(2560, 440)
 
 [node name="Coins" type="Node2D" parent="."]
 
 [node name="Coin1" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(320, 330)
+position = Vector2(320, 300)
 
 [node name="Coin2" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(410, 320)
+position = Vector2(430, 290)
 
 [node name="Coin3" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(660, 290)
+position = Vector2(700, 290)
 
 [node name="Coin4" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(800, 270)
+position = Vector2(860, 280)
 
 [node name="Coin5" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1100, 280)
+position = Vector2(1180, 265)
 
 [node name="Coin6" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1260, 260)
+position = Vector2(1350, 290)
 
 [node name="Coin7" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1620, 270)
+position = Vector2(1710, 280)
 
 [node name="Coin8" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1920, 250)
+position = Vector2(2010, 270)
 
 [node name="Coin9" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(2265, 270)
+position = Vector2(2330, 280)
 
 [node name="Coin10" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(2460, 250)
+position = Vector2(2490, 260)
 
 [node name="ExitGate" parent="." instance=ExtResource("4_exit")]
-position = Vector2(2720, 272)
+position = Vector2(2680, 272)
 
 [node name="PitHazardArea" type="Area2D" parent="."]
 position = Vector2(1500, 560)

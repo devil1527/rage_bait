@@ -2305,6 +2305,36 @@ func test_level_8_gameplay_mechanics() -> void:
 	assert_eq(wz4.wind_type, CursedWindZoneClass.WindType.REVERSING, "Zone 4 is REVERSING")
 	assert_eq(wz5.wind_type, CursedWindZoneClass.WindType.BURST, "Zone 5 is BURST")
 	
+	# Rebalance Verification: Generous Platform Widths and Controlled Wind Forces
+	print("  Validating Level 8 Rebalanced Platform Widths & Controlled Wind...")
+	var plat1 = lvl.get_node("Platforms/Plat1_Stone")
+	var plat2 = lvl.get_node("Platforms/Plat2_RestA")
+	var plat5 = lvl.get_node("Platforms/Plat5_StoneIslet")
+	var plat7_pier = lvl.get_node("Platforms/Plat7_StonePier")
+	var plat10 = lvl.get_node("Platforms/Plat10_TriggeredPhantom")
+	
+	var plat1_shape = plat1.get_node("CollisionShape2D").shape as RectangleShape2D
+	var plat2_shape = plat2.get_node("CollisionShape2D").shape as RectangleShape2D
+	var plat5_shape = plat5.get_node("CollisionShape2D").shape as RectangleShape2D
+	var pier_shape = plat7_pier.get_node("CollisionShape2D").shape as RectangleShape2D
+	
+	assert_true(plat1_shape.size.x >= 120.0, "Plat1 width >= 120px for reliable landing")
+	assert_true(plat2_shape.size.x >= 120.0, "Plat2 RestA width >= 120px")
+	assert_true(plat5_shape.size.x >= 120.0, "Plat5 StoneIslet widened to 120px (was 60px needle)")
+	assert_true(pier_shape.size.x >= 120.0, "Plat7 StonePier widened to 120px (was 50px needle)")
+	assert_true(plat10.width >= 100.0, "Plat10 TriggeredPhantom width >= 100px")
+	assert_true(plat10.trigger_delay >= 1.2, "Plat10 trigger delay >= 1.2s for fair reaction time")
+	
+	# Wind strengths are controlled and predictable
+	assert_true(wz1.base_strength <= 60.0, "Zone 1 wind strength <= 60px/s (moderate intro)")
+	assert_true(wz2.direction > 0.0, "Zone 2 wind flows rightward along natural stage route")
+	assert_true(wz2.base_strength <= 60.0, "Zone 2 wind strength <= 60px/s")
+	assert_true(wz3.base_strength <= 70.0, "Zone 3 reversing strength <= 70px/s")
+	assert_true(wz3.warning_duration >= 0.9, "Zone 3 warning telegraph >= 0.9s for clear visual cue")
+	assert_true(wz4.base_strength <= 70.0, "Zone 4 crosswind strength <= 70px/s")
+	assert_true(wz5.burst_strength <= 90.0, "Zone 5 burst strength <= 90px/s (bounded and controllable)")
+	assert_true(wz5.burst_warning_duration >= 0.9, "Zone 5 burst warning cue >= 0.9s")
+	
 	# Exit gate locked state and positioning
 	var exit_gate = lvl.get_node("ExitGate")
 	var sanctuary_plat = lvl.get_node("Platforms/Plat_ExitSanctuary")
