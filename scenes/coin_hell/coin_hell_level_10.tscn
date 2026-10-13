@@ -163,36 +163,6 @@ position = Vector2(660, 500)
 
 [node name="Coins" type="Node2D" parent="."]
 
-[node name="Coin1" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(160, 340)
-
-[node name="Coin2" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(240, 340)
-
-[node name="Coin3" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(270, 280)
-
-[node name="Coin4" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(340, 250)
-
-[node name="Coin5" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(410, 190)
-
-[node name="Coin6" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(480, 160)
-
-[node name="Coin7" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(550, 190)
-
-[node name="Coin8" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(620, 250)
-
-[node name="Coin9" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(690, 280)
-
-[node name="Coin10" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(760, 340)
-
 [node name="HUD" type="CanvasLayer" parent="."]
 
 [node name="MarginContainer" type="MarginContainer" parent="HUD"]
@@ -227,6 +197,7 @@ vertical_alignment = 1
 
 [node name="TimerContainer" type="HBoxContainer" parent="HUD/MarginContainer/TopBar"]
 layout_mode = 2
+theme_override_constants/separation = 6
 
 [node name="SurvivalTimer" type="Label" parent="HUD/MarginContainer/TopBar/TimerContainer"]
 layout_mode = 2
@@ -238,12 +209,42 @@ theme_override_font_sizes/font_size = 18
 text = "SURVIVE: 60s"
 vertical_alignment = 1
 
+[node name="RoundIndicator" type="Label" parent="HUD/MarginContainer/TopBar/TimerContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.9, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 15
+text = "[R1/10]"
+vertical_alignment = 1
+
 [node name="PauseBtn" type="Button" parent="HUD/MarginContainer/TopBar"]
 custom_minimum_size = Vector2(80, 36)
 layout_mode = 2
 focus_mode = 0
 theme_override_font_sizes/font_size = 14
 text = "PAUSE"
+
+[node name="RoundBanner" type="Label" parent="HUD"]
+visible = false
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_top = 58.0
+offset_right = 200.0
+offset_bottom = 98.0
+grow_horizontal = 2
+pivot_offset = Vector2(200, 20)
+theme_override_colors/font_color = Color(0.9, 0.95, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 20
+text = "ROUND 1 / 10"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="AlertBanner" type="Label" parent="HUD"]
 visible = false

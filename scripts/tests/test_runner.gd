@@ -81,6 +81,7 @@ func run_all_tests() -> void:
 	test_level_9_gameplay_mechanics()
 	test_survival_arena_platform_and_hazards()
 	test_level_10_haunted_survival_gameplay()
+	test_level_10_anti_camping_and_rounds()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -2797,12 +2798,10 @@ func test_level_10_haunted_survival_gameplay() -> void:
 	assert_eq(p4.hazard_type, SurvivalArenaPlatformClass.HazardType.CHAINS, "Platform 4 hazard is CHAINS")
 	assert_eq(p5.hazard_type, SurvivalArenaPlatformClass.HazardType.COUNTDOWN, "Platform 5 hazard is COUNTDOWN")
 	
-	# Exactly 10 coins
-	print("  Validating Exactly 10 Coins across Arena...")
+	# 10 Six-Second Rounds & Dynamic Coin Spawning
+	print("  Validating Boss Stage Intro & Initial State...")
 	var coins = lvl.get_node("Coins")
-	assert_eq(coins.get_child_count(), 10, "Level 10 contains exactly 10 coins")
-	for i in range(1, 11):
-		assert_true(coins.has_node("Coin%d" % i), "Coin %d exists" % i)
+	assert_eq(coins.get_child_count(), 0, "Coins container initially empty before intro finishes")
 		
 	# Boss Intro Overlay validation
 	print("  Validating Boss Stage Intro Flow...")
@@ -2816,11 +2815,48 @@ func test_level_10_haunted_survival_gameplay() -> void:
 	assert_eq(intro_overlay.objective_label.text, "SURVIVE FOR 1 MINUTE!", "Intro displays 'SURVIVE FOR 1 MINUTE!'")
 	assert_eq(intro_overlay.instruction_label.text, "Dodge the cursed hazards. Keep moving. Survive until the timer reaches zero!", "Intro displays required instruction")
 	
-	# Skip/complete intro
+	# Skip/complete intro: starts Round 1
 	intro_overlay.skip()
 	assert_true(not intro_overlay.is_playing, "Intro dismisses cleanly on skip")
 	assert_true(not player._input_disabled, "Player movement restored after intro")
 	assert_true(lvl._is_surviving, "Survival gameplay active after intro")
+	assert_eq(lvl.current_round, 1, "Level 10 begins at Round 1")
+	assert_eq(coins.get_child_count(), 1, "Round 1 spawns Coin 1 dynamically at 0s")
+	assert_true(coins.has_node("Coin1"), "Coin 1 exists in Coins container")
+	assert_eq(lvl.round_indicator.text, "[R1/10]", "HUD TopBar displays Round 1 indicator")
+	
+	# Validate 10 Rounds & Dynamic Coin Spawning across 60 seconds
+	print("  Validating 10 Rounds & Dynamic Coin Spawning...")
+	# Advance to 6.0s -> Round 2
+	lvl._physics_process(6.0)
+	assert_eq(lvl.current_round, 2, "Advances to Round 2 at 6s boundary")
+	assert_eq(coins.get_child_count(), 2, "Round 2 spawns Coin 2 at 6s")
+	assert_true(coins.has_node("Coin2"), "Coin 2 exists")
+	assert_eq(lvl.round_indicator.text, "[R2/10]", "HUD displays Round 2 indicator")
+	
+	# Advance to 12.0s -> Round 3
+	lvl._physics_process(6.0)
+	assert_eq(lvl.current_round, 3, "Advances to Round 3 at 12s boundary")
+	assert_eq(coins.get_child_count(), 3, "Round 3 spawns Coin 3 at 12s")
+	assert_true(coins.has_node("Coin3"), "Coin 3 exists")
+	
+	# Advance to 48.0s -> Round 9
+	lvl._physics_process(36.0)
+	assert_eq(lvl.current_round, 9, "Advances to Round 9 at 48s boundary")
+	assert_eq(coins.get_child_count(), 9, "Round 9 spawns Coin 9 at 48s")
+	assert_true(coins.has_node("Coin9"), "Coin 9 exists")
+	
+	# Advance to 50.1s -> 10-second alert
+	lvl._physics_process(2.1)
+	assert_true(lvl._shown_10s_alert, "10-second alert displayed at 50s elapsed")
+	assert_true(lvl.alert_banner.text.contains("10 SECONDS LEFT!"), "Alert text contains '10 SECONDS LEFT!'")
+	
+	# Advance to 54.0s -> Round 10 (Final Round)
+	lvl._physics_process(3.9)
+	assert_eq(lvl.current_round, 10, "Advances to Round 10 at 54s boundary")
+	assert_eq(coins.get_child_count(), 10, "Round 10 spawns Coin 10 at 54s (exactly 10 coins spawned)")
+	assert_true(coins.has_node("Coin10"), "Coin 10 exists")
+	assert_eq(lvl.round_indicator.text, "[R10/10]", "HUD displays Round 10 indicator")
 	
 	# Collect all 10 coins
 	print("  Validating Coin Collection during Survival...")
@@ -2829,15 +2865,9 @@ func test_level_10_haunted_survival_gameplay() -> void:
 	assert_eq(GameManager.current_coins, 10, "All 10 coins collected in Level 10")
 	assert_eq(lvl.coin_counter_label.text, "COINS: 10 / 10", "Coin counter displays 10 / 10")
 	
-	# Test survival time progression & alerts
-	print("  Validating 60-Second Survival Progression & Alerts...")
-	# Advance to 50 seconds elapsed (10s remaining)
-	lvl._physics_process(50.1)
-	assert_true(lvl._shown_10s_alert, "10-second alert displayed at 50s elapsed")
-	assert_true(lvl.alert_banner.text.contains("10 SECONDS LEFT!"), "Alert text contains '10 SECONDS LEFT!'")
-	
-	# Advance to 55 seconds elapsed (5s remaining)
-	lvl._physics_process(5.0)
+	# Advance to 55.0s elapsed (5s remaining)
+	print("  Validating Final 5 Seconds Countdown & Victory...")
+	lvl._physics_process(1.0)
 	assert_eq(lvl._last_5s_announced, 5, "Final 5 seconds countdown triggered at 55s elapsed")
 	assert_true(lvl.alert_banner.text.contains("FINAL 5 SECONDS!"), "Alert displays 'FINAL 5 SECONDS!'")
 	
@@ -2861,6 +2891,8 @@ func test_level_10_haunted_survival_gameplay() -> void:
 	# Test clean retry reset
 	print("  Validating Clean Reset on Death / Retry...")
 	lvl._on_retry()
+	assert_eq(lvl.current_round, 1, "Retry resets round to Round 1")
+	assert_eq(coins.get_child_count(), 1, "Retry resets coins container to Coin 1")
 	assert_eq(GameManager.current_coins, 0, "Coins reset to 0 on retry")
 	assert_eq(lvl._survival_elapsed, 0.0, "Survival elapsed reset to 0.0s")
 	assert_true(not lvl._is_victory, "Victory flag reset on retry")
@@ -2873,5 +2905,78 @@ func test_level_10_haunted_survival_gameplay() -> void:
 	assert_eq(lvl.surprise_chain.current_state, SurpriseGhostChainClass.ChainState.DORMANT, "Surprise chain reset to DORMANT")
 	
 	lvl.queue_free()
+
+func _step_level_10_arena(lvl: Node2D, total_time: float) -> void:
+	var remaining := total_time
+	while remaining > 0.0001:
+		var dt := minf(0.1, remaining)
+		lvl._physics_process(dt)
+		for p in lvl.get_node("Platforms").get_children():
+			p._physics_process(dt)
+		if lvl.surprise_chain:
+			lvl.surprise_chain._physics_process(dt)
+		remaining -= dt
+
+func test_level_10_anti_camping_and_rounds() -> void:
+	print("\n--- TEST: Level 10 Anti-Camping & Hazard Scheduling Across 10 Rounds ---")
+	var lvl_scene = load("res://scenes/coin_hell/coin_hell_level_10.tscn")
+	assert_true(lvl_scene != null, "Level 10 loads")
+	var lvl = lvl_scene.instantiate()
+	add_child(lvl)
+	
+	var intro_overlay = lvl.get_node("HUD/BossIntroOverlay")
+	intro_overlay.skip()
+	
+	var p1 = lvl.get_node("Platforms/Platform1_Spikes")
+	var p2 = lvl.get_node("Platforms/Platform2_Phantom")
+	var p3 = lvl.get_node("Platforms/Platform3_Crumbling")
+	var p4 = lvl.get_node("Platforms/Platform4_Chains")
+	var p5 = lvl.get_node("Platforms/Platform5_Countdown")
+	var coins = lvl.get_node("Coins")
+	
+	# Anti-Camping Test 1: Platform 1 (Spawn platform) is attacked in Round 1
+	print("  Validating Anti-Camping on Platform 1 (Spawn)...")
+	assert_true(p1.is_platform_safe(), "Platform 1 starts safe")
+	_step_level_10_arena(lvl, 2.5)
+	assert_true(not p1.is_platform_safe(), "Platform 1 becomes hazardous by 2.5s (camping at spawn punished!)")
+	assert_true(p2.is_platform_safe(), "Platform 2 is safe escape landing")
+	assert_true(p3.is_platform_safe(), "Platform 3 is safe escape landing")
+	
+	# Anti-Camping Test 2: Platform 2 is attacked in Round 2
+	print("  Validating Anti-Camping on Platform 2...")
+	_step_level_10_arena(lvl, 5.5) # total 8.0s
+	assert_eq(lvl.current_round, 2, "Current round is 2 at 8.0s")
+	assert_true(not p2.is_platform_safe(), "Platform 2 becomes intangible/hazardous (camping on P2 punished!)")
+	assert_true(p3.is_platform_safe(), "Platform 3 is safe escape landing above P2")
+	
+	# Anti-Camping Test 3: Platform 3 is attacked in Round 3
+	print("  Validating Anti-Camping on Platform 3...")
+	_step_level_10_arena(lvl, 6.0) # total 14.0s
+	assert_eq(lvl.current_round, 3, "Current round is 3 at 14.0s")
+	assert_true(not p3.is_platform_safe(), "Platform 3 collapses/hazardous (camping on apex P3 punished!)")
+	assert_true(p4.is_platform_safe(), "Platform 4 is safe escape landing")
+	
+	# Anti-Camping Test 4: Platform 4 is attacked in Round 4
+	print("  Validating Anti-Camping on Platform 4...")
+	_step_level_10_arena(lvl, 6.0) # total 20.0s
+	assert_eq(lvl.current_round, 4, "Current round is 4 at 20.0s")
+	assert_true(not p4.is_platform_safe(), "Platform 4 chains strike (camping on P4 punished!)")
+	assert_true(p5.is_platform_safe(), "Platform 5 is safe escape landing")
+	
+	# Anti-Camping Test 5: Platform 5 is attacked in Round 5
+	print("  Validating Anti-Camping on Platform 5...")
+	_step_level_10_arena(lvl, 6.0) # total 26.0s
+	assert_eq(lvl.current_round, 5, "Current round is 5 at 26.0s")
+	assert_true(not p5.is_platform_safe(), "Platform 5 dissolves (camping on P5 punished!)")
+	assert_true(p2.is_platform_safe() or p3.is_platform_safe(), "Safe escape platform exists")
+	
+	# Verify continuous coin spawning across remaining rounds to Round 10
+	print("  Validating Continuous Coin Spawning across all 10 rounds...")
+	_step_level_10_arena(lvl, 28.0) # total 54.0s
+	assert_eq(lvl.current_round, 10, "Current round is 10 at 54.0s")
+	assert_eq(coins.get_child_count(), 10, "Exactly 10 coins spawned by Round 10")
+	
+	lvl.queue_free()
+
 
 
