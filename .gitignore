@@ -8,6 +8,16 @@ bin/
 *.apk
 *.aab
 
+# Signing keystores and certificates
+*.keystore
+*.jks
+*.p12
+*.key
+
+# Android Gradle build directory
+android/build/
+.gradle/
+
 # OS generated
 .DS_Store
 Thumbs.db

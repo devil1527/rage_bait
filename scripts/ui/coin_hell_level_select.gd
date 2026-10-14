@@ -22,7 +22,7 @@ var _style_dev_normal: StyleBoxFlat
 var _style_dev_hover: StyleBoxFlat
 
 var is_debug_mode: bool = OS.is_debug_build()
-var dev_bypass_active: bool = true
+var dev_bypass_active: bool = false
 var dev_toggle_btn: Button = null
 
 func _init() -> void:
@@ -116,6 +116,9 @@ func _update_dev_button_text() -> void:
 		dev_toggle_btn.modulate = Color(0.7, 0.7, 0.7)
 
 func _on_dev_toggle_pressed() -> void:
+	if not is_debug_mode:
+		dev_bypass_active = false
+		return
 	dev_bypass_active = !dev_bypass_active
 	_update_dev_button_text()
 	_refresh_tile_states()

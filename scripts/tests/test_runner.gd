@@ -268,7 +268,7 @@ func test_level_select_logic_and_states() -> void:
 	assert_true(lsel_scene != null, "Level select scene loads successfully")
 	var lsel = lsel_scene.instantiate()
 	add_child(lsel)
-	lsel.dev_bypass_active = false
+	assert_true(not lsel.dev_bypass_active, "Level select starts with developer bypass disabled by default")
 	
 	var worlds_container = lsel.get_node("MarginContainer/VBox/ScrollContainer/WorldsContainer")
 	assert_true(worlds_container != null, "WorldsContainer exists in Level Select")
@@ -1675,23 +1675,38 @@ func test_developer_only_level_access() -> void:
 	assert_eq(SaveManager.highest_unlocked_level, 1, "Save progress starts at Level 1")
 	assert_true(not SaveManager.is_level_unlocked(6), "Level 6 is legitimately locked")
 	
-	# In debug mode, dev toggle button exists
+	# In debug mode, dev toggle button exists but bypass is disabled by default
 	assert_true(lsel.is_debug_mode, "Debug build detected for developer tools")
 	assert_true(lsel.dev_toggle_btn != null, "Developer bypass toggle button exists in header bar")
-	assert_true(lsel.dev_bypass_active, "Developer bypass enabled by default in debug build")
+	assert_true(not lsel.dev_bypass_active, "Developer bypass is disabled by default in debug build")
+	assert_eq(lsel.dev_toggle_btn.text, "🛠 DEV: LOCKED", "Dev toggle button text starts as '🛠 DEV: LOCKED'")
+	
+	# Verify that locked level cannot launch by default
+	GameManager.current_level_id = 1
+	lsel._on_level_tile_pressed(6)
+	assert_eq(GameManager.current_level_id, 1, "With dev bypass disabled by default, locked Level 6 does not launch")
+	assert_true(lsel.message_modal.visible, "Locked modal dialog displayed for Level 6")
+	assert_eq(lsel.modal_title.text, "LEVEL 6 IS LOCKED", "Modal explains Level 6 is locked")
+	lsel.message_modal.visible = false
+
+	# Toggle dev bypass on: simulate developer explicitly clicking button to test
+	lsel._on_dev_toggle_pressed()
+	assert_true(lsel.dev_bypass_active, "Dev bypass toggled on")
+	assert_eq(lsel.dev_toggle_btn.text, "🛠 DEV: UNLOCKED", "Dev toggle button text updates to '🛠 DEV: UNLOCKED'")
 	
 	# With dev bypass active, Level 6 can be launched directly without completing Levels 1-5!
 	assert_true(GameManager.can_play_level(6), "Level 6 is implemented")
 	lsel._on_level_tile_pressed(6)
-	assert_eq(GameManager.current_level_id, 6, "Developer mode allows direct launch into Level 6")
+	assert_eq(GameManager.current_level_id, 6, "Developer mode allows direct launch into Level 6 when explicitly enabled")
 	
 	# Verify that legitimate progression was NOT overwritten
 	assert_eq(SaveManager.highest_unlocked_level, 1, "Legitimate highest_unlocked_level is preserved (not overwritten)")
 	assert_true(not SaveManager.is_level_unlocked(6), "SaveManager still records Level 6 as legitimately locked")
 	
-	# Toggle dev bypass off: simulate release / locked behavior
+	# Toggle dev bypass off: simulate returning to locked behavior
 	lsel._on_dev_toggle_pressed()
 	assert_true(not lsel.dev_bypass_active, "Dev bypass toggled off")
+	assert_eq(lsel.dev_toggle_btn.text, "🛠 DEV: LOCKED", "Dev toggle button text returns to '🛠 DEV: LOCKED'")
 	
 	# Pressing locked Level 6 now shows locked modal
 	GameManager.current_level_id = 1
@@ -1706,6 +1721,16 @@ func test_developer_only_level_access() -> void:
 	lsel._on_level_tile_pressed(11)
 	assert_true(lsel.message_modal.visible, "Unimplemented Level 11 displays in-progress modal")
 	assert_eq(lsel.modal_title.text, "LEVEL 11 IN PROGRESS", "Modal indicates Level 11 is in progress")
+	
+	# Release mode simulation: verify that when is_debug_mode is false, bypass cannot be activated
+	lsel.dev_bypass_active = false
+	lsel.is_debug_mode = false
+	lsel._on_dev_toggle_pressed()
+	assert_true(not lsel.dev_bypass_active, "In release mode (is_debug_mode == false), dev toggle cannot activate bypass")
+	GameManager.current_level_id = 1
+	lsel._on_level_tile_pressed(6)
+	assert_eq(GameManager.current_level_id, 1, "In release mode, locked level cannot be launched")
+	assert_true(lsel.message_modal.visible, "Locked modal dialog displayed in release mode")
 	
 	lsel.queue_free()
 
