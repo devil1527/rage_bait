@@ -1,0 +1,278 @@
+# RETRO RAGE ARCADE — COMPLETE PROJECT HANDOVER
+## Godot Android Game Development — Status Through Level 10
+
+### 1. PROJECT IDENTITY
+
+**Overall game:** RETRO RAGE ARCADE  
+**Playable mode:** Coin Hell  
+**Engine:** Godot 4 / GDScript  
+**Platform:** Android  
+**Orientation:** Landscape  
+**Development workflow:** Antigravity IDE, GitHub repository, GitHub Actions Android APK builds.
+
+This is a ragebait-style 2D platformer. The goal is to create challenging, addictive, surprising levels that reward learning, timing, and quick decisions.
+
+The game should be difficult but fair. Players should die because they make mistakes or fail to react—not because the game creates unavoidable situations.
+
+The player enjoys discovering traps, learning their behaviour, and finally beating a difficult stage.
+
+### 2. COMPLETE WORLD STRUCTURE
+
+The planned game has four worlds and 20 stages.
+
+- **World 1 — Neon Ruins:** Levels 1–5. Complete.
+- **World 2 — The Haunted Hall:** Levels 6–10. Complete.
+- **World 3 — Rage Factory:** Levels 11–15. Next to develop.
+- **World 4 — Final Hell:** Levels 16–20. Planned.
+
+Each level should contain exactly 10 coins, following the established level design.
+
+Worlds must have genuinely different visual identities, not merely recoloured versions of the same background.
+
+### 3. IMPORTANT DEVELOPMENT RULES
+
+Before implementing a new level, inspect the existing project and relevant scripts.
+
+Preserve:
+- Existing player controller and physics.
+- Android landscape orientation.
+- Multitouch movement and jump controls.
+- Camera behaviour appropriate to each level.
+- HUD, pause, death, and retry systems.
+- Coin collection and counting.
+- Local save data and level progression.
+- Existing level-selection and unlock rules.
+- Android build configuration.
+
+**Do not modify completed levels unless explicitly requested.**
+
+Do not globally change gravity, jump height, movement speed, acceleration, or friction just to compensate for poor level geometry.
+
+Reuse proven systems where practical, but keep new mechanics isolated enough that they do not break older stages.
+
+When writing Antigravity prompts, provide a complete, ready-to-copy implementation prompt after the design is agreed upon.
+
+Do not claim a feature or test works unless it has actually been verified.
+
+### 4. WORLD 1 — NEON RUINS (LEVELS 1–5)
+
+**Level 1:** Foundational platforming with coins, spikes, falling platforms, and ragebait tricks. Physics and platform spacing were reworked to make jumps feasible.
+
+**Level 2 — Trust Nothing:** Falling platforms, greedy coins, hidden spike-floor surprises, moving-wall hazards, and a fake exit. Unsafe deaths and collision issues were investigated and improved.
+
+**Level 3 — Fire & Fury:** Very difficult level with hidden spike-trigger behaviour. The user loved the challenge and beat it after roughly one in ten attempts. Preserve the learned rule that some spikes activate when approached from left to right and within their trigger range.
+
+**Level 4 — Crushing Silence:** Crusher-themed level was planned. Do not assume particular implementation details beyond what the current project verifies.
+
+**Level 5 — The Final Betrayal:** World 1 finale, combining established traps. The user liked its visual theme and layout. Controls looked too small, and fire was explicitly removed from Level 5. Do not reintroduce fire into Level 5.
+
+World 1 is considered complete. Do not redesign these levels.
+
+### 5. WORLD 2 — THE HAUNTED HALL (LEVELS 6–10)
+
+This world has a distinctive gothic haunted-castle atmosphere:
+- Ancient stone architecture.
+- Broken arches and towers.
+- Purple mist and spectral lighting.
+- Flying ghosts in the background.
+- Ghostly green, blue, and violet accents.
+- Haunted platforms and supernatural hazards.
+
+Background ghosts are decorative and must not interfere with gameplay.
+
+**Level 6 — Phantom’s Curse**
+
+Introduced timed and triggered phantom platforms. Platforms fade between solid and intangible states. Visual and collision states must match. Warnings and recovery timing must be predictable. The user liked the concept and its difficulty.
+
+**Level 7 — Hall of Illusions**
+
+Haunted platforms, spikes, crusher bars, and phantom-bar mechanics. Two bugs were fixed:
+1. Death disabled movement and jumping until the application restarted.
+2. The exit gate was partially buried.
+
+The user confirmed these issues were resolved. Avoid reintroducing the retry/input bug.
+
+**Level 8 — The Cursed Wind**
+
+The original version was far too difficult: the user tried around 50 times without winning. It was rebalanced to improve route clarity, wind behaviour, platform spacing, and jump feasibility.
+
+The user subsequently said it was better and accepted its slightly easier difficulty. Do not change it without permission.
+
+**Level 9 — Chains of the Damned**
+
+Introduced swinging ghost chains. The user completed the level in one go and loved the chain mechanic.
+
+A HUD positioning bug was identified: the coin counter and pause button appeared in opposite corners from their intended layout. A Level 9-only correction was requested as part of the Level 10 work. Preserve the fix and verify the current scene if needed. Do not change Level 9 gameplay.
+
+**Level 10 — Haunted Survival**
+
+This is the World 2 boss stage, and it is NOT a conventional scrolling platformer.
+
+The player survives for 60 seconds in a fixed-camera arena with five connected platforms. The player moves left and right and jumps to avoid hazards.
+
+The boss is the environment itself. There is no traditional boss character or health bar.
+
+The boss introduction displays:
+
+WORLD 2  
+THE HAUNTED HALL  
+BOSS STAGE  
+HAUNTED SURVIVAL  
+SURVIVE FOR 1 MINUTE!
+
+The introduction must finish before the timer starts and before the player gains control.
+
+The five signature hazard types are:
+
+1. **Spikes:** Emerge after a warning and retract.
+2. **Phantom platform:** Fades and becomes intangible, then returns.
+3. **Crumbling platform:** Shakes, collapses, and resets.
+4. **Cursed chains:** Suddenly emerge from above, swing through danger zones, then retract and disappear.
+5. **Countdown platform:** Warns the player before temporarily disappearing.
+
+The arena must remain fixed on screen. All five platforms should be visible, and jumps must be possible using existing physics.
+
+### 6. LEVEL 10 — HOW THE SURVIVAL SYSTEM EVOLVED
+
+The first version was a failure as a boss fight: the user survived on the first attempt simply by standing still and waiting for the timer.
+
+The first major improvement divided the minute into 10 rounds of six seconds each. One coin appears at the beginning of each round.
+
+Coin spawn times:
+- 0 seconds
+- 6 seconds
+- 12 seconds
+- 18 seconds
+- 24 seconds
+- 30 seconds
+- 36 seconds
+- 42 seconds
+- 48 seconds
+- 54 seconds
+
+Exactly 10 coins should spawn during a full attempt. Coins should be visible and reachable, and collection must update the existing HUD correctly.
+
+The user then identified another problem: although the coins and round transitions worked, the hazard positions remained fixed.
+
+Examples:
+- Spikes appeared only on the left.
+- The same vanishing bar was repeatedly targeted.
+- Chains attacked from the same position.
+- Only one chain appeared.
+
+The hazard system was subsequently improved to use **dynamic hazard targets and changing combinations**.
+
+The current user feedback is positive: the level is much better and more enjoyable. It may still feel somewhat easy because the user has become familiar with the mechanics.
+
+The latest direction is to keep the improved dynamic hazard system. Do not revert to fixed positions or start another redesign of Level 10 without a specific reason.
+
+### 7. CURRENT LEVEL 10 DESIGN REQUIREMENTS
+
+The six-second rounds must change the actual gameplay, not just display a new round label.
+
+**Dynamic spikes**
+- Can activate at different eligible positions across the arena.
+- Can move between left, middle, right, and other valid platform or floor sections.
+- Can use different combinations of spike sections.
+- Must warn the player before activating.
+- Collision must match visible spikes.
+
+**Dynamic phantom platforms**
+- Different eligible platforms can vanish in different rounds.
+- One platform can disappear, or two can disappear in a coordinated sequence when fair.
+- Visual and collision states must remain synchronised.
+- Do not make every landing option disappear at once.
+
+**Dynamic chains**
+- Use multiple valid ceiling attachment points.
+- Attack from different horizontal positions.
+- Support one, two, or occasionally three chains.
+- Chains may attack sequentially or in coordinated groups.
+- Their trajectories and collisions must match their visuals.
+- They must appear, swing, and disappear rather than remain permanently visible.
+- Avoid spawning chains directly inside the player.
+
+**Dynamic crumbling platforms**
+- Different eligible platforms can crumble in different rounds.
+- Warnings must identify the actual platform about to collapse.
+- Platforms must recover correctly.
+
+**Dynamic scheduling**
+- Use deliberate patterns plus controlled variation between attempts.
+- Avoid repeating the exact same pattern every round.
+- Avoid immediately repeating identical patterns where practical.
+- Consider the player's position and the available escape routes.
+- Do not create unavoidable deaths.
+- Prevent passive camping from being a reliable strategy.
+- Do not make all hazards active simultaneously.
+
+Difficulty should come from movement, timing, changing targets, and combinations—not simply making every hazard faster.
+
+### 8. LEVEL 10 TIMER, COINS, AND RETRY
+
+The timer counts down from 60 seconds once the introduction ends.
+
+- The timer pauses with the game.
+- It stops on death.
+- It resets to 60 seconds on retry.
+- Victory triggers exactly once when the timer reaches zero.
+- At 50 seconds elapsed, show “10 SECONDS LEFT! DON'T DIE NOW!”
+- At 55 seconds elapsed, show “FINAL 5 SECONDS!”
+- At 60 seconds, stop hazards and trigger victory.
+
+The round and coin sequence must reset properly on retry. Clear pending hazard timers, retract chains, restore phantom platforms, reset crumbling platforms, and restore player control.
+
+Preserve the existing coin completion rules. Do not silently change the campaign's requirements for collecting coins.
+
+### 9. IMPORTANT IMPLEMENTATION AND TESTING EXPECTATIONS
+
+For future stages, do not accept “the scripts compile” as sufficient proof of success.
+
+Verify actual gameplay:
+- Are intended jumps feasible?
+- Are hazard warnings clear?
+- Do collision shapes match visuals?
+- Do hazards really change position?
+- Can the player get trapped unfairly?
+- Can the player camp safely for the entire stage?
+- Does death and retry restore all systems?
+- Do pause and resume work?
+- Are coins collectible and counted once?
+- Does progression save correctly?
+- Do Android multitouch controls still work?
+- Do earlier levels remain unchanged?
+
+A previous retry bug in Level 7 disabled player movement and jumping. Regression-test death and retry in any level that uses shared systems.
+
+### 10. NEXT TASK — START LEVEL 11
+
+The next level to design is:
+
+**World 3 — Rage Factory**  
+**Level 11 — Title and mechanics to be decided**
+
+World 3 should look and feel completely different from the Haunted Hall.
+
+The user has not yet chosen the Level 11 concept, mechanics, or difficulty. Do not assume a particular design before discussing it.
+
+Recommended workflow:
+1. Start with a discussion of possible Level 11 concepts.
+2. Choose the core mechanic and visual identity.
+3. Agree on the difficulty and trap combinations.
+4. Then create a complete Antigravity prompt.
+5. Implement and inspect actual gameplay before deciding on Level 12.
+
+Do not begin by rewriting Levels 1–10 or changing the global physics.
+
+### 11. USER'S COLLABORATION PREFERENCES
+
+- The user wants practical, clear instructions.
+- They prefer discussing the design before receiving a full implementation prompt when the concept is not settled.
+- Once the concept is agreed upon, provide one complete, ready-to-copy Antigravity prompt rather than scattered fragments.
+- They care about actual gameplay, not just impressive screenshots.
+- They like challenging mechanics that feel clever and surprising.
+- They will test APKs and report what feels too easy, too difficult, or broken.
+- Preserve working systems and fix root causes rather than hiding symptoms.
+- Avoid unnecessary changes to already-completed levels.
+
+**CURRENT STATUS: LEVELS 1–10 COMPLETE. NEXT: DISCUSS AND DESIGN LEVEL 11 — RAGE FACTORY.**
