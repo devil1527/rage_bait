@@ -1,0 +1,320 @@
+name: Build & Validate Signed Android Release AAB (Google Play)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-release-aab:
+    name: Build & Validate Signed Release AAB
+    runs-on: ubuntu-latest
+
+    env:
+      GODOT_VERSION: "4.7.2"
+      GODOT_RELEASE: "4.7.2-stable"
+      BUNDLETOOL_VERSION: "1.18.1"
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
+
+      - name: Install Android Build Tools 36 and Platform 36
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager --install "cmdline-tools;latest" "platform-tools" "build-tools;36.0.0" "platforms;android-36"
+          echo "$ANDROID_HOME/build-tools/36.0.0" >> $GITHUB_PATH
+
+      - name: Download Godot 4.7.2 Headless & Export Templates
+        run: |
+          mkdir -p ~/.local/bin ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          curl -L -o godot.zip https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/Godot_v${GODOT_RELEASE}_linux.x86_64.zip
+          unzip -q godot.zip
+          mv Godot_v${GODOT_RELEASE}_linux.x86_64 ~/.local/bin/godot
+          chmod +x ~/.local/bin/godot
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+          curl -L -o templates.tpz https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/Godot_v${GODOT_RELEASE}_export_templates.tpz
+          unzip -q templates.tpz
+          mv templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
+          rm -f godot.zip templates.tpz
+
+      - name: Install Android Build Template for Gradle Build
+        run: |
+          if [ -f ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/android_source.zip ]; then
+            mkdir -p android/build
+            unzip -q -o ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/android_source.zip -d android/build
+            echo "${GODOT_VERSION}.stable" > android/.build_version
+            echo "Installed Android build template from android_source.zip"
+          else
+            echo "Installing build template via Godot CLI..."
+            godot --headless --install-android-build-template
+          fi
+
+      - name: Setup Release Keystore and Editor Settings
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_RELEASE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          # Verify required secrets are present
+          MISSING_SECRETS=""
+          if [ -z "$KEYSTORE_BASE64" ]; then MISSING_SECRETS="$MISSING_SECRETS ANDROID_RELEASE_KEYSTORE_BASE64"; fi
+          if [ -z "$KEYSTORE_PASSWORD" ]; then MISSING_SECRETS="$MISSING_SECRETS ANDROID_RELEASE_KEYSTORE_PASSWORD"; fi
+          if [ -z "$KEY_ALIAS" ]; then MISSING_SECRETS="$MISSING_SECRETS ANDROID_RELEASE_KEY_ALIAS"; fi
+          if [ -z "$KEY_PASSWORD" ]; then MISSING_SECRETS="$MISSING_SECRETS ANDROID_RELEASE_KEY_PASSWORD"; fi
+
+          if [ -n "$MISSING_SECRETS" ]; then
+            echo "ERROR: The following required GitHub Secrets are missing or empty:$MISSING_SECRETS"
+            echo "Please configure them under Repository Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+
+          mkdir -p ~/.android ~/.config/godot ~/.local/share/godot
+          echo "$KEYSTORE_BASE64" | base64 -d > ~/.android/release.keystore
+          chmod 600 ~/.android/release.keystore
+
+          # Verify keystore integrity with keytool
+          echo "Verifying decoded release keystore with keytool..."
+          keytool -list -keystore ~/.android/release.keystore -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > /dev/null
+          echo "Keystore verified successfully."
+
+          # Configure editor settings for SDK paths
+          for d in ~/.config/godot ~/.local/share/godot; do
+            for f in "$d/editor_settings-4.tres" "$d/editor_settings-4.7.tres"; do
+              echo '[gd_resource type="EditorSettings" format=3]' > "$f"
+              echo '' >> "$f"
+              echo '[resource]' >> "$f"
+              echo "export/android/android_sdk_path = \"$ANDROID_HOME\"" >> "$f"
+              echo "export/android/java_sdk_path = \"$JAVA_HOME\"" >> "$f"
+            done
+          done
+
+      - name: Import Assets Headlessly
+        run: |
+          godot --headless --editor --quit
+
+      - name: Run Headless Automated Test Suite
+        run: |
+          godot --headless "res://scenes/tests/test_runner.tscn"
+
+      - name: Export Signed Android Release AAB
+        env:
+          GODOT_ANDROID_KEYSTORE_RELEASE_PATH: /home/runner/.android/release.keystore
+          GODOT_ANDROID_KEYSTORE_RELEASE_USER: ${{ secrets.ANDROID_RELEASE_KEY_ALIAS }}
+          GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEYSTORE_PASSWORD }}
+        run: |
+          mkdir -p build
+          echo "Starting Godot export-release for preset 'Android-Release-AAB'..."
+          godot --verbose --headless --export-release "Android-Release-AAB" build/retro-rage-arcade-release.aab
+
+      - name: Verify Release AAB File Integrity
+        run: |
+          set -euo pipefail
+          AAB="build/retro-rage-arcade-release.aab"
+          if [ ! -f "$AAB" ]; then
+            echo "ERROR: Release AAB file $AAB was not generated!"
+            exit 1
+          fi
+
+          FILE_SIZE=$(stat -c%s "$AAB")
+          echo "AAB File: $AAB"
+          echo "File Size: $FILE_SIZE bytes"
+          if [ "$FILE_SIZE" -lt 10000000 ]; then
+            echo "ERROR: AAB file size is suspiciously small ($FILE_SIZE bytes)!"
+            exit 1
+          fi
+
+          sha256sum "$AAB"
+
+      - name: Download bundletool
+        run: |
+          curl -L -o /tmp/bundletool.jar "https://github.com/google/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar"
+          chmod +x /tmp/bundletool.jar
+
+      - name: Verify AAB Manifest Metadata (bundletool)
+        run: |
+          set -euo pipefail
+          echo "=== DUMPING MANIFEST FROM AAB USING BUNDLETOOL ==="
+          java -jar /tmp/bundletool.jar dump manifest --bundle=build/retro-rage-arcade-release.aab > /tmp/aab_manifest.xml
+          cat /tmp/aab_manifest.xml
+
+          python3 - << 'EOF'
+          import xml.etree.ElementTree as ET
+          import sys
+
+          tree = ET.parse('/tmp/aab_manifest.xml')
+          root = tree.getroot()
+
+          errors = []
+          pkg = root.attrib.get('package', '')
+          ver_code = root.attrib.get('{http://schemas.android.com/apk/res/android}versionCode', '')
+          ver_name = root.attrib.get('{http://schemas.android.com/apk/res/android}versionName', '')
+
+          print(f"AAB Package:      {pkg}")
+          print(f"AAB VersionCode:  {ver_code}")
+          print(f"AAB VersionName:  {ver_name}")
+
+          if pkg != "com.antigravity.retroragearcade":
+              errors.append(f"Unexpected package: {pkg}")
+          if ver_code != "10":
+              errors.append(f"Unexpected versionCode: {ver_code}")
+          if ver_name != "0.10.0":
+              errors.append(f"Unexpected versionName: {ver_name}")
+
+          uses_sdk = root.find('uses-sdk')
+          if uses_sdk is not None:
+              target_sdk = uses_sdk.attrib.get('{http://schemas.android.com/apk/res/android}targetSdkVersion', '')
+              min_sdk = uses_sdk.attrib.get('{http://schemas.android.com/apk/res/android}minSdkVersion', '')
+              print(f"AAB TargetSDK:    {target_sdk}")
+              print(f"AAB MinSDK:       {min_sdk}")
+              if target_sdk != "36":
+                  errors.append(f"Unexpected targetSdkVersion: {target_sdk}")
+              if min_sdk != "24":
+                  errors.append(f"Unexpected minSdkVersion: {min_sdk}")
+          else:
+              errors.append("uses-sdk element not found in AAB manifest!")
+
+          if errors:
+              print("\nMANIFEST VERIFICATION FAILED:")
+              for err in errors:
+                  print(f"  - {err}")
+              sys.exit(1)
+
+          print("\nVERIFIED: AAB manifest satisfies Google Play API 36 and package requirements.")
+          EOF
+
+      - name: Verify Native Library 16 KB ELF Alignment (readelf on AAB)
+        run: |
+          set -euo pipefail
+          echo "=== EXTRACTING AND INSPECTING NATIVE LIBRARIES FROM AAB ==="
+          AAB="build/retro-rage-arcade-release.aab"
+          UNPACK_DIR="/tmp/aab_unpacked"
+          rm -rf "$UNPACK_DIR"
+          mkdir -p "$UNPACK_DIR"
+          unzip -q "$AAB" -d "$UNPACK_DIR"
+
+          python3 - << 'EOF'
+          import subprocess, sys, os, hashlib
+
+          unpack_dir = "/tmp/aab_unpacked"
+          lib_dir = os.path.join(unpack_dir, "base", "lib")
+          if not os.path.exists(lib_dir):
+              print(f"ERROR: No base/lib directory found in AAB: {lib_dir}")
+              sys.exit(1)
+
+          so_files = []
+          for root, _, files in os.walk(lib_dir):
+              for file in files:
+                  if file.endswith(".so"):
+                      full_path = os.path.join(root, file)
+                      rel_path = os.path.relpath(full_path, unpack_dir).replace("\\", "/")
+                      parts = rel_path.split("/")
+                      abi = parts[2] if len(parts) >= 3 else "unknown"
+                      so_files.append((rel_path, full_path, abi))
+
+          so_files.sort(key=lambda x: x[0])
+          print(f"Found {len(so_files)} packaged native libraries in AAB across ABIs:")
+          for rel_path, _, abi in so_files:
+              print(f"  - [{abi}] {rel_path}")
+
+          if not so_files:
+              print("ERROR: No native libraries found in AAB!")
+              sys.exit(1)
+
+          PAGE_SIZE_16KB = 16384  # 0x4000
+          PAGE_SIZE_4KB  = 4096   # 0x1000
+
+          overall_failure = False
+          print("=" * 105)
+          print(f"{'Library Path':<45} {'ABI':<12} {'Seg':<4} {'Offset':<12} {'VirtAddr':<14} {'Align':<10} {'Result'}")
+          print("=" * 105)
+
+          for rel_path, full_path, abi in so_files:
+              res = subprocess.run(["readelf", "-lW", full_path], capture_output=True, text=True)
+              if res.returncode != 0:
+                  print(f"ERROR: readelf failed for {rel_path}: {res.stderr}")
+                  overall_failure = True
+                  continue
+
+              load_segments = []
+              for line in res.stdout.splitlines():
+                  tokens = line.strip().split()
+                  if tokens and tokens[0] == "LOAD":
+                      try:
+                          offset = int(tokens[1], 16)
+                          vaddr = int(tokens[2], 16)
+                          align_str = tokens[-1]
+                          align = int(align_str, 16)
+                          load_segments.append((offset, vaddr, align, align_str))
+                      except Exception as ex:
+                          print(f"ERROR parsing line: {line} ({ex})")
+                          overall_failure = True
+
+              for idx, (offset, vaddr, align, align_str) in enumerate(load_segments):
+                  if abi in ("arm64-v8a", "x86_64"):
+                      is_aligned = (align >= PAGE_SIZE_16KB) and ((vaddr - offset) % PAGE_SIZE_16KB == 0)
+                      status = f"PASS (16 KB - {align_str})" if is_aligned else f"FAIL (<16 KB - {align_str})"
+                      if not is_aligned:
+                          overall_failure = True
+                  else:
+                      is_aligned = (align >= PAGE_SIZE_4KB) and ((vaddr - offset) % PAGE_SIZE_4KB == 0)
+                      status = f"PASS (32-bit 4 KB - {align_str})" if is_aligned else f"FAIL (<4 KB - {align_str})"
+                      if not is_aligned:
+                          overall_failure = True
+
+                  print(f"{rel_path:<45} {abi:<12} {idx:<4} {hex(offset):<12} {hex(vaddr):<14} {align_str:<10} {status}")
+
+          print("=" * 105)
+          if overall_failure:
+              print("\nFAILURE: One or more native libraries do not satisfy ELF page alignment requirements!")
+              sys.exit(1)
+
+          print("\nSUCCESS: All native libraries in AAB passed ELF segment alignment verification.")
+          EOF
+
+      - name: Verify AAB Digital Signature (jarsigner)
+        run: |
+          set -euo pipefail
+          echo "=== VERIFYING AAB DIGITAL SIGNATURE ==="
+          jarsigner -verify -verbose -certs build/retro-rage-arcade-release.aab > /tmp/signature_verify.txt
+          cat /tmp/signature_verify.txt | head -n 30
+          if grep -q "jar verified" /tmp/signature_verify.txt; then
+            echo "VERIFIED: Release AAB is properly signed and verified."
+          else
+            echo "ERROR: Release AAB signature verification failed!"
+            cat /tmp/signature_verify.txt
+            exit 1
+          fi
+
+      - name: Verify Exclusion of Non-Production Test Tools
+        run: |
+          echo "=== CHECKING FOR EXCLUDED FILES IN AAB ==="
+          if unzip -l build/retro-rage-arcade-release.aab | grep -E "scenes/tests|scripts/tests|scripts/tools|screenshots"; then
+              echo "ERROR: Test files found in release AAB!"
+              exit 1
+          else
+              echo "VERIFIED: Test tools, runners, and capture scripts successfully excluded from release AAB."
+          fi
+
+      - name: Upload Signed Release AAB Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: retro-rage-arcade-release-aab
+          path: build/retro-rage-arcade-release.aab
+          if-no-files-found: error
