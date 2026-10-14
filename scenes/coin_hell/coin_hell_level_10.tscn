@@ -122,11 +122,35 @@ position = Vector2(760, 400)
 hazard_type = 4
 platform_width = 160.0
 
+[node name="ChainLeft" parent="." instance=ExtResource("5_schain")]
+position = Vector2(260, 50)
+chain_length = 150.0
+max_swing_angle = 42.0
+swing_speed = 2.5
+
+[node name="ChainMidLeft" parent="." instance=ExtResource("5_schain")]
+position = Vector2(400, 50)
+chain_length = 135.0
+max_swing_angle = -40.0
+swing_speed = 2.6
+
+[node name="ChainCenter" parent="." instance=ExtResource("5_schain")]
+position = Vector2(480, 50)
+chain_length = 120.0
+max_swing_angle = 45.0
+swing_speed = 2.7
+
 [node name="SurpriseGhostChain" parent="." instance=ExtResource("5_schain")]
 position = Vector2(620, 50)
 chain_length = 145.0
 max_swing_angle = 46.0
 swing_speed = 2.4
+
+[node name="ChainRight" parent="." instance=ExtResource("5_schain")]
+position = Vector2(740, 50)
+chain_length = 150.0
+max_swing_angle = -44.0
+swing_speed = 2.5
 
 [node name="SpawnPoint" type="Marker2D" parent="."]
 position = Vector2(200, 350)

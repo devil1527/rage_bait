@@ -39,6 +39,7 @@ enum PlatformState {
 
 @export var linked_surprise_chain: SurpriseGhostChain = null
 
+var default_hazard_type: HazardType = HazardType.SPIKES
 var current_state: PlatformState = PlatformState.SAFE
 var _state_timer: float = 0.0
 var _warning_duration: float = 0.8
@@ -61,6 +62,7 @@ var _shake_tween: Tween = null
 var _fall_tween: Tween = null
 
 func _ready() -> void:
+	default_hazard_type = hazard_type
 	_original_position = position
 	_update_dimensions()
 	_apply_safe_state()
@@ -110,9 +112,11 @@ func _update_dimensions() -> void:
 	if spikes_collision and spikes_collision.shape is RectangleShape2D:
 		(spikes_collision.shape as RectangleShape2D).size = Vector2(platform_width - 8.0, 14.0)
 
-func trigger_hazard(warn_time: float = 0.8, active_time: float = 1.8) -> void:
+func trigger_hazard(warn_time: float = 0.8, active_time: float = 1.8, override_type: int = -1) -> void:
 	if current_state != PlatformState.SAFE:
 		return
+	if override_type >= 0 and override_type <= HazardType.COUNTDOWN:
+		hazard_type = override_type as HazardType
 	_warning_duration = maxf(0.01, warn_time)
 	_active_duration = maxf(0.01, active_time)
 	_state_timer = 0.0
@@ -293,6 +297,7 @@ func _on_spikes_body_entered(body: Node2D) -> void:
 		GameManager.trigger_player_death()
 
 func reset_hazard() -> void:
+	hazard_type = default_hazard_type
 	_apply_safe_state()
 	if linked_surprise_chain:
 		linked_surprise_chain.reset()

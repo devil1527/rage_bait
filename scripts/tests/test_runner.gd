@@ -82,6 +82,7 @@ func run_all_tests() -> void:
 	test_survival_arena_platform_and_hazards()
 	test_level_10_haunted_survival_gameplay()
 	test_level_10_anti_camping_and_rounds()
+	test_level_10_variable_hazard_positions_and_chains()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -2744,6 +2745,7 @@ func test_level_10_haunted_survival_gameplay() -> void:
 	assert_true(lvl_scene != null, "Level 10 scene loads successfully")
 	
 	var lvl = lvl_scene.instantiate()
+	lvl.variant_override = 0
 	add_child(lvl)
 	
 	var player = lvl.get_node_or_null("Player")
@@ -2913,7 +2915,11 @@ func _step_level_10_arena(lvl: Node2D, total_time: float) -> void:
 		lvl._physics_process(dt)
 		for p in lvl.get_node("Platforms").get_children():
 			p._physics_process(dt)
-		if lvl.surprise_chain:
+		if "all_chains" in lvl and lvl.all_chains.size() > 0:
+			for ch in lvl.all_chains:
+				if ch:
+					ch._physics_process(dt)
+		elif lvl.surprise_chain:
 			lvl.surprise_chain._physics_process(dt)
 		remaining -= dt
 
@@ -2922,6 +2928,7 @@ func test_level_10_anti_camping_and_rounds() -> void:
 	var lvl_scene = load("res://scenes/coin_hell/coin_hell_level_10.tscn")
 	assert_true(lvl_scene != null, "Level 10 loads")
 	var lvl = lvl_scene.instantiate()
+	lvl.variant_override = 0
 	add_child(lvl)
 	
 	var intro_overlay = lvl.get_node("HUD/BossIntroOverlay")
@@ -2977,6 +2984,158 @@ func test_level_10_anti_camping_and_rounds() -> void:
 	assert_eq(coins.get_child_count(), 10, "Exactly 10 coins spawned by Round 10")
 	
 	lvl.queue_free()
+
+func test_level_10_variable_hazard_positions_and_chains() -> void:
+	print("\n--- TEST: Level 10 Variable Hazard Positions, Multi-Chains & Attempt Variation ---")
+	var lvl_scene = load("res://scenes/coin_hell/coin_hell_level_10.tscn")
+	assert_true(lvl_scene != null, "Level 10 loads")
+	var lvl = lvl_scene.instantiate()
+	lvl.variant_override = 0
+	add_child(lvl)
+	
+	var intro_overlay = lvl.get_node("HUD/BossIntroOverlay")
+	intro_overlay.skip()
+	
+	var platforms = lvl.get_node("Platforms")
+	var p1 = platforms.get_node("Platform1_Spikes")
+	var p2 = platforms.get_node("Platform2_Phantom")
+	var p3 = platforms.get_node("Platform3_Crumbling")
+	var p4 = platforms.get_node("Platform4_Chains")
+	var p5 = platforms.get_node("Platform5_Countdown")
+	
+	# 1. Validate 5 Ceiling Attachment Points
+	print("  Validating Multiple Ceiling Chain Attachment Points...")
+	assert_eq(lvl.all_chains.size(), 5, "Level 10 contains 5 ceiling chain attachment points")
+	assert_eq(lvl.chain_left.position.x, 260.0, "Chain 0 (Left) attached at X=260")
+	assert_eq(lvl.chain_mid_left.position.x, 400.0, "Chain 1 (Mid-Left) attached at X=400")
+	assert_eq(lvl.chain_center.position.x, 480.0, "Chain 2 (Center) attached at X=480")
+	assert_eq(lvl.surprise_chain.position.x, 620.0, "Chain 3 (Mid-Right) attached at X=620")
+	assert_eq(lvl.chain_right.position.x, 740.0, "Chain 4 (Right) attached at X=740")
+	
+	for idx in range(5):
+		var ch: SurpriseGhostChain = lvl.all_chains[idx]
+		assert_eq(ch.current_state, SurpriseGhostChainClass.ChainState.DORMANT, "Chain %d starts DORMANT" % idx)
+		assert_true(not ch.visible, "Chain %d invisible when dormant" % idx)
+		assert_true(not ch.hazard_area.monitoring, "Chain %d monitoring disabled when dormant" % idx)
+	
+	# 2. TEST A — Variable Spike Positions Across Arena (Left, Right, Mid-Left, Center Apex, Dual, Sequential)
+	print("  Validating Variable Spike Positions Across Arena (Variant 0)...")
+	# Round 1: Spikes on P1 (Left, X=200)
+	_step_level_10_arena(lvl, 2.4) # at 2.4s: P1 spikes active (warn 0.8s, triggered at 1.5s -> active at 2.3s)
+	assert_eq(p1.hazard_type, SurvivalArenaPlatformClass.HazardType.SPIKES, "P1 has Spikes in R1")
+	assert_true(p1.spikes_area.monitoring, "P1 Spikes active on Left platform (X=200)")
+	assert_true(not p5.spikes_area.monitoring, "P5 Spikes not active on Right platform")
+	
+	# Round 3: Spikes on P5 (Right, X=760)
+	_step_level_10_arena(lvl, 13.0) # total 15.4s (R3: wave at 14.5s with warn 0.75s -> active at 15.25s)
+	assert_true(p5.spikes_area.monitoring, "Spikes activate on Right platform P5 (X=760) in Round 3!")
+	assert_true(not p1.spikes_area.monitoring, "P1 Spikes retracted")
+	
+	# Round 6: Spikes on P3 (Center Apex, X=480)
+	_step_level_10_arena(lvl, 16.4) # total 31.8s (R6: wave at 30.8s with warn 0.75s -> active at 31.55s)
+	assert_true(p3.spikes_area.monitoring, "Spikes activate on Center Apex platform P3 (X=480) in Round 6!")
+	
+	# Round 7: Dual Spikes on P1 (Left) and P5 (Right)
+	_step_level_10_arena(lvl, 6.0) # total 37.8s (R7: wave at 36.8s with warn 0.7s -> active at 37.5s)
+	assert_true(p1.spikes_area.monitoring, "Dual Spikes: Left platform P1 active in Round 7")
+	assert_true(p5.spikes_area.monitoring, "Dual Spikes: Right platform P5 active in Round 7")
+	assert_true(p3.is_platform_safe(), "Center apex P3 safe escape route during dual flank spikes")
+	
+	# Round 9: Sequential Spikes across arena: P1 at 48.8s -> P4 at 50.2s
+	_step_level_10_arena(lvl, 12.0) # total 49.8s (P1 active from 49.45s)
+	assert_true(p1.spikes_area.monitoring, "Sequential Spikes Step 1: P1 active at 49.8s")
+	_step_level_10_arena(lvl, 1.3) # total 51.1s (P4 active from 50.85s)
+	assert_true(p4.spikes_area.monitoring, "Sequential Spikes Step 2: P4 active at 51.1s across the arena!")
+	
+	# 3. TEST B & C — Multiple Chains: Dual & Triple Chain Attacks
+	print("  Validating Dual & Triple Ceiling Chains...")
+	# Round 10 (at 56.6s): Triple Chains (Chain 0 at X=260, Chain 2 at X=480, Chain 4 at X=740)
+	_step_level_10_arena(lvl, 5.5) # total 56.6s (wave at 55.8s with warn 0.6s -> active at 56.4s)
+	assert_eq(lvl.chain_left.current_state, SurpriseGhostChainClass.ChainState.ATTACKING, "Chain 0 (Left X=260) ATTACKING in Triple Chain wave")
+	assert_eq(lvl.chain_center.current_state, SurpriseGhostChainClass.ChainState.ATTACKING, "Chain 2 (Center X=480) ATTACKING in Triple Chain wave")
+	assert_eq(lvl.chain_right.current_state, SurpriseGhostChainClass.ChainState.ATTACKING, "Chain 4 (Right X=740) ATTACKING in Triple Chain wave")
+	assert_true(lvl.chain_left.hazard_area.monitoring, "Chain 0 hazard monitoring active")
+	assert_true(lvl.chain_center.hazard_area.monitoring, "Chain 2 hazard monitoring active")
+	assert_true(lvl.chain_right.hazard_area.monitoring, "Chain 4 hazard monitoring active")
+	assert_true(p3.is_platform_safe() or p4.is_platform_safe(), "Safe escape platform preserved during triple chains")
+	
+	lvl.queue_free()
+	
+	# 4. TEST D — Variable Phantom & Crumbling Targets Across Variants
+	print("  Validating Phantom & Crumbling Target Variation (Variant 1 & 2)...")
+	# Variant 1: P4 Phantom, P2 Crumbling
+	var lvl_v1 = lvl_scene.instantiate()
+	lvl_v1.variant_override = 1
+	add_child(lvl_v1)
+	lvl_v1.boss_intro_overlay.skip()
+	
+	# Round 2 in Variant 1: P4 Phantom (wave at 6.8s -> active at 7.6s)
+	_step_level_10_arena(lvl_v1, 7.8)
+	var p4_v1 = lvl_v1.get_node("Platforms/Platform4_Chains")
+	assert_eq(p4_v1.hazard_type, SurvivalArenaPlatformClass.HazardType.PHANTOM, "Variant 1 R2: Platform 4 becomes PHANTOM target!")
+	assert_true(p4_v1.collision_shape.disabled, "P4 collision disabled while phantom in Variant 1")
+	
+	# Round 3 in Variant 1: P2 Crumbling (wave at 12.8s -> active at 13.6s)
+	_step_level_10_arena(lvl_v1, 6.0) # total 13.8s
+	var p2_v1 = lvl_v1.get_node("Platforms/Platform2_Phantom")
+	assert_eq(p2_v1.hazard_type, SurvivalArenaPlatformClass.HazardType.CRUMBLING, "Variant 1 R3: Platform 2 becomes CRUMBLING target!")
+	assert_true(p2_v1.collision_shape.disabled, "P2 collision disabled while crumbling in Variant 1")
+	lvl_v1.queue_free()
+	
+	# Variant 2: P3 Phantom (Apex vanishes!), P1 Crumbling
+	var lvl_v2 = lvl_scene.instantiate()
+	lvl_v2.variant_override = 2
+	add_child(lvl_v2)
+	lvl_v2.boss_intro_overlay.skip()
+	
+	# Round 2 in Variant 2: P3 (Apex) Phantom (wave at 6.8s -> active at 7.6s)
+	_step_level_10_arena(lvl_v2, 7.8)
+	var p3_v2 = lvl_v2.get_node("Platforms/Platform3_Crumbling")
+	assert_eq(p3_v2.hazard_type, SurvivalArenaPlatformClass.HazardType.PHANTOM, "Variant 2 R2: Center Apex P3 becomes PHANTOM target!")
+	assert_true(p3_v2.collision_shape.disabled, "P3 Apex collision disabled while phantom in Variant 2")
+	lvl_v2.queue_free()
+	
+	# 5. TEST F — Attempt Variation (Controlled Randomization)
+	print("  Validating Controlled Attempt Variation & Hazard Schedules...")
+	var lvl_rand = lvl_scene.instantiate()
+	lvl_rand.variant_override = -1
+	add_child(lvl_rand)
+	
+	# Set previous attempt as 0 -> retry must choose variant 1 or 2
+	lvl_rand._last_attempt_variant = 0
+	lvl_rand._reset_level()
+	assert_true(lvl_rand.current_variant != 0, "Retry avoids repeating the immediate previous variant pattern (selected %d)" % lvl_rand.current_variant)
+	
+	var var_after_0 = lvl_rand.current_variant
+	lvl_rand._last_attempt_variant = var_after_0
+	lvl_rand._reset_level()
+	assert_true(lvl_rand.current_variant != var_after_0, "Next retry avoids repeating variant %d (selected %d)" % [var_after_0, lvl_rand.current_variant])
+	
+	# Verify distinct coin placements between variants
+	lvl_rand._init_hazard_schedule(0)
+	var v0_coin_pos: Vector2 = lvl_rand._round_coin_positions.get(1, Vector2.ZERO)
+	lvl_rand._init_hazard_schedule(1)
+	var v1_coin_pos: Vector2 = lvl_rand._round_coin_positions.get(1, Vector2.ZERO)
+	lvl_rand._init_hazard_schedule(2)
+	var v2_coin_pos: Vector2 = lvl_rand._round_coin_positions.get(1, Vector2.ZERO)
+	assert_true(v0_coin_pos != v1_coin_pos or v1_coin_pos != v2_coin_pos, "Variants use distinct dynamic coin spawn positions")
+	
+	# 6. TEST G & H — Fairness & Anti-Camping Guarantees
+	print("  Validating Fairness Guarantees (Viable Escape Routes)...")
+	# Check all waves in Variant 0, 1, 2 have at least 2 safe platforms
+	for v in [0, 1, 2]:
+		lvl_rand._init_hazard_schedule(v)
+		for wave in lvl_rand._scheduled_waves:
+			var hazards: Array = wave.get("hazards", [])
+			var affected_pids: Dictionary = {}
+			for h in hazards:
+				if h.get("type") == "platform":
+					affected_pids[h.get("pid")] = true
+					assert_true(h.get("warn", 0.0) >= 0.6, "Variant %d wave at %.1fs gives at least 0.6s warning" % [v, wave.get("time")])
+			assert_true(5 - affected_pids.size() >= 2, "Variant %d wave at %.1fs guarantees at least 2 safe platforms" % [v, wave.get("time")])
+	
+	lvl_rand.queue_free()
+
 
 
 
