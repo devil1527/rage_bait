@@ -295,19 +295,22 @@ jobs:
           set -euo pipefail
           echo "=== VERIFYING AAB DIGITAL SIGNATURE ==="
           jarsigner -verify -verbose -certs build/retro-rage-arcade-release.aab > /tmp/signature_verify.txt
-          cat /tmp/signature_verify.txt | head -n 30
+          head -n 40 /tmp/signature_verify.txt
+          tail -n 25 /tmp/signature_verify.txt
           if grep -q "jar verified" /tmp/signature_verify.txt; then
             echo "VERIFIED: Release AAB is properly signed and verified."
           else
             echo "ERROR: Release AAB signature verification failed!"
-            cat /tmp/signature_verify.txt
+            tail -n 100 /tmp/signature_verify.txt
             exit 1
           fi
 
       - name: Verify Exclusion of Non-Production Test Tools
         run: |
+          set -euo pipefail
           echo "=== CHECKING FOR EXCLUDED FILES IN AAB ==="
-          if unzip -l build/retro-rage-arcade-release.aab | grep -E "scenes/tests|scripts/tests|scripts/tools|screenshots"; then
+          unzip -l build/retro-rage-arcade-release.aab > /tmp/aab_filelist.txt
+          if grep -E "scenes/tests|scripts/tests|scripts/tools|screenshots" /tmp/aab_filelist.txt; then
               echo "ERROR: Test files found in release AAB!"
               exit 1
           else
