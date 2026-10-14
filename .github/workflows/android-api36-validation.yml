@@ -48,10 +48,6 @@ jobs:
           mv templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
           rm -f godot.zip templates.tpz
 
-      - name: Run Headless Automated Test Suite
-        run: |
-          godot --headless "res://scenes/tests/test_runner.tscn"
-
       - name: Setup Android Keystore and Editor Settings
         run: |
           mkdir -p ~/.config/godot ~/.local/share/godot ~/.android
@@ -72,6 +68,10 @@ jobs:
       - name: Import Assets Headlessly
         run: |
           godot --headless --editor --quit
+
+      - name: Run Headless Automated Test Suite
+        run: |
+          godot --headless "res://scenes/tests/test_runner.tscn"
 
       - name: Export Android Test APK
         run: |
