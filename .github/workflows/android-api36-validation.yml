@@ -89,11 +89,9 @@ jobs:
             exit 1
           fi
 
-          BUILD_TOOLS_DIR="${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools/36.0.0"
-          export PATH="$BUILD_TOOLS_DIR:$PATH"
-          AAPT2_CMD=$(which aapt2 || echo "$BUILD_TOOLS_DIR/aapt2")
-          echo "Using aapt2 binary: $AAPT2_CMD"
-          $AAPT2_CMD dump badging "$APK" > /tmp/badging.txt
+          AAPT2_BIN="$ANDROID_HOME/build-tools/36.0.0/aapt2"
+          echo "Using aapt2 binary: $AAPT2_BIN"
+          "$AAPT2_BIN" dump badging "$APK" > /tmp/badging.txt
           echo "=== AAPT2 DUMP BADGING OUTPUT ==="
           cat /tmp/badging.txt
           echo "=================================="
@@ -116,9 +114,9 @@ jobs:
           EXPECTED_ABIS = {"arm64-v8a", "armeabi-v7a"}
 
           # Parse package, versionCode, versionName
-          pkg_match = re.search(r"package:\s+.*name='([^']+)'", output)
-          ver_code_match = re.search(r"versionCode='([^']+)'", output)
-          ver_name_match = re.search(r"versionName='([^']+)'", output)
+          pkg_match = re.search(r"\bpackage:.*?\bname='([^']+)'", output)
+          ver_code_match = re.search(r"\bversionCode='([^']+)'", output)
+          ver_name_match = re.search(r"\bversionName='([^']+)'", output)
 
           if not pkg_match:
               errors.append("Package name not found in aapt2 output")
@@ -145,7 +143,7 @@ jobs:
                   errors.append(f"versionName mismatch: got '{ver_name}', expected '{EXPECTED['versionName']}'")
 
           # Parse targetSdkVersion
-          target_match = re.search(r"targetSdkVersion:'(\d+)'", output)
+          target_match = re.search(r"\btargetSdkVersion:'(\d+)'", output)
           if not target_match:
               errors.append("targetSdkVersion not found in aapt2 output")
           else:
@@ -155,7 +153,7 @@ jobs:
                   errors.append(f"targetSdkVersion mismatch: got '{target_sdk}', expected '{EXPECTED['targetSdkVersion']}'")
 
           # Parse minSdkVersion (sdkVersion)
-          min_match = re.search(r"sdkVersion:'(\d+)'", output)
+          min_match = re.search(r"\b(?:minSdkVersion|sdkVersion):'(\d+)'", output)
           if not min_match:
               errors.append("minSdkVersion (sdkVersion) not found in aapt2 output")
           else:
@@ -165,7 +163,7 @@ jobs:
                   errors.append(f"minSdkVersion mismatch: got '{min_sdk}', expected '{EXPECTED['minSdkVersion']}'")
 
           # Parse packaged native ABIs
-          abi_match = re.search(r"native-code:\s+(.+)", output)
+          abi_match = re.search(r"\bnative-code:\s+(.+)", output)
           if not abi_match:
               errors.append("native-code (ABIs) not found in aapt2 output")
           else:
@@ -334,14 +332,12 @@ jobs:
             exit 1
           fi
 
-          BUILD_TOOLS_DIR="${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools/36.0.0"
-          export PATH="$BUILD_TOOLS_DIR:$PATH"
-          ZIPALIGN_CMD=$(which zipalign || echo "$BUILD_TOOLS_DIR/zipalign")
-          echo "Using zipalign binary: $ZIPALIGN_CMD"
+          ZIPALIGN_BIN="$ANDROID_HOME/build-tools/36.0.0/zipalign"
+          echo "Using zipalign binary: $ZIPALIGN_BIN"
           echo "Executing command: zipalign -c -P 16 -v 4 $APK"
 
           set +e
-          OUTPUT=$($ZIPALIGN_CMD -c -P 16 -v 4 "$APK" 2>&1)
+          OUTPUT=$("$ZIPALIGN_BIN" -c -P 16 -v 4 "$APK" 2>&1)
           ZIPALIGN_EXIT=$?
           set -e
 
