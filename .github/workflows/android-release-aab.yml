@@ -3,6 +3,8 @@ name: Build & Validate Signed Android Release AAB (Google Play)
 on:
   workflow_dispatch:
   push:
+    branches:
+      - migration/android-api36-godot47
     tags:
       - 'v*'
 
