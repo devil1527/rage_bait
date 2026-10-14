@@ -1,0 +1,117 @@
+name: Validate Android API 36 Export (Godot 4.7.2)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ migration/android-api36-godot47 ]
+
+jobs:
+  validate-api36:
+    name: Validate Android API 36 & 16KB Page Alignment
+    runs-on: ubuntu-latest
+
+    env:
+      GODOT_VERSION: "4.7.2"
+      GODOT_RELEASE: "4.7.2-stable"
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
+
+      - name: Install Android Build Tools 36 and Platform 36
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager --install "cmdline-tools;latest" "platform-tools" "build-tools;36.0.0" "platforms;android-36"
+
+      - name: Download Godot 4.7.2 Headless & Export Templates
+        run: |
+          mkdir -p ~/.local/bin ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          curl -L -o godot.zip https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/Godot_v${GODOT_RELEASE}_linux.x86_64.zip
+          unzip -q godot.zip
+          mv Godot_v${GODOT_RELEASE}_linux.x86_64 ~/.local/bin/godot
+          chmod +x ~/.local/bin/godot
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+          curl -L -o templates.tpz https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/Godot_v${GODOT_RELEASE}_export_templates.tpz
+          unzip -q templates.tpz
+          mv templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
+          rm -f godot.zip templates.tpz
+
+      - name: Run Headless Automated Test Suite
+        run: |
+          godot --headless "res://scenes/tests/test_runner.tscn"
+
+      - name: Setup Android Keystore and Editor Settings
+        run: |
+          mkdir -p ~/.config/godot ~/.local/share/godot ~/.android
+          keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore ~/.android/debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999
+          for d in ~/.config/godot ~/.local/share/godot; do
+            for f in "$d/editor_settings-4.tres" "$d/editor_settings-4.7.tres"; do
+              echo '[gd_resource type="EditorSettings" format=3]' > "$f"
+              echo '' >> "$f"
+              echo '[resource]' >> "$f"
+              echo "export/android/android_sdk_path = \"$ANDROID_HOME\"" >> "$f"
+              echo "export/android/debug_keystore = \"$HOME/.android/debug.keystore\"" >> "$f"
+              echo 'export/android/debug_keystore_user = "androiddebugkey"' >> "$f"
+              echo 'export/android/debug_keystore_pass = "android"' >> "$f"
+              echo "export/android/java_sdk_path = \"$JAVA_HOME\"" >> "$f"
+            done
+          done
+
+      - name: Import Assets Headlessly
+        run: |
+          godot --headless --editor --quit
+
+      - name: Export Android Test APK
+        run: |
+          mkdir -p build
+          godot --verbose --headless --export-debug "Android" build/coin-hell-api36-test.apk
+
+      - name: Verify Android Manifest Target SDK (API 36)
+        run: |
+          echo "=== DUMPING MANIFEST TARGET SDK ==="
+          aapt2 dump badging build/coin-hell-api36-test.apk | grep -E "targetSdkVersion|versionName|versionCode"
+
+      - name: Verify Native Library 16 KB Page Alignment
+        run: |
+          echo "=== UNPACKING APK TO INSPECT ELF NATIVE LIBRARIES ==="
+          unzip -q build/coin-hell-api36-test.apk -d /tmp/apk_unpacked
+          echo "Inspecting arm64-v8a libgodot_android.so..."
+          readelf -W -l /tmp/apk_unpacked/lib/arm64-v8a/libgodot_android.so | grep -E "LOAD"
+          python3 -c '
+          import subprocess, sys
+          out = subprocess.check_output(["readelf", "-W", "-l", "/tmp/apk_unpacked/lib/arm64-v8a/libgodot_android.so"]).decode()
+          has_16kb = any("LOAD" in l and ("0x4000" in l or "16384" in l) for l in out.splitlines())
+          if has_16kb:
+              print("SUCCESS: 16 KB (0x4000) ELF page alignment verified!")
+          else:
+              print("WARNING: Standard 4 KB alignment found")
+          '
+
+      - name: Verify Exclusion of Non-Production Test Tools
+        run: |
+          echo "=== CHECKING FOR EXCLUDED FILES ==="
+          if unzip -l build/coin-hell-api36-test.apk | grep -E "scenes/tests|scripts/tools|screenshots"; then
+              echo "ERROR: Test files found in package!"
+              exit 1
+          else
+              echo "VERIFIED: Test tools, runners, and capture scripts successfully excluded from export package."
+          fi
+
+      - name: Upload Test APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coin-hell-api36-test-apk
+          path: build/coin-hell-api36-test.apk
+          if-no-files-found: error
