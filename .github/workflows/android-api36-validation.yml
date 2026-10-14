@@ -33,6 +33,7 @@ jobs:
         run: |
           yes | sdkmanager --licenses || true
           sdkmanager --install "cmdline-tools;latest" "platform-tools" "build-tools;36.0.0" "platforms;android-36"
+          echo "$ANDROID_HOME/build-tools/36.0.0" >> $GITHUB_PATH
 
       - name: Download Godot 4.7.2 Headless & Export Templates
         run: |
@@ -81,7 +82,8 @@ jobs:
       - name: Verify Android Manifest Target SDK (API 36)
         run: |
           echo "=== DUMPING MANIFEST TARGET SDK ==="
-          aapt2 dump badging build/coin-hell-api36-test.apk | grep -E "targetSdkVersion|versionName|versionCode"
+          $ANDROID_HOME/build-tools/36.0.0/aapt2 dump badging build/coin-hell-api36-test.apk | grep -E "targetSdkVersion|versionName|versionCode"
+          $ANDROID_HOME/build-tools/36.0.0/aapt2 dump xmltree build/coin-hell-api36-test.apk --file AndroidManifest.xml | grep -iE "targetsdk|compilesdk"
 
       - name: Verify Native Library 16 KB Page Alignment
         run: |
