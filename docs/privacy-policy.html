@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Privacy Policy for Retro Rage Arcade (com.antigravity.retroragearcade) - A 100% offline retro arcade platformer on Android.">
+  <title>Privacy Policy - Retro Rage Arcade</title>
+  <style>
+    :root {
+      --bg-color: #0b0d17;
+      --card-bg: #141829;
+      --card-border: #232b45;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --heading-color: #ffffff;
+      --accent-color: #38bdf8;
+      --accent-hover: #0284c7;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success-color: #34d399;
+      --success-bg: rgba(52, 211, 153, 0.1);
+      --warning-color: #fbbf24;
+      --warning-bg: rgba(251, 191, 36, 0.1);
+      --badge-bg: #1e293b;
+      --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg-color: #f8fafc;
+        --card-bg: #ffffff;
+        --card-border: #e2e8f0;
+        --text-main: #1e293b;
+        --text-muted: #64748b;
+        --heading-color: #0f172a;
+        --accent-color: #0284c7;
+        --accent-hover: #0369a1;
+        --accent-glow: rgba(2, 132, 199, 0.1);
+        --success-color: #059669;
+        --success-bg: rgba(5, 150, 105, 0.1);
+        --warning-color: #d97706;
+        --warning-bg: rgba(217, 119, 6, 0.1);
+        --badge-bg: #f1f5f9;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-stack);
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      line-height: 1.68;
+      padding: 2rem 1rem;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      max-width: 860px;
+      width: 100%;
+    }
+
+    header {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 2.25rem 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.15);
+      position: relative;
+      overflow: hidden;
+    }
+
+    header::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
+    }
+
+    .app-badge {
+      display: inline-block;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.35rem 0.75rem;
+      border-radius: 9999px;
+      background: var(--badge-bg);
+      color: var(--accent-color);
+      border: 1px solid var(--card-border);
+      margin-bottom: 0.75rem;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      color: var(--heading-color);
+      line-height: 1.2;
+      margin-bottom: 0.5rem;
+    }
+
+    .app-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--card-border);
+    }
+
+    .meta-item strong {
+      color: var(--text-main);
+    }
+
+    /* Quick Summary Card */
+    .summary-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .summary-card h2 {
+      font-size: 1.25rem;
+      color: var(--heading-color);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .grid-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+
+    .summary-item {
+      background: var(--badge-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 1rem;
+    }
+
+    .summary-item .label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+    }
+
+    .summary-item .val {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--heading-color);
+    }
+
+    .val.pass {
+      color: var(--success-color);
+    }
+
+    /* Table of contents */
+    .toc {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .toc h3 {
+      font-size: 1.1rem;
+      color: var(--heading-color);
+      margin-bottom: 0.75rem;
+    }
+
+    .toc ul {
+      list-style-type: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 0.5rem 1.5rem;
+    }
+
+    .toc a {
+      color: var(--accent-color);
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: color 0.15s ease;
+    }
+
+    .toc a:hover {
+      color: var(--accent-hover);
+      text-decoration: underline;
+    }
+
+    /* Content sections */
+    section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    h2 {
+      font-size: 1.4rem;
+      color: var(--heading-color);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    h3 {
+      font-size: 1.15rem;
+      color: var(--heading-color);
+      margin: 1.25rem 0 0.5rem 0;
+    }
+
+    p {
+      margin-bottom: 1rem;
+      color: var(--text-main);
+    }
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+
+    ul, ol {
+      margin-bottom: 1rem;
+      padding-left: 1.5rem;
+    }
+
+    li {
+      margin-bottom: 0.5rem;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.88em;
+      background: var(--badge-bg);
+      border: 1px solid var(--card-border);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      color: var(--accent-color);
+    }
+
+    .alert {
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      font-size: 0.95rem;
+    }
+
+    .alert-success {
+      background: var(--success-bg);
+      border: 1px solid var(--success-color);
+      color: var(--success-color);
+    }
+
+    .alert-warning {
+      background: var(--warning-bg);
+      border: 1px solid var(--warning-color);
+      color: var(--warning-color);
+    }
+
+    .confirmation-box {
+      background: rgba(251, 191, 36, 0.08);
+      border: 1px dashed var(--warning-color);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      margin-top: 1rem;
+      font-size: 0.95rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem 0;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    footer a {
+      color: var(--accent-color);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="app-badge">Google Play Data Safety &amp; Privacy Policy</div>
+      <h1>Privacy Policy for Retro Rage Arcade</h1>
+      <p style="color: var(--text-muted); margin-bottom: 0;">Comprehensive privacy disclosure for <strong>Retro Rage Arcade</strong> on Android.</p>
+      
+      <div class="app-meta">
+        <div class="meta-item"><strong>Package ID:</strong> <code>com.antigravity.retroragearcade</code></div>
+        <div class="meta-item"><strong>Version:</strong> 0.10.0 (versionCode 10)</div>
+        <div class="meta-item"><strong>Developer:</strong> Ashwin Golani / Retro Rage Arcade</div>
+        <div class="meta-item"><strong>Effective Date:</strong> October 15, 2026</div>
+        <div class="meta-item"><strong>Last Updated:</strong> October 15, 2026</div>
+      </div>
+    </header>
+
+    <!-- Quick Summary / Highlights -->
+    <div class="summary-card">
+      <h2>⚡ Policy Highlights at a Glance</h2>
+      <div class="grid-summary">
+        <div class="summary-item">
+          <div class="label">Personal Data Collected</div>
+          <div class="val pass">Zero / None</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">Advertisements (Ads)</div>
+          <div class="val pass">Zero / No Ad SDKs</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">Analytics / Tracking</div>
+          <div class="val pass">None / No Telemetry</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">In-App Purchases (IAP)</div>
+          <div class="val pass">None / 100% Free</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">Internet Permission</div>
+          <div class="val pass">Not Requested (Offline)</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">Sensitive Permissions</div>
+          <div class="val pass">Zero Requested</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table of Contents -->
+    <nav class="toc">
+      <h3>Table of Contents</h3>
+      <ul>
+        <li><a href="#introduction">1. Introduction &amp; App Identity</a></li>
+        <li><a href="#data-collection">2. Information We Do Not Collect</a></li>
+        <li><a href="#local-storage">3. Locally Stored Game Progress</a></li>
+        <li><a href="#permissions">4. Device Permissions &amp; Hardware Access</a></li>
+        <li><a href="#third-parties">5. Third-Party Services &amp; Platform Data</a></li>
+        <li><a href="#retention-deletion">6. Data Retention &amp; User Deletion Rights</a></li>
+        <li><a href="#children">7. Children's Privacy (COPPA &amp; GDPR-K)</a></li>
+        <li><a href="#security">8. Security &amp; Data Protection</a></li>
+        <li><a href="#updates">9. Policy Updates</a></li>
+        <li><a href="#contact">10. Developer Contact &amp; Questions</a></li>
+      </ul>
+    </nav>
+
+    <!-- Section 1: Introduction -->
+    <section id="introduction">
+      <h2>1. Introduction &amp; App Identity</h2>
+      <p>
+        This Privacy Policy explains how <strong>Retro Rage Arcade</strong> ("the Game", "the Application", "we", "us", or "our"), 
+        with Android package name <code>com.antigravity.retroragearcade</code>, handles information when installed on Android devices.
+      </p>
+      <p>
+        The game is developed by <strong>Ashwin Golani</strong> (operating as <strong>Retro Rage Arcade</strong>) using the 
+        open-source Godot Engine (version 4.7.2). We are committed to transparency and respecting your digital privacy. 
+        Retro Rage Arcade is engineered as a standalone, self-contained, 100% offline retro 2D arcade platformer.
+      </p>
+      <div class="alert alert-success">
+        ✓ <strong>Core Privacy Promise:</strong> Retro Rage Arcade does not collect, record, track, transmit, monetize, sell, or distribute any personal data from its players.
+      </div>
+    </section>
+
+    <!-- Section 2: Data Collection -->
+    <section id="data-collection">
+      <h2>2. Information We Do Not Collect</h2>
+      <p>
+        Retro Rage Arcade has been thoroughly audited and verified to contain <strong>zero data collection mechanisms</strong>. Specifically:
+      </p>
+      <ul>
+        <li><strong>No Personal Information:</strong> We do not ask for, collect, or store your name, email address, physical address, phone number, age, gender, or government identifiers.</li>
+        <li><strong>No Account or Login Credentials:</strong> The game does not require user accounts, passwords, social media logins (e.g., Google Sign-In, Facebook Login), or cloud player profiles.</li>
+        <li><strong>No Unique Device Identifiers:</strong> We do not collect or access Android IDs, Advertising IDs (GAID), MAC addresses, IMEI numbers, IMSI numbers, or hardware serial numbers.</li>
+        <li><strong>No Location Data:</strong> The game does not access precise (GPS) or approximate (network-based) location.</li>
+        <li><strong>No Financial or Payment Data:</strong> There are no in-app purchases (IAP), subscriptions, paid unlocks, or credit card processing. The game is completely free.</li>
+        <li><strong>No Telemetry or Behavioral Tracking:</strong> We do not track player session times, in-game death heatmaps, button presses, gameplay analytics, or behavioral events.</li>
+      </ul>
+    </section>
+
+    <!-- Section 3: Local Storage -->
+    <section id="local-storage">
+      <h2>3. Locally Stored Game Progress</h2>
+      <p>
+        To preserve your gameplay achievements across sessions, the game stores a minimal, strictly local JSON file on your device:
+      </p>
+      <ul>
+        <li><strong>Storage File Path:</strong> <code>user://retro_rage_save.json</code> (sandboxed inside the application's private internal storage: <code>/data/data/com.antigravity.retroragearcade/files/</code>).</li>
+        <li><strong>Data Elements Stored:</strong>
+          <ol>
+            <li><code>schema_version</code>: An integer (currently <code>1</code>) used to maintain save file compatibility.</li>
+            <li><code>highest_unlocked_level</code>: An integer (range <code>1</code> to <code>20</code>) indicating level progression.</li>
+            <li><code>completed_levels</code>: An array of integers representing the specific stages completed by the player.</li>
+            <li><code>sfx_enabled</code>: A boolean flag (<code>true</code> / <code>false</code>) representing the player's sound effects audio toggle.</li>
+            <li><code>music_enabled</code>: A boolean flag (<code>true</code> / <code>false</code>) representing the player's music audio toggle.</li>
+          </ol>
+        </li>
+      </ul>
+      <p>
+        <strong>Zero Network Transmission:</strong> This save file resides solely on your physical device hardware. It is never transmitted across any network, never synchronized to an external cloud database, and is inaccessible to other applications thanks to Android's operating system application sandboxing.
+      </p>
+    </section>
+
+    <!-- Section 4: Permissions -->
+    <section id="permissions">
+      <h2>4. Device Permissions &amp; Hardware Access</h2>
+      <p>
+        The Android App Bundle (<code>.aab</code>) and manifest for Retro Rage Arcade declare <strong>zero sensitive or runtime permissions</strong>.
+      </p>
+      <ul>
+        <li><code>android.permission.INTERNET</code>: <strong>Not requested.</strong> The app has no network communication capability.</li>
+        <li><code>android.permission.ACCESS_NETWORK_STATE</code>: <strong>Disabled</strong> (set to <code>false</code> in export preset).</li>
+        <li><code>android.permission.READ_EXTERNAL_STORAGE</code>: <strong>Disabled</strong> (set to <code>false</code>).</li>
+        <li><code>android.permission.WRITE_EXTERNAL_STORAGE</code>: <strong>Disabled</strong> (set to <code>false</code>).</li>
+        <li><code>Camera &amp; Microphone</code>: <strong>Not requested.</strong></li>
+        <li><code>Contacts, SMS &amp; Phone State</code>: <strong>Not requested.</strong></li>
+        <li><code>Location (Precise or Coarse)</code>: <strong>Not requested.</strong></li>
+      </ul>
+    </section>
+
+    <!-- Section 5: Third-Party Services -->
+    <section id="third-parties">
+      <h2>5. Third-Party Services &amp; Platform Data</h2>
+      
+      <h3>5.1 Third-Party SDKs inside the Game</h3>
+      <p>
+        Retro Rage Arcade includes <strong>zero third-party SDKs, plugins, or advertising frameworks</strong>. Specifically:
+      </p>
+      <ul>
+        <li><strong>No Advertising Networks:</strong> The game does not integrate Google AdMob, Unity Ads, AppLovin, ironSource, or any other ad network.</li>
+        <li><strong>No Analytics SDKs:</strong> The game does not include Google Analytics for Firebase, GameAnalytics, Flurry, AppsFlyer, or Adjust.</li>
+        <li><strong>No Crash Reporting SDKs:</strong> The game does not bundle Firebase Crashlytics, Sentry, Bugsnag, or ACRA.</li>
+        <li><strong>No Billing Libraries:</strong> The game does not bundle Google Play In-App Billing or payment gateways.</li>
+      </ul>
+
+      <h3>5.2 Google Play Store &amp; Android OS Platform Services</h3>
+      <p>
+        Because the game is distributed through the Google Play Store, Google LLC provides platform-level infrastructure. When you download, update, or uninstall the Game, Google may collect system-level telemetry (such as your device model, operating system version, download counts, and anonymized Android Vitals crash/ANR logs) in accordance with the 
+        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a>.
+      </p>
+      <p>
+        The developer of Retro Rage Arcade only receives aggregated, non-identifying statistical metrics in the Google Play Console (e.g., total active installs and crash rate percentages). We have no access to individual player identities, IP addresses, or personal accounts through these platform metrics.
+      </p>
+    </section>
+
+    <!-- Section 6: Retention & Deletion -->
+    <section id="retention-deletion">
+      <h2>6. Data Retention &amp; User Deletion Rights</h2>
+      <p>
+        Because we store no user data on external servers or databases, we retain no personal data to delete.
+      </p>
+      <p>
+        <strong>How to Delete Your Local Game Progress:</strong>
+      </p>
+      <ol>
+        <li><strong>Clear App Data:</strong> On your Android device, go to <code>Settings &gt; Apps &gt; Retro Rage Arcade &gt; Storage &gt; Clear Storage / Clear Data</code>. This will permanently erase your local save file (<code>retro_rage_save.json</code>) and reset your game progress to level 1.</li>
+        <li><strong>Uninstall the Game:</strong> Uninstalling Retro Rage Arcade removes the application package and deletes its private internal sandbox files.</li>
+      </ol>
+    </section>
+
+    <!-- Section 7: Children's Privacy -->
+    <section id="children">
+      <h2>7. Children's Privacy (COPPA &amp; GDPR-K)</h2>
+      <p>
+        Protecting children's digital privacy is paramount:
+      </p>
+      <ul>
+        <li>The Game is designed as a family-friendly retro arcade platformer suitable for all ages.</li>
+        <li>We do not knowingly collect, request, or solicit any personal information from children under the age of 13 (or under 16 within the European Economic Area / UK), nor from any user regardless of age.</li>
+        <li>The game contains no advertisements, no tracking technologies, no interactive chat or communication features, and no external hyperlinks that could expose minors to third-party services.</li>
+        <li>The game complies with the <strong>Children's Online Privacy Protection Act (COPPA)</strong>, <strong>GDPR Article 8</strong>, and the <strong>Google Play Families Policy Requirements</strong>.</li>
+      </ul>
+      <p>
+        If a parent or guardian believes their child has somehow provided personal information to us, please contact us immediately, and we will take prompt corrective action.
+      </p>
+    </section>
+
+    <!-- Section 8: Security -->
+    <section id="security">
+      <h2>8. Security &amp; Data Protection</h2>
+      <p>
+        Although Retro Rage Arcade does not collect or transmit personal information over the internet, we prioritize application security:
+      </p>
+      <ul>
+        <li><strong>Sandboxed Storage:</strong> In-game progress is stored strictly inside Android's protected application sandbox, preventing unauthorized access from other apps installed on your device.</li>
+        <li><strong>No Insecure Network Channels:</strong> Because the game makes zero network calls and does not request internet access, players are immune to man-in-the-middle (MITM) attacks, data leaks, or unencrypted data transfers.</li>
+        <li><strong>Cryptographic Release Signing:</strong> Official release builds are signed with our private RSA 2048-bit developer upload key, ensuring the binary has not been tampered with or altered.</li>
+      </ul>
+    </section>
+
+    <!-- Section 9: Updates -->
+    <section id="updates">
+      <h2>9. Changes to This Privacy Policy</h2>
+      <p>
+        We may occasionally update this Privacy Policy to reflect future game enhancements, regulatory developments, or Google Play policy updates. 
+        Any changes will be posted on this page with an updated "Last Updated" date. We encourage players to review this page periodically. 
+        Continued use of the game following the posting of changes constitutes acceptance of those changes.
+      </p>
+    </section>
+
+    <!-- Section 10: Contact -->
+    <section id="contact">
+      <h2>10. Developer Contact &amp; Privacy Questions</h2>
+      <p>
+        If you have any questions, concerns, or feedback regarding this Privacy Policy or the privacy practices of Retro Rage Arcade, please contact the developer:
+      </p>
+      
+      <ul>
+        <li><strong>Developer:</strong> Ashwin Golani (Retro Rage Arcade)</li>
+        <li><strong>Location:</strong> Pune, Maharashtra, India</li>
+        <li><strong>Project Repository:</strong> <a href="https://github.com/devil1527/rage_bait" target="_blank" rel="noopener noreferrer">github.com/devil1527/rage_bait</a></li>
+        <li><strong>Privacy Support Email:</strong> <a href="mailto:contact.retroragearcade@gmail.com">contact.retroragearcade@gmail.com</a></li>
+      </ul>
+
+      <div class="confirmation-box">
+        <strong>⚠️ Note for Developer / Account Owner:</strong><br>
+        Please confirm if <code>contact.retroragearcade@gmail.com</code> is your preferred public support email for the Google Play Store listing and privacy inquiries, or if you would like to substitute your personal/studio contact address (e.g. <code>ashwin.golani@...</code>).
+      </div>
+    </section>
+
+    <footer>
+      <p>&copy; 2026 Retro Rage Arcade. All rights reserved.</p>
+      <p>Retro Rage Arcade is built with Godot Engine 4.7.2. Package ID: <code>com.antigravity.retroragearcade</code></p>
+    </footer>
+  </div>
+</body>
+</html>
