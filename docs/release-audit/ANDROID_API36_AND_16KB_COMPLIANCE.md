@@ -8,7 +8,7 @@
 | **Application Package ID** | `com.antigravity.retroragearcade` |
 | **Target Android API Level** | `36` (Android 16 / Baklava) |
 | **Minimum Android API Level** | `24` (Android 7.0 / Nougat) |
-| **Version Code / Name** | `10` / `0.10.0` |
+| **Version Code / Name** | `11` / `0.11.0` |
 | **Audit Date** | October 14, 2026 |
 | **Tested Build Artifact** | `build/coin-hell-api36-test.apk` (SHA-256: `9fa0670868822097034c2bb91f274cbba1a64f331cf5d8ba0b92db2c027411bb`) |
 | **CI Build Execution** | GitHub Actions Run `#38548792723`, Job `#115801375186` |
@@ -48,7 +48,7 @@ $ANDROID_HOME/build-tools/36.0.0/aapt2 dump badging build/coin-hell-api36-test.a
 | :--- | :--- | :--- | :---: |
 | **Package Name** | `com.antigravity.retroragearcade` | `com.antigravity.retroragearcade` | **PASS** |
 | **Version Code** | `10` | `10` | **PASS** |
-| **Version Name** | `0.10.0` | `0.10.0` | **PASS** |
+| **Version Name** | `0.11.0` | `0.11.0` | **PASS** |
 | **Target SDK Version** | `36` | `36` | **PASS** |
 | **Minimum SDK Version** | `24` | `24` | **PASS** |
 | **Packaged Native ABIs** | `arm64-v8a`, `armeabi-v7a` | `arm64-v8a`, `armeabi-v7a` | **PASS** |
@@ -60,7 +60,7 @@ $ANDROID_HOME/build-tools/36.0.0/aapt2 dump badging build/coin-hell-api36-test.a
 
 ### 2.3 Raw Manifest Badging Excerpt
 ```text
-package: name='com.antigravity.retroragearcade' versionCode='10' versionName='0.10.0' compileSdkVersion='36' compileSdkVersionCodename='16'
+package: name='com.antigravity.retroragearcade' versionCode='11' versionName='0.11.0' compileSdkVersion='36' compileSdkVersionCodename='16'
 sdkVersion:'24'
 targetSdkVersion:'36'
 uses-feature: name='android.hardware.screen.landscape'
@@ -222,7 +222,7 @@ unzip -l build/coin-hell-api36-test.apk | grep -E "scenes/tests|scripts/tests|sc
 | Target SDK 36 (Android 16) Manifest Declaration                 | VERIFIED / PASS  |
 | Minimum SDK 24 (Android 7.0) Compatibility                      | VERIFIED / PASS  |
 | Package ID: com.antigravity.retroragearcade                     | VERIFIED / PASS  |
-| Version Code: 10 / Version Name: 0.10.0                         | VERIFIED / PASS  |
+| Version Code: 11 / Version Name: 0.11.0                         | VERIFIED / PASS  |
 | 64-Bit ELF LOAD Alignment (libgodot_android.so arm64-v8a)       | VERIFIED / PASS  |
 | 64-Bit ELF LOAD Alignment (libc++_shared.so arm64-v8a)          | VERIFIED / PASS  |
 | 32-Bit Legacy ELF LOAD Alignment (armeabi-v7a binaries)         | VERIFIED / PASS  |

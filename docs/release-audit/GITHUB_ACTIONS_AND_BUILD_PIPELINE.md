@@ -144,7 +144,7 @@ graph TD
 - Executes inline Python validator enforcing:
   - `package == "com.antigravity.retroragearcade"`
   - `versionCode == "10"`
-  - `versionName == "0.10.0"`
+  - `versionName == "0.11.0"`
   - `targetSdkVersion == "36"`
   - `minSdkVersion == "24"`
   - `ABIs == {"arm64-v8a", "armeabi-v7a"}`

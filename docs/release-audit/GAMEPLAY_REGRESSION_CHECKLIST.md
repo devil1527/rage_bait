@@ -7,7 +7,7 @@
 | :--- | :--- |
 | **Target Application** | Retro Rage Arcade (Coin Hell) |
 | **Package ID** | `com.antigravity.retroragearcade` |
-| **APK Version Code / Name** | `10` / `0.10.0` |
+| **APK Version Code / Name** | `11` / `0.11.0` |
 | **Target Android API** | API 36 (Android 16) / Minimum API 24 (Android 7.0) |
 | **Test Artifact** | `coin-hell-api36-test.apk` |
 | **QA Execution Status** | **NOT TESTED** (Template prepared for physical device testing) |

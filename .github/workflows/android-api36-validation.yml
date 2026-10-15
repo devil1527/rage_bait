@@ -106,8 +106,8 @@ jobs:
 
           EXPECTED = {
               "package": "com.antigravity.retroragearcade",
-              "versionCode": "10",
-              "versionName": "0.10.0",
+              "versionCode": "11",
+              "versionName": "0.11.0",
               "targetSdkVersion": "36",
               "minSdkVersion": "24",
           }

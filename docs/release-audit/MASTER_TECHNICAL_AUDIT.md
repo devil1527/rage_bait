@@ -148,7 +148,7 @@ The project defines a single export preset `[preset.0]` named `"Android"` target
 | `package/name` | `"Retro Rage Arcade"` | Display application title |
 | `package/signed` | `true` | Output signed with debug keystore |
 | `version/code` | `10` | Version code (Integer) |
-| `version/name` | `"0.10.0"` | Version name (SemVer) |
+| `version/name` | `"0.11.0"` | Version name (SemVer) |
 | `screen/orientation` | `0` | Landscape orientation |
 | `screen/support_small` | `true` | Small screen support enabled |
 | `screen/support_normal` | `true` | Normal screen support enabled |
@@ -176,7 +176,7 @@ The project defines a single export preset `[preset.0]` named `"Android"` target
 
 ### 4.2 Target SDK & Package Metadata Verification
 Android SDK Build Tools 36.0.0 `aapt2 dump badging build/coin-hell-api36-test.apk` was executed in the CI gate and validated by automated Python assertions:
-- `package: name='com.antigravity.retroragearcade' versionCode='10' versionName='0.10.0'`
+- `package: name='com.antigravity.retroragearcade' versionCode='11' versionName='0.11.0'`
 - `sdkVersion:'24'` (minSdkVersion = 24 / Android 7.0)
 - `targetSdkVersion:'36'` (Android 16 / Baklava)
 - `native-code: 'arm64-v8a' 'armeabi-v7a'`

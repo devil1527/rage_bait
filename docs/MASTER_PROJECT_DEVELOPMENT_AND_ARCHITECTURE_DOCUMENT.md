@@ -369,7 +369,7 @@ The project uses GitHub Actions to automatically test, export, and package the A
 ### Latest Build Verification
 - **GitHub Workflow Run:** [Run 38512622966](https://github.com/devil1527/rage_bait/actions/runs/38512622966)
 - **Git Commit:** `29f20d5`
-- **Android Version:** Code `10` / Name `0.10.0`
+- **Android Version:** Code `11` / Name `0.11.0`
 - **Result:** `success`
 - **Artifact:** `coin-hell-debug-apk` (48,211,423 bytes, ~46 MB)
 

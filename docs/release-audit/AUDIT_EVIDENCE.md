@@ -125,7 +125,7 @@ $ANDROID_HOME/build-tools/36.0.0/aapt2 dump badging build/coin-hell-api36-test.a
 === VERIFYING ANDROID MANIFEST METADATA (API 36 & ABIs) ===
 Using aapt2 binary: /usr/local/lib/android/sdk/build-tools/36.0.0/aapt2
 === AAPT2 DUMP BADGING OUTPUT ===
-package: name='com.antigravity.retroragearcade' versionCode='10' versionName='0.10.0' compileSdkVersion='36' compileSdkVersionCodename='16'
+package: name='com.antigravity.retroragearcade' versionCode='11' versionName='0.11.0' compileSdkVersion='36' compileSdkVersionCodename='16'
 sdkVersion:'24'
 targetSdkVersion:'36'
 uses-feature: name='android.hardware.screen.landscape'
@@ -137,7 +137,7 @@ native-code: 'arm64-v8a' 'armeabi-v7a'
 ==================================
 Package ID:     com.antigravity.retroragearcade
 Version Code:   10
-Version Name:   0.10.0
+Version Name:   0.11.0
 Target SDK:     36
 Minimum SDK:    24
 Packaged ABIs:  ['arm64-v8a', 'armeabi-v7a']

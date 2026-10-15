@@ -7,7 +7,7 @@
 | :--- | :--- |
 | **Application Title** | Retro Rage Arcade |
 | **Package Identifier** | `com.antigravity.retroragearcade` |
-| **Current Version Code / Name** | `10` / `0.10.0` |
+| **Current Version Code / Name** | `11` / `0.11.0` |
 | **Engine Version** | Godot Engine `v4.7.2.stable.official.ed1daf0bf` |
 | **Target Android API Level** | `36` (Android 16 / Baklava) |
 | **Audit Date** | October 14, 2026 |
