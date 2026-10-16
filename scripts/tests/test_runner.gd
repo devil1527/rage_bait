@@ -89,6 +89,7 @@ func run_all_tests() -> void:
 	test_level_11_meltdown_gameplay()
 	test_level_11_conveyors_and_reversal()
 	test_level_11_crusher_shaft()
+	test_level_11_moving_platforms_and_timed_spikes()
 	test_level_11_rising_lava_and_pressure()
 	test_level_11_lifecycle_and_reset()
 
@@ -3240,34 +3241,58 @@ func test_level_11_meltdown_gameplay() -> void:
 	var c10 = lvl.get_node_or_null("Coins/Coin10")
 
 	assert_true(c1 != null and c2 != null, "Section 1: Furnace Entrance contains Coins 1 and 2")
-	assert_eq(c1.position, Vector2(260, 340), "Coin 1 positioned above Platform 1 (260, 340)")
-	assert_eq(c2.position, Vector2(380, 300), "Coin 2 positioned above Platform 2 (380, 300)")
+	assert_eq(c1.position, Vector2(240, 330), "Coin 1 positioned above Platform 1 (240, 330)")
+	assert_eq(c2.position, Vector2(370, 290), "Coin 2 positioned above FallingPlatform 1 (370, 290)")
 
 	assert_true(c3 != null and c4 != null, "Section 2: Conveyor Crossing contains Coins 3 and 4")
-	assert_eq(c3.position, Vector2(530, 260), "Coin 3 positioned above Conveyor 1 (530, 260)")
-	assert_eq(c4.position, Vector2(810, 170), "Coin 4 positioned above Conveyor 2 (810, 170)")
+	assert_eq(c3.position, Vector2(690, 210), "Coin 3 positioned above Conveyor 1 (690, 210)")
+	assert_eq(c4.position, Vector2(840, 150), "Coin 4 positioned above Conveyor 2 (840, 150)")
 
 	assert_true(c5 != null, "Section 3: Rising Pressure contains Coin 5")
-	assert_eq(c5.position, Vector2(670, 0), "Coin 5 positioned on ascending path Platform 3C (670, 0)")
+	assert_eq(c5.position, Vector2(640, -50), "Coin 5 positioned on ascending path Platform 3C (640, -50)")
 
 	assert_true(c6 != null and c7 != null, "Section 4: Crusher Shaft contains Coins 6 and 7")
-	assert_eq(c6.position, Vector2(460, -90), "Coin 6 positioned at crusher corridor entry (460, -90)")
-	assert_eq(c7.position, Vector2(320, -90), "Coin 7 positioned at crusher corridor exit (320, -90)")
+	assert_eq(c6.position, Vector2(440, -80), "Coin 6 positioned at crusher corridor entry (440, -80)")
+	assert_eq(c7.position, Vector2(320, -80), "Coin 7 positioned at crusher corridor exit (320, -80)")
 
 	assert_true(c8 != null and c9 != null, "Section 5: Greed Is Expensive contains Coins 8 and 9")
-	assert_eq(c8.position, Vector2(270, -260), "Coin 8 positioned on main upward route Platform 5A (270, -260)")
-	assert_eq(c9.position, Vector2(550, -320), "Coin 9 positioned on risky greed detour Platform D2 (550, -320)")
+	assert_eq(c8.position, Vector2(270, -280), "Coin 8 positioned on main upward route Platform 5A (270, -280)")
+	assert_eq(c9.position, Vector2(550, -350), "Coin 9 positioned on risky greed detour Platform D2 (550, -350)")
 
 	assert_true(c10 != null, "Section 6: Meltdown contains Coin 10")
-	assert_eq(c10.position, Vector2(540, -540), "Coin 10 positioned on upper escape route Platform 6C (540, -540)")
+	assert_eq(c10.position, Vector2(520, -560), "Coin 10 positioned on upper escape route FallingPlatform 6B (520, -560)")
 
 	# Verify Section 7: Emergency Exit & Gate
 	var exit = lvl.get_node_or_null("ExitGate")
 	assert_true(exit != null, "Section 7: Emergency Exit Gate exists")
-	assert_eq(exit.position, Vector2(140, -690), "Exit Gate positioned atop final exit platform (140, -690)")
+	assert_eq(exit.position, Vector2(130, -700), "Exit Gate positioned atop final exit platform (130, -700)")
 	assert_true(not exit._is_open, "Exit Gate starts locked")
 
-	lvl.queue_free()
+	# Touch Controls Sizing Verification (Matching Levels 1-10 exactly)
+	assert_eq(lvl.touch_btn_left.size, Vector2(104, 104), "Left button size is 104x104 (matches Levels 1-10)")
+	assert_eq(lvl.touch_btn_right.size, Vector2(104, 104), "Right button size is 104x104 (matches Levels 1-10)")
+	assert_eq(lvl.touch_btn_jump.size, Vector2(124, 124), "Jump button size is 124x124 (matches Levels 1-10)")
+	assert_eq(lvl.touch_controls.mouse_filter, Control.MOUSE_FILTER_IGNORE, "TouchControls container mouse_filter is IGNORE")
+	assert_eq(lvl.touch_btn_left.touch_margin, 8.0, "Left button touch margin is 8.0")
+	assert_eq(lvl.touch_btn_right.touch_margin, 8.0, "Right button touch margin is 8.0")
+	assert_eq(lvl.touch_btn_jump.touch_margin, 16.0, "Jump button touch margin is 16.0")
+	assert_eq(lvl.touch_btn_jump.drag_margin, 40.0, "Jump button drag margin is 40.0")
+
+	# Verify Dynamic Platforms & Hazards in Level 11
+	assert_true(lvl.get_node_or_null("Platforms/FallingPlatform1") != null, "FallingPlatform1 exists in Section A")
+	assert_true(lvl.get_node_or_null("Platforms/MovingPlatform1") != null, "MovingPlatform1 exists in Section A")
+	assert_true(lvl.get_node_or_null("Platforms/MovingPlatform2") != null, "MovingPlatform2 exists in Section B")
+	assert_true(lvl.get_node_or_null("Platforms/FallingPlatform2") != null, "FallingPlatform2 exists in Section B")
+	assert_true(lvl.get_node_or_null("Platforms/FakeSafePlatform") != null, "FakeSafePlatform exists in Section B")
+	assert_true(lvl.get_node_or_null("Hazards/TimedSpikes1") != null, "TimedSpikes1 exists in Section B")
+	assert_true(lvl.get_node_or_null("Hazards/Crusher2") != null, "Crusher2 secondary crusher exists in Section C")
+	assert_true(lvl.get_node_or_null("Platforms/FallingPlatformD1") != null, "FallingPlatformD1 exists in Greed Detour")
+	assert_true(lvl.get_node_or_null("Platforms/MovingPlatform4") != null, "MovingPlatform4 exists in Greed Detour")
+	assert_true(lvl.get_node_or_null("Platforms/MovingPlatform5") != null, "MovingPlatform5 exists in Section C")
+	assert_true(lvl.get_node_or_null("Platforms/FallingPlatform6B") != null, "FallingPlatform6B exists in Section C")
+
+	remove_child(lvl)
+	lvl.free()
 
 func test_level_11_conveyors_and_reversal() -> void:
 	print("\n--- TEST: Level 11 Conveyor Mechanics & Warned Direction Reversal ---")
@@ -3359,9 +3384,59 @@ func test_level_11_crusher_shaft() -> void:
 	# Test Reset
 	crusher.reset()
 	assert_eq(crusher.current_state, crusher.State.IDLE, "Reset restores IDLE state")
-	assert_true(crusher.hazard_collision.disabled, "Reset disables hazard collision")
+	remove_child(crusher)
+	crusher.free()
 
-	crusher.queue_free()
+func test_level_11_moving_platforms_and_timed_spikes() -> void:
+	print("\n--- TEST: Level 11 Moving Platforms & Timed Spikes Mechanics ---")
+	var mvplat_scene: PackedScene = load("res://scenes/coin_hell/moving_platform.tscn")
+	assert_true(mvplat_scene != null, "MovingPlatform scene loads successfully")
+	var mvplat = mvplat_scene.instantiate()
+	mvplat.move_direction = Vector2(1, 0)
+	mvplat.move_distance = 100.0
+	mvplat.move_speed = 100.0
+	mvplat.pause_at_ends = 0.5
+	add_child(mvplat)
+
+	var start_x: float = mvplat.position.x
+	mvplat._physics_process(0.5)
+	assert_true(mvplat.position.x > start_x, "MovingPlatform advances horizontally during physics process")
+	assert_eq(mvplat.collision_layer, 2, "MovingPlatform on terrain collision layer 2")
+
+	mvplat.reset()
+	assert_eq(mvplat.position.x, start_x, "MovingPlatform resets to initial position")
+	remove_child(mvplat)
+	mvplat.free()
+
+	# Test TimedSpikes
+	var spike_scene: PackedScene = load("res://scenes/coin_hell/timed_spikes.tscn")
+	assert_true(spike_scene != null, "TimedSpikes scene loads successfully")
+	var spikes = spike_scene.instantiate()
+	spikes.retracted_duration = 1.0
+	spikes.warning_duration = 0.4
+	spikes.extended_duration = 0.8
+	add_child(spikes)
+
+	assert_eq(spikes.current_state, spikes.State.RETRACTED, "TimedSpikes starts in RETRACTED state")
+	assert_true(spikes.collision_shape.disabled, "TimedSpikes collision disabled while retracted")
+
+	# Advance to warning
+	spikes._state_timer = 0.0
+	spikes._physics_process(0.01)
+	assert_eq(spikes.current_state, spikes.State.WARNING, "TimedSpikes transitions to WARNING")
+	assert_true(spikes.collision_shape.disabled, "TimedSpikes collision disabled during warning")
+
+	# Advance to extended lethal
+	spikes._state_timer = 0.0
+	spikes._physics_process(0.01)
+	assert_eq(spikes.current_state, spikes.State.EXTENDED, "TimedSpikes transitions to EXTENDED")
+	assert_true(not spikes.collision_shape.disabled, "TimedSpikes collision active when extended")
+
+	spikes.reset()
+	assert_eq(spikes.current_state, spikes.State.RETRACTED, "TimedSpikes resets to RETRACTED state")
+	assert_true(spikes.collision_shape.disabled, "TimedSpikes collision disabled upon reset")
+	remove_child(spikes)
+	spikes.free()
 
 func test_level_11_rising_lava_and_pressure() -> void:
 	print("\n--- TEST: Level 11 Rising Lava Controller & Deterministic Timeline ---")

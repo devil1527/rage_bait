@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3 uid="uid://dtmdspk11002"]
+
+[ext_resource type="Script" path="res://scripts/coin_hell/timed_spikes.gd" id="1_tmspk"]
+[ext_resource type="Texture2D" path="res://assets/sprites/spikes.png" id="2_spkspr"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_timed_spikes"]
+size = Vector2(28, 14)
+
+[node name="TimedSpikes" type="Area2D"]
+collision_layer = 4
+collision_mask = 1
+script = ExtResource("1_tmspk")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_spkspr")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 1)
+shape = SubResource("RectangleShape2D_timed_spikes")
