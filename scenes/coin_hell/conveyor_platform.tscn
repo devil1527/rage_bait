@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3 uid="uid://conveyor001lvl11"]
+
+[ext_resource type="Script" path="res://scripts/coin_hell/conveyor_platform.gd" id="1_conv"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_conv"]
+size = Vector2(140, 24)
+
+[node name="ConveyorPlatform" type="AnimatableBody2D"]
+collision_layer = 2
+collision_mask = 0
+sync_to_physics = false
+script = ExtResource("1_conv")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_conv")

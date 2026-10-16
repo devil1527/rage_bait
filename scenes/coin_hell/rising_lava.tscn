@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3 uid="uid://risinglava001lvl11"]
+
+[ext_resource type="Script" path="res://scripts/coin_hell/rising_lava.gd" id="1_lava"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lhaz"]
+size = Vector2(1400, 1400)
+
+[node name="RisingLava" type="Node2D"]
+script = ExtResource("1_lava")
+
+[node name="HazardArea" type="Area2D" parent="."]
+collision_layer = 4
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HazardArea"]
+position = Vector2(600, 700)
+shape = SubResource("RectangleShape2D_lhaz")

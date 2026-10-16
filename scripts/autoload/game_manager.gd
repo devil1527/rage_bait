@@ -32,7 +32,7 @@ var levels: Dictionary = {
 	8: {"id": 8, "name": "The Cursed Wind", "world_id": 2, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_8.tscn", "coin_count": 10},
 	9: {"id": 9, "name": "Chains of the Damned", "world_id": 2, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_9.tscn", "coin_count": 10},
 	10: {"id": 10, "name": "Haunted Survival", "world_id": 2, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_10.tscn", "coin_count": 10},
-	11: {"id": 11, "name": "The Long Way", "world_id": 3, "implemented": false, "scene": "", "coin_count": 20},
+	11: {"id": 11, "name": "Meltdown", "world_id": 3, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_11.tscn", "coin_count": 10},
 	12: {"id": 12, "name": "Double Trouble", "world_id": 3, "implemented": false, "scene": "", "coin_count": 14},
 	13: {"id": 13, "name": "The Coin Switch", "world_id": 3, "implemented": false, "scene": "", "coin_count": 12},
 	14: {"id": 14, "name": "Nothing Is Safe", "world_id": 3, "implemented": false, "scene": "", "coin_count": 16},

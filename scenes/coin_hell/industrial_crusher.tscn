@@ -1,0 +1,29 @@
+[gd_scene load_steps=4 format=3 uid="uid://indcrusher001lvl11"]
+
+[ext_resource type="Script" path="res://scripts/coin_hell/industrial_crusher.gd" id="1_crush"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_cbody"]
+size = Vector2(80, 36)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_chaz"]
+size = Vector2(76, 14)
+
+[node name="IndustrialCrusher" type="Node2D"]
+script = ExtResource("1_crush")
+
+[node name="CrusherBody" type="AnimatableBody2D" parent="."]
+collision_layer = 2
+collision_mask = 0
+sync_to_physics = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CrusherBody"]
+shape = SubResource("RectangleShape2D_cbody")
+
+[node name="HazardArea" type="Area2D" parent="CrusherBody"]
+collision_layer = 4
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CrusherBody/HazardArea"]
+position = Vector2(0, 12)
+shape = SubResource("RectangleShape2D_chaz")
+disabled = true

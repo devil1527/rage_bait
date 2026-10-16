@@ -18,6 +18,9 @@ const SurvivalArenaPlatformClass = preload("res://scripts/coin_hell/survival_are
 const SurpriseGhostChainClass = preload("res://scripts/coin_hell/surprise_ghost_chain.gd")
 const BossIntroOverlayClass = preload("res://scripts/coin_hell/boss_intro_overlay.gd")
 const BossVictoryOverlayClass = preload("res://scripts/coin_hell/boss_victory_overlay.gd")
+const ConveyorPlatformClass = preload("res://scripts/coin_hell/conveyor_platform.gd")
+const IndustrialCrusherClass = preload("res://scripts/coin_hell/industrial_crusher.gd")
+const RisingLavaClass = preload("res://scripts/coin_hell/rising_lava.gd")
 
 var passed_count: int = 0
 var failed_count: int = 0
@@ -83,6 +86,11 @@ func run_all_tests() -> void:
 	test_level_10_haunted_survival_gameplay()
 	test_level_10_anti_camping_and_rounds()
 	test_level_10_variable_hazard_positions_and_chains()
+	test_level_11_meltdown_gameplay()
+	test_level_11_conveyors_and_reversal()
+	test_level_11_crusher_shaft()
+	test_level_11_rising_lava_and_pressure()
+	test_level_11_lifecycle_and_reset()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -176,7 +184,14 @@ func test_game_manager_level_definitions() -> void:
 	assert_true(GameManager.can_play_level(10), "Level 10 is playable")
 	assert_eq(lvl10.get("coin_count"), 10, "Level 10 coin count is 10")
 	
-	for lvl_id in range(11, 21):
+	var lvl11: Dictionary = GameManager.get_level_info(11)
+	assert_eq(lvl11.get("name"), "Meltdown", "Level 11 name is 'Meltdown'")
+	assert_eq(GameManager.get_world_name_for_stage(11), "RAGE FACTORY", "Level 11 world is 'RAGE FACTORY'")
+	assert_true(lvl11.get("implemented"), "Level 11 is marked implemented")
+	assert_true(GameManager.can_play_level(11), "Level 11 is playable")
+	assert_eq(lvl11.get("coin_count"), 10, "Level 11 coin count is 10")
+	
+	for lvl_id in range(12, 21):
 		assert_true(not GameManager.can_play_level(lvl_id), "Level %d is marked not implemented" % lvl_id)
 		
 	# Test coin counter clamping
@@ -346,13 +361,19 @@ func test_level_select_logic_and_states() -> void:
 	assert_true(SaveManager.is_level_unlocked(10), "Level 10 is unlocked after completing Level 9")
 	assert_true(GameManager.can_play_level(10), "Level 10 is playable")
 
-	# Complete level 10 to unlock level 11 (World 3) and test unimplemented level press
+	# Complete level 10 to unlock level 11 (World 3) and verify Level 11 is playable
 	SaveManager.complete_level(10)
 	lsel._update_ui()
 	assert_true(SaveManager.is_level_unlocked(11), "Level 11 is unlocked after completing Level 10")
-	lsel._on_level_tile_pressed(11)
+	assert_true(GameManager.can_play_level(11), "Level 11 is playable")
+
+	# Complete level 11 to unlock level 12 and test unimplemented level press
+	SaveManager.complete_level(11)
+	lsel._update_ui()
+	assert_true(SaveManager.is_level_unlocked(12), "Level 12 is unlocked after completing Level 11")
+	lsel._on_level_tile_pressed(12)
 	assert_true(modal.visible, "Pressing unlocked but unimplemented level shows modal")
-	assert_eq(modal_label.text, "Level 11 is still being built. Replay an earlier level for now.", "Modal shows exact unimplemented level message")
+	assert_eq(modal_label.text, "Level 12 is still being built. Replay an earlier level for now.", "Modal shows exact unimplemented level message")
 	
 	lsel.queue_free()
 
@@ -1715,12 +1736,12 @@ func test_developer_only_level_access() -> void:
 	assert_true(lsel.message_modal.visible, "Locked modal dialog displayed")
 	assert_eq(lsel.modal_title.text, "LEVEL 6 IS LOCKED", "Modal explains Level 6 is locked")
 	
-	# Unimplemented level (e.g. Level 11) cannot be launched even with dev mode on
+	# Unimplemented level (e.g. Level 12) cannot be launched even with dev mode on
 	lsel._on_dev_toggle_pressed()
 	assert_true(lsel.dev_bypass_active, "Dev bypass toggled on")
-	lsel._on_level_tile_pressed(11)
-	assert_true(lsel.message_modal.visible, "Unimplemented Level 11 displays in-progress modal")
-	assert_eq(lsel.modal_title.text, "LEVEL 11 IN PROGRESS", "Modal indicates Level 11 is in progress")
+	lsel._on_level_tile_pressed(12)
+	assert_true(lsel.message_modal.visible, "Unimplemented Level 12 displays in-progress modal")
+	assert_eq(lsel.modal_title.text, "LEVEL 12 IN PROGRESS", "Modal indicates Level 12 is in progress")
 	
 	# Release mode simulation: verify that when is_debug_mode is false, bypass cannot be activated
 	lsel.dev_bypass_active = false
@@ -2911,9 +2932,9 @@ func test_level_10_haunted_survival_gameplay() -> void:
 	assert_eq(victory_overlay.subtitle_label.text, "60 SECONDS IN HELL!", "Victory displays '60 SECONDS IN HELL!'")
 	assert_eq(victory_overlay.world_complete_label.text, "WORLD 2 COMPLETE!", "Victory displays 'WORLD 2 COMPLETE!'")
 	
-	# Pressing World 3 on victory overlay displays in-progress modal for Level 11
-	victory_overlay._on_next_level_pressed()
-	assert_true(victory_overlay.message_modal.visible, "Next Level button shows World 3 in-progress modal")
+	# Pressing World 3 on victory overlay starts Level 11
+	assert_true(GameManager.can_play_level(11), "Next level (Level 11: Meltdown) is implemented and playable")
+	assert_eq(GameManager.get_world_name_for_stage(11), "RAGE FACTORY", "Next level belongs to World 3: RAGE FACTORY")
 	
 	# Test clean retry reset
 	print("  Validating Clean Reset on Death / Retry...")
@@ -3160,6 +3181,265 @@ func test_level_10_variable_hazard_positions_and_chains() -> void:
 			assert_true(5 - affected_pids.size() >= 2, "Variant %d wave at %.1fs guarantees at least 2 safe platforms" % [v, wave.get("time")])
 	
 	lvl_rand.queue_free()
+
+func test_level_11_meltdown_gameplay() -> void:
+	print("\n--- TEST: Level 11 'Meltdown' Core Layout & Exact Coin Placement ---")
+	var lvl11_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_11.tscn")
+	assert_true(lvl11_scene != null, "Level 11 scene loads successfully")
+	var lvl = lvl11_scene.instantiate()
+	add_child(lvl)
+
+	# Verify Player & Spawn Point
+	var player = lvl.get_node_or_null("Player")
+	assert_true(player != null, "Player instance exists in Level 11")
+	assert_true(player.is_in_group("player"), "Player is registered in group 'player'")
+	var spawn = lvl.get_node_or_null("SpawnPoint")
+	assert_true(spawn != null, "SpawnPoint marker exists in Level 11")
+	assert_eq(spawn.position, Vector2(120, 400), "SpawnPoint located at initial position (120, 400)")
+
+	# Verify Camera Bounds for Vertical Industrial Climb
+	var cam: Camera2D = lvl.get_node_or_null("Player/Camera2D")
+	assert_true(cam != null, "Camera2D attached to player")
+	assert_eq(cam.limit_left, 0, "Camera limit_left is 0")
+	assert_eq(cam.limit_bottom, 540, "Camera limit_bottom is 540")
+	assert_eq(cam.limit_top, -800, "Camera limit_top accommodates full ascent (-800)")
+	assert_true(cam.limit_right >= 1100, "Camera limit_right covers full factory width")
+
+	# Verify Exactly 10 Coins in Coins container
+	var coins = lvl.get_node_or_null("Coins")
+	assert_true(coins != null, "Coins container exists in Level 11")
+	assert_eq(coins.get_child_count(), 10, "Coins container contains exactly 10 collectible coins")
+
+	# Verify 7 Sections Coin Placement
+	var c1 = lvl.get_node_or_null("Coins/Coin1")
+	var c2 = lvl.get_node_or_null("Coins/Coin2")
+	var c3 = lvl.get_node_or_null("Coins/Coin3")
+	var c4 = lvl.get_node_or_null("Coins/Coin4")
+	var c5 = lvl.get_node_or_null("Coins/Coin5")
+	var c6 = lvl.get_node_or_null("Coins/Coin6")
+	var c7 = lvl.get_node_or_null("Coins/Coin7")
+	var c8 = lvl.get_node_or_null("Coins/Coin8")
+	var c9 = lvl.get_node_or_null("Coins/Coin9")
+	var c10 = lvl.get_node_or_null("Coins/Coin10")
+
+	assert_true(c1 != null and c2 != null, "Section 1: Furnace Entrance contains Coins 1 and 2")
+	assert_eq(c1.position, Vector2(260, 340), "Coin 1 positioned above Platform 1 (260, 340)")
+	assert_eq(c2.position, Vector2(380, 300), "Coin 2 positioned above Platform 2 (380, 300)")
+
+	assert_true(c3 != null and c4 != null, "Section 2: Conveyor Crossing contains Coins 3 and 4")
+	assert_eq(c3.position, Vector2(530, 260), "Coin 3 positioned above Conveyor 1 (530, 260)")
+	assert_eq(c4.position, Vector2(810, 170), "Coin 4 positioned above Conveyor 2 (810, 170)")
+
+	assert_true(c5 != null, "Section 3: Rising Pressure contains Coin 5")
+	assert_eq(c5.position, Vector2(670, 0), "Coin 5 positioned on ascending path Platform 3C (670, 0)")
+
+	assert_true(c6 != null and c7 != null, "Section 4: Crusher Shaft contains Coins 6 and 7")
+	assert_eq(c6.position, Vector2(460, -90), "Coin 6 positioned at crusher corridor entry (460, -90)")
+	assert_eq(c7.position, Vector2(320, -90), "Coin 7 positioned at crusher corridor exit (320, -90)")
+
+	assert_true(c8 != null and c9 != null, "Section 5: Greed Is Expensive contains Coins 8 and 9")
+	assert_eq(c8.position, Vector2(270, -260), "Coin 8 positioned on main upward route Platform 5A (270, -260)")
+	assert_eq(c9.position, Vector2(550, -320), "Coin 9 positioned on risky greed detour Platform D2 (550, -320)")
+
+	assert_true(c10 != null, "Section 6: Meltdown contains Coin 10")
+	assert_eq(c10.position, Vector2(540, -540), "Coin 10 positioned on upper escape route Platform 6C (540, -540)")
+
+	# Verify Section 7: Emergency Exit & Gate
+	var exit = lvl.get_node_or_null("ExitGate")
+	assert_true(exit != null, "Section 7: Emergency Exit Gate exists")
+	assert_eq(exit.position, Vector2(140, -690), "Exit Gate positioned atop final exit platform (140, -690)")
+	assert_true(not exit._is_open, "Exit Gate starts locked")
+
+	lvl.queue_free()
+
+func test_level_11_conveyors_and_reversal() -> void:
+	print("\n--- TEST: Level 11 Conveyor Mechanics & Warned Direction Reversal ---")
+	var conv_scene: PackedScene = load("res://scenes/coin_hell/conveyor_platform.tscn")
+	assert_true(conv_scene != null, "ConveyorPlatform scene loads successfully")
+
+	# Test Standard Conveyor (Conveyor 1)
+	var conv1 = conv_scene.instantiate()
+	conv1.belt_speed = 100.0
+	conv1.can_reverse = false
+	add_child(conv1)
+	assert_eq(conv1.constant_linear_velocity.x, 100.0, "Conveyor 1 applies positive horizontal velocity (100 px/s)")
+	assert_eq(conv1.collision_layer, 2, "Conveyor on collision layer 2 (terrain)")
+
+	# Test Reversing Conveyor (Conveyor 2)
+	var conv2 = conv_scene.instantiate()
+	conv2.belt_speed = -90.0
+	conv2.can_reverse = true
+	conv2.reversal_time = 5.5
+	conv2.warning_duration = 1.2
+	conv2.reversed_speed = 110.0
+	add_child(conv2)
+
+	assert_eq(conv2.constant_linear_velocity.x, -90.0, "Conveyor 2 initially moves left (-90 px/s)")
+	assert_true(not conv2._is_reversing_warning, "Reversal warning inactive at t=0s")
+	assert_true(not conv2._has_reversed, "Reversal uncompleted at t=0s")
+
+	# Advance before warning window (t=4.0s < 4.3s)
+	conv2._physics_process(4.0)
+	assert_true(not conv2._is_reversing_warning, "At t=4.0s before warning window, warning is inactive")
+	assert_eq(conv2.constant_linear_velocity.x, -90.0, "Velocity remains -90 px/s before warning")
+
+	# Advance into warning window (t=4.5s >= 4.3s)
+	conv2._physics_process(0.5)
+	assert_true(conv2._is_reversing_warning, "At t=4.5s in warning window, warning beacon activates")
+	assert_true(not conv2._has_reversed, "Direction not yet reversed during warning window")
+
+	# Advance past reversal threshold (t=5.6s > 5.5s)
+	conv2._physics_process(1.1)
+	assert_true(conv2._has_reversed, "At t=5.6s, reversal completes successfully")
+	assert_true(not conv2._is_reversing_warning, "Warning state clears after reversal")
+	assert_eq(conv2.constant_linear_velocity.x, 110.0, "Velocity reverses to +110 px/s")
+
+	# Test Clean Reset
+	conv2.reset()
+	assert_eq(conv2.constant_linear_velocity.x, -90.0, "Reset restores initial speed (-90 px/s)")
+	assert_true(not conv2._has_reversed, "Reset clears reversed flag")
+	assert_true(not conv2._is_reversing_warning, "Reset clears warning flag")
+	assert_eq(conv2._elapsed_time, 0.0, "Reset clears elapsed timer")
+
+	conv1.queue_free()
+	conv2.queue_free()
+
+func test_level_11_crusher_shaft() -> void:
+	print("\n--- TEST: Level 11 Industrial Crusher State Machine & Timing ---")
+	var crush_scene: PackedScene = load("res://scenes/coin_hell/industrial_crusher.tscn")
+	assert_true(crush_scene != null, "IndustrialCrusher scene loads successfully")
+	var crusher = crush_scene.instantiate()
+	crusher.travel_distance = 120.0
+	crusher.warning_duration = 0.7
+	crusher.slam_duration = 0.15
+	crusher.active_duration = 0.6
+	crusher.retract_duration = 0.9
+	crusher.reset_delay = 0.4
+	crusher.auto_cycle = true
+	add_child(crusher)
+
+	assert_eq(crusher.current_state, crusher.State.IDLE, "Crusher initially starts in IDLE state")
+	assert_true(crusher.hazard_collision.disabled, "Lethal hazard disabled while retracted/idle")
+
+	# Advance into WARNING state
+	crusher._physics_process(0.01)
+	assert_eq(crusher.current_state, crusher.State.WARNING, "Auto-cycle transitions to WARNING")
+	assert_true(crusher.hazard_collision.disabled, "Lethal hazard disabled during warning tremor")
+
+	# Warning duration (0.7s) gives player sufficient time to react
+	assert_true(crusher.warning_duration >= 0.6, "Warning duration is at least 0.6s for fairness")
+
+	# Safe passing window while retracted/idle is > 1.8s
+	var safe_window: float = crusher.warning_duration + crusher.retract_duration + crusher.reset_delay
+	assert_true(safe_window >= 1.8, "Total non-lethal window (%.2fs) allows safe crossing (needs ~0.35s)" % safe_window)
+
+	# Trigger slam descent
+	crusher._state_timer = 0.0
+	crusher._physics_process(0.01)
+	assert_eq(crusher.current_state, crusher.State.DESCENDING, "Transitions to DESCENDING slam")
+	assert_true(not crusher.hazard_collision.disabled, "Lethal hazard active during slam")
+
+	# Test Reset
+	crusher.reset()
+	assert_eq(crusher.current_state, crusher.State.IDLE, "Reset restores IDLE state")
+	assert_true(crusher.hazard_collision.disabled, "Reset disables hazard collision")
+
+	crusher.queue_free()
+
+func test_level_11_rising_lava_and_pressure() -> void:
+	print("\n--- TEST: Level 11 Rising Lava Controller & Deterministic Timeline ---")
+	var lava_scene: PackedScene = load("res://scenes/coin_hell/rising_lava.tscn")
+	assert_true(lava_scene != null, "RisingLava scene loads successfully")
+	var lava = lava_scene.instantiate()
+	lava.initial_y = 510.0
+	lava.max_height_y = -480.0
+	add_child(lava)
+
+	# Phase 1: Warning at 510.0 (t < 3s)
+	assert_eq(lava._calculate_surface_height(0.0), 510.0, "Lava starts at initial height Y=510")
+	assert_eq(lava._calculate_surface_height(2.5), 510.0, "Lava remains at 510 during warning phase")
+
+	# Phase 2: Initial Rise to 360.0 (3s <= t < 12s)
+	var y_7s: float = lava._calculate_surface_height(7.5)
+	assert_true(y_7s < 510.0 and y_7s > 360.0, "Lava rises between 510 and 360 during Phase 2")
+	assert_eq(lava._calculate_surface_height(12.0), 360.0, "Lava reaches 360 at t=12s")
+
+	# Phase 3: Steady Rise to 160.0 (12s <= t < 24s)
+	assert_eq(lava._calculate_surface_height(24.0), 160.0, "Lava reaches 160 at t=24s")
+
+	# Phase 4: Ascent to -60.0 (24s <= t < 42s)
+	assert_eq(lava._calculate_surface_height(42.0), -60.0, "Lava reaches -60 at t=42s")
+
+	# Phase 5: Greed Window to -220.0 (42s <= t < 60s)
+	assert_eq(lava._calculate_surface_height(60.0), -220.0, "Lava reaches -220 at t=60s")
+
+	# Phase 6: Meltdown Final Surge to -480.0 (60s <= t < 80s)
+	assert_eq(lava._calculate_surface_height(80.0), -480.0, "Lava reaches -480 at t=80s")
+	assert_eq(lava._calculate_surface_height(120.0), -480.0, "Lava capped strictly at max_height_y (-480)")
+
+	# Safety Verification: Exit platform is at Y=-650.0 and Exit Gate is at Y=-690.0.
+	# Max lava height (-480.0) is at least 170px below the exit platform!
+	assert_true(lava.max_height_y > -650.0, "Lava ceiling (-480) is well below exit platform (-650), exit never blocked")
+
+	# Lethal contact test with player
+	var player_scene: PackedScene = load("res://scenes/coin_hell/player.tscn")
+	var player = player_scene.instantiate()
+	add_child(player)
+	player.global_position = Vector2(200, 520) # Inside lava
+	lava._physics_process(0.01)
+	assert_true(not player._is_alive, "Player touching molten lava dies immediately")
+
+	# Test Clean Reset
+	lava.reset()
+	assert_eq(lava.current_surface_y, 510.0, "Reset restores lava surface to initial Y=510")
+	assert_eq(lava.get_lava_progress_percentage(), 0.0, "Reset restores progress percentage to 0%")
+
+	remove_child(player)
+	player.free()
+	remove_child(lava)
+	lava.free()
+
+func test_level_11_lifecycle_and_reset() -> void:
+	print("\n--- TEST: Level 11 Gameplay Lifecycle, Completion, and Full Reset ---")
+	var lvl11_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_11.tscn")
+	var lvl = lvl11_scene.instantiate()
+	add_child(lvl)
+
+	# Coin collection progression
+	GameManager.current_level_id = 11
+	GameManager.total_coins_required = 10
+	GameManager.reset_coins()
+	assert_eq(GameManager.current_coins, 0, "Coins initially 0")
+	assert_true(not lvl.exit_gate._is_open, "Exit Gate starts locked")
+
+	# Collect all 10 coins
+	for i in range(10):
+		GameManager.collect_coin()
+
+	assert_eq(GameManager.current_coins, 10, "10 coins collected")
+	assert_true(GameManager.are_all_coins_collected(), "All 10 required coins collected")
+	assert_true(lvl.exit_gate._is_open, "Exit Gate unlocks upon collecting all 10 coins")
+
+	# Completing Level 11 unlocks Level 12 in SaveManager
+	SaveManager.complete_level(11)
+	assert_true(SaveManager.is_level_completed(11), "Level 11 marked completed in SaveManager")
+	assert_true(SaveManager.is_level_unlocked(12), "Level 12 unlocked after completing Level 11")
+	assert_true(not SaveManager.is_level_unlocked(13), "Level 13 remains locked")
+
+	# Full Retry Reset Verification
+	print("  Validating Full Reset on Death / Retry in Level 11...")
+	lvl._on_retry()
+	assert_eq(GameManager.current_coins, 0, "Retry resets coins to 0")
+	assert_eq(lvl.coin_counter_label.text, "COINS: 0 / 10", "HUD coin counter resets to 'COINS: 0 / 10'")
+	assert_true(lvl.player._is_alive, "Player revived at spawn point")
+	assert_eq(lvl.player.global_position, lvl.spawn_point.global_position, "Player returned to spawn position")
+	assert_eq(lvl.rising_lava.current_surface_y, 510.0, "Lava reset to initial Y=510")
+	assert_true(not lvl.death_overlay.visible, "Death overlay hidden on retry")
+	assert_true(not lvl.level_complete_overlay.visible, "Level complete overlay hidden on retry")
+	assert_true(not lvl.pause_overlay.visible, "Pause overlay hidden on retry")
+
+	remove_child(lvl)
+	lvl.free()
 
 
 
