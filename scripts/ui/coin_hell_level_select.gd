@@ -102,8 +102,68 @@ func _ready() -> void:
 		dev_toggle_btn.pressed.connect(_on_dev_toggle_pressed)
 		header_bar.add_child(dev_toggle_btn)
 
+	_setup_secret_developer_tap()
 	_build_level_tiles()
 	_update_ui()
+
+var _secret_tap_count: int = 0
+var _secret_tap_last_time: float = 0.0
+
+func _setup_secret_developer_tap() -> void:
+	var title_box: VBoxContainer = get_node_or_null("MarginContainer/VBox/HeaderBar/TitleBox")
+	if title_box:
+		title_box.mouse_filter = Control.MOUSE_FILTER_STOP
+		title_box.gui_input.connect(_on_secret_tap_input)
+		for child in title_box.get_children():
+			if child is Control:
+				child.mouse_filter = Control.MOUSE_FILTER_PASS
+
+	var progress_box: VBoxContainer = get_node_or_null("MarginContainer/VBox/HeaderBar/ProgressBox")
+	if progress_box:
+		progress_box.mouse_filter = Control.MOUSE_FILTER_STOP
+		progress_box.gui_input.connect(_on_secret_tap_input)
+		for child in progress_box.get_children():
+			if child is Control:
+				child.mouse_filter = Control.MOUSE_FILTER_PASS
+
+func _on_secret_tap_input(event: InputEvent) -> void:
+	var is_tap := false
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		is_tap = true
+	elif event is InputEventScreenTouch and event.pressed:
+		is_tap = true
+
+	if is_tap:
+		var now := Time.get_ticks_msec() / 1000.0
+		if now - _secret_tap_last_time > 2.5:
+			_secret_tap_count = 0
+		_secret_tap_last_time = now
+		_secret_tap_count += 1
+
+		if _secret_tap_count >= 5:
+			_secret_tap_count = 0
+			_activate_dev_mode_secret()
+
+func _activate_dev_mode_secret() -> void:
+	is_debug_mode = true
+	dev_bypass_active = true
+
+	if not dev_toggle_btn:
+		var header_bar: HBoxContainer = $MarginContainer/VBox/HeaderBar
+		dev_toggle_btn = Button.new()
+		dev_toggle_btn.name = "DevBypassToggle"
+		dev_toggle_btn.custom_minimum_size = Vector2(130, 36)
+		dev_toggle_btn.add_theme_font_size_override("font_size", 11)
+		dev_toggle_btn.pressed.connect(_on_dev_toggle_pressed)
+		header_bar.add_child(dev_toggle_btn)
+
+	_update_dev_button_text()
+	_refresh_tile_states()
+	AudioManager.play_sfx("coin")
+
+	modal_title.text = "🛠 DEV MODE UNLOCKED"
+	modal_label.text = "Developer bypass active! All implemented levels (including Level 11: Meltdown) are unlocked for testing."
+	message_modal.visible = true
 
 func _update_dev_button_text() -> void:
 	if not dev_toggle_btn:

@@ -1752,6 +1752,23 @@ func test_developer_only_level_access() -> void:
 	lsel._on_level_tile_pressed(6)
 	assert_eq(GameManager.current_level_id, 1, "In release mode, locked level cannot be launched")
 	assert_true(lsel.message_modal.visible, "Locked modal dialog displayed in release mode")
+	lsel.message_modal.visible = false
+
+	# Secret developer tap unlock: 5 taps activates dev mode even from release mode
+	var tap_event := InputEventMouseButton.new()
+	tap_event.pressed = true
+	tap_event.button_index = MOUSE_BUTTON_LEFT
+	for i in range(5):
+		lsel._on_secret_tap_input(tap_event)
+	assert_true(lsel.is_debug_mode, "Secret 5-tap gesture activates debug mode")
+	assert_true(lsel.dev_bypass_active, "Secret 5-tap gesture activates dev bypass")
+	assert_true(lsel.message_modal.visible, "Dev mode unlocked modal displayed")
+	assert_eq(lsel.modal_title.text, "🛠 DEV MODE UNLOCKED", "Modal title confirms dev mode unlocked")
+	lsel.message_modal.visible = false
+
+	# With bypass active from secret gesture, Level 11 can now be launched!
+	lsel._on_level_tile_pressed(11)
+	assert_eq(GameManager.current_level_id, 11, "Level 11 launches directly after secret dev unlock")
 	
 	lsel.queue_free()
 
