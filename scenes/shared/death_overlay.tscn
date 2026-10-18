@@ -34,24 +34,24 @@ grow_vertical = 2
 color = Color(0.2, 0, 0, 0.6)
 
 [node name="Panel" type="PanelContainer" parent="."]
-custom_minimum_size = Vector2(360, 260)
+custom_minimum_size = Vector2(380, 310)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -180.0
-offset_top = -130.0
-offset_right = 180.0
-offset_bottom = 130.0
+offset_left = -190.0
+offset_top = -155.0
+offset_right = 190.0
+offset_bottom = 155.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="VBox" type="VBoxContainer" parent="Panel"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 alignment = 1
 
 [node name="Title" type="Label" parent="Panel/VBox"]
@@ -71,14 +71,28 @@ theme_override_font_sizes/font_size = 13
 text = "Trust is a luxury you cannot afford."
 horizontal_alignment = 1
 
-[node name="RetryBtn" type="Button" parent="Panel/VBox"]
-custom_minimum_size = Vector2(220, 42)
+[node name="ReviveBtn" type="Button" parent="Panel/VBox"]
+custom_minimum_size = Vector2(240, 42)
 layout_mode = 2
 size_flags_horizontal = 4
-text = "↺ RETRY LEVEL"
+theme_override_colors/font_color = Color(0.95, 1, 0.95, 1)
+text = "🎬 WATCH AD — REVIVE"
+
+[node name="AdStatusLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.9, 0.7, 0.9)
+theme_override_font_sizes/font_size = 11
+text = "Watch a short ad to revive here"
+horizontal_alignment = 1
+
+[node name="RetryBtn" type="Button" parent="Panel/VBox"]
+custom_minimum_size = Vector2(240, 42)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "↺ RESTART LEVEL"
 
 [node name="LevelSelectBtn" type="Button" parent="Panel/VBox"]
-custom_minimum_size = Vector2(220, 42)
+custom_minimum_size = Vector2(240, 42)
 layout_mode = 2
 size_flags_horizontal = 4
 text = "☰ LEVEL SELECT"

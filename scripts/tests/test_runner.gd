@@ -92,6 +92,8 @@ func run_all_tests() -> void:
 	test_level_11_moving_platforms_and_timed_spikes()
 	test_level_11_rising_lava_and_pressure()
 	test_level_11_lifecycle_and_reset()
+	test_level_1_invisible_spike_death_fix()
+	test_rewarded_revive_ad_system()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -3530,6 +3532,154 @@ func test_level_11_lifecycle_and_reset() -> void:
 	assert_true(not lvl.level_complete_overlay.visible, "Level complete overlay hidden on retry")
 	assert_true(not lvl.pause_overlay.visible, "Pause overlay hidden on retry")
 
+	remove_child(lvl)
+	lvl.free()
+
+func test_level_1_invisible_spike_death_fix() -> void:
+	print("\n--- TEST: Level 1 Invisible Spike Death Reproduction & Fix ---")
+	var lvl1_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_1.tscn")
+	assert_true(lvl1_scene != null, "Level 1 scene loads successfully")
+	var lvl = lvl1_scene.instantiate()
+	add_child(lvl)
+
+	var player = lvl.get_node("Player")
+	var plat4 = lvl.get_node("Platforms/Platform4")
+	var coin8 = lvl.get_node("Coins/Coin8")
+	var coins_container = lvl.get_node("Coins")
+	var exit_gate = lvl.get_node("ExitGate")
+
+	assert_true(coin8 != null, "Coin 8 exists in Level 1")
+	assert_eq(coin8.position, Vector2(1380, 255), "Coin 8 positioned at (1380, 255) above Platform 4")
+	assert_eq(plat4.position, Vector2(1380, 330), "Platform 4 positioned at (1380, 330)")
+
+	# 1. Verify Platform 4 initial harmless state
+	assert_true(not plat4._triggered, "Platform 4 trap is initially un-triggered")
+	assert_true(not plat4._active_spikes, "Platform 4 spikes are initially inactive")
+	assert_true(not plat4.spikes_sprite.visible, "Spikes sprite is initially hidden before trigger")
+	assert_true(plat4.spikes_collision.disabled, "Spikes collision is initially disabled")
+	assert_true(plat4.spikes_sprite.z_index >= 2, "Spikes sprite z-index is set to at least 2 to ensure rendering above platform")
+	assert_eq(plat4.spikes_sprite.position.y, plat4.spikes_collision.position.y, "Initial spike sprite position agrees with collision position")
+
+	# 2. Trigger Platform 4 and verify immediate visual emergence and collision agreement
+	plat4.trigger_trap()
+	assert_true(plat4._triggered, "Platform 4 trap triggers on approach")
+	assert_true(plat4._active_spikes, "Platform 4 spikes become active")
+	assert_true(plat4.spikes_sprite.visible, "Spikes sprite is visible once emerged")
+	assert_true(not plat4.spikes_collision.disabled, "Spikes collision is enabled once emerged")
+	assert_eq(plat4.spikes_sprite.position.y, -14.0, "Spikes sprite is positioned at -14.0, protruding above platform surface")
+	assert_eq(plat4.spikes_collision.position.y, -14.0, "Spikes collision agrees with sprite position (-14.0)")
+	assert_true(plat4.spikes_sprite.z_index >= 2, "Spikes sprite renders in front of platform surface")
+
+	# 3. Verify safe edges vs lethal center
+	# Platform 4 width is 120 (bounds x: 1320 to 1440). Spikes width is 34 (bounds x: 1363 to 1397).
+	# Landing on left edge (x=1335) should NOT die
+	player.reset_to(Vector2(1335, 304))
+	plat4._check_spike_collision()
+	assert_true(player._is_alive, "Player survives standing on left edge of Platform 4")
+
+	# Landing on lethal center where spikes protrude (x=1380) should die to visible spikes
+	player.reset_to(Vector2(1380, 304))
+	plat4._check_spike_collision()
+	assert_true(not player._is_alive, "Player dies when touching emerged spikes in center")
+	assert_true(plat4.spikes_sprite.visible, "Spikes were visible at the moment of death")
+
+	# 4. Verify all 10 coins are collectible and exit unlocks
+	lvl._on_retry()
+	assert_true(player._is_alive, "Player alive after retry")
+	for i in range(1, 11):
+		var c = coins_container.get_node("Coin%d" % i)
+		assert_true(c != null, "Coin %d exists" % i)
+		c.collect()
+	assert_eq(GameManager.current_coins, 10, "All 10 coins collected")
+	assert_true(exit_gate._is_open, "Exit Gate unlocked after collecting all 10 coins")
+
+	remove_child(lvl)
+	lvl.free()
+
+func test_rewarded_revive_ad_system() -> void:
+	print("\n--- TEST: Centralized Rewarded Revive Ad System ---")
+
+	# Test 1: Offline / Ad Unavailable default behavior
+	AdManager.disable_mock_mode()
+	assert_true(not AdManager.is_rewarded_ad_ready(), "Ad is not ready without native plugin or mock mode")
+
+	var lvl1_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_1.tscn")
+	var lvl = lvl1_scene.instantiate()
+	add_child(lvl)
+	var player = lvl.get_node("Player")
+	var death_overlay = lvl.death_overlay
+
+	death_overlay.open()
+	assert_true(death_overlay.revive_btn.disabled, "Revive button is disabled when ad is unavailable")
+	assert_true(not death_overlay.retry_btn.disabled, "Restart Level button is always enabled and available")
+	assert_true("offline" in death_overlay.ad_status_label.text.to_lower() or "not ready" in death_overlay.ad_status_label.text.to_lower() or "unavailable" in death_overlay.ad_status_label.text.to_lower(), "Status label indicates ad is unavailable")
+	death_overlay.visible = false
+
+	# Test 2: Enable mock mode for deterministic transaction verification
+	AdManager.enable_mock_mode(true)
+	assert_true(AdManager.is_rewarded_ad_ready(), "Rewarded ad is ready in mock mode")
+
+	# Test 3: Successful ad flow with verified reward -> Exactly one revive
+	GameManager.current_coins = 4
+	player.global_position = Vector2(1380, 304)
+	player.die()
+	assert_true(not player._is_alive, "Player is dead before revive")
+	assert_eq(GameManager.current_coins, 4, "4 coins collected prior to death")
+
+	death_overlay.open()
+	assert_true(not death_overlay.revive_btn.disabled, "Revive button is enabled when ad is ready")
+
+	# Press Watch Ad - Revive
+	death_overlay._on_revive_pressed()
+	assert_true(death_overlay.revive_btn.disabled, "Revive button disabled during ad playback")
+	assert_true(death_overlay.retry_btn.disabled, "Retry button disabled during ad playback")
+
+	# Authoritative reward callback
+	AdManager.simulate_mock_reward("Revive", 1)
+	assert_true(player._is_alive, "Player successfully revived after verified ad reward")
+	assert_true(player.is_invulnerable, "Spawn protection active immediately after revive")
+	assert_eq(GameManager.current_coins, 4, "Collected coins are preserved on revive (not reset)")
+	assert_true(not death_overlay.visible, "Death overlay closed upon successful revive")
+	assert_true(player.global_position.y < 500.0, "Player respawned at safe height clear of pit")
+
+	# Test 4: Bounded spawn protection expires
+	for _i in range(70):
+		player._physics_process(0.016)
+	assert_true(not player.is_invulnerable, "Spawn protection expires after bounded duration")
+
+	# Test 5: Ad dismissed without reward -> No revive granted
+	player.die()
+	death_overlay.open()
+	death_overlay._on_revive_pressed()
+	AdManager.simulate_mock_dismiss_without_reward()
+	assert_true(not player._is_alive, "Player is NOT revived if ad is dismissed without reward")
+	assert_true(not death_overlay.retry_btn.disabled, "Restart Level remains available after failed ad")
+	assert_true("closed" in death_overlay.ad_status_label.text.to_lower() or "failed" in death_overlay.ad_status_label.text.to_lower(), "Failure explanation displayed to player")
+
+	# Test 6: Duplicate reward callback protection
+	# Setup active revive flow
+	death_overlay._on_revive_pressed()
+	AdManager.simulate_mock_reward("Revive", 1)
+	assert_true(player._is_alive, "Player revived from ad")
+	var initial_revives: int = GameManager.revives_used_this_death
+	# Stray duplicate callback
+	AdManager.simulate_mock_duplicate_reward_callback()
+	assert_eq(GameManager.revives_used_this_death, initial_revives, "Duplicate reward callback safely discarded without duplicate revive")
+
+	# Test 7: Restart during ad request cancels stale callback
+	player.die()
+	death_overlay.open()
+	death_overlay._on_revive_pressed()
+	# Player decides not to wait and clicks Restart
+	death_overlay._on_retry_pressed()
+	assert_true(not death_overlay.visible, "Death overlay closed on restart")
+	# Late delayed callback arrives after restart
+	AdManager.simulate_mock_reward("Revive", 1)
+	# Player is at spawn from restart, not revived mid-run
+	assert_true(not AdManager._transaction_in_progress, "Stale transaction cancelled cleanly on retry")
+
+	# Clean up
+	AdManager.disable_mock_mode()
 	remove_child(lvl)
 	lvl.free()
 

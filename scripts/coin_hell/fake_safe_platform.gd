@@ -35,11 +35,13 @@ func _setup_initial_spikes_state() -> void:
 	_active_spikes = false
 	if spikes_sprite:
 		spikes_sprite.visible = false
-		spikes_sprite.position.y = 12.0  # Fully concealed inside platform
+		spikes_sprite.position.y = -14.0  # Fully aligned with spike collision shape
+		spikes_sprite.z_index = 2         # Ensure spikes render in front of platform graphics
+		spikes_sprite.scale = Vector2.ONE
 		spikes_sprite.modulate = Color(1.0, 0.2, 0.2, 1.0)
 	if spikes_collision:
 		spikes_collision.disabled = true
-		spikes_collision.position.y = 12.0
+		spikes_collision.position.y = -14.0
 
 func _physics_process(_delta: float) -> void:
 	if _active_spikes:
@@ -57,17 +59,19 @@ func trigger_trap() -> void:
 	trap_triggered.emit()
 	AudioManager.play_sfx("warning")
 	
-	# Activate collision matching the emerged spikes
+	# Make spikes artwork fully visible above platform before/during collision check
+	if spikes_sprite:
+		spikes_sprite.visible = true
+		spikes_sprite.position.y = -14.0
+		spikes_sprite.z_index = 2
+		spikes_sprite.scale = Vector2(1.15, 1.25)
+		var tween := create_tween()
+		tween.tween_property(spikes_sprite, "scale", Vector2.ONE, 0.06)
+	
+	# Activate collision matching the emerged spikes exactly
 	if spikes_collision:
 		spikes_collision.disabled = false
 		spikes_collision.position.y = -14.0
-	
-	# Immediate fast emergence animation (no pre-warning, no countdown)
-	if spikes_sprite:
-		spikes_sprite.visible = true
-		spikes_sprite.position.y = 10.0
-		var tween := create_tween()
-		tween.tween_property(spikes_sprite, "position:y", -14.0, 0.05)
 	
 	# Immediate lethality check for any player already touching or in the trap area
 	_check_spike_collision()

@@ -21,6 +21,10 @@ var _was_on_floor: bool = false
 var _is_alive: bool = true
 var _input_disabled: bool = false
 
+# Temporary spawn protection / invulnerability (used during rewarded revive)
+var is_invulnerable: bool = false
+var _invulnerability_timer: float = 0.0
+
 # Virtual touch input flags
 var touch_left: bool = false
 var touch_right: bool = false
@@ -36,14 +40,31 @@ var wind_velocity: float = 0.0
 
 func _ready() -> void:
 	add_to_group("player")
+	if GameManager:
+		GameManager.register_player(self)
 
 func _physics_process(delta: float) -> void:
+	# Process bounded spawn protection countdown & visual flicker
+	if _invulnerability_timer > 0.0:
+		_invulnerability_timer = maxf(0.0, _invulnerability_timer - delta)
+		if _invulnerability_timer <= 0.0:
+			is_invulnerable = false
+			if sprite:
+				sprite.modulate.a = 1.0
+		else:
+			if sprite:
+				sprite.modulate.a = 0.35 if int(_invulnerability_timer * 18.0) % 2 == 0 else 0.95
+
 	if not _is_alive or _input_disabled:
 		velocity.x = move_toward(velocity.x, 0.0, friction * delta)
 		if not is_on_floor():
 			velocity.y += gravity * delta
 		move_and_slide()
 		return
+
+	# Record safe foothold position when stably resting on ground
+	if is_on_floor() and not is_invulnerable and GameManager:
+		GameManager.record_safe_position(global_position)
 
 	# Handle gravity
 	if not is_on_floor():
@@ -100,7 +121,7 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 func die() -> void:
-	if not _is_alive:
+	if not _is_alive or is_invulnerable:
 		return
 	_is_alive = false
 	_input_disabled = true
@@ -116,6 +137,8 @@ func die() -> void:
 	velocity = Vector2.ZERO
 	# Small death hop
 	velocity.y = -200.0
+	if GameManager:
+		GameManager.record_death_position(global_position)
 	player_died.emit()
 	GameManager.trigger_player_death()
 
@@ -132,9 +155,15 @@ func disable_input() -> void:
 	Input.action_release("jump")
 	velocity.x = 0.0
 
+func apply_spawn_protection(duration: float = 1.0) -> void:
+	is_invulnerable = true
+	_invulnerability_timer = duration
+
 func revive() -> void:
 	_is_alive = true
 	_input_disabled = false
+	is_invulnerable = false
+	_invulnerability_timer = 0.0
 	wind_velocity = 0.0
 	velocity = Vector2.ZERO
 	_coyote_timer = 0.0
@@ -149,6 +178,7 @@ func revive() -> void:
 	Input.action_release("jump")
 	if sprite:
 		sprite.flip_h = false
+		sprite.modulate.a = 1.0
 
 func reset_to(spawn_position: Vector2) -> void:
 	global_position = spawn_position

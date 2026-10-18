@@ -1,0 +1,8 @@
+{
+  "test_mode": true,
+  "app_id_test": "ca-app-pub-3940256099942544~3347511713",
+  "app_id_production": "ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX",
+  "rewarded_ad_unit_id_test": "ca-app-pub-3940256099942544/5224354917",
+  "rewarded_ad_unit_id_production": "ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX",
+  "notes": "Set test_mode to false and insert valid AdMob IDs before publishing production releases. Never test with production ad units."
+}

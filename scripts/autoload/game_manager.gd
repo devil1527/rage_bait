@@ -5,12 +5,19 @@ extends Node
 signal coin_collected(current: int, total: int)
 signal level_completed(level_id: int)
 signal player_died
+signal player_revived(position: Vector2)
 signal coins_reset
 
 var current_level_id: int = 1
 var current_coins: int = 0
 var total_coins_required: int = 10
 var is_gameplay_active: bool = false
+
+# Player reference and revive tracking
+var active_player: CharacterBody2D = null
+var last_safe_position: Vector2 = Vector2.ZERO
+var last_death_position: Vector2 = Vector2.ZERO
+var revives_used_this_death: int = 0
 
 # 4 Worlds definitions organizing all 20 planned stages
 var worlds: Dictionary = {
@@ -138,7 +145,67 @@ func trigger_level_complete() -> void:
 
 func trigger_player_death() -> void:
 	AudioManager.play_sfx("death")
+	# A new death resets the revive eligibility for this specific death event
+	revives_used_this_death = 0
 	player_died.emit()
+
+func register_player(p: CharacterBody2D) -> void:
+	active_player = p
+	if not p.tree_exiting.is_connected(_on_player_tree_exiting):
+		p.tree_exiting.connect(_on_player_tree_exiting)
+
+func _on_player_tree_exiting() -> void:
+	active_player = null
+
+func record_safe_position(pos: Vector2) -> void:
+	# Keep track of solid ground location above pits
+	if pos.y < 510.0:
+		last_safe_position = pos
+
+func record_death_position(pos: Vector2) -> void:
+	last_death_position = pos
+
+func find_safe_revive_position(death_pos: Vector2) -> Vector2:
+	# Priority 1: Use last stable grounded safe foothold if available
+	if last_safe_position != Vector2.ZERO and last_safe_position.y < 510.0:
+		return last_safe_position
+
+	# Priority 2: Use level SpawnPoint if available
+	var players := get_tree().get_nodes_in_group("player")
+	if players.size() > 0:
+		var p = players[0]
+		if p.get_parent():
+			var spawn_node = p.get_parent().get_node_or_null("SpawnPoint")
+			if spawn_node is Marker2D or spawn_node is Node2D:
+				return spawn_node.global_position
+
+	# Fallback: Slightly elevated from death position to clear ground hazards
+	return Vector2(death_pos.x, clampf(death_pos.y - 32.0, 50.0, 480.0))
+
+func revive_current_player() -> bool:
+	var p: CharacterBody2D = active_player
+	if p == null or not is_instance_valid(p):
+		var players := get_tree().get_nodes_in_group("player")
+		if players.size() > 0:
+			p = players[0]
+
+	if p == null or not is_instance_valid(p):
+		push_warning("[GameManager] Revive requested but no active player found.")
+		return false
+
+	var target_safe_pos := find_safe_revive_position(last_death_position)
+	p.global_position = target_safe_pos
+	p.revive()
+	p.apply_spawn_protection(1.0) # 1.0s bounded spawn protection with flicker
+
+	is_gameplay_active = true
+	get_tree().paused = false
+	revives_used_this_death += 1
+
+	AudioManager.play_sfx("coin")
+	player_revived.emit(target_safe_pos)
+	print("[GameManager] Player successfully revived at safe position: %s" % str(target_safe_pos))
+	return true
 
 func get_world_id_for_stage(stage_id: int) -> int:
 	if stage_id <= 5:
