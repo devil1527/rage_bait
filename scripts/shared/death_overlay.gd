@@ -16,10 +16,14 @@ func _ready() -> void:
 	if AdManager:
 		AdManager.rewarded_ad_loaded.connect(_on_ad_loaded)
 		AdManager.rewarded_ad_failed_to_load.connect(_on_ad_failed_to_load)
+		AdManager.network_state_changed.connect(_on_network_state_changed)
 
 func open() -> void:
 	visible = true
 	_update_ad_status()
+	# Proactively request ad if not ready yet
+	if AdManager and not AdManager.is_rewarded_ad_ready() and not AdManager.is_loading():
+		AdManager.load_rewarded_ad()
 
 func _exit_tree() -> void:
 	if get_tree():
@@ -43,19 +47,28 @@ func _update_ad_status() -> void:
 	elif AdManager.is_loading():
 		revive_btn.disabled = true
 		revive_btn.text = "🎬 WATCH AD — REVIVE"
-		ad_status_label.text = "Loading rewarded ad..."
+		ad_status_label.text = "Loading ad..."
 		ad_status_label.modulate = Color(1.0, 0.85, 0.3, 0.9)
 	else:
 		revive_btn.disabled = true
 		revive_btn.text = "🎬 WATCH AD — REVIVE"
 		ad_status_label.text = AdManager.get_status_text()
-		ad_status_label.modulate = Color(0.8, 0.8, 0.8, 0.7)
+		if AdManager.last_error_type == AdManager.AdErrorType.NETWORK_ERROR or not AdManager.is_network_available:
+			ad_status_label.modulate = Color(0.9, 0.5, 0.5, 0.9)
+		elif AdManager.last_error_type == AdManager.AdErrorType.NO_FILL:
+			ad_status_label.modulate = Color(0.8, 0.8, 0.8, 0.8)
+		else:
+			ad_status_label.modulate = Color(0.8, 0.8, 0.8, 0.7)
 
 func _on_ad_loaded() -> void:
 	if visible:
 		_update_ad_status()
 
-func _on_ad_failed_to_load(_err: String) -> void:
+func _on_ad_failed_to_load(_error_type: Variant = 0, _error_code: Variant = null, _error_message: String = "") -> void:
+	if visible:
+		_update_ad_status()
+
+func _on_network_state_changed(_available: bool) -> void:
 	if visible:
 		_update_ad_status()
 

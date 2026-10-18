@@ -245,6 +245,8 @@ position = Vector2(1380, 330)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("19_kplat")
+is_coin_triggered = true
+warning_duration = 0.55
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform4"]
 shape = SubResource("RectangleShape2D_plat4")
@@ -271,7 +273,7 @@ collision_mask = 1
 shape = SubResource("RectangleShape2D_plat4_trig")
 
 [node name="SpikesArea" type="Area2D" parent="Platforms/Platform4"]
-position = Vector2(0, -6)
+position = Vector2(30, -6)
 collision_layer = 4
 collision_mask = 1
 
@@ -391,7 +393,8 @@ greedy_platform = NodePath("../../Platforms/PlatformGreedy")
 position = Vector2(1170, 210)
 
 [node name="Coin8" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1380, 255)
+position = Vector2(1340, 265)
+target_trap = NodePath("../../Platforms/Platform4")
 
 [node name="Coin9" parent="Coins" instance=ExtResource("3_coin")]
 position = Vector2(1560, 195)

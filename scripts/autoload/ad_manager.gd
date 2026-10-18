@@ -1,18 +1,19 @@
 extends Node
 
 ## AdManager — Centralized, Reusable Rewarded Ad Service for Retro Rage Arcade
-## Integrates with Google AdMob via Android Engine singleton (e.g. GodotAdMob / PoingGodotAdMob).
-## Provides clean offline fallbacks, single-transaction security, duplicate callback protection,
-## and stale-callback prevention across all 20 levels.
+## Integrates with Google Mobile Ads (AdMob) via Android Engine singleton (e.g. GodotAdMob / PoingGodotAdMob).
+## Features safe pre-loading, exponential backoff retries, single-transaction security,
+## authoritative reward verification, duplicate/stale callback protection, and accurate error attribution.
 
 signal initialization_completed(success: bool)
 signal rewarded_ad_loaded
-signal rewarded_ad_failed_to_load(error_message: String)
+signal rewarded_ad_failed_to_load(error_type: int, error_code: Variant, error_message: String)
 signal rewarded_ad_opened
 signal rewarded_ad_closed
 signal user_earned_reward(currency_type: String, amount: int)
 signal revive_reward_verified(transaction_id: String)
 signal revive_flow_failed(reason: String)
+signal network_state_changed(is_available: bool)
 
 enum AdState {
 	UNINITIALIZED,
@@ -24,18 +25,45 @@ enum AdState {
 	ERROR
 }
 
-# Google Official Test AdMob IDs for Android (Production IDs are loaded from ad_config.json if provided)
+enum AdErrorType {
+	NONE,
+	NO_FILL,
+	NETWORK_ERROR,
+	TIMEOUT,
+	INVALID_REQUEST,
+	INTERNAL_ERROR,
+	PLUGIN_NOT_CONFIGURED,
+	NOT_INITIALIZED,
+	UNKNOWN
+}
+
+# Google Official Test AdMob IDs for Android (Production IDs configured via ad_config.json)
 const DEFAULT_TEST_APP_ID := "ca-app-pub-3940256099942544~3347511713"
 const DEFAULT_TEST_REWARDED_AD_UNIT_ID := "ca-app-pub-3940256099942544/5224354917"
 const CONFIG_PATH := "res://ad_config.json"
+
+const MAX_LOAD_RETRIES := 3
+const RETRY_BACKOFF_DELAYS: Array[float] = [5.0, 15.0, 30.0]
+const NO_FILL_COOLDOWN := 30.0
 
 var is_test_mode: bool = true
 var app_id: String = DEFAULT_TEST_APP_ID
 var rewarded_ad_unit_id: String = DEFAULT_TEST_REWARDED_AD_UNIT_ID
 
 var current_state: AdState = AdState.UNINITIALIZED
+var last_error_type: AdErrorType = AdErrorType.NONE
+var last_error_code: Variant = null
+var last_error_message: String = ""
+var is_network_available: bool = true
+
 var _plugin_singleton: Object = null
 var _plugin_name: String = ""
+
+# Preloading retry & backoff tracking
+var _load_retry_count: int = 0
+var _retry_timer: float = 0.0
+var _is_retrying: bool = false
+var _cooldown_timer: float = 0.0
 
 # Transaction safety variables
 var _current_transaction_id: String = ""
@@ -45,7 +73,7 @@ var _active_reward_callback: Callable = Callable()
 var _active_failure_callback: Callable = Callable()
 var _transaction_counter: int = 0
 
-# Mock / Unit Testing support (for automated test suite)
+# Mock / Unit Testing support
 var _mock_mode_enabled: bool = false
 var _mock_ad_ready: bool = false
 
@@ -54,6 +82,17 @@ func _ready() -> void:
 	_load_configuration()
 	_detect_plugin()
 	initialize()
+
+func _process(delta: float) -> void:
+	if _cooldown_timer > 0.0:
+		_cooldown_timer = maxf(0.0, _cooldown_timer - delta)
+
+	if _is_retrying:
+		_retry_timer -= delta
+		if _retry_timer <= 0.0:
+			_is_retrying = false
+			print("[AdManager] Retry timer expired. Attempting rewarded ad reload (attempt %d/%d)..." % [_load_retry_count, MAX_LOAD_RETRIES])
+			load_rewarded_ad()
 
 func _load_configuration() -> void:
 	if FileAccess.file_exists(CONFIG_PATH):
@@ -71,7 +110,7 @@ func _load_configuration() -> void:
 				else:
 					app_id = str(data.get("app_id_production", ""))
 					rewarded_ad_unit_id = str(data.get("rewarded_ad_unit_id_production", ""))
-				print("[AdManager] Configuration loaded. TestMode: %s" % is_test_mode)
+				print("[AdManager] Configuration loaded. TestMode: %s, RewardedUnit: %s" % [is_test_mode, rewarded_ad_unit_id])
 				return
 	# Fallback to test defaults
 	is_test_mode = true
@@ -90,55 +129,64 @@ func _detect_plugin() -> void:
 	else:
 		_plugin_singleton = null
 		_plugin_name = ""
-		print("[AdManager] No native AdMob plugin singleton detected on platform: %s" % OS.get_name())
+		print("[AdManager] No native AdMob plugin singleton detected on platform: %s (AdMob native library pending build configuration)" % OS.get_name())
 
 func initialize() -> void:
+	print("[AdManager] SDK Initializing... (plugin: %s, test_mode: %s)" % [_plugin_name if _plugin_name != "" else "none", is_test_mode])
+	
 	if _mock_mode_enabled:
 		current_state = AdState.READY if _mock_ad_ready else AdState.NOT_LOADED
+		last_error_type = AdErrorType.NONE
 		initialization_completed.emit(true)
+		print("[AdManager] SDK initialized in mock test mode.")
 		return
 
 	if _plugin_singleton == null:
 		current_state = AdState.NOT_LOADED
+		last_error_type = AdErrorType.PLUGIN_NOT_CONFIGURED
+		last_error_message = "Native AdMob plugin is not configured in this export."
 		initialization_completed.emit(false)
+		print("[AdManager] SDK initialization incomplete: native plugin singleton not present.")
 		return
 
 	current_state = AdState.INITIALIZING
 	_connect_plugin_signals()
-	
+
 	if _plugin_singleton.has_method("initialize"):
-		# Most GodotAdMob plugins accept initialization call or config
 		_plugin_singleton.call("initialize")
 		current_state = AdState.NOT_LOADED
+		last_error_type = AdErrorType.NONE
 		initialization_completed.emit(true)
-		# Automatically attempt initial ad load in background
+		print("[AdManager] SDK initialized successfully with native provider.")
+		# Proactively preload rewarded ad in background
 		load_rewarded_ad()
 	else:
 		current_state = AdState.NOT_LOADED
+		last_error_type = AdErrorType.NONE
 		initialization_completed.emit(true)
+		print("[AdManager] SDK initialized with native provider.")
 		load_rewarded_ad()
 
 func _connect_plugin_signals() -> void:
 	if not _plugin_singleton:
 		return
-		
-	# Connect to GodotAdMob / PoingGodotAdMob rewarded video signals safely
+
 	_safe_connect_signal("rewarded_video_loaded", _on_plugin_rewarded_ad_loaded)
 	_safe_connect_signal("on_rewarded_video_ad_loaded", _on_plugin_rewarded_ad_loaded)
 	_safe_connect_signal("rewarded_ad_loaded", _on_plugin_rewarded_ad_loaded)
-	
+
 	_safe_connect_signal("rewarded_video_failed_to_load", _on_plugin_rewarded_ad_failed_to_load)
 	_safe_connect_signal("on_rewarded_video_ad_failed_to_load", _on_plugin_rewarded_ad_failed_to_load)
 	_safe_connect_signal("rewarded_ad_failed_to_load", _on_plugin_rewarded_ad_failed_to_load)
-	
+
 	_safe_connect_signal("rewarded_video_opened", _on_plugin_rewarded_ad_opened)
 	_safe_connect_signal("on_rewarded_video_ad_opened", _on_plugin_rewarded_ad_opened)
 	_safe_connect_signal("rewarded_ad_opened", _on_plugin_rewarded_ad_opened)
-	
+
 	_safe_connect_signal("rewarded_video_closed", _on_plugin_rewarded_ad_closed)
 	_safe_connect_signal("on_rewarded_video_ad_closed", _on_plugin_rewarded_ad_closed)
 	_safe_connect_signal("rewarded_ad_closed", _on_plugin_rewarded_ad_closed)
-	
+
 	_safe_connect_signal("rewarded", _on_plugin_user_earned_reward)
 	_safe_connect_signal("on_rewarded", _on_plugin_user_earned_reward)
 	_safe_connect_signal("user_earned_reward", _on_plugin_user_earned_reward)
@@ -148,21 +196,39 @@ func _safe_connect_signal(signal_name: String, target_callable: Callable) -> voi
 		if not _plugin_singleton.is_connected(signal_name, target_callable):
 			_plugin_singleton.connect(signal_name, target_callable)
 
+## Safely request and preload a rewarded ad before it is needed
 func load_rewarded_ad() -> void:
 	if _mock_mode_enabled:
 		return
 
-	if current_state == AdState.READY or current_state == AdState.LOADING:
+	if current_state == AdState.READY:
+		print("[AdManager] Rewarded ad already cached and ready to show.")
+		return
+
+	if current_state == AdState.LOADING:
+		print("[AdManager] Rewarded ad request already in progress.")
+		return
+
+	if _cooldown_timer > 0.0:
+		print("[AdManager] Ad request cooldown active (%.1fs remaining). Avoiding server spam." % _cooldown_timer)
+		return
+
+	if not is_network_available:
+		current_state = AdState.ERROR
+		last_error_type = AdErrorType.NETWORK_ERROR
+		last_error_message = "No network connection available."
+		print("[AdManager] Cannot load ad: network connection unavailable.")
 		return
 
 	if _plugin_singleton == null:
-		# Offline or desktop development without native plugin
 		current_state = AdState.NOT_LOADED
+		last_error_type = AdErrorType.PLUGIN_NOT_CONFIGURED
+		last_error_message = "Native ad plugin not configured."
 		return
 
 	current_state = AdState.LOADING
-	print("[AdManager] Requesting rewarded ad load...")
-	
+	print("[AdManager] Ad request started (attempt %d, ad_unit: %s)..." % [_load_retry_count + 1, rewarded_ad_unit_id])
+
 	if _plugin_singleton.has_method("load_rewarded_video"):
 		_plugin_singleton.call("load_rewarded_video", rewarded_ad_unit_id)
 	elif _plugin_singleton.has_method("load_rewarded_ad"):
@@ -177,17 +243,16 @@ func is_loading() -> bool:
 	return current_state == AdState.LOADING
 
 func show_rewarded_ad_for_revive(on_reward: Callable, on_failure: Callable) -> bool:
-	# Rate-limiting & re-entrancy prevention: only one active ad presentation at a time
 	if _transaction_in_progress:
-		print("[AdManager] Revive requested while a transaction is already active.")
+		print("[AdManager] Revive requested while a transaction is already in progress.")
 		if on_failure.is_valid():
 			on_failure.call("Ad request already in progress. Please wait.")
 		return false
 
 	if not is_rewarded_ad_ready():
-		print("[AdManager] Revive requested but rewarded ad is not ready.")
+		print("[AdManager] Revive requested but rewarded ad is not ready. Current state: %s, Last error: %s" % [current_state, last_error_type])
 		if on_failure.is_valid():
-			on_failure.call("Rewarded ad is not available right now. Please restart the level.")
+			on_failure.call(get_status_text())
 		return false
 
 	_transaction_counter += 1
@@ -197,10 +262,9 @@ func show_rewarded_ad_for_revive(on_reward: Callable, on_failure: Callable) -> b
 	_active_reward_callback = on_reward
 	_active_failure_callback = on_failure
 	current_state = AdState.SHOWING
-	print("[AdManager] Starting revive ad presentation. Transaction ID: %s" % _current_transaction_id)
+	print("[AdManager] Starting revive ad presentation (transaction: %s)" % _current_transaction_id)
 
 	if _mock_mode_enabled:
-		# In unit test / mock mode, execution is controlled deterministically by test runner
 		rewarded_ad_opened.emit()
 		return true
 
@@ -215,18 +279,18 @@ func show_rewarded_ad_for_revive(on_reward: Callable, on_failure: Callable) -> b
 		_handle_transaction_failure("Native ad provider unavailable on this platform.")
 		return false
 
-## Authoritative callback when player has successfully watched the rewarded ad
+## Authoritative reward callback received from the SDK
 func _on_plugin_user_earned_reward(currency_type: String = "Revive", amount: int = 1) -> void:
 	if not _transaction_in_progress:
 		print("[AdManager] Discarding unexpected reward callback (no active revive transaction).")
 		return
 
 	if _transaction_consumed:
-		print("[AdManager] Duplicate reward callback received for transaction %s. Discarded." % _current_transaction_id)
+		print("[AdManager] Duplicate reward callback received for transaction %s. Discarded safely." % _current_transaction_id)
 		return
 
 	_transaction_consumed = true
-	print("[AdManager] Authoritative reward confirmed for transaction %s: %s x %d" % [_current_transaction_id, currency_type, amount])
+	print("[AdManager] Authoritative reward verified: %s x %d (transaction: %s)" % [currency_type, amount, _current_transaction_id])
 	user_earned_reward.emit(currency_type, amount)
 	revive_reward_verified.emit(_current_transaction_id)
 
@@ -237,29 +301,70 @@ func _on_plugin_user_earned_reward(currency_type: String = "Revive", amount: int
 
 func _on_plugin_rewarded_ad_loaded() -> void:
 	current_state = AdState.READY
-	print("[AdManager] Rewarded ad successfully loaded and ready.")
+	last_error_type = AdErrorType.NONE
+	last_error_code = null
+	last_error_message = ""
+	_load_retry_count = 0
+	_is_retrying = false
+	print("[AdManager] Rewarded ad loaded successfully and cached.")
 	rewarded_ad_loaded.emit()
 
 func _on_plugin_rewarded_ad_failed_to_load(error_code: Variant = 0) -> void:
 	current_state = AdState.ERROR
-	var err_str := "Ad load failed (code: %s)" % str(error_code)
-	print("[AdManager] %s" % err_str)
-	rewarded_ad_failed_to_load.emit(err_str)
+	last_error_code = error_code
+	
+	# Categorize Google AdMob error codes cleanly:
+	# 0: ERROR_CODE_INTERNAL_ERROR
+	# 1: ERROR_CODE_INVALID_REQUEST
+	# 2: ERROR_CODE_NETWORK_ERROR
+	# 3: ERROR_CODE_NO_FILL
+	var code_int: int = int(error_code) if (typeof(error_code) == TYPE_INT or typeof(error_code) == TYPE_FLOAT) else -1
+	var code_str := str(error_code).to_lower()
+	
+	if code_int == 3 or "no_fill" in code_str or "no fill" in code_str:
+		last_error_type = AdErrorType.NO_FILL
+		last_error_message = "No ad inventory currently available from ad network."
+		_cooldown_timer = NO_FILL_COOLDOWN
+	elif code_int == 2 or "network" in code_str or "connection" in code_str or "offline" in code_str:
+		last_error_type = AdErrorType.NETWORK_ERROR
+		last_error_message = "Network error during ad request."
+	elif code_int == 4 or "timeout" in code_str:
+		last_error_type = AdErrorType.TIMEOUT
+		last_error_message = "Ad request timed out."
+	elif code_int == 1 or "invalid" in code_str:
+		last_error_type = AdErrorType.INVALID_REQUEST
+		last_error_message = "Invalid ad request configuration."
+	elif code_int == 0 or "internal" in code_str:
+		last_error_type = AdErrorType.INTERNAL_ERROR
+		last_error_message = "Internal ad server error."
+	else:
+		last_error_type = AdErrorType.UNKNOWN
+		last_error_message = "Ad load failed (code: %s)" % str(error_code)
+
+	print("[AdManager] Ad load failed (error_type: %s, code: %s, message: %s)" % [last_error_type, str(error_code), last_error_message])
+	rewarded_ad_failed_to_load.emit(last_error_type, error_code, last_error_message)
+
+	# Bounded exponential backoff retry for transient network/timeout errors
+	if (last_error_type == AdErrorType.NETWORK_ERROR or last_error_type == AdErrorType.TIMEOUT) and _load_retry_count < MAX_LOAD_RETRIES:
+		var delay: float = RETRY_BACKOFF_DELAYS[clampi(_load_retry_count, 0, RETRY_BACKOFF_DELAYS.size() - 1)]
+		_load_retry_count += 1
+		_is_retrying = true
+		_retry_timer = delay
+		print("[AdManager] Scheduling ad reload retry in %.1fs (attempt %d/%d)..." % [delay, _load_retry_count, MAX_LOAD_RETRIES])
 
 func _on_plugin_rewarded_ad_opened() -> void:
-	print("[AdManager] Rewarded ad opened fullscreen.")
+	print("[AdManager] Rewarded ad opened fullscreen (transaction: %s)" % _current_transaction_id)
 	rewarded_ad_opened.emit()
 
 func _on_plugin_rewarded_ad_closed() -> void:
-	print("[AdManager] Rewarded ad closed.")
+	print("[AdManager] Rewarded ad dismissed/closed (transaction: %s)" % _current_transaction_id)
 	rewarded_ad_closed.emit()
 
 	if _transaction_in_progress and not _transaction_consumed:
-		# Player closed or skipped before earning reward
 		_handle_transaction_failure("Ad was closed before completing the reward requirement.")
 
 	_finish_transaction()
-	# Pre-load next ad for future death events
+	# Proactively preload next ad for subsequent deaths
 	load_rewarded_ad()
 
 func _handle_transaction_failure(reason: String) -> void:
@@ -279,7 +384,7 @@ func _finish_transaction() -> void:
 	if current_state == AdState.SHOWING:
 		current_state = AdState.NOT_LOADED
 
-## Invalidate any pending or delayed transaction if player restarts, exits, or changes levels
+## Cancel transaction when player restarts or navigates away
 func cancel_current_transaction() -> void:
 	if _transaction_in_progress:
 		print("[AdManager] Cancelling active revive transaction: %s" % _current_transaction_id)
@@ -291,30 +396,45 @@ func cancel_current_transaction() -> void:
 		if current_state == AdState.SHOWING:
 			current_state = AdState.NOT_LOADED
 
+## Clear, non-misleading user-facing message corresponding to the exact current state
 func get_status_text() -> String:
 	if is_rewarded_ad_ready():
-		return "Ready to watch"
+		return "Watch a short ad to revive here!"
 	elif is_loading():
 		return "Loading ad..."
 	elif current_state == AdState.SHOWING:
-		return "Ad in progress..."
-	elif _plugin_singleton == null and not _mock_mode_enabled:
-		return "Ad unavailable offline"
+		return "Preparing ad..."
+	elif last_error_type == AdErrorType.NO_FILL:
+		return "No ads available right now"
+	elif last_error_type == AdErrorType.NETWORK_ERROR:
+		return "Network connection needed"
+	elif last_error_type == AdErrorType.TIMEOUT:
+		return "Ad request timed out"
+	elif last_error_type == AdErrorType.PLUGIN_NOT_CONFIGURED:
+		return "Ad service not configured"
+	elif not is_network_available:
+		return "Network connection needed"
 	else:
-		return "Ad not ready"
+		return "Ad temporarily unavailable"
 
 # ==============================================================================
-# MOCK / UNIT TEST HARNESS METHODS (For automated CI and acceptance testing)
+# MOCK / UNIT TEST HARNESS METHODS (For Part E Automated Acceptance Testing)
 # ==============================================================================
 
 func enable_mock_mode(initial_ready: bool = true) -> void:
 	_mock_mode_enabled = true
 	_mock_ad_ready = initial_ready
+	_is_retrying = false
+	_load_retry_count = 0
+	last_error_type = AdErrorType.NONE
 	current_state = AdState.READY if initial_ready else AdState.NOT_LOADED
+	print("[AdManager] Mock mode enabled (initial_ready: %s)" % initial_ready)
 
 func disable_mock_mode() -> void:
 	_mock_mode_enabled = false
 	_mock_ad_ready = false
+	_is_retrying = false
+	_load_retry_count = 0
 	_detect_plugin()
 	initialize()
 
@@ -322,7 +442,17 @@ func set_mock_ad_available(available: bool) -> void:
 	_mock_ad_ready = available
 	current_state = AdState.READY if available else AdState.NOT_LOADED
 	if available:
+		last_error_type = AdErrorType.NONE
 		rewarded_ad_loaded.emit()
+
+func simulate_mock_load_failure(error_type: AdErrorType = AdErrorType.NO_FILL, err_code: Variant = 3, message: String = "No fill") -> void:
+	_mock_ad_ready = false
+	current_state = AdState.ERROR
+	last_error_type = error_type
+	last_error_code = err_code
+	last_error_message = message
+	print("[AdManager] Mock load failure simulated: %s (%s)" % [error_type, message])
+	rewarded_ad_failed_to_load.emit(error_type, err_code, message)
 
 func simulate_mock_reward(currency_type: String = "Revive", amount: int = 1) -> void:
 	_on_plugin_user_earned_reward(currency_type, amount)
@@ -334,6 +464,20 @@ func simulate_mock_dismiss_without_reward() -> void:
 func simulate_mock_duplicate_reward_callback() -> void:
 	_on_plugin_user_earned_reward("Revive", 1)
 
-func simulate_mock_load_failure(err: String = "Network error") -> void:
+func simulate_network_loss() -> void:
+	is_network_available = false
 	_mock_ad_ready = false
-	_on_plugin_rewarded_ad_failed_to_load(err)
+	current_state = AdState.ERROR
+	last_error_type = AdErrorType.NETWORK_ERROR
+	last_error_message = "Network connection lost."
+	print("[AdManager] Network loss simulated.")
+	network_state_changed.emit(false)
+
+func simulate_network_recovery() -> void:
+	is_network_available = true
+	print("[AdManager] Network recovery: attempting ad pre-load...")
+	network_state_changed.emit(true)
+	if _mock_mode_enabled:
+		set_mock_ad_available(true)
+	else:
+		load_rewarded_ad()

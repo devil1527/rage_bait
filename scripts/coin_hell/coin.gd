@@ -4,6 +4,7 @@ extends Area2D
 
 @export var is_surprise_coin: bool = false
 @export var greedy_platform: NodePath = NodePath("")
+@export var target_trap: NodePath = NodePath("")
 
 var _collected: bool = false
 var _initial_pos: Vector2
@@ -76,6 +77,13 @@ func collect() -> void:
 		var gp = get_node_or_null(greedy_platform)
 		if gp and gp.has_method("trigger_greedy_drop"):
 			gp.trigger_greedy_drop()
+
+	if target_trap != NodePath(""):
+		var trap = get_node_or_null(target_trap)
+		if trap and trap.has_method("trigger_from_coin"):
+			trap.trigger_from_coin()
+		elif trap and trap.has_method("trigger_trap_with_warning"):
+			trap.trigger_trap_with_warning()
 
 func reset() -> void:
 	_collected = false

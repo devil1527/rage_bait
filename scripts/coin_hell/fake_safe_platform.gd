@@ -1,22 +1,27 @@
 class_name FakeSafePlatform
 extends StaticBody2D
 
-## TRICK B — THE FAKE SAFE LANDING
-## A platform that appears completely safe and ordinary at a glance.
-## Contains concealed pop-up spikes with NO visible red warnings or countdowns beforehand.
-## When the player crosses the trigger point, the spikes emerge immediately with a
-## fast, consistent pop-up animation and active lethal collision from all directions.
+## TRICK B — THE FAKE SAFE LANDING / COIN-TRIGGERED SPIKE TRAP
+## A platform with concealed pop-up spikes.
+## Can trigger immediately or via coin collection with a fair visual warning period.
 ## Resets cleanly on retry.
 
 signal trap_triggered
+signal warning_started
+
+@export var is_coin_triggered: bool = false
+@export var warning_duration: float = 0.5
 
 var _initial_pos: Vector2
 var _triggered: bool = false
 var _active_spikes: bool = false
+var _in_warning: bool = false
+var _warning_timer: float = 0.0
+var _warning_tween: Tween = null
 
 @onready var visual_rect: NinePatchRect = $NinePatchRect
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
-@onready var trigger_area: Area2D = $TriggerArea
+@onready var trigger_area: Area2D = get_node_or_null("TriggerArea")
 @onready var spikes_area: Area2D = $SpikesArea
 @onready var spikes_sprite: Sprite2D = $SpikesArea/Sprite2D
 @onready var spikes_collision: CollisionShape2D = $SpikesArea/CollisionShape2D
@@ -33,6 +38,11 @@ func _ready() -> void:
 func _setup_initial_spikes_state() -> void:
 	_triggered = false
 	_active_spikes = false
+	_in_warning = false
+	_warning_timer = 0.0
+	if _warning_tween:
+		_warning_tween.kill()
+		_warning_tween = null
 	if spikes_sprite:
 		spikes_sprite.visible = false
 		spikes_sprite.position.y = -14.0  # Fully aligned with spike collision shape
@@ -43,17 +53,60 @@ func _setup_initial_spikes_state() -> void:
 		spikes_collision.disabled = true
 		spikes_collision.position.y = -14.0
 
-func _physics_process(_delta: float) -> void:
-	if _active_spikes:
+func _physics_process(delta: float) -> void:
+	if _in_warning:
+		_warning_timer -= delta
+		if _warning_timer <= 0.0:
+			_in_warning = false
+			_activate_spikes()
+	elif _active_spikes:
 		_check_spike_collision()
 
 func _on_trigger_body_entered(body: Node2D) -> void:
-	if not _triggered and (body.is_in_group("player") or body.name == "Player"):
+	if is_coin_triggered:
+		return
+	if not _triggered and not _in_warning and not _active_spikes and (body.is_in_group("player") or body.name == "Player"):
 		trigger_trap()
 
-func trigger_trap() -> void:
-	if _triggered:
+func trigger_from_coin() -> void:
+	if _triggered or _in_warning or _active_spikes:
 		return
+	trigger_trap_with_warning(warning_duration)
+
+func trigger_trap_with_warning(duration: float = 0.5) -> void:
+	if _triggered or _in_warning or _active_spikes:
+		return
+	_in_warning = true
+	_warning_timer = duration
+	warning_started.emit()
+	AudioManager.play_sfx("warning")
+	
+	# Clear visual warning state:
+	# Spikes peek slightly (4px above surface) with an amber/red pulsing tell
+	if spikes_sprite:
+		spikes_sprite.visible = true
+		spikes_sprite.position.y = -4.0
+		spikes_sprite.z_index = 2
+		spikes_sprite.modulate = Color(1.0, 0.6, 0.1, 0.9)
+		if _warning_tween:
+			_warning_tween.kill()
+		_warning_tween = create_tween()
+		_warning_tween.set_loops()
+		_warning_tween.tween_property(spikes_sprite, "modulate", Color(1.0, 0.15, 0.15, 1.0), 0.1)
+		_warning_tween.tween_property(spikes_sprite, "modulate", Color(1.0, 0.85, 0.2, 0.85), 0.1)
+	
+	# Lethal collision remains strictly DISABLED during warning period!
+	if spikes_collision:
+		spikes_collision.disabled = true
+
+func trigger_trap() -> void:
+	_activate_spikes()
+
+func _activate_spikes() -> void:
+	if _warning_tween:
+		_warning_tween.kill()
+		_warning_tween = null
+	_in_warning = false
 	_triggered = true
 	_active_spikes = true
 	trap_triggered.emit()
@@ -64,6 +117,7 @@ func trigger_trap() -> void:
 		spikes_sprite.visible = true
 		spikes_sprite.position.y = -14.0
 		spikes_sprite.z_index = 2
+		spikes_sprite.modulate = Color(1.0, 0.2, 0.2, 1.0)
 		spikes_sprite.scale = Vector2(1.15, 1.25)
 		var tween := create_tween()
 		tween.tween_property(spikes_sprite, "scale", Vector2.ONE, 0.06)
@@ -100,7 +154,6 @@ func _check_spike_collision() -> void:
 			_kill_player(body)
 	
 	# 2. Geometric bounding box check against Player
-	# Covers touches from any direction (top, side, bottom)
 	var player = _get_active_player()
 	if player and is_instance_valid(player) and player.has_method("die") and player._is_alive:
 		var spike_shape: Shape2D = spikes_collision.shape if spikes_collision else null
@@ -112,7 +165,6 @@ func _check_spike_collision() -> void:
 			spike_center_global - spike_size * 0.5,
 			spike_size
 		)
-		# Player collision shape is 16px wide x 28px high centered at Vector2(0, 2)
 		var player_center_global: Vector2 = player.global_position + Vector2(0.0, 2.0)
 		var player_rect := Rect2(
 			player_center_global - Vector2(8.0, 14.0),
