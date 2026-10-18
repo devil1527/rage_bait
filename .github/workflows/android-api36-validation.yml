@@ -98,21 +98,19 @@ jobs:
           EXPORT_STATUS=${PIPESTATUS[0]}
           set -e
           if [ $EXPORT_STATUS -ne 0 ]; then
-            echo "::error::Godot export-debug failed with status $EXPORT_STATUS"
-            echo "=== LAST 200 LINES OF GODOT EXPORT LOG ==="
+            ERR_MSG=$(grep -i -C 2 -E "error|failure|exception" /tmp/godot_export.log | head -n 25 | tr '\r\n' ' ')
+            echo "::error title=Godot Export Failure::$ERR_MSG"
             tail -n 200 /tmp/godot_export.log
             exit $EXPORT_STATUS
           fi
 
-      - name: Dump Gradle and Export Logs on Failure
+      - name: Upload APK Export Failure Log
         if: failure()
-        run: |
-          echo "=== CHECKING ANDROID BUILD DIRECTORY ==="
-          ls -la android/build || true
-          if [ -f /tmp/godot_export.log ]; then
-            echo "=== FULL EXPORT LOG ==="
-            cat /tmp/godot_export.log
-          fi
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-export-failure-log
+          path: /tmp/godot_export.log
+          if-no-files-found: ignore
 
       - name: Verify Android Manifest Metadata & Intended ABIs
         run: |

@@ -4,9 +4,11 @@
 
 # Export builds
 build/
-bin/
+/bin/
 *.apk
 *.aab
+!addons/**/bin/
+!addons/**/bin/**
 
 # Signing keystores and certificates
 *.keystore

@@ -59,14 +59,20 @@ class AndroidExportPlugin extends EditorExportPlugin:
 		return _plugin_name
 
 
-	func _export_begin(features: PackedStringArray, is_debug: bool, path: String, flags: int) -> void:
-		if _supports_platform(get_export_platform()):
+	func _ensure_export_config() -> void:
+		if not _export_config:
 			_export_config = AdmobAndroidExportConfig.new()
 			if not _export_config.export_config_file_exists() or _export_config.load_export_config_from_file() != OK:
 				_export_config.load_export_config_from_node()
 
 
+	func _export_begin(features: PackedStringArray, is_debug: bool, path: String, flags: int) -> void:
+		if _supports_platform(get_export_platform()):
+			_ensure_export_config()
+
+
 	func _get_android_dependencies(platform: EditorExportPlatform, debug: bool) -> PackedStringArray:
+		_ensure_export_config()
 		var deps: PackedStringArray = PackedStringArray(ANDROID_DEPENDENCIES)
 		if _export_config and _export_config.enabled_mediation_networks.size() > 0:
 			for __network in _export_config.enabled_mediation_networks:
@@ -79,6 +85,7 @@ class AndroidExportPlugin extends EditorExportPlugin:
 
 
 	func _get_android_dependencies_maven_repos(platform: EditorExportPlatform, debug: bool) -> PackedStringArray:
+		_ensure_export_config()
 		var __custom_repos: PackedStringArray = []
 
 		if _export_config and _export_config.enabled_mediation_networks.size() > 0:
@@ -94,6 +101,7 @@ class AndroidExportPlugin extends EditorExportPlugin:
 
 
 	func _get_android_manifest_application_element_contents(platform: EditorExportPlatform, debug: bool) -> String:
+		_ensure_export_config()
 		var __contents: String
 
 		if _export_config:
