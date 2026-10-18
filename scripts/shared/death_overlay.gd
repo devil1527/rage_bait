@@ -13,6 +13,8 @@ func _ready() -> void:
 	revive_btn.pressed.connect(_on_revive_pressed)
 	retry_btn.pressed.connect(_on_retry_pressed)
 	level_select_btn.pressed.connect(_on_level_select_pressed)
+	ad_status_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	ad_status_label.gui_input.connect(_on_ad_status_label_gui_input)
 	if AdManager:
 		AdManager.rewarded_ad_loaded.connect(_on_ad_loaded)
 		AdManager.rewarded_ad_failed_to_load.connect(_on_ad_failed_to_load)
@@ -21,7 +23,7 @@ func _ready() -> void:
 func open() -> void:
 	visible = true
 	_update_ad_status()
-	# Proactively request ad if not ready yet
+	# Proactively request ad if not ready yet and not currently loading
 	if AdManager and not AdManager.is_rewarded_ad_ready() and not AdManager.is_loading():
 		AdManager.load_rewarded_ad()
 
@@ -55,10 +57,25 @@ func _update_ad_status() -> void:
 		ad_status_label.text = AdManager.get_status_text()
 		if AdManager.last_error_type == AdManager.AdErrorType.NETWORK_ERROR or not AdManager.is_network_available:
 			ad_status_label.modulate = Color(0.9, 0.5, 0.5, 0.9)
+		elif AdManager.last_error_type == AdManager.AdErrorType.TIMEOUT:
+			ad_status_label.modulate = Color(1.0, 0.7, 0.3, 0.9)
 		elif AdManager.last_error_type == AdManager.AdErrorType.NO_FILL:
 			ad_status_label.modulate = Color(0.8, 0.8, 0.8, 0.8)
 		else:
 			ad_status_label.modulate = Color(0.8, 0.8, 0.8, 0.7)
+
+func _on_ad_status_label_gui_input(event: InputEvent) -> void:
+	var is_click := false
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		is_click = true
+	elif event is InputEventScreenTouch and event.pressed:
+		is_click = true
+
+	if is_click and AdManager and not AdManager.is_rewarded_ad_ready() and not AdManager.is_loading():
+		AudioManager.play_sfx("click")
+		ad_status_label.text = "Loading ad..."
+		ad_status_label.modulate = Color(1.0, 0.85, 0.3, 0.9)
+		AdManager.retry_load_ad()
 
 func _on_ad_loaded() -> void:
 	if visible:

@@ -3785,6 +3785,7 @@ func test_rewarded_revive_ad_system() -> void:
 	lvl.free()
 
 class MockNativeAdmobPlugin extends RefCounted:
+	signal initialization_completed(status_data: Dictionary)
 	signal rewarded_ad_loaded(ad_data: Dictionary, load_data: Dictionary)
 	signal rewarded_ad_failed_to_load(ad_data: Dictionary, error_data: Dictionary)
 	signal rewarded_ad_showed_full_screen_content(ad_data: Dictionary)
@@ -3936,7 +3937,32 @@ func test_native_admob_plugin_lifecycle_and_security() -> void:
 	mock_plugin.rewarded_ad_failed_to_show_full_screen_content.emit({"ad_id": test_ad_id_4}, {"code": 1, "message": "Failed to show ad content"})
 	assert_true(not player._is_alive, "AdMob Native: Player NOT revived when ad fails to show")
 	assert_true(not death_overlay.retry_btn.disabled, "AdMob Native: Retry button enabled on show failure")
-	assert_true(not death_overlay.level_select_btn.disabled, "AdMob Native: Level Select enabled on show failure")
+	# 16. Bounded load timeout: state transitions to ERROR / TIMEOUT after duration
+	AdManager.reset_cooldown()
+	AdManager.load_rewarded_ad()
+	assert_true(AdManager.is_loading(), "AdMob Native: AdManager is loading before timeout")
+	assert_eq(death_overlay.revive_btn.disabled, true, "AdMob Native: Revive button disabled while loading")
+	# Advance timeout countdown
+	AdManager._process(13.0)
+	assert_eq(AdManager.current_state, AdManager.AdState.ERROR, "AdMob Native: AdState is ERROR after timeout")
+	assert_eq(AdManager.last_error_type, AdManager.AdErrorType.TIMEOUT, "AdMob Native: Error type is TIMEOUT after timeout")
+	death_overlay._update_ad_status()
+	assert_true(death_overlay.revive_btn.disabled, "AdMob Native: Revive button remains disabled after timeout")
+	assert_true(not death_overlay.retry_btn.disabled, "AdMob Native: Retry button remains enabled after timeout")
+	assert_true(not death_overlay.level_select_btn.disabled, "AdMob Native: Level Select remains enabled after timeout")
+	assert_true(death_overlay.ad_status_label.text.contains("timed out") or death_overlay.ad_status_label.text.contains("check network"), "AdMob Native: Status label reflects timeout state")
+
+	# 17. Controlled manual retry when ad timed out or failed
+	AdManager.retry_load_ad()
+	assert_true(AdManager.is_loading(), "AdMob Native: retry_load_ad re-requests ad and sets LOADING state")
+	assert_true(AdManager._load_timeout_timer > 0.0, "AdMob Native: Timeout timer refreshed on manual retry")
+	var prev_timer: float = AdManager._load_timeout_timer
+	AdManager.retry_load_ad()
+	assert_eq(AdManager._load_timeout_timer, prev_timer, "AdMob Native: Duplicate manual retry safely ignored while loading")
+
+	# 18. Async initialization completed event handling
+	mock_plugin.initialization_completed.emit({"status": "READY"})
+	assert_true(AdManager.is_plugin_initialized(), "AdMob Native: is_plugin_initialized is true after initialization_completed signal")
 
 	# Clean up
 	AdManager.restore_plugin_detection()

@@ -45,6 +45,7 @@ const CONFIG_PATH := "res://ad_config.json"
 const MAX_LOAD_RETRIES := 3
 const RETRY_BACKOFF_DELAYS: Array[float] = [5.0, 15.0, 30.0]
 const NO_FILL_COOLDOWN := 30.0
+const LOAD_TIMEOUT := 12.0
 
 var is_test_mode: bool = true
 var app_id: String = DEFAULT_TEST_APP_ID
@@ -59,6 +60,8 @@ var is_network_available: bool = true
 var _plugin_singleton: Object = null
 var _plugin_name: String = ""
 var _last_loaded_ad_id: String = ""
+var _is_plugin_initialized: bool = false
+var _load_timeout_timer: float = 0.0
 
 # Preloading retry & backoff tracking
 var _load_retry_count: int = 0
@@ -94,6 +97,13 @@ func _process(delta: float) -> void:
 			_is_retrying = false
 			print("[AdManager] Retry timer expired. Attempting rewarded ad reload (attempt %d/%d)..." % [_load_retry_count, MAX_LOAD_RETRIES])
 			load_rewarded_ad()
+
+	# Bounded ad load timeout to prevent UI indefinite loading hang
+	if current_state == AdState.LOADING:
+		_load_timeout_timer -= delta
+		if _load_timeout_timer <= 0.0:
+			_load_timeout_timer = 0.0
+			_on_load_timeout()
 
 func _load_configuration() -> void:
 	if FileAccess.file_exists(CONFIG_PATH):
@@ -171,6 +181,7 @@ func initialize() -> void:
 	else:
 		current_state = AdState.NOT_LOADED
 		last_error_type = AdErrorType.NONE
+		_is_plugin_initialized = true
 		initialization_completed.emit(true)
 		print("[AdManager] SDK initialized with native provider.")
 		load_rewarded_ad()
@@ -178,6 +189,9 @@ func initialize() -> void:
 func _connect_plugin_signals() -> void:
 	if not _plugin_singleton:
 		return
+
+	# Initialization signal
+	_safe_connect_signal("initialization_completed", _on_plugin_initialization_completed)
 
 	# Loaded signals
 	_safe_connect_signal("rewarded_video_loaded", _on_plugin_rewarded_ad_loaded)
@@ -214,6 +228,24 @@ func _safe_connect_signal(signal_name: String, target_callable: Callable) -> voi
 	if _plugin_singleton and _plugin_singleton.has_signal(signal_name):
 		if not _plugin_singleton.is_connected(signal_name, target_callable):
 			_plugin_singleton.connect(signal_name, target_callable)
+			print("[AdManager] Connected native signal: %s" % signal_name)
+
+func _on_plugin_initialization_completed(status_data: Variant = null) -> void:
+	print("[AdManager] Native AdMob SDK initialization completed signal received from %s. Status: %s" % [_plugin_name, str(status_data)])
+	_is_plugin_initialized = true
+	
+	if _plugin_singleton and _plugin_singleton.has_method("set_request_configuration"):
+		var req_config := {"test_device_ids": []}
+		_plugin_singleton.call("set_request_configuration", req_config)
+		print("[AdManager] Native request configuration reapplied post-initialization.")
+
+	initialization_completed.emit(true)
+
+	# If the SDK finished initializing and an ad is not ready, load now with active native backend
+	if not is_rewarded_ad_ready():
+		print("[AdManager] Initializing finished: requesting rewarded ad from active native SDK.")
+		current_state = AdState.NOT_LOADED
+		load_rewarded_ad()
 
 ## Safely request and preload a rewarded ad before it is needed
 func load_rewarded_ad() -> void:
@@ -225,7 +257,7 @@ func load_rewarded_ad() -> void:
 		return
 
 	if current_state == AdState.LOADING:
-		print("[AdManager] Rewarded ad request already in progress.")
+		print("[AdManager] Rewarded ad request already in progress (%.1fs remaining on timeout timer)." % _load_timeout_timer)
 		return
 
 	if _cooldown_timer > 0.0:
@@ -246,10 +278,14 @@ func load_rewarded_ad() -> void:
 		return
 
 	current_state = AdState.LOADING
-	print("[AdManager] Ad request started (attempt %d, ad_unit: %s)..." % [_load_retry_count + 1, rewarded_ad_unit_id])
+	_load_timeout_timer = LOAD_TIMEOUT
+	print("[AdManager] Ad request started (attempt %d, ad_unit: %s, timeout: %.1fs)..." % [_load_retry_count + 1, rewarded_ad_unit_id, LOAD_TIMEOUT])
 
 	if _plugin_name == "AdmobPlugin":
-		_plugin_singleton.call("load_rewarded_ad", {"ad_unit_id": rewarded_ad_unit_id})
+		var request_payload: Dictionary = {
+			"ad_unit_id": rewarded_ad_unit_id
+		}
+		_plugin_singleton.call("load_rewarded_ad", request_payload)
 	elif _plugin_singleton.has_method("load_rewarded_video"):
 		_plugin_singleton.call("load_rewarded_video", rewarded_ad_unit_id)
 	elif _plugin_singleton.has_method("load_rewarded_ad"):
@@ -337,6 +373,7 @@ func _on_plugin_user_earned_reward(arg1: Variant = "Revive", arg2: Variant = 1) 
 		cb.call()
 
 func _on_plugin_rewarded_ad_loaded(arg1: Variant = null, _arg2: Variant = null) -> void:
+	_load_timeout_timer = 0.0
 	if arg1 is Dictionary:
 		_last_loaded_ad_id = str(arg1.get("ad_id", ""))
 	current_state = AdState.READY
@@ -349,6 +386,7 @@ func _on_plugin_rewarded_ad_loaded(arg1: Variant = null, _arg2: Variant = null) 
 	rewarded_ad_loaded.emit()
 
 func _on_plugin_rewarded_ad_failed_to_load(arg1: Variant = 0, arg2: Variant = null) -> void:
+	_load_timeout_timer = 0.0
 	current_state = AdState.ERROR
 	var code_val: Variant = 0
 	var msg_val: String = ""
@@ -357,8 +395,15 @@ func _on_plugin_rewarded_ad_failed_to_load(arg1: Variant = 0, arg2: Variant = nu
 		code_val = arg2.get("code", 0)
 		msg_val = str(arg2.get("message", ""))
 	elif arg1 is Dictionary:
-		code_val = arg1.get("code", 0)
-		msg_val = str(arg1.get("message", ""))
+		if arg1.has("code"):
+			code_val = arg1.get("code", 0)
+			msg_val = str(arg1.get("message", ""))
+		elif arg2 != null:
+			code_val = arg2
+			msg_val = str(arg2)
+		else:
+			code_val = arg1.get("code", 0)
+			msg_val = str(arg1.get("message", ""))
 	else:
 		code_val = arg1
 		msg_val = str(arg1)
@@ -402,6 +447,38 @@ func _on_plugin_rewarded_ad_failed_to_load(arg1: Variant = 0, arg2: Variant = nu
 		_is_retrying = true
 		_retry_timer = delay
 		print("[AdManager] Scheduling ad reload retry in %.1fs (attempt %d/%d)..." % [delay, _load_retry_count, MAX_LOAD_RETRIES])
+
+func _on_load_timeout() -> void:
+	print("[AdManager] Rewarded ad request timed out after %.1fs." % LOAD_TIMEOUT)
+	current_state = AdState.ERROR
+	last_error_type = AdErrorType.TIMEOUT
+	last_error_code = -1
+	last_error_message = "Ad request timed out. Please check network connection."
+	
+	if _load_retry_count < MAX_LOAD_RETRIES:
+		var delay: float = RETRY_BACKOFF_DELAYS[clampi(_load_retry_count, 0, RETRY_BACKOFF_DELAYS.size() - 1)]
+		_load_retry_count += 1
+		_is_retrying = true
+		_retry_timer = delay
+		print("[AdManager] Scheduling ad reload retry in %.1fs (attempt %d/%d)..." % [delay, _load_retry_count, MAX_LOAD_RETRIES])
+	else:
+		print("[AdManager] Maximum load retries reached (%d/%d)." % [_load_retry_count, MAX_LOAD_RETRIES])
+
+	rewarded_ad_failed_to_load.emit(last_error_type, last_error_code, last_error_message)
+
+## Allows controlled manual retry from the UI when an ad is not ready or has timed out
+func retry_load_ad() -> void:
+	if current_state == AdState.LOADING:
+		print("[AdManager] Ad request already active. Ignoring redundant manual retry.")
+		return
+	if is_rewarded_ad_ready():
+		print("[AdManager] Rewarded ad is already loaded and ready.")
+		return
+	print("[AdManager] User initiated manual ad reload.")
+	_cooldown_timer = 0.0
+	_retry_timer = 0.0
+	_is_retrying = false
+	load_rewarded_ad()
 
 func _on_plugin_rewarded_ad_opened(_arg1: Variant = null) -> void:
 	print("[AdManager] Rewarded ad opened fullscreen (transaction: %s)" % _current_transaction_id)
@@ -516,6 +593,9 @@ func get_plugin_singleton() -> Object:
 
 func get_plugin_name() -> String:
 	return _plugin_name
+
+func is_plugin_initialized() -> bool:
+	return _is_plugin_initialized
 
 func get_last_loaded_ad_id() -> String:
 	return _last_loaded_ad_id
