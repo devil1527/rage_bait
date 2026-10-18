@@ -49,6 +49,21 @@ jobs:
           mv templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
           rm -f godot.zip templates.tpz
 
+      - name: Install Android Build Template for Gradle Build
+        run: |
+          if [ -f ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/android_source.zip ]; then
+            mkdir -p android/build
+            unzip -q -o ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/android_source.zip -d android/build
+            echo "${GODOT_VERSION}.stable" > android/.build_version
+            echo "Installed Android build template from android_source.zip"
+          else
+            echo "Installing build template via Godot CLI..."
+            godot --headless --install-android-build-template
+          fi
+          if [ -f android/build/gradlew ]; then
+            chmod +x android/build/gradlew
+          fi
+
       - name: Setup Android Keystore and Editor Settings
         run: |
           mkdir -p ~/.config/godot ~/.local/share/godot ~/.android

@@ -1,9 +1,0 @@
-[config]
-name="AdmobPlugin"
-binary_type="local"
-binary="AdmobPlugin-release.aar"
-
-[dependencies]
-local=[]
-remote=["androidx.appcompat:appcompat:1.7.1", "androidx.lifecycle:lifecycle-process:2.8.3", "com.google.android.gms:play-services-ads:24.9.0"]
-custom_maven=[]

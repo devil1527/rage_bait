@@ -64,6 +64,9 @@ jobs:
             echo "Installing build template via Godot CLI..."
             godot --headless --install-android-build-template
           fi
+          if [ -f android/build/gradlew ]; then
+            chmod +x android/build/gradlew
+          fi
 
       - name: Setup Release Keystore and Editor Settings
         env:
