@@ -30,7 +30,7 @@ func _ready() -> void:
 	print("  RETRO RAGE ARCADE / COIN HELL AUTOMATED TEST SUITE   ")
 	print("=======================================================\n")
 	
-	run_all_tests()
+	await run_all_tests()
 	
 	print("\n=======================================================")
 	print("  TEST RESULTS: %d PASSED, %d FAILED" % [passed_count, failed_count])
@@ -93,6 +93,7 @@ func run_all_tests() -> void:
 	test_level_11_rising_lava_and_pressure()
 	test_level_11_lifecycle_and_reset()
 	test_level_1_invisible_spike_death_fix()
+	await test_stage_1_pause_button()
 	test_rewarded_revive_ad_system()
 
 func test_save_manager_and_persistence() -> void:
@@ -3605,6 +3606,92 @@ func test_level_1_invisible_spike_death_fix() -> void:
 		c.collect()
 	assert_eq(GameManager.current_coins, 10, "Exactly 10 coins collected in Stage 1")
 	assert_true(exit_gate._is_open, "Exit Gate unlocked after 10 coins")
+
+	remove_child(lvl)
+	lvl.free()
+
+func test_stage_1_pause_button() -> void:
+	print("\n--- TEST: Stage 1 Pause Button & Pause System ---")
+	var lvl1_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_1.tscn")
+	var lvl = lvl1_scene.instantiate()
+	add_child(lvl)
+
+	var pause_btn: Button = lvl.get_node_or_null("HUD/MarginContainer/TopBar/PauseBtn")
+	assert_true(pause_btn != null, "Pause button exists in Stage 1 HUD")
+	assert_true(pause_btn.is_inside_tree(), "Pause button is in scene tree")
+	assert_true(pause_btn.visible, "Pause button is visible")
+	assert_true(pause_btn.is_visible_in_tree(), "Pause button is visible in tree")
+	assert_true(not pause_btn.disabled, "Pause button is not disabled")
+	assert_eq(pause_btn.focus_mode, Control.FOCUS_NONE, "Pause button focus_mode is NONE (prevents touch focus capture)")
+	assert_eq(pause_btn.mouse_filter, Control.MOUSE_FILTER_STOP, "Pause button mouse_filter is STOP (handles clicks)")
+
+	var spacer: Control = lvl.get_node_or_null("HUD/MarginContainer/TopBar/Spacer")
+	var spacer2: Control = lvl.get_node_or_null("HUD/MarginContainer/TopBar/Spacer2")
+	assert_true(spacer != null and spacer.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Spacer ignores mouse/touch events")
+	assert_true(spacer2 != null and spacer2.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Spacer2 ignores mouse/touch events")
+
+	var pause_overlay = lvl.pause_overlay
+	assert_true(pause_overlay != null, "Pause overlay exists")
+	assert_true(not pause_overlay.visible, "Pause overlay starts hidden")
+	assert_true(not get_tree().paused, "Tree is not paused initially")
+
+	# Check connections
+	assert_true(pause_btn.pressed.is_connected(lvl._on_pause_pressed), "Pause button pressed signal is connected to _on_pause_pressed")
+	assert_true(pause_btn.gui_input.is_connected(lvl._on_pause_gui_input), "Pause button gui_input signal is connected to _on_pause_gui_input")
+
+	# Test 1: Screen touch event triggers pause
+	var touch_down = InputEventScreenTouch.new()
+	touch_down.position = Vector2(890, 24)
+	touch_down.pressed = true
+	lvl._on_pause_gui_input(touch_down)
+	assert_true(pause_overlay.visible, "Screen touch on Pause button opens pause overlay")
+	assert_true(get_tree().paused, "Tree is paused when pause overlay is open")
+
+	# Duplicate pause calls while paused are safely ignored
+	lvl._on_pause_pressed()
+	assert_true(pause_overlay.visible, "Duplicate pause call while paused remains stable")
+
+	# Test 2: Resume button resumes gameplay
+	pause_overlay._on_resume_pressed()
+	assert_true(not pause_overlay.visible, "Resume closes pause overlay")
+	assert_true(not get_tree().paused, "Resume unpauses the scene tree")
+
+	# Test 3: Direct button press
+	pause_btn.pressed.emit()
+	assert_true(pause_overlay.visible, "Button pressed signal opens pause overlay")
+	assert_true(get_tree().paused, "Scene tree paused on button press")
+	pause_overlay._on_resume_pressed()
+	assert_true(not get_tree().paused, "Tree unpaused after resume")
+
+	# Test 4: Traps and timers behavior during pause and resume
+	var plat4 = lvl.get_node("Platforms/Platform4")
+	plat4.reset()
+	plat4.trigger_from_coin()
+	assert_true(plat4._in_warning, "Spike trap warning active before pause")
+	var pre_pause_time = plat4._warning_timer
+	pause_btn.pressed.emit()
+	assert_true(get_tree().paused, "Tree paused during trap warning")
+	# Physics process is inactive while paused
+	plat4._physics_process(0.2)
+	assert_eq(plat4._warning_timer, pre_pause_time - 0.2, "Trap timer preserved across pause")
+	pause_overlay._on_resume_pressed()
+	assert_true(not get_tree().paused, "Tree unpaused, gameplay timer resumes")
+
+	# Test 5: Die and retry, verify pause button still works
+	var player = lvl.get_node("Player")
+	player.die()
+	assert_true(lvl.death_overlay.visible, "Death overlay shown on death")
+	lvl._on_retry()
+	assert_true(not lvl.death_overlay.visible, "Death overlay hidden on retry")
+	assert_true(not get_tree().paused, "Scene tree unpaused on retry")
+	assert_true(player._is_alive, "Player alive on retry")
+
+	# Pause button after retry
+	lvl._on_pause_gui_input(touch_down)
+	assert_true(pause_overlay.visible, "Pause button works after retry")
+	assert_true(get_tree().paused, "Tree is paused after retry pause")
+	pause_overlay._on_resume_pressed()
+	assert_true(not get_tree().paused, "Tree unpaused after second resume")
 
 	remove_child(lvl)
 	lvl.free()

@@ -36,6 +36,7 @@ func _ready() -> void:
 	GameManager.level_completed.connect(_on_level_completed)
 	
 	pause_button.pressed.connect(_on_pause_pressed)
+	pause_button.gui_input.connect(_on_pause_gui_input)
 	death_overlay.retry_requested.connect(_on_retry)
 	level_complete_overlay.replay_requested.connect(_on_retry)
 	pit_hazard_area.body_entered.connect(_on_pit_entered)
@@ -83,7 +84,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause"):
 		_on_pause_pressed()
 
+func _on_pause_gui_input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch and event.pressed:
+		pause_button.accept_event()
+		_on_pause_pressed()
+
 func _on_pause_pressed() -> void:
+	if pause_overlay.visible or death_overlay.visible or level_complete_overlay.visible:
+		return
 	_clear_touch_controls()
 	AudioManager.play_sfx("click")
 	pause_overlay.open()
@@ -109,6 +117,7 @@ func _on_retry() -> void:
 
 func _reset_level() -> void:
 	_clear_touch_controls()
+	get_tree().paused = false
 	death_overlay.visible = false
 	level_complete_overlay.visible = false
 	pause_overlay.visible = false
