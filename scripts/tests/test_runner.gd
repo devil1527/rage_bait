@@ -95,6 +95,7 @@ func run_all_tests() -> void:
 	test_level_1_invisible_spike_death_fix()
 	await test_stage_1_pause_button()
 	test_rewarded_revive_ad_system()
+	test_native_admob_plugin_lifecycle_and_security()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -3782,6 +3783,167 @@ func test_rewarded_revive_ad_system() -> void:
 	AdManager.disable_mock_mode()
 	remove_child(lvl)
 	lvl.free()
+
+class MockNativeAdmobPlugin extends RefCounted:
+	signal rewarded_ad_loaded(ad_data: Dictionary, load_data: Dictionary)
+	signal rewarded_ad_failed_to_load(ad_data: Dictionary, error_data: Dictionary)
+	signal rewarded_ad_showed_full_screen_content(ad_data: Dictionary)
+	signal rewarded_ad_failed_to_show_full_screen_content(ad_data: Dictionary, error_data: Dictionary)
+	signal rewarded_ad_dismissed_full_screen_content(ad_data: Dictionary)
+	signal rewarded_ad_user_earned_reward(ad_data: Dictionary, reward_data: Dictionary)
+
+	var initialized: bool = false
+	var last_loaded_dict: Dictionary = {}
+	var last_shown_ad_id: String = ""
+	var request_configuration: Dictionary = {}
+
+	func initialize() -> void:
+		initialized = true
+
+	func set_request_configuration(config: Dictionary) -> void:
+		request_configuration = config
+
+	func load_rewarded_ad(options: Dictionary) -> void:
+		last_loaded_dict = options
+
+	func show_rewarded_ad(ad_id: String) -> void:
+		last_shown_ad_id = ad_id
+
+func test_native_admob_plugin_lifecycle_and_security() -> void:
+	print("\n--- TEST: Native AdMob Plugin Lifecycle, Callbacks & Security ---")
+
+	# 1. SDK initialization failure when native singleton is missing
+	AdManager.set_mock_plugin(null, "")
+	AdManager.initialize()
+	assert_eq(AdManager.current_state, AdManager.AdState.NOT_LOADED, "AdMob Native: State is NOT_LOADED when plugin missing")
+	assert_eq(AdManager.last_error_type, AdManager.AdErrorType.PLUGIN_NOT_CONFIGURED, "AdMob Native: Error is PLUGIN_NOT_CONFIGURED when plugin missing")
+	assert_eq(AdManager.get_status_text(), "Ad service not configured", "AdMob Native: Status text explains ad service not configured")
+
+	# 2. SDK initialization success with AdmobPlugin singleton
+	var mock_plugin := MockNativeAdmobPlugin.new()
+	AdManager.set_mock_plugin(mock_plugin, "AdmobPlugin")
+	AdManager.initialize()
+	assert_true(mock_plugin.initialized, "AdMob Native: initialize() called on native plugin singleton")
+	assert_eq(AdManager.get_plugin_name(), "AdmobPlugin", "AdMob Native: Plugin name confirmed as AdmobPlugin")
+	assert_eq(AdManager.current_state, AdManager.AdState.LOADING, "AdMob Native: Initial load initiated after initialization")
+
+	# 3. Ad loading payload structure check
+	assert_true(mock_plugin.last_loaded_dict.has("ad_unit_id"), "AdMob Native: load_rewarded_ad sends Dictionary with 'ad_unit_id'")
+	assert_eq(mock_plugin.last_loaded_dict["ad_unit_id"], AdManager.rewarded_ad_unit_id, "AdMob Native: Correct rewarded ad unit ID sent to native SDK")
+	assert_true(AdManager.is_loading(), "AdMob Native: is_loading() is true while waiting for SDK response")
+	assert_eq(AdManager.get_status_text(), "Loading ad...", "AdMob Native: Status is 'Loading ad...' while loading")
+
+	# 4. Ad loading success callback from native SDK with ad_id caching
+	var test_ad_id := "ad_cache_android_test_101"
+	mock_plugin.rewarded_ad_loaded.emit({"ad_id": test_ad_id}, {})
+	assert_true(AdManager.is_rewarded_ad_ready(), "AdMob Native: is_rewarded_ad_ready() is true after rewarded_ad_loaded signal")
+	assert_eq(AdManager.get_last_loaded_ad_id(), test_ad_id, "AdMob Native: Ad ID cached from loaded event")
+	assert_eq(AdManager.get_status_text(), "Watch a short ad to revive here!", "AdMob Native: Status is ready message")
+
+	# 5. Ad loading failure mapping: Error Code 3 (NO_FILL)
+	AdManager.reset_cooldown()
+	mock_plugin.rewarded_ad_failed_to_load.emit({"ad_id": test_ad_id}, {"code": 3, "message": "No fill"})
+	assert_true(not AdManager.is_rewarded_ad_ready(), "AdMob Native: Ad not ready on NO_FILL")
+	assert_eq(AdManager.last_error_type, AdManager.AdErrorType.NO_FILL, "AdMob Native: Mapped error code 3 to NO_FILL")
+	assert_eq(AdManager.get_status_text(), "No ads available right now", "AdMob Native: NO_FILL status never claims device is offline")
+
+	# 6. Ad loading failure mapping: Error Code 2 (NETWORK_ERROR)
+	AdManager.reset_cooldown()
+	mock_plugin.rewarded_ad_failed_to_load.emit({}, {"code": 2, "message": "Network connection error"})
+	assert_eq(AdManager.last_error_type, AdManager.AdErrorType.NETWORK_ERROR, "AdMob Native: Mapped error code 2 to NETWORK_ERROR")
+	assert_eq(AdManager.get_status_text(), "Network connection needed", "AdMob Native: NETWORK_ERROR explains network needed")
+
+	# 7. Ad loading failure mapping: Error Code 1 (INVALID_REQUEST)
+	AdManager.reset_cooldown()
+	mock_plugin.rewarded_ad_failed_to_load.emit({}, {"code": 1, "message": "Invalid request"})
+	assert_eq(AdManager.last_error_type, AdManager.AdErrorType.INVALID_REQUEST, "AdMob Native: Mapped error code 1 to INVALID_REQUEST")
+
+	# 8. Ad loading failure mapping: Error Code 0 (INTERNAL_ERROR)
+	AdManager.reset_cooldown()
+	mock_plugin.rewarded_ad_failed_to_load.emit({}, {"code": 0, "message": "Internal error"})
+	assert_eq(AdManager.last_error_type, AdManager.AdErrorType.INTERNAL_ERROR, "AdMob Native: Mapped error code 0 to INTERNAL_ERROR")
+
+	# Setup DeathOverlay and Level 1 for in-game revive flow testing
+	var lvl1_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_1.tscn")
+	var lvl = lvl1_scene.instantiate()
+	add_child(lvl)
+	var player = lvl.get_node("Player")
+	var death_overlay = lvl.death_overlay
+
+	# 9. Death screen: Revive button disabled when ad not ready, Retry/LevelSelect available
+	player.global_position = Vector2(1340, 280)
+	player.die()
+	death_overlay.open()
+	assert_true(death_overlay.revive_btn.disabled, "AdMob Native: Revive button disabled when ad is not ready")
+	assert_true(not death_overlay.retry_btn.disabled, "AdMob Native: Retry button enabled when ad is not ready")
+	assert_true(not death_overlay.level_select_btn.disabled, "AdMob Native: Level Select button enabled when ad is not ready")
+
+	# 10. Load ad and verify Revive button enables
+	AdManager.reset_cooldown()
+	var test_ad_id_2 := "ad_revive_session_202"
+	mock_plugin.rewarded_ad_loaded.emit({"ad_id": test_ad_id_2}, {})
+	death_overlay._update_ad_status()
+	assert_true(not death_overlay.revive_btn.disabled, "AdMob Native: Revive button enabled after ad loaded")
+
+	# 11. Dismissal WITHOUT reward callback -> No revive granted
+	death_overlay._on_revive_pressed()
+	assert_eq(mock_plugin.last_shown_ad_id, test_ad_id_2, "AdMob Native: show_rewarded_ad called with cached ad ID")
+	mock_plugin.rewarded_ad_showed_full_screen_content.emit({"ad_id": test_ad_id_2})
+	# Ad closed before reward earned:
+	mock_plugin.rewarded_ad_dismissed_full_screen_content.emit({"ad_id": test_ad_id_2})
+	assert_true(not player._is_alive, "AdMob Native: Player NOT revived when ad dismissed without reward")
+	assert_true(not death_overlay.retry_btn.disabled, "AdMob Native: Retry button available after dismissed ad")
+	assert_true(not death_overlay.level_select_btn.disabled, "AdMob Native: Level Select available after dismissed ad")
+
+	# 12. Verified Reward Callback -> Grants exactly ONE revive
+	AdManager.reset_cooldown()
+	var test_ad_id_3 := "ad_revive_session_303"
+	mock_plugin.rewarded_ad_loaded.emit({"ad_id": test_ad_id_3}, {})
+	death_overlay._update_ad_status()
+	assert_true(not death_overlay.revive_btn.disabled, "AdMob Native: Revive button ready for second attempt")
+
+	GameManager.current_coins = 7
+	death_overlay._on_revive_pressed()
+	assert_eq(mock_plugin.last_shown_ad_id, test_ad_id_3, "AdMob Native: Correct ad ID shown for second attempt")
+	mock_plugin.rewarded_ad_showed_full_screen_content.emit({"ad_id": test_ad_id_3})
+	# Authoritative reward callback received from Google Mobile Ads SDK:
+	mock_plugin.rewarded_ad_user_earned_reward.emit({"ad_id": test_ad_id_3}, {"type": "Revive", "amount": 1})
+	mock_plugin.rewarded_ad_dismissed_full_screen_content.emit({"ad_id": test_ad_id_3})
+
+	assert_true(player._is_alive, "AdMob Native: Player successfully revived upon verified reward")
+	assert_true(player.is_invulnerable, "AdMob Native: Player has spawn protection active")
+	assert_eq(GameManager.current_coins, 7, "AdMob Native: Current coins preserved exactly on revive")
+	assert_true(not death_overlay.visible, "AdMob Native: Death overlay hidden upon revive")
+
+	# 13. Protection against duplicate reward callbacks
+	# Attempting a second reward callback on the already completed transaction
+	var pre_coins := GameManager.current_coins
+	mock_plugin.rewarded_ad_user_earned_reward.emit({"ad_id": test_ad_id_3}, {"type": "Revive", "amount": 1})
+	assert_eq(GameManager.current_coins, pre_coins, "AdMob Native: Duplicate reward callback safely discarded (no duplicate revive/coins)")
+
+	# 14. Protection against unexpected reward callbacks outside of any active transaction
+	mock_plugin.rewarded_ad_user_earned_reward.emit({"ad_id": "stale_id"}, {"type": "Revive", "amount": 1})
+	assert_true(player._is_alive, "AdMob Native: Unexpected reward callback safely ignored")
+
+	# 15. Show failure handling
+	AdManager.reset_cooldown()
+	var test_ad_id_4 := "ad_revive_session_404"
+	mock_plugin.rewarded_ad_loaded.emit({"ad_id": test_ad_id_4}, {})
+	player.is_invulnerable = false
+	player.die()
+	death_overlay.open()
+	death_overlay._on_revive_pressed()
+	mock_plugin.rewarded_ad_failed_to_show_full_screen_content.emit({"ad_id": test_ad_id_4}, {"code": 1, "message": "Failed to show ad content"})
+	assert_true(not player._is_alive, "AdMob Native: Player NOT revived when ad fails to show")
+	assert_true(not death_overlay.retry_btn.disabled, "AdMob Native: Retry button enabled on show failure")
+	assert_true(not death_overlay.level_select_btn.disabled, "AdMob Native: Level Select enabled on show failure")
+
+	# Clean up
+	AdManager.restore_plugin_detection()
+	AdManager.reset_cooldown()
+	remove_child(lvl)
+	lvl.free()
+
 
 
 

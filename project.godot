@@ -24,6 +24,10 @@ AudioManager="*res://scripts/autoload/audio_manager.gd"
 AdManager="*res://scripts/autoload/ad_manager.gd"
 GameManager="*res://scripts/autoload/game_manager.gd"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/AdmobPlugin/plugin.cfg")
+
 [display]
 
 window/size/viewport_width=960

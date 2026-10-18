@@ -58,6 +58,7 @@ var is_network_available: bool = true
 
 var _plugin_singleton: Object = null
 var _plugin_name: String = ""
+var _last_loaded_ad_id: String = ""
 
 # Preloading retry & backoff tracking
 var _load_retry_count: int = 0
@@ -118,7 +119,11 @@ func _load_configuration() -> void:
 	rewarded_ad_unit_id = DEFAULT_TEST_REWARDED_AD_UNIT_ID
 
 func _detect_plugin() -> void:
-	if Engine.has_singleton("GodotAdMob"):
+	if Engine.has_singleton("AdmobPlugin"):
+		_plugin_singleton = Engine.get_singleton("AdmobPlugin")
+		_plugin_name = "AdmobPlugin"
+		print("[AdManager] Detected native Android singleton: AdmobPlugin")
+	elif Engine.has_singleton("GodotAdMob"):
 		_plugin_singleton = Engine.get_singleton("GodotAdMob")
 		_plugin_name = "GodotAdMob"
 		print("[AdManager] Detected native Android singleton: GodotAdMob")
@@ -154,10 +159,13 @@ func initialize() -> void:
 
 	if _plugin_singleton.has_method("initialize"):
 		_plugin_singleton.call("initialize")
+		if _plugin_singleton.has_method("set_request_configuration"):
+			var req_config := {"test_device_ids": []}
+			_plugin_singleton.call("set_request_configuration", req_config)
 		current_state = AdState.NOT_LOADED
 		last_error_type = AdErrorType.NONE
 		initialization_completed.emit(true)
-		print("[AdManager] SDK initialized successfully with native provider.")
+		print("[AdManager] SDK initialized successfully with native provider: %s" % _plugin_name)
 		# Proactively preload rewarded ad in background
 		load_rewarded_ad()
 	else:
@@ -171,25 +179,36 @@ func _connect_plugin_signals() -> void:
 	if not _plugin_singleton:
 		return
 
+	# Loaded signals
 	_safe_connect_signal("rewarded_video_loaded", _on_plugin_rewarded_ad_loaded)
 	_safe_connect_signal("on_rewarded_video_ad_loaded", _on_plugin_rewarded_ad_loaded)
 	_safe_connect_signal("rewarded_ad_loaded", _on_plugin_rewarded_ad_loaded)
 
+	# Load failure signals
 	_safe_connect_signal("rewarded_video_failed_to_load", _on_plugin_rewarded_ad_failed_to_load)
 	_safe_connect_signal("on_rewarded_video_ad_failed_to_load", _on_plugin_rewarded_ad_failed_to_load)
 	_safe_connect_signal("rewarded_ad_failed_to_load", _on_plugin_rewarded_ad_failed_to_load)
 
+	# Ad opened / full screen content showed
 	_safe_connect_signal("rewarded_video_opened", _on_plugin_rewarded_ad_opened)
 	_safe_connect_signal("on_rewarded_video_ad_opened", _on_plugin_rewarded_ad_opened)
 	_safe_connect_signal("rewarded_ad_opened", _on_plugin_rewarded_ad_opened)
+	_safe_connect_signal("rewarded_ad_showed_full_screen_content", _on_plugin_rewarded_ad_opened)
 
+	# Show failures
+	_safe_connect_signal("rewarded_ad_failed_to_show_full_screen_content", _on_plugin_rewarded_ad_failed_to_show)
+
+	# Ad closed / dismissed
 	_safe_connect_signal("rewarded_video_closed", _on_plugin_rewarded_ad_closed)
 	_safe_connect_signal("on_rewarded_video_ad_closed", _on_plugin_rewarded_ad_closed)
 	_safe_connect_signal("rewarded_ad_closed", _on_plugin_rewarded_ad_closed)
+	_safe_connect_signal("rewarded_ad_dismissed_full_screen_content", _on_plugin_rewarded_ad_closed)
 
+	# User earned reward
 	_safe_connect_signal("rewarded", _on_plugin_user_earned_reward)
 	_safe_connect_signal("on_rewarded", _on_plugin_user_earned_reward)
 	_safe_connect_signal("user_earned_reward", _on_plugin_user_earned_reward)
+	_safe_connect_signal("rewarded_ad_user_earned_reward", _on_plugin_user_earned_reward)
 
 func _safe_connect_signal(signal_name: String, target_callable: Callable) -> void:
 	if _plugin_singleton and _plugin_singleton.has_signal(signal_name):
@@ -229,10 +248,12 @@ func load_rewarded_ad() -> void:
 	current_state = AdState.LOADING
 	print("[AdManager] Ad request started (attempt %d, ad_unit: %s)..." % [_load_retry_count + 1, rewarded_ad_unit_id])
 
-	if _plugin_singleton.has_method("load_rewarded_video"):
+	if _plugin_name == "AdmobPlugin":
+		_plugin_singleton.call("load_rewarded_ad", {"ad_unit_id": rewarded_ad_unit_id})
+	elif _plugin_singleton.has_method("load_rewarded_video"):
 		_plugin_singleton.call("load_rewarded_video", rewarded_ad_unit_id)
 	elif _plugin_singleton.has_method("load_rewarded_ad"):
-		_plugin_singleton.call("load_rewarded_ad", rewarded_ad_unit_id)
+		_plugin_singleton.call("load_rewarded_ad", {"ad_unit_id": rewarded_ad_unit_id})
 
 func is_rewarded_ad_ready() -> bool:
 	if _mock_mode_enabled:
@@ -269,10 +290,12 @@ func show_rewarded_ad_for_revive(on_reward: Callable, on_failure: Callable) -> b
 		return true
 
 	if _plugin_singleton != null:
-		if _plugin_singleton.has_method("show_rewarded_video"):
+		if _plugin_name == "AdmobPlugin":
+			_plugin_singleton.call("show_rewarded_ad", _last_loaded_ad_id)
+		elif _plugin_singleton.has_method("show_rewarded_video"):
 			_plugin_singleton.call("show_rewarded_video")
 		elif _plugin_singleton.has_method("show_rewarded_ad"):
-			_plugin_singleton.call("show_rewarded_ad")
+			_plugin_singleton.call("show_rewarded_ad", _last_loaded_ad_id)
 		rewarded_ad_opened.emit()
 		return true
 	else:
@@ -280,7 +303,21 @@ func show_rewarded_ad_for_revive(on_reward: Callable, on_failure: Callable) -> b
 		return false
 
 ## Authoritative reward callback received from the SDK
-func _on_plugin_user_earned_reward(currency_type: String = "Revive", amount: int = 1) -> void:
+func _on_plugin_user_earned_reward(arg1: Variant = "Revive", arg2: Variant = 1) -> void:
+	var currency_type: String = "Revive"
+	var amount: int = 1
+	if arg2 is Dictionary:
+		currency_type = str(arg2.get("type", "Revive"))
+		amount = int(arg2.get("amount", 1))
+	elif arg1 is Dictionary:
+		currency_type = str(arg1.get("type", "Revive"))
+		amount = int(arg1.get("amount", 1))
+	else:
+		if arg1 != null and typeof(arg1) == TYPE_STRING:
+			currency_type = str(arg1)
+		if arg2 != null and (typeof(arg2) == TYPE_INT or typeof(arg2) == TYPE_FLOAT):
+			amount = int(arg2)
+
 	if not _transaction_in_progress:
 		print("[AdManager] Discarding unexpected reward callback (no active revive transaction).")
 		return
@@ -299,28 +336,42 @@ func _on_plugin_user_earned_reward(currency_type: String = "Revive", amount: int
 		_active_reward_callback = Callable()
 		cb.call()
 
-func _on_plugin_rewarded_ad_loaded() -> void:
+func _on_plugin_rewarded_ad_loaded(arg1: Variant = null, _arg2: Variant = null) -> void:
+	if arg1 is Dictionary:
+		_last_loaded_ad_id = str(arg1.get("ad_id", ""))
 	current_state = AdState.READY
 	last_error_type = AdErrorType.NONE
 	last_error_code = null
 	last_error_message = ""
 	_load_retry_count = 0
 	_is_retrying = false
-	print("[AdManager] Rewarded ad loaded successfully and cached.")
+	print("[AdManager] Rewarded ad loaded successfully and cached (ad_id: %s)." % _last_loaded_ad_id)
 	rewarded_ad_loaded.emit()
 
-func _on_plugin_rewarded_ad_failed_to_load(error_code: Variant = 0) -> void:
+func _on_plugin_rewarded_ad_failed_to_load(arg1: Variant = 0, arg2: Variant = null) -> void:
 	current_state = AdState.ERROR
-	last_error_code = error_code
-	
+	var code_val: Variant = 0
+	var msg_val: String = ""
+
+	if arg2 is Dictionary:
+		code_val = arg2.get("code", 0)
+		msg_val = str(arg2.get("message", ""))
+	elif arg1 is Dictionary:
+		code_val = arg1.get("code", 0)
+		msg_val = str(arg1.get("message", ""))
+	else:
+		code_val = arg1
+		msg_val = str(arg1)
+
+	last_error_code = code_val
+	var code_int: int = int(code_val) if (typeof(code_val) == TYPE_INT or typeof(code_val) == TYPE_FLOAT) else -1
+	var code_str := (str(code_val) + " " + msg_val).to_lower()
+
 	# Categorize Google AdMob error codes cleanly:
 	# 0: ERROR_CODE_INTERNAL_ERROR
 	# 1: ERROR_CODE_INVALID_REQUEST
 	# 2: ERROR_CODE_NETWORK_ERROR
 	# 3: ERROR_CODE_NO_FILL
-	var code_int: int = int(error_code) if (typeof(error_code) == TYPE_INT or typeof(error_code) == TYPE_FLOAT) else -1
-	var code_str := str(error_code).to_lower()
-	
 	if code_int == 3 or "no_fill" in code_str or "no fill" in code_str:
 		last_error_type = AdErrorType.NO_FILL
 		last_error_message = "No ad inventory currently available from ad network."
@@ -339,10 +390,10 @@ func _on_plugin_rewarded_ad_failed_to_load(error_code: Variant = 0) -> void:
 		last_error_message = "Internal ad server error."
 	else:
 		last_error_type = AdErrorType.UNKNOWN
-		last_error_message = "Ad load failed (code: %s)" % str(error_code)
+		last_error_message = "Ad load failed (code: %s)" % str(code_val)
 
-	print("[AdManager] Ad load failed (error_type: %s, code: %s, message: %s)" % [last_error_type, str(error_code), last_error_message])
-	rewarded_ad_failed_to_load.emit(last_error_type, error_code, last_error_message)
+	print("[AdManager] Ad load failed (error_type: %s, code: %s, message: %s)" % [last_error_type, str(code_val), last_error_message])
+	rewarded_ad_failed_to_load.emit(last_error_type, code_val, last_error_message)
 
 	# Bounded exponential backoff retry for transient network/timeout errors
 	if (last_error_type == AdErrorType.NETWORK_ERROR or last_error_type == AdErrorType.TIMEOUT) and _load_retry_count < MAX_LOAD_RETRIES:
@@ -352,11 +403,22 @@ func _on_plugin_rewarded_ad_failed_to_load(error_code: Variant = 0) -> void:
 		_retry_timer = delay
 		print("[AdManager] Scheduling ad reload retry in %.1fs (attempt %d/%d)..." % [delay, _load_retry_count, MAX_LOAD_RETRIES])
 
-func _on_plugin_rewarded_ad_opened() -> void:
+func _on_plugin_rewarded_ad_opened(_arg1: Variant = null) -> void:
 	print("[AdManager] Rewarded ad opened fullscreen (transaction: %s)" % _current_transaction_id)
 	rewarded_ad_opened.emit()
 
-func _on_plugin_rewarded_ad_closed() -> void:
+func _on_plugin_rewarded_ad_failed_to_show(arg1: Variant = null, arg2: Variant = null) -> void:
+	var reason := "Failed to display ad."
+	if arg2 is Dictionary:
+		reason = str(arg2.get("message", reason))
+	elif arg1 is Dictionary:
+		reason = str(arg1.get("message", reason))
+	print("[AdManager] Rewarded ad failed to show: %s" % reason)
+	_handle_transaction_failure(reason)
+	_finish_transaction()
+	load_rewarded_ad()
+
+func _on_plugin_rewarded_ad_closed(_arg1: Variant = null) -> void:
 	print("[AdManager] Rewarded ad dismissed/closed (transaction: %s)" % _current_transaction_id)
 	rewarded_ad_closed.emit()
 
@@ -437,6 +499,32 @@ func disable_mock_mode() -> void:
 	_load_retry_count = 0
 	_detect_plugin()
 	initialize()
+
+func set_mock_plugin(mock: Object, plugin_name: String = "AdmobPlugin") -> void:
+	_plugin_singleton = mock
+	_plugin_name = plugin_name
+	_mock_mode_enabled = false
+	if _plugin_singleton != null:
+		_connect_plugin_signals()
+
+func restore_plugin_detection() -> void:
+	_mock_mode_enabled = false
+	_detect_plugin()
+
+func get_plugin_singleton() -> Object:
+	return _plugin_singleton
+
+func get_plugin_name() -> String:
+	return _plugin_name
+
+func get_last_loaded_ad_id() -> String:
+	return _last_loaded_ad_id
+
+func reset_cooldown() -> void:
+	_cooldown_timer = 0.0
+	_retry_timer = 0.0
+	_is_retrying = false
+	_load_retry_count = 0
 
 func set_mock_ad_available(available: bool) -> void:
 	_mock_ad_ready = available
