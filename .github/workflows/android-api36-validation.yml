@@ -92,7 +92,27 @@ jobs:
       - name: Export Android Test APK
         run: |
           mkdir -p build
-          godot --verbose --headless --export-debug "Android" build/coin-hell-api36-test.apk
+          echo "Starting Godot export-debug for preset 'Android'..."
+          set +e
+          godot --verbose --headless --export-debug "Android" build/coin-hell-api36-test.apk 2>&1 | tee /tmp/godot_export.log
+          EXPORT_STATUS=${PIPESTATUS[0]}
+          set -e
+          if [ $EXPORT_STATUS -ne 0 ]; then
+            echo "::error::Godot export-debug failed with status $EXPORT_STATUS"
+            echo "=== LAST 200 LINES OF GODOT EXPORT LOG ==="
+            tail -n 200 /tmp/godot_export.log
+            exit $EXPORT_STATUS
+          fi
+
+      - name: Dump Gradle and Export Logs on Failure
+        if: failure()
+        run: |
+          echo "=== CHECKING ANDROID BUILD DIRECTORY ==="
+          ls -la android/build || true
+          if [ -f /tmp/godot_export.log ]; then
+            echo "=== FULL EXPORT LOG ==="
+            cat /tmp/godot_export.log
+          fi
 
       - name: Verify Android Manifest Metadata & Intended ABIs
         run: |

@@ -126,7 +126,26 @@ jobs:
         run: |
           mkdir -p build
           echo "Starting Godot export-release for preset 'Android-Release-AAB'..."
-          godot --verbose --headless --export-release "Android-Release-AAB" build/retro-rage-arcade-release.aab
+          set +e
+          godot --verbose --headless --export-release "Android-Release-AAB" build/retro-rage-arcade-release.aab 2>&1 | tee /tmp/godot_export.log
+          EXPORT_STATUS=${PIPESTATUS[0]}
+          set -e
+          if [ $EXPORT_STATUS -ne 0 ]; then
+            echo "::error::Godot export-release failed with status $EXPORT_STATUS"
+            echo "=== LAST 200 LINES OF GODOT EXPORT LOG ==="
+            tail -n 200 /tmp/godot_export.log
+            exit $EXPORT_STATUS
+          fi
+
+      - name: Dump Gradle and Export Logs on Failure
+        if: failure()
+        run: |
+          echo "=== CHECKING ANDROID BUILD DIRECTORY ==="
+          ls -la android/build || true
+          if [ -f /tmp/godot_export.log ]; then
+            echo "=== FULL EXPORT LOG ==="
+            cat /tmp/godot_export.log
+          fi
 
       - name: Verify Release AAB File Integrity
         run: |
