@@ -207,10 +207,26 @@ func initialize() -> void:
 	else:
 		print("[AdManager] Warning: Unknown plugin singleton without initialize method.")
 
+## Determines if a given adapter key or dictionary represents the core Google Mobile Ads adapter.
+func _is_google_adapter(key_name: String, adapter_val: Variant) -> bool:
+	var key_lower := key_name.to_lower()
+	if key_lower == "google" or key_lower == "googlemobileads" or key_lower == "admob" \
+			or key_lower == "com.google.android.gms.ads.mobileads" \
+			or key_lower == "com.google.ads.mediation.admob.admobadapter":
+		return true
+	if adapter_val is Dictionary:
+		var adapter_class: String = String(adapter_val.get("adapter_class", "")).to_lower()
+		if "com.google.android.gms.ads.mobileads" in adapter_class \
+				or "com.google.ads.mediation.admob.admobadapter" in adapter_class:
+			return true
+	return false
+
 ## Inspects status dictionary (from initialization_completed signal or get_initialization_status)
-## and returns true ONLY if at least one adapter is "READY" and NO adapter is "NOT_READY".
-## If any adapter has initialization_state == "NOT_READY", returns false immediately.
-## If status is empty, null, or has no "READY" adapter, returns false.
+## and returns true ONLY if the primary Google Mobile Ads SDK adapter is positively "READY".
+## If the Google Mobile Ads adapter reports "NOT_READY", returns false immediately.
+## Unconfigured, optional third-party mediation adapters (e.g. Liftoff/Vungle, AppLovin, AdColony)
+## reporting "NOT_READY" or "Failed to create Adapter" do not fail initialization when Google is READY.
+## If status is empty, null, or has no Google Mobile Ads adapter, returns false.
 func is_initialization_status_ready(status: Variant) -> bool:
 	if status == null:
 		return false
@@ -236,24 +252,41 @@ func is_initialization_status_ready(status: Variant) -> bool:
 			return false
 		return state_str == "READY"
 
-	# Case 2: Adapter map dictionary e.g. {"GoogleMobileAds": {"initialization_state": "READY", ...}}
-	var has_ready_adapter := false
+	# Case 2: Adapter map dictionary e.g. {"GoogleMobileAds": {"initialization_state": "READY", ...}, "Vungle": ...}
+	var google_found := false
+	var google_ready := false
+
 	for key in status_dict.keys():
 		var val = status_dict[key]
-		if val is Dictionary:
-			var adapter_state: String = String(val.get("initialization_state", "")).to_upper()
-			if adapter_state == "NOT_READY":
-				print("[AdManager] Adapter '%s' status reports NOT_READY. Plugin is NOT ready." % str(key))
-				return false
-			elif adapter_state == "READY":
-				has_ready_adapter = true
-		elif String(val).to_upper() == "NOT_READY":
-			print("[AdManager] Key '%s' status reports NOT_READY. Plugin is NOT ready." % str(key))
-			return false
-		elif String(val).to_upper() == "READY":
-			has_ready_adapter = true
+		if _is_google_adapter(String(key), val):
+			google_found = true
+			var adapter_state: String = ""
+			if val is Dictionary:
+				adapter_state = String(val.get("initialization_state", "")).to_upper()
+			else:
+				adapter_state = String(val).to_upper()
 
-	return has_ready_adapter
+			if adapter_state == "READY":
+				google_ready = true
+			elif adapter_state == "NOT_READY":
+				print("[AdManager] Google Mobile Ads adapter '%s' status reports NOT_READY. Plugin is NOT ready." % str(key))
+				return false
+			else:
+				print("[AdManager] Google Mobile Ads adapter '%s' status is unrecognized (%s). Plugin is NOT ready." % [str(key), adapter_state])
+				return false
+		else:
+			# Non-Google optional mediation adapter
+			if val is Dictionary:
+				var med_state: String = String(val.get("initialization_state", "")).to_upper()
+				var med_desc: String = String(val.get("description", ""))
+				if med_state == "NOT_READY":
+					print("[AdManager] Optional mediation adapter '%s' is NOT_READY (%s). Ignored for Google test ads." % [str(key), med_desc])
+
+	if not google_found:
+		print("[AdManager] No Google Mobile Ads adapter found in status dictionary. Plugin is NOT ready.")
+		return false
+
+	return google_ready
 
 func _connect_plugin_signals() -> void:
 	if not _plugin_singleton:
@@ -316,7 +349,7 @@ func _on_plugin_initialization_completed(status_data: Variant = null) -> void:
 		initialization_completed.emit(false)
 		return
 
-	print("[AdManager] Native initialization SUCCESS: Verified READY from %s (Status: %s)" % [_plugin_name, str(status_data)])
+	print("[AdManager] Google Mobile Ads SDK READY: Native initialization completed successfully (Provider: %s, Status: %s)" % [_plugin_name, str(status_data)])
 	_is_plugin_initialized = true
 	_init_timeout_timer = 0.0
 	current_state = AdState.NOT_LOADED

@@ -97,6 +97,7 @@ func run_all_tests() -> void:
 	test_rewarded_revive_ad_system()
 	test_native_admob_plugin_lifecycle_and_security()
 	test_admob_initialization_not_ready_regression()
+	test_admob_mediation_readiness_and_distinct_errors_regression()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -4076,6 +4077,176 @@ func test_admob_initialization_not_ready_regression() -> void:
 	AdManager.reset_cooldown()
 	remove_child(lvl)
 	lvl.free()
+
+func test_admob_mediation_readiness_and_distinct_errors_regression() -> void:
+	print("\n--- TEST: AdMob Mediation Readiness, Distinct Error States & Phone Log Regression ---")
+
+	# 1. Exact phone log reproduction:
+	# Google adapter reports READY, but unconfigured mediation adapters report NOT_READY ("Failed to create Adapter")
+	var phone_log_status: Dictionary = {
+		"google": {
+			"adapter_class": "com.google.ads.mediation.admob.AdMobAdapter",
+			"initialization_state": "READY",
+			"latency": 1500,
+			"description": ""
+		},
+		"vungle": {
+			"adapter_class": "com.google.ads.mediation.vungle.VungleMediationAdapter",
+			"initialization_state": "NOT_READY",
+			"description": "Failed to create Adapter"
+		},
+		"applovin": {
+			"adapter_class": "com.google.ads.mediation.applovin.AppLovinMediationAdapter",
+			"initialization_state": "NOT_READY",
+			"description": "Failed to create Adapter"
+		},
+		"adcolony": {
+			"adapter_class": "com.jirbo.adcolony.AdColonyAdapter",
+			"initialization_state": "NOT_READY",
+			"description": "Failed to create Adapter"
+		}
+	}
+	assert_true(AdManager.is_initialization_status_ready(phone_log_status), "Phone Log: Google READY is accepted despite unconfigured mediation adapters reporting NOT_READY")
+
+	# 2. Rejection of Google NOT_READY even when mediation adapters report READY
+	var google_not_ready_status: Dictionary = {
+		"google": {
+			"adapter_class": "com.google.ads.mediation.admob.AdMobAdapter",
+			"initialization_state": "NOT_READY",
+			"latency": 0,
+			"description": ""
+		},
+		"vungle": {
+			"adapter_class": "com.google.ads.mediation.vungle.VungleMediationAdapter",
+			"initialization_state": "READY",
+			"description": ""
+		}
+	}
+	assert_true(not AdManager.is_initialization_status_ready(google_not_ready_status), "Phone Log: Google NOT_READY rejects initialization even if mediation adapter reports READY")
+
+	# 3. Missing Google adapter entry must NOT falsely report success
+	var missing_google_status: Dictionary = {
+		"vungle": {
+			"adapter_class": "com.google.ads.mediation.vungle.VungleMediationAdapter",
+			"initialization_state": "READY",
+			"description": ""
+		},
+		"applovin": {
+			"adapter_class": "com.google.ads.mediation.applovin.AppLovinMediationAdapter",
+			"initialization_state": "READY",
+			"description": ""
+		}
+	}
+	assert_true(not AdManager.is_initialization_status_ready(missing_google_status), "Phone Log: Missing Google adapter entry in map correctly rejected as not ready")
+
+	# 4. Safe handling of empty, malformed and null statuses
+	assert_true(not AdManager.is_initialization_status_ready(null), "Safety: null status rejected")
+	assert_true(not AdManager.is_initialization_status_ready({}), "Safety: empty status dictionary rejected")
+	assert_true(not AdManager.is_initialization_status_ready("READY"), "Safety: string status rejected")
+	assert_true(not AdManager.is_initialization_status_ready(12345), "Safety: integer status rejected")
+	assert_true(not AdManager.is_initialization_status_ready([1, 2, 3]), "Safety: array status rejected")
+	assert_true(not AdManager.is_initialization_status_ready({"google": "NOT_READY"}), "Safety: string NOT_READY rejected")
+	assert_true(AdManager.is_initialization_status_ready({"google": "READY"}), "Safety: string READY accepted")
+	assert_true(AdManager.is_initialization_status_ready(true), "Safety: boolean true accepted")
+	assert_true(not AdManager.is_initialization_status_ready(false), "Safety: boolean false rejected")
+
+	# 5. Full Lifecycle with MockNativeAdmobPlugin simulating the exact phone sequence:
+	# 18:46:33: init called
+	# 18:46:34: Google NOT_READY -> AdManager remains in INITIALIZING, zero ad requests sent
+	# 18:46:35: Google READY + unconfigured mediation NOT_READY -> AdManager completes initialization, requests ad!
+	var mock_plugin := MockNativeAdmobPlugin.new()
+	mock_plugin.custom_init_status = {"google": {"initialization_state": "NOT_READY"}}
+	AdManager.set_mock_plugin(mock_plugin, "AdmobPlugin")
+	AdManager.initialize()
+
+	assert_eq(AdManager.current_state, AdManager.AdState.INITIALIZING, "Phone Sequence: AdManager enters INITIALIZING state")
+	assert_true(not AdManager.is_plugin_initialized(), "Phone Sequence: Plugin not initialized while Google is NOT_READY")
+	assert_true(mock_plugin.last_loaded_dict.is_empty(), "Phone Sequence: No ad requests issued while Google is NOT_READY")
+
+	# Instantiation of death overlay to verify UI status text during sequence
+	var lvl1_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_1.tscn")
+	var lvl = lvl1_scene.instantiate()
+	add_child(lvl)
+	var death_overlay = lvl.death_overlay
+	death_overlay.open()
+
+	assert_eq(death_overlay.ad_status_label.text, "Initializing ad service...", "Phone Sequence: Death screen shows 'Initializing ad service...' while initializing")
+	assert_true(death_overlay.revive_btn.disabled, "Phone Sequence: Revive button disabled while initializing")
+	assert_true(not death_overlay.retry_btn.disabled, "Phone Sequence: Restart button enabled and responsive")
+	assert_true(not death_overlay.level_select_btn.disabled, "Phone Sequence: Level Select enabled and responsive")
+
+	# Now native completion arrives with Google READY + mediation NOT_READY
+	mock_plugin.initialization_completed.emit(phone_log_status)
+
+	assert_true(AdManager.is_plugin_initialized(), "Phone Sequence: AdManager marked initialized after Google READY")
+	assert_eq(AdManager.current_state, AdManager.AdState.LOADING, "Phone Sequence: AdManager immediately transitions to LOADING first ad")
+	assert_true(not mock_plugin.last_loaded_dict.is_empty(), "Phone Sequence: Rewarded ad request START immediately dispatched to native plugin")
+	assert_eq(mock_plugin.last_loaded_dict.get("ad_unit_id"), AdManager.rewarded_ad_unit_id, "Phone Sequence: Exact test rewarded ad unit ID requested")
+	assert_eq(death_overlay.ad_status_label.text, "Loading ad...", "Phone Sequence: Death screen shows 'Loading ad...' during ad request")
+	assert_true(death_overlay.revive_btn.disabled, "Phone Sequence: Revive button disabled while ad is loading")
+
+	# 6. Distinction between Initialization Failure and Ad Load Failure:
+	# Ensure ad load failures NEVER show "Ad service not configured"
+	AdManager.reset_cooldown()
+	mock_plugin.rewarded_ad_failed_to_load.emit({}, {"code": 3, "message": "No fill"})
+	death_overlay._update_ad_status()
+	assert_eq(AdManager.last_error_type, AdManager.AdErrorType.NO_FILL, "Distinct Errors: Error mapped to NO_FILL")
+	assert_eq(AdManager.get_status_text(), "No ads available right now", "Distinct Errors: Status text shows 'No ads available right now' (NEVER 'Ad service not configured')")
+	assert_ne(death_overlay.ad_status_label.text, "Ad service not configured", "Distinct Errors: UI does NOT display 'Ad service not configured' on NO_FILL")
+	assert_true(not death_overlay.retry_btn.disabled, "Distinct Errors: Restart button remains usable")
+	assert_true(not death_overlay.level_select_btn.disabled, "Distinct Errors: Level Select remains usable")
+
+	# Test network error ad-load failure
+	AdManager.reset_cooldown()
+	mock_plugin.rewarded_ad_failed_to_load.emit({}, {"code": 2, "message": "Network error"})
+	death_overlay._update_ad_status()
+	assert_eq(AdManager.last_error_type, AdManager.AdErrorType.NETWORK_ERROR, "Distinct Errors: Error mapped to NETWORK_ERROR")
+	assert_eq(AdManager.get_status_text(), "Network connection needed", "Distinct Errors: Status text shows 'Network connection needed' (NEVER 'Ad service not configured')")
+	assert_ne(death_overlay.ad_status_label.text, "Ad service not configured", "Distinct Errors: UI does NOT display 'Ad service not configured' on NETWORK_ERROR")
+
+	# Test ad load timeout failure
+	AdManager._on_load_timeout()
+	death_overlay._update_ad_status()
+	assert_eq(AdManager.last_error_type, AdManager.AdErrorType.TIMEOUT, "Distinct Errors: Error mapped to TIMEOUT")
+	assert_eq(AdManager.get_status_text(), "Ad request timed out", "Distinct Errors: Status text shows 'Ad request timed out' (NEVER 'Ad service not configured')")
+	assert_ne(death_overlay.ad_status_label.text, "Ad service not configured", "Distinct Errors: UI does NOT display 'Ad service not configured' on TIMEOUT")
+
+	# 7. Ad load success & Revive button readiness
+	var live_ad_id := "test_google_ad_999"
+	mock_plugin.rewarded_ad_loaded.emit({"ad_id": live_ad_id}, {})
+	death_overlay._update_ad_status()
+	assert_true(AdManager.is_rewarded_ad_ready(), "Ad Success: is_rewarded_ad_ready() is true")
+	assert_eq(death_overlay.ad_status_label.text, "Watch a short ad to revive here!", "Ad Success: Death overlay displays ready prompt")
+	assert_true(not death_overlay.revive_btn.disabled, "Ad Success: Revive button is enabled")
+
+	# 8. Duplicate initialization prevention
+	var prev_singleton = AdManager._plugin_singleton
+	AdManager.initialize() # Redundant call
+	assert_eq(AdManager._plugin_singleton, prev_singleton, "Re-entrancy: Redundant initialize() does not reset plugin or state")
+	assert_true(AdManager.is_rewarded_ad_ready(), "Re-entrancy: Rewarded ad remains ready after redundant initialize() call")
+
+	# 9. Verified Revive Flow and Anti-Duplicate Safeguards
+	var player = lvl.player
+	player._is_alive = false # Player starts dead
+	GameManager.current_coins = 10
+	death_overlay._on_revive_pressed()
+
+	# Emit authoritative reward callback
+	mock_plugin.rewarded_ad_user_earned_reward.emit({"ad_id": live_ad_id}, {"type": "Revive", "amount": 1})
+	assert_true(player._is_alive, "Revive Flow: Player successfully revived upon verified reward")
+	assert_eq(GameManager.current_coins, 10, "Revive Flow: Coins preserved on revive")
+	assert_true(not death_overlay.visible, "Revive Flow: Death overlay closed upon revive")
+
+	# Duplicate reward callback on same transaction: must be safely discarded
+	mock_plugin.rewarded_ad_user_earned_reward.emit({"ad_id": live_ad_id}, {"type": "Revive", "amount": 1})
+	assert_eq(GameManager.current_coins, 10, "Security: Duplicate reward callback safely ignored (no duplicate coins or revives)")
+
+	# 10. Clean up
+	AdManager.restore_plugin_detection()
+	AdManager.reset_cooldown()
+	remove_child(lvl)
+	lvl.free()
+
 
 
 
