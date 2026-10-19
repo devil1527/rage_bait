@@ -57,6 +57,15 @@ func assert_eq(actual, expected, test_name: String) -> void:
 		printerr("  [FAIL] %s - Expected: %s, Got: %s" % [test_name, str(expected), str(actual)])
 		failed_count += 1
 
+func assert_ne(actual, expected, test_name: String) -> void:
+	if actual != expected:
+		print("  [PASS] %s" % test_name)
+		passed_count += 1
+	else:
+		printerr("  [FAIL] %s - Expected NOT equal to: %s, Got: %s" % [test_name, str(expected), str(actual)])
+		failed_count += 1
+
+
 func run_all_tests() -> void:
 	test_save_manager_and_persistence()
 	test_game_manager_level_definitions()
@@ -4233,6 +4242,7 @@ func test_admob_mediation_readiness_and_distinct_errors_regression() -> void:
 
 	# Emit authoritative reward callback
 	mock_plugin.rewarded_ad_user_earned_reward.emit({"ad_id": live_ad_id}, {"type": "Revive", "amount": 1})
+	mock_plugin.rewarded_ad_dismissed_full_screen_content.emit({"ad_id": live_ad_id})
 	assert_true(player._is_alive, "Revive Flow: Player successfully revived upon verified reward")
 	assert_eq(GameManager.current_coins, 10, "Revive Flow: Coins preserved on revive")
 	assert_true(not death_overlay.visible, "Revive Flow: Death overlay closed upon revive")
