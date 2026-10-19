@@ -106,8 +106,8 @@ func _process(delta: float) -> void:
 		_init_timeout_timer -= delta
 		if _plugin_name == "AdmobPlugin" and _plugin_singleton != null:
 			var init_status: Variant = _plugin_singleton.call("get_initialization_status")
-			if init_status is Dictionary and not init_status.is_empty():
-				print("[AdManager] Native get_initialization_status() reports active readiness: %s" % str(init_status))
+			if is_initialization_status_ready(init_status):
+				print("[AdManager] Native get_initialization_status() confirmed READY: %s" % str(init_status))
 				_on_plugin_initialization_completed(init_status)
 		if _init_timeout_timer <= 0.0 and current_state == AdState.INITIALIZING:
 			_init_timeout_timer = 0.0
@@ -162,6 +162,13 @@ func _detect_plugin() -> void:
 		print("[AdManager] No native AdMob plugin singleton detected on platform: %s (AdMob native library pending build configuration)" % OS.get_name())
 
 func initialize() -> void:
+	if current_state == AdState.INITIALIZING:
+		print("[AdManager] Initialization already in progress. Ignoring redundant initialize() call.")
+		return
+	if _is_plugin_initialized:
+		print("[AdManager] Plugin already initialized. Ignoring redundant initialize() call.")
+		return
+
 	print("[AdManager] SDK Initializing... (plugin: %s, test_mode: %s)" % [_plugin_name if _plugin_name != "" else "none", is_test_mode])
 	
 	if _mock_mode_enabled:
@@ -199,6 +206,54 @@ func initialize() -> void:
 		_plugin_singleton.call("initialize")
 	else:
 		print("[AdManager] Warning: Unknown plugin singleton without initialize method.")
+
+## Inspects status dictionary (from initialization_completed signal or get_initialization_status)
+## and returns true ONLY if at least one adapter is "READY" and NO adapter is "NOT_READY".
+## If any adapter has initialization_state == "NOT_READY", returns false immediately.
+## If status is empty, null, or has no "READY" adapter, returns false.
+func is_initialization_status_ready(status: Variant) -> bool:
+	if status == null:
+		return false
+	if status is bool:
+		return status
+	if not (status is Dictionary):
+		return false
+	
+	var status_dict: Dictionary = status
+	if status_dict.is_empty():
+		return false
+
+	# Case 1: Flat status dictionary e.g. {"initialization_state": "READY"} or {"status": "READY"}
+	if status_dict.has("initialization_state"):
+		var state_str: String = String(status_dict["initialization_state"]).to_upper()
+		if state_str == "NOT_READY":
+			return false
+		return state_str == "READY"
+
+	if status_dict.has("status"):
+		var state_str: String = String(status_dict["status"]).to_upper()
+		if state_str == "NOT_READY":
+			return false
+		return state_str == "READY"
+
+	# Case 2: Adapter map dictionary e.g. {"GoogleMobileAds": {"initialization_state": "READY", ...}}
+	var has_ready_adapter := false
+	for key in status_dict.keys():
+		var val = status_dict[key]
+		if val is Dictionary:
+			var adapter_state: String = String(val.get("initialization_state", "")).to_upper()
+			if adapter_state == "NOT_READY":
+				print("[AdManager] Adapter '%s' status reports NOT_READY. Plugin is NOT ready." % str(key))
+				return false
+			elif adapter_state == "READY":
+				has_ready_adapter = true
+		elif String(val).to_upper() == "NOT_READY":
+			print("[AdManager] Key '%s' status reports NOT_READY. Plugin is NOT ready." % str(key))
+			return false
+		elif String(val).to_upper() == "READY":
+			has_ready_adapter = true
+
+	return has_ready_adapter
 
 func _connect_plugin_signals() -> void:
 	if not _plugin_singleton:
@@ -247,11 +302,26 @@ func _safe_connect_signal(signal_name: String, target_callable: Callable) -> voi
 func _on_plugin_initialization_completed(status_data: Variant = null) -> void:
 	if _is_plugin_initialized:
 		return
-	print("[AdManager] Native initialization SUCCESS: 'initialization_completed' signal received from %s (Status: %s)" % [_plugin_name, str(status_data)])
+
+	# CRITICAL READINESS GATE:
+	# A status containing initialization_state: "NOT_READY" can NEVER be treated as initialized.
+	# Reject any status that reports NOT_READY or fails positive verification.
+	if not is_initialization_status_ready(status_data):
+		print("[AdManager] Native initialization FAILED or INCOMPLETE: Status reports NOT_READY or invalid: %s" % str(status_data))
+		_is_plugin_initialized = false
+		current_state = AdState.NOT_LOADED
+		last_error_type = AdErrorType.PLUGIN_NOT_CONFIGURED
+		last_error_message = "Ad service adapter is NOT_READY. Tap to retry."
+		_init_timeout_timer = 0.0
+		initialization_completed.emit(false)
+		return
+
+	print("[AdManager] Native initialization SUCCESS: Verified READY from %s (Status: %s)" % [_plugin_name, str(status_data)])
 	_is_plugin_initialized = true
 	_init_timeout_timer = 0.0
 	current_state = AdState.NOT_LOADED
 	last_error_type = AdErrorType.NONE
+	last_error_message = ""
 	
 	if _plugin_name == "AdmobPlugin" or (_plugin_singleton and _plugin_singleton.has_method("set_request_configuration")):
 		var req_config := {"test_device_ids": []}
@@ -260,14 +330,14 @@ func _on_plugin_initialization_completed(status_data: Variant = null) -> void:
 
 	initialization_completed.emit(true)
 
-	# Preload first rewarded ad now that native SDK is confirmed initialized
+	# Preload first rewarded ad now that native SDK is confirmed initialized and verified READY
 	if not is_rewarded_ad_ready() and not is_loading():
 		print("[AdManager] Native SDK confirmed ready: initiating first rewarded ad preload...")
 		load_rewarded_ad()
 
 func _on_init_timeout() -> void:
 	print("[AdManager] Native initialization TIMEOUT: SDK failed to complete initialization within %.1fs." % INIT_TIMEOUT)
-	current_state = AdState.ERROR
+	current_state = AdState.NOT_LOADED
 	last_error_type = AdErrorType.TIMEOUT
 	last_error_code = -1
 	last_error_message = "Ad service initialization timed out. Tap to retry."
@@ -278,9 +348,9 @@ func load_rewarded_ad() -> void:
 	if _mock_mode_enabled:
 		return
 
-	# Strict gate: Never request an ad before native initialization completes
-	if not _is_plugin_initialized:
-		print("[AdManager] Refusing ad load: Native plugin has not completed initialization yet (state: %s)." % AdState.keys()[current_state])
+	# Strict gate: Never request an ad before native initialization completes and is verified
+	if not _is_plugin_initialized or current_state == AdState.INITIALIZING:
+		print("[AdManager] Refusing ad load: Native plugin has not completed initialization yet (state: %s, initialized: %s)." % [AdState.keys()[current_state], _is_plugin_initialized])
 		return
 
 	if current_state == AdState.READY:
@@ -628,11 +698,18 @@ func set_mock_plugin(mock: Object, plugin_name: String = "AdmobPlugin") -> void:
 	_plugin_singleton = mock
 	_plugin_name = plugin_name
 	_mock_mode_enabled = false
+	_is_plugin_initialized = false
+	current_state = AdState.UNINITIALIZED
+	_init_timeout_timer = 0.0
+	_load_timeout_timer = 0.0
+	_is_retrying = false
 	if _plugin_singleton != null:
 		_connect_plugin_signals()
 
 func restore_plugin_detection() -> void:
 	_mock_mode_enabled = false
+	_is_plugin_initialized = false
+	current_state = AdState.UNINITIALIZED
 	_detect_plugin()
 
 func get_plugin_singleton() -> Object:

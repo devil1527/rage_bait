@@ -96,6 +96,7 @@ func run_all_tests() -> void:
 	await test_stage_1_pause_button()
 	test_rewarded_revive_ad_system()
 	test_native_admob_plugin_lifecycle_and_security()
+	test_admob_initialization_not_ready_regression()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -3797,11 +3798,14 @@ class MockNativeAdmobPlugin extends RefCounted:
 	var last_loaded_dict: Dictionary = {}
 	var last_shown_ad_id: String = ""
 	var request_configuration: Dictionary = {}
+	var custom_init_status: Dictionary = {}
 
 	func initialize() -> void:
 		initialized = true
 
 	func get_initialization_status() -> Dictionary:
+		if not custom_init_status.is_empty():
+			return custom_init_status
 		return {"GoogleMobileAds": {"initialization_state": "READY"}} if initialized else {}
 
 	func set_request_configuration(config: Dictionary) -> void:
@@ -3979,6 +3983,100 @@ func test_native_admob_plugin_lifecycle_and_security() -> void:
 	AdManager.reset_cooldown()
 	remove_child(lvl)
 	lvl.free()
+
+func test_admob_initialization_not_ready_regression() -> void:
+	print("\n--- TEST: AdMob Initialization NOT_READY Regression, Timeout & Gating ---")
+
+	var mock_plugin := MockNativeAdmobPlugin.new()
+	# Exact phone log reproduction: get_initialization_status() reports NOT_READY
+	mock_plugin.custom_init_status = {"GoogleMobileAds": {"adapter_class": "com.google.android.gms.ads.MobileAds", "initialization_state": "NOT_READY", "latency": 0}}
+	AdManager.set_mock_plugin(mock_plugin, "AdmobPlugin")
+	AdManager.initialize()
+
+	assert_true(mock_plugin.initialized, "AdMob NOT_READY: initialize() invoked on native plugin")
+	assert_eq(AdManager.current_state, AdManager.AdState.INITIALIZING, "AdMob NOT_READY: State is INITIALIZING")
+	assert_true(not AdManager.is_plugin_initialized(), "AdMob NOT_READY: Plugin is NOT initialized")
+
+	# Test readiness helper directly with various payloads
+	assert_true(not AdManager.is_initialization_status_ready({"GoogleMobileAds": {"initialization_state": "NOT_READY"}}), "AdMob NOT_READY: Helper rejects NOT_READY adapter")
+	assert_true(not AdManager.is_initialization_status_ready({"initialization_state": "NOT_READY"}), "AdMob NOT_READY: Helper rejects flat NOT_READY status")
+	assert_true(not AdManager.is_initialization_status_ready({}), "AdMob NOT_READY: Helper rejects empty status map")
+	assert_true(not AdManager.is_initialization_status_ready(null), "AdMob NOT_READY: Helper rejects null status")
+	assert_true(AdManager.is_initialization_status_ready({"GoogleMobileAds": {"initialization_state": "READY"}}), "AdMob NOT_READY: Helper accepts READY adapter")
+	assert_true(AdManager.is_initialization_status_ready({"initialization_state": "READY"}), "AdMob NOT_READY: Helper accepts flat READY status")
+
+	# Simulate active polling frame: ensure poll does NOT mark plugin initialized when status is NOT_READY
+	AdManager._process(0.1)
+	assert_eq(AdManager.current_state, AdManager.AdState.INITIALIZING, "AdMob NOT_READY: Active polling frame preserves INITIALIZING state when status is NOT_READY")
+	assert_true(not AdManager.is_plugin_initialized(), "AdMob NOT_READY: Plugin remains uninitialized despite polling status returning NOT_READY")
+	assert_true(mock_plugin.last_loaded_dict.is_empty(), "AdMob NOT_READY: Zero ad requests sent while NOT_READY")
+
+	# Attempt to call load_rewarded_ad() directly: strict gate must reject it
+	AdManager.load_rewarded_ad()
+	assert_true(mock_plugin.last_loaded_dict.is_empty(), "AdMob NOT_READY: load_rewarded_ad() rejected while uninitialized / INITIALIZING")
+
+	# Emit native initialization_completed signal with NOT_READY payload (e.g. SDK failed or offline startup)
+	var init_signal_capture := [false, true] # [fired, success]
+	var on_init_cb := func(success: bool):
+		init_signal_capture[0] = true
+		init_signal_capture[1] = success
+	AdManager.initialization_completed.connect(on_init_cb)
+
+	mock_plugin.initialization_completed.emit({"GoogleMobileAds": {"initialization_state": "NOT_READY"}})
+	AdManager.initialization_completed.disconnect(on_init_cb)
+
+	assert_true(init_signal_capture[0], "AdMob NOT_READY: initialization_completed signal was emitted")
+	assert_true(not init_signal_capture[1], "AdMob NOT_READY: Signal emitted success=false for NOT_READY status")
+	assert_true(not AdManager.is_plugin_initialized(), "AdMob NOT_READY: Plugin remains NOT initialized after NOT_READY signal")
+	assert_true(mock_plugin.last_loaded_dict.is_empty(), "AdMob NOT_READY: Still zero ad requests sent")
+	assert_eq(AdManager.current_state, AdManager.AdState.NOT_LOADED, "AdMob NOT_READY: State transitioned to NOT_LOADED")
+	assert_eq(AdManager.last_error_type, AdManager.AdErrorType.PLUGIN_NOT_CONFIGURED, "AdMob NOT_READY: Error type is PLUGIN_NOT_CONFIGURED")
+
+	# Test death overlay reaction when initialization is not ready
+	var lvl1_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_1.tscn")
+	var lvl = lvl1_scene.instantiate()
+	add_child(lvl)
+	var death_overlay = lvl.death_overlay
+	death_overlay.open()
+
+	assert_true(death_overlay.revive_btn.disabled, "AdMob NOT_READY: Revive button disabled when not initialized")
+	assert_true(not death_overlay.retry_btn.disabled, "AdMob NOT_READY: Retry button enabled and usable")
+	assert_true(not death_overlay.level_select_btn.disabled, "AdMob NOT_READY: Level Select button enabled and usable")
+
+	# Test re-entrancy protection: calling initialize() while in INITIALIZING does not restart or duplicate
+	AdManager.current_state = AdManager.AdState.INITIALIZING
+	var timer_before := AdManager._init_timeout_timer
+	AdManager.initialize()
+	assert_eq(AdManager._init_timeout_timer, timer_before, "AdMob NOT_READY: initialize() while INITIALIZING is safely ignored")
+
+	# Test initialization timeout path
+	AdManager.current_state = AdManager.AdState.INITIALIZING
+	AdManager._is_plugin_initialized = false
+	AdManager._init_timeout_timer = 0.5
+	AdManager._process(1.0)
+	assert_eq(AdManager.current_state, AdManager.AdState.NOT_LOADED, "AdMob Timeout: State is NOT_LOADED after initialization timeout")
+	assert_eq(AdManager.last_error_type, AdManager.AdErrorType.TIMEOUT, "AdMob Timeout: Error type is TIMEOUT")
+	assert_true(not AdManager.is_plugin_initialized(), "AdMob Timeout: Plugin is not initialized after timeout")
+	death_overlay._update_ad_status()
+	assert_true(death_overlay.revive_btn.disabled, "AdMob Timeout: Revive button disabled after timeout")
+	assert_true(not death_overlay.retry_btn.disabled, "AdMob Timeout: Restart button remains enabled and usable")
+	assert_true(not death_overlay.level_select_btn.disabled, "AdMob Timeout: Level Select remains enabled and usable")
+
+	# Test successful recovery and initialization once READY is received
+	mock_plugin.custom_init_status = {"GoogleMobileAds": {"initialization_state": "READY"}}
+	AdManager.retry_load_ad() # Triggers initialize() since not initialized
+	assert_eq(AdManager.current_state, AdManager.AdState.INITIALIZING, "AdMob Recovery: State entered INITIALIZING on retry")
+	mock_plugin.initialization_completed.emit({"GoogleMobileAds": {"initialization_state": "READY"}})
+	assert_true(AdManager.is_plugin_initialized(), "AdMob Recovery: Plugin initialized after READY signal")
+	assert_true(not mock_plugin.last_loaded_dict.is_empty(), "AdMob Recovery: load_rewarded_ad sent ad request immediately upon READY")
+	assert_eq(AdManager.current_state, AdManager.AdState.LOADING, "AdMob Recovery: State is LOADING ad")
+
+	# Clean up
+	AdManager.restore_plugin_detection()
+	AdManager.reset_cooldown()
+	remove_child(lvl)
+	lvl.free()
+
 
 
 
