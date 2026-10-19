@@ -361,12 +361,13 @@ func _on_plugin_initialization_completed(status_data: Variant = null) -> void:
 		_plugin_singleton.call("set_request_configuration", req_config)
 		print("[AdManager] Native request configuration reapplied post-initialization.")
 
-	initialization_completed.emit(true)
-
 	# Preload first rewarded ad now that native SDK is confirmed initialized and verified READY
 	if not is_rewarded_ad_ready() and not is_loading():
 		print("[AdManager] Native SDK confirmed ready: initiating first rewarded ad preload...")
 		load_rewarded_ad()
+
+	initialization_completed.emit(true)
+
 
 func _on_init_timeout() -> void:
 	print("[AdManager] Native initialization TIMEOUT: SDK failed to complete initialization within %.1fs." % INIT_TIMEOUT)

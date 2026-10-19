@@ -116,7 +116,16 @@ jobs:
 
       - name: Run Headless Automated Test Suite
         run: |
-          godot --headless "res://scenes/tests/test_runner.tscn"
+          set +e
+          godot --headless "res://scenes/tests/test_runner.tscn" 2>&1 | tee /tmp/test_runner.log
+          TEST_STATUS=${PIPESTATUS[0]}
+          set -e
+          if [ $TEST_STATUS -ne 0 ]; then
+            echo "::error title=Test Suite Failure::Automated test suite failed with exit code $TEST_STATUS"
+            cat /tmp/test_runner.log
+            exit $TEST_STATUS
+          fi
+
 
       - name: Export Signed Android Release AAB
         env:

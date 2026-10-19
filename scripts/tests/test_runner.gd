@@ -4191,6 +4191,8 @@ func test_admob_mediation_readiness_and_distinct_errors_regression() -> void:
 	assert_eq(AdManager.current_state, AdManager.AdState.LOADING, "Phone Sequence: AdManager immediately transitions to LOADING first ad")
 	assert_true(not mock_plugin.last_loaded_dict.is_empty(), "Phone Sequence: Rewarded ad request START immediately dispatched to native plugin")
 	assert_eq(mock_plugin.last_loaded_dict.get("ad_unit_id"), AdManager.rewarded_ad_unit_id, "Phone Sequence: Exact test rewarded ad unit ID requested")
+	death_overlay._update_ad_status()
+	assert_eq(AdManager.get_status_text(), "Loading ad...", "Phone Sequence: AdManager status is 'Loading ad...' during ad request")
 	assert_eq(death_overlay.ad_status_label.text, "Loading ad...", "Phone Sequence: Death screen shows 'Loading ad...' during ad request")
 	assert_true(death_overlay.revive_btn.disabled, "Phone Sequence: Revive button disabled while ad is loading")
 
@@ -4236,7 +4238,10 @@ func test_admob_mediation_readiness_and_distinct_errors_regression() -> void:
 
 	# 9. Verified Revive Flow and Anti-Duplicate Safeguards
 	var player = lvl.player
-	player._is_alive = false # Player starts dead
+	player.global_position = Vector2(1340, 280)
+	player.die()
+	death_overlay.open()
+	death_overlay._update_ad_status()
 	GameManager.current_coins = 10
 	death_overlay._on_revive_pressed()
 
