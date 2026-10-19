@@ -46,6 +46,7 @@ const MAX_LOAD_RETRIES := 3
 const RETRY_BACKOFF_DELAYS: Array[float] = [5.0, 15.0, 30.0]
 const NO_FILL_COOLDOWN := 30.0
 const LOAD_TIMEOUT := 12.0
+const INIT_TIMEOUT := 15.0
 
 var is_test_mode: bool = true
 var app_id: String = DEFAULT_TEST_APP_ID
@@ -61,6 +62,8 @@ var _plugin_singleton: Object = null
 var _plugin_name: String = ""
 var _last_loaded_ad_id: String = ""
 var _is_plugin_initialized: bool = false
+var _init_requested: bool = false
+var _init_timeout_timer: float = 0.0
 var _load_timeout_timer: float = 0.0
 
 # Preloading retry & backoff tracking
@@ -97,6 +100,18 @@ func _process(delta: float) -> void:
 			_is_retrying = false
 			print("[AdManager] Retry timer expired. Attempting rewarded ad reload (attempt %d/%d)..." % [_load_retry_count, MAX_LOAD_RETRIES])
 			load_rewarded_ad()
+
+	# Bounded initialization timeout and active readiness polling for native plugin
+	if current_state == AdState.INITIALIZING and not _is_plugin_initialized:
+		_init_timeout_timer -= delta
+		if _plugin_name == "AdmobPlugin" and _plugin_singleton != null:
+			var init_status: Variant = _plugin_singleton.call("get_initialization_status")
+			if init_status is Dictionary and not init_status.is_empty():
+				print("[AdManager] Native get_initialization_status() reports active readiness: %s" % str(init_status))
+				_on_plugin_initialization_completed(init_status)
+		if _init_timeout_timer <= 0.0 and current_state == AdState.INITIALIZING:
+			_init_timeout_timer = 0.0
+			_on_init_timeout()
 
 	# Bounded ad load timeout to prevent UI indefinite loading hang
 	if current_state == AdState.LOADING:
@@ -152,6 +167,7 @@ func initialize() -> void:
 	if _mock_mode_enabled:
 		current_state = AdState.READY if _mock_ad_ready else AdState.NOT_LOADED
 		last_error_type = AdErrorType.NONE
+		_is_plugin_initialized = true
 		initialization_completed.emit(true)
 		print("[AdManager] SDK initialized in mock test mode.")
 		return
@@ -160,31 +176,29 @@ func initialize() -> void:
 		current_state = AdState.NOT_LOADED
 		last_error_type = AdErrorType.PLUGIN_NOT_CONFIGURED
 		last_error_message = "Native AdMob plugin is not configured in this export."
+		_is_plugin_initialized = false
 		initialization_completed.emit(false)
 		print("[AdManager] SDK initialization incomplete: native plugin singleton not present.")
 		return
 
 	current_state = AdState.INITIALIZING
+	_is_plugin_initialized = false
+	_init_requested = true
+	_init_timeout_timer = INIT_TIMEOUT
 	_connect_plugin_signals()
 
-	if _plugin_singleton.has_method("initialize"):
+	# Start native initialization asynchronously.
+	# NEVER invoke load_rewarded_ad() here. We strictly await the native
+	# 'initialization_completed' signal before requesting any ads from the native SDK.
+	print("[AdManager] Native initialization START: Invoking initialize() on %s. Awaiting native completion signal..." % _plugin_name)
+	if _plugin_name == "AdmobPlugin":
 		_plugin_singleton.call("initialize")
-		if _plugin_singleton.has_method("set_request_configuration"):
-			var req_config := {"test_device_ids": []}
-			_plugin_singleton.call("set_request_configuration", req_config)
-		current_state = AdState.NOT_LOADED
-		last_error_type = AdErrorType.NONE
-		initialization_completed.emit(true)
-		print("[AdManager] SDK initialized successfully with native provider: %s" % _plugin_name)
-		# Proactively preload rewarded ad in background
-		load_rewarded_ad()
+	elif _plugin_singleton.has_method("initialize"):
+		_plugin_singleton.call("initialize")
+	elif _plugin_name != "":
+		_plugin_singleton.call("initialize")
 	else:
-		current_state = AdState.NOT_LOADED
-		last_error_type = AdErrorType.NONE
-		_is_plugin_initialized = true
-		initialization_completed.emit(true)
-		print("[AdManager] SDK initialized with native provider.")
-		load_rewarded_ad()
+		print("[AdManager] Warning: Unknown plugin singleton without initialize method.")
 
 func _connect_plugin_signals() -> void:
 	if not _plugin_singleton:
@@ -231,25 +245,42 @@ func _safe_connect_signal(signal_name: String, target_callable: Callable) -> voi
 			print("[AdManager] Connected native signal: %s" % signal_name)
 
 func _on_plugin_initialization_completed(status_data: Variant = null) -> void:
-	print("[AdManager] Native AdMob SDK initialization completed signal received from %s. Status: %s" % [_plugin_name, str(status_data)])
+	if _is_plugin_initialized:
+		return
+	print("[AdManager] Native initialization SUCCESS: 'initialization_completed' signal received from %s (Status: %s)" % [_plugin_name, str(status_data)])
 	_is_plugin_initialized = true
+	_init_timeout_timer = 0.0
+	current_state = AdState.NOT_LOADED
+	last_error_type = AdErrorType.NONE
 	
-	if _plugin_singleton and _plugin_singleton.has_method("set_request_configuration"):
+	if _plugin_name == "AdmobPlugin" or (_plugin_singleton and _plugin_singleton.has_method("set_request_configuration")):
 		var req_config := {"test_device_ids": []}
 		_plugin_singleton.call("set_request_configuration", req_config)
 		print("[AdManager] Native request configuration reapplied post-initialization.")
 
 	initialization_completed.emit(true)
 
-	# If the SDK finished initializing and an ad is not ready, load now with active native backend
-	if not is_rewarded_ad_ready():
-		print("[AdManager] Initializing finished: requesting rewarded ad from active native SDK.")
-		current_state = AdState.NOT_LOADED
+	# Preload first rewarded ad now that native SDK is confirmed initialized
+	if not is_rewarded_ad_ready() and not is_loading():
+		print("[AdManager] Native SDK confirmed ready: initiating first rewarded ad preload...")
 		load_rewarded_ad()
+
+func _on_init_timeout() -> void:
+	print("[AdManager] Native initialization TIMEOUT: SDK failed to complete initialization within %.1fs." % INIT_TIMEOUT)
+	current_state = AdState.ERROR
+	last_error_type = AdErrorType.TIMEOUT
+	last_error_code = -1
+	last_error_message = "Ad service initialization timed out. Tap to retry."
+	initialization_completed.emit(false)
 
 ## Safely request and preload a rewarded ad before it is needed
 func load_rewarded_ad() -> void:
 	if _mock_mode_enabled:
+		return
+
+	# Strict gate: Never request an ad before native initialization completes
+	if not _is_plugin_initialized:
+		print("[AdManager] Refusing ad load: Native plugin has not completed initialization yet (state: %s)." % AdState.keys()[current_state])
 		return
 
 	if current_state == AdState.READY:
@@ -258,6 +289,10 @@ func load_rewarded_ad() -> void:
 
 	if current_state == AdState.LOADING:
 		print("[AdManager] Rewarded ad request already in progress (%.1fs remaining on timeout timer)." % _load_timeout_timer)
+		return
+
+	if current_state == AdState.SHOWING:
+		print("[AdManager] Rewarded ad is currently showing.")
 		return
 
 	if _cooldown_timer > 0.0:
@@ -279,7 +314,7 @@ func load_rewarded_ad() -> void:
 
 	current_state = AdState.LOADING
 	_load_timeout_timer = LOAD_TIMEOUT
-	print("[AdManager] Ad request started (attempt %d, ad_unit: %s, timeout: %.1fs)..." % [_load_retry_count + 1, rewarded_ad_unit_id, LOAD_TIMEOUT])
+	print("[AdManager] Rewarded ad request START (attempt %d, ad_unit: %s, timeout: %.1fs)..." % [_load_retry_count + 1, rewarded_ad_unit_id, LOAD_TIMEOUT])
 
 	if _plugin_name == "AdmobPlugin":
 		var request_payload: Dictionary = {
@@ -288,7 +323,7 @@ func load_rewarded_ad() -> void:
 		_plugin_singleton.call("load_rewarded_ad", request_payload)
 	elif _plugin_singleton.has_method("load_rewarded_video"):
 		_plugin_singleton.call("load_rewarded_video", rewarded_ad_unit_id)
-	elif _plugin_singleton.has_method("load_rewarded_ad"):
+	else:
 		_plugin_singleton.call("load_rewarded_ad", {"ad_unit_id": rewarded_ad_unit_id})
 
 func is_rewarded_ad_ready() -> bool:
@@ -437,7 +472,7 @@ func _on_plugin_rewarded_ad_failed_to_load(arg1: Variant = 0, arg2: Variant = nu
 		last_error_type = AdErrorType.UNKNOWN
 		last_error_message = "Ad load failed (code: %s)" % str(code_val)
 
-	print("[AdManager] Ad load failed (error_type: %s, code: %s, message: %s)" % [last_error_type, str(code_val), last_error_message])
+	print("[AdManager] Rewarded ad load FAILURE: error_type=%s, code=%s, message='%s'" % [AdErrorType.keys()[last_error_type], str(code_val), last_error_message])
 	rewarded_ad_failed_to_load.emit(last_error_type, code_val, last_error_message)
 
 	# Bounded exponential backoff retry for transient network/timeout errors
@@ -468,6 +503,13 @@ func _on_load_timeout() -> void:
 
 ## Allows controlled manual retry from the UI when an ad is not ready or has timed out
 func retry_load_ad() -> void:
+	if current_state == AdState.INITIALIZING:
+		print("[AdManager] Native SDK is still initializing. Cannot retry load yet.")
+		return
+	if not _is_plugin_initialized and not _mock_mode_enabled:
+		print("[AdManager] Native SDK not initialized. Re-triggering initialize()...")
+		initialize()
+		return
 	if current_state == AdState.LOADING:
 		print("[AdManager] Ad request already active. Ignoring redundant manual retry.")
 		return
@@ -539,6 +581,8 @@ func cancel_current_transaction() -> void:
 func get_status_text() -> String:
 	if is_rewarded_ad_ready():
 		return "Watch a short ad to revive here!"
+	elif current_state == AdState.INITIALIZING:
+		return "Initializing ad service..."
 	elif is_loading():
 		return "Loading ad..."
 	elif current_state == AdState.SHOWING:
@@ -555,6 +599,9 @@ func get_status_text() -> String:
 		return "Network connection needed"
 	else:
 		return "Ad temporarily unavailable"
+
+func is_initializing() -> bool:
+	return current_state == AdState.INITIALIZING
 
 # ==============================================================================
 # MOCK / UNIT TEST HARNESS METHODS (For Part E Automated Acceptance Testing)

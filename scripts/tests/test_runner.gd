@@ -3801,6 +3801,9 @@ class MockNativeAdmobPlugin extends RefCounted:
 	func initialize() -> void:
 		initialized = true
 
+	func get_initialization_status() -> Dictionary:
+		return {"GoogleMobileAds": {"initialization_state": "READY"}} if initialized else {}
+
 	func set_request_configuration(config: Dictionary) -> void:
 		request_configuration = config
 
@@ -3826,7 +3829,14 @@ func test_native_admob_plugin_lifecycle_and_security() -> void:
 	AdManager.initialize()
 	assert_true(mock_plugin.initialized, "AdMob Native: initialize() called on native plugin singleton")
 	assert_eq(AdManager.get_plugin_name(), "AdmobPlugin", "AdMob Native: Plugin name confirmed as AdmobPlugin")
-	assert_eq(AdManager.current_state, AdManager.AdState.LOADING, "AdMob Native: Initial load initiated after initialization")
+	assert_eq(AdManager.current_state, AdManager.AdState.INITIALIZING, "AdMob Native: State is INITIALIZING while awaiting completion callback")
+	assert_true(not AdManager.is_plugin_initialized(), "AdMob Native: Not initialized until native callback arrives")
+	assert_true(mock_plugin.last_loaded_dict.is_empty(), "AdMob Native: No ad request sent before native initialization completion")
+
+	# 2b. Native initialization completes
+	mock_plugin.initialization_completed.emit({"status": "READY"})
+	assert_true(AdManager.is_plugin_initialized(), "AdMob Native: is_plugin_initialized true after initialization_completed signal")
+	assert_eq(AdManager.current_state, AdManager.AdState.LOADING, "AdMob Native: Initial load initiated after initialization complete")
 
 	# 3. Ad loading payload structure check
 	assert_true(mock_plugin.last_loaded_dict.has("ad_unit_id"), "AdMob Native: load_rewarded_ad sends Dictionary with 'ad_unit_id'")

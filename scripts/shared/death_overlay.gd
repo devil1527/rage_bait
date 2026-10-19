@@ -16,6 +16,7 @@ func _ready() -> void:
 	ad_status_label.mouse_filter = Control.MOUSE_FILTER_STOP
 	ad_status_label.gui_input.connect(_on_ad_status_label_gui_input)
 	if AdManager:
+		AdManager.initialization_completed.connect(_on_ad_initialization_completed)
 		AdManager.rewarded_ad_loaded.connect(_on_ad_loaded)
 		AdManager.rewarded_ad_failed_to_load.connect(_on_ad_failed_to_load)
 		AdManager.network_state_changed.connect(_on_network_state_changed)
@@ -23,8 +24,8 @@ func _ready() -> void:
 func open() -> void:
 	visible = true
 	_update_ad_status()
-	# Proactively request ad if not ready yet and not currently loading
-	if AdManager and not AdManager.is_rewarded_ad_ready() and not AdManager.is_loading():
+	# Proactively request ad if not ready yet, not loading, and native SDK is initialized
+	if AdManager and not AdManager.is_rewarded_ad_ready() and not AdManager.is_loading() and AdManager.is_plugin_initialized():
 		AdManager.load_rewarded_ad()
 
 func _exit_tree() -> void:
@@ -46,6 +47,11 @@ func _update_ad_status() -> void:
 		revive_btn.text = "🎬 WATCH AD — REVIVE"
 		ad_status_label.text = "Watch a short ad to revive here!"
 		ad_status_label.modulate = Color(0.5, 1.0, 0.6, 0.9)
+	elif AdManager.is_initializing():
+		revive_btn.disabled = true
+		revive_btn.text = "🎬 WATCH AD — REVIVE"
+		ad_status_label.text = "Initializing ad service..."
+		ad_status_label.modulate = Color(1.0, 0.85, 0.3, 0.9)
 	elif AdManager.is_loading():
 		revive_btn.disabled = true
 		revive_btn.text = "🎬 WATCH AD — REVIVE"
@@ -71,11 +77,15 @@ func _on_ad_status_label_gui_input(event: InputEvent) -> void:
 	elif event is InputEventScreenTouch and event.pressed:
 		is_click = true
 
-	if is_click and AdManager and not AdManager.is_rewarded_ad_ready() and not AdManager.is_loading():
+	if is_click and AdManager and not AdManager.is_rewarded_ad_ready() and not AdManager.is_loading() and not AdManager.is_initializing():
 		AudioManager.play_sfx("click")
 		ad_status_label.text = "Loading ad..."
 		ad_status_label.modulate = Color(1.0, 0.85, 0.3, 0.9)
 		AdManager.retry_load_ad()
+
+func _on_ad_initialization_completed(_success: bool) -> void:
+	if visible:
+		_update_ad_status()
 
 func _on_ad_loaded() -> void:
 	if visible:
