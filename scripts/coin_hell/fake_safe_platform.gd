@@ -19,12 +19,12 @@ var _in_warning: bool = false
 var _warning_timer: float = 0.0
 var _warning_tween: Tween = null
 
-@onready var visual_rect: NinePatchRect = $NinePatchRect
-@onready var collision_shape: CollisionShape2D = $CollisionShape2D
+@onready var visual_rect: NinePatchRect = get_node_or_null("NinePatchRect")
+@onready var collision_shape: CollisionShape2D = get_node_or_null("CollisionShape2D")
 @onready var trigger_area: Area2D = get_node_or_null("TriggerArea")
-@onready var spikes_area: Area2D = $SpikesArea
-@onready var spikes_sprite: Sprite2D = $SpikesArea/Sprite2D
-@onready var spikes_collision: CollisionShape2D = $SpikesArea/CollisionShape2D
+@onready var spikes_area: Area2D = get_node_or_null("SpikesArea")
+@onready var spikes_sprite: Sprite2D = get_node_or_null("SpikesArea/Sprite2D")
+@onready var spikes_collision: CollisionShape2D = get_node_or_null("SpikesArea/CollisionShape2D")
 
 func _ready() -> void:
 	_initial_pos = global_position

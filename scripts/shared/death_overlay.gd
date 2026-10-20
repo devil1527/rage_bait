@@ -145,13 +145,15 @@ func _on_revive_reward_granted(expected_run_id: int = -1) -> void:
 		return
 
 	print("[DeathOverlay] Authoritative revive reward received for run %d." % (expected_run_id if expected_run_id != -1 else GameManager.current_run_id))
-	get_tree().paused = false
-	visible = false
-	revive_btn.disabled = false
-	retry_btn.disabled = false
-	# Centralized revive execution
-	GameManager.revive_current_player()
-	revive_requested.emit()
+	var revived := GameManager.revive_current_player()
+	if revived:
+		visible = false
+		revive_btn.disabled = false
+		retry_btn.disabled = false
+		revive_requested.emit()
+	else:
+		get_tree().paused = false
+		_update_ad_status()
 
 func _on_revive_ad_failed(reason: String) -> void:
 	print("[DeathOverlay] Ad flow failed or dismissed: %s" % reason)

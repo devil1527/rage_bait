@@ -76,6 +76,7 @@ var _cooldown_timer: float = 0.0
 var _current_transaction_id: String = ""
 var _transaction_in_progress: bool = false
 var _transaction_consumed: bool = false
+var _reward_earned_in_current_transaction: bool = false
 var _active_reward_callback: Callable = Callable()
 var _active_failure_callback: Callable = Callable()
 var _transaction_counter: int = 0
@@ -455,6 +456,7 @@ func show_rewarded_ad_for_revive(on_reward: Callable, on_failure: Callable) -> b
 	_current_transaction_id = "revive_%d_%d" % [Time.get_ticks_msec(), _transaction_counter]
 	_transaction_in_progress = true
 	_transaction_consumed = false
+	_reward_earned_in_current_transaction = false
 	_active_reward_callback = on_reward
 	_active_failure_callback = on_failure
 	current_state = AdState.SHOWING
@@ -502,14 +504,19 @@ func _on_plugin_user_earned_reward(arg1: Variant = "Revive", arg2: Variant = 1) 
 		return
 
 	_transaction_consumed = true
+	_reward_earned_in_current_transaction = true
 	print("[AdManager] Authoritative reward verified: %s x %d (transaction: %s)" % [currency_type, amount, _current_transaction_id])
 	user_earned_reward.emit(currency_type, amount)
-	revive_reward_verified.emit(_current_transaction_id)
 
-	if _active_reward_callback.is_valid():
-		var cb := _active_reward_callback
-		_active_reward_callback = Callable()
-		cb.call()
+	# If not currently displaying full-screen ad (e.g. mock test environment), execute revive callback immediately
+	if current_state != AdState.SHOWING or _plugin_singleton == null or _mock_mode_enabled:
+		revive_reward_verified.emit(_current_transaction_id)
+		if _active_reward_callback.is_valid():
+			var cb := _active_reward_callback
+			_active_reward_callback = Callable()
+			cb.call()
+	else:
+		print("[AdManager] Reward recorded. Waiting for ad dismissal to execute revive safely in the foreground.")
 
 func _on_plugin_rewarded_ad_loaded(arg1: Variant = null, _arg2: Variant = null) -> void:
 	_load_timeout_timer = 0.0
@@ -645,8 +652,17 @@ func _on_plugin_rewarded_ad_closed(_arg1: Variant = null) -> void:
 	print("[AdManager] Rewarded ad dismissed/closed (transaction: %s)" % _current_transaction_id)
 	rewarded_ad_closed.emit()
 
-	if _transaction_in_progress and not _transaction_consumed:
-		_handle_transaction_failure("Ad was closed before completing the reward requirement.")
+	if _transaction_in_progress:
+		if _reward_earned_in_current_transaction:
+			_reward_earned_in_current_transaction = false
+			print("[AdManager] Full-screen ad dismissed. Executing verified revive callback now!")
+			revive_reward_verified.emit(_current_transaction_id)
+			if _active_reward_callback.is_valid():
+				var cb := _active_reward_callback
+				_active_reward_callback = Callable()
+				cb.call()
+		elif not _transaction_consumed:
+			_handle_transaction_failure("Ad was closed before completing the reward requirement.")
 
 	_finish_transaction()
 	# Proactively preload next ad for subsequent deaths
@@ -664,6 +680,7 @@ func _handle_transaction_failure(reason: String) -> void:
 
 func _finish_transaction() -> void:
 	_transaction_in_progress = false
+	_reward_earned_in_current_transaction = false
 	_active_reward_callback = Callable()
 	_active_failure_callback = Callable()
 	if current_state == AdState.SHOWING:

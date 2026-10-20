@@ -22,9 +22,9 @@ var _is_triggered: bool = false
 var _is_falling: bool = false
 var _timer: float = 0.0
 
-@onready var collision_shape: CollisionShape2D = $CollisionShape2D
-@onready var visual_rect: NinePatchRect = $NinePatchRect
-@onready var step_area: Area2D = $StepArea
+@onready var collision_shape: CollisionShape2D = get_node_or_null("CollisionShape2D")
+@onready var visual_rect: NinePatchRect = get_node_or_null("NinePatchRect")
+@onready var step_area: Area2D = get_node_or_null("StepArea")
 
 func _ready() -> void:
 	_initial_pos = global_position

@@ -57,32 +57,32 @@ func _init() -> void:
 
 func _init_styles() -> void:
 	# World 1: Neon Cyan Styles
-	_style_w1_comp_normal = _create_card_style(Color(0.04, 0.14, 0.18, 0.95), Color(0.0, 0.92, 1.0, 0.95), 2, Color(0.0, 0.85, 1.0, 0.35), 6)
-	_style_w1_comp_hover = _create_card_style(Color(0.07, 0.18, 0.24, 0.98), Color(0.3, 1.0, 1.0, 1.0), 2, Color(0.0, 0.95, 1.0, 0.6), 8)
-	_style_w1_avail_normal = _create_card_style(Color(0.07, 0.10, 0.18, 0.95), Color(1.0, 0.82, 0.15, 1.0), 2, Color(1.0, 0.75, 0.1, 0.3), 5)
-	_style_w1_avail_hover = _create_card_style(Color(0.10, 0.15, 0.26, 0.98), Color(1.0, 0.94, 0.35, 1.0), 3, Color(1.0, 0.85, 0.2, 0.55), 8)
+	_style_w1_comp_normal = _create_card_style(Color(0.04, 0.13, 0.18, 0.96), Color(0.0, 0.95, 1.0, 1.0), 2, Color(0.0, 0.9, 1.0, 0.4), 8)
+	_style_w1_comp_hover = _create_card_style(Color(0.06, 0.18, 0.25, 0.98), Color(0.3, 1.0, 1.0, 1.0), 2, Color(0.0, 1.0, 1.0, 0.65), 12)
+	_style_w1_avail_normal = _create_card_style(Color(0.08, 0.10, 0.18, 0.96), Color(1.0, 0.85, 0.20, 1.0), 2, Color(1.0, 0.8, 0.15, 0.45), 8)
+	_style_w1_avail_hover = _create_card_style(Color(0.11, 0.15, 0.26, 0.98), Color(1.0, 0.95, 0.40, 1.0), 3, Color(1.0, 0.88, 0.25, 0.7), 12)
 
 	# World 2: The Haunted Hall (Spectral Violet Styles)
-	_style_w2_comp_normal = _create_card_style(Color(0.12, 0.08, 0.20, 0.95), Color(0.78, 0.55, 1.0, 0.95), 2, Color(0.7, 0.4, 1.0, 0.35), 6)
-	_style_w2_comp_hover = _create_card_style(Color(0.16, 0.11, 0.26, 0.98), Color(0.9, 0.7, 1.0, 1.0), 2, Color(0.8, 0.5, 1.0, 0.6), 8)
-	_style_w2_avail_normal = _create_card_style(Color(0.10, 0.08, 0.16, 0.95), Color(1.0, 0.82, 0.15, 1.0), 2, Color(1.0, 0.75, 0.1, 0.3), 5)
-	_style_w2_avail_hover = _create_card_style(Color(0.14, 0.11, 0.22, 0.98), Color(1.0, 0.94, 0.35, 1.0), 3, Color(1.0, 0.85, 0.2, 0.55), 8)
+	_style_w2_comp_normal = _create_card_style(Color(0.12, 0.08, 0.20, 0.96), Color(0.80, 0.55, 1.0, 1.0), 2, Color(0.75, 0.45, 1.0, 0.4), 8)
+	_style_w2_comp_hover = _create_card_style(Color(0.16, 0.11, 0.28, 0.98), Color(0.92, 0.72, 1.0, 1.0), 2, Color(0.85, 0.55, 1.0, 0.65), 12)
+	_style_w2_avail_normal = _create_card_style(Color(0.10, 0.08, 0.18, 0.96), Color(1.0, 0.85, 0.20, 1.0), 2, Color(1.0, 0.8, 0.15, 0.45), 8)
+	_style_w2_avail_hover = _create_card_style(Color(0.14, 0.11, 0.25, 0.98), Color(1.0, 0.95, 0.40, 1.0), 3, Color(1.0, 0.88, 0.25, 0.7), 12)
 
 	# World 3: Rage Factory (Hazard Amber/Orange Styles)
-	_style_w3_comp_normal = _create_card_style(Color(0.15, 0.10, 0.06, 0.95), Color(1.0, 0.68, 0.15, 0.95), 2, Color(1.0, 0.6, 0.1, 0.35), 6)
-	_style_w3_comp_hover = _create_card_style(Color(0.20, 0.13, 0.08, 0.98), Color(1.0, 0.82, 0.30, 1.0), 2, Color(1.0, 0.7, 0.15, 0.6), 8)
-	_style_w3_avail_normal = _create_card_style(Color(0.12, 0.08, 0.05, 0.95), Color(1.0, 0.55, 0.12, 1.0), 2, Color(1.0, 0.5, 0.1, 0.35), 5)
-	_style_w3_avail_hover = _create_card_style(Color(0.17, 0.11, 0.07, 0.98), Color(1.0, 0.75, 0.25, 1.0), 3, Color(1.0, 0.65, 0.15, 0.55), 8)
+	_style_w3_comp_normal = _create_card_style(Color(0.15, 0.09, 0.05, 0.96), Color(1.0, 0.68, 0.15, 1.0), 2, Color(1.0, 0.6, 0.12, 0.4), 8)
+	_style_w3_comp_hover = _create_card_style(Color(0.20, 0.13, 0.08, 0.98), Color(1.0, 0.85, 0.32, 1.0), 2, Color(1.0, 0.75, 0.18, 0.65), 12)
+	_style_w3_avail_normal = _create_card_style(Color(0.14, 0.09, 0.06, 0.96), Color(1.0, 0.85, 0.20, 1.0), 2, Color(1.0, 0.8, 0.15, 0.45), 8)
+	_style_w3_avail_hover = _create_card_style(Color(0.18, 0.12, 0.08, 0.98), Color(1.0, 0.95, 0.40, 1.0), 3, Color(1.0, 0.88, 0.25, 0.7), 12)
 
 	# World 4: Final Hell (Infernal Crimson Styles)
-	_style_w4_normal = _create_card_style(Color(0.10, 0.05, 0.07, 0.90), Color(0.70, 0.22, 0.28, 0.85), 1, Color(0.6, 0.15, 0.2, 0.2), 4)
-	_style_w4_hover = _create_card_style(Color(0.14, 0.07, 0.10, 0.95), Color(0.95, 0.30, 0.40, 0.95), 2, Color(0.9, 0.2, 0.3, 0.4), 6)
+	_style_w4_normal = _create_card_style(Color(0.12, 0.05, 0.08, 0.92), Color(0.85, 0.25, 0.35, 0.85), 1, Color(0.8, 0.18, 0.28, 0.25), 5)
+	_style_w4_hover = _create_card_style(Color(0.16, 0.07, 0.11, 0.96), Color(1.0, 0.35, 0.45, 1.0), 2, Color(0.95, 0.25, 0.35, 0.5), 8)
 
 	# Locked and Planned Styles
-	_style_lock_normal = _create_card_style(Color(0.06, 0.06, 0.11, 0.85), Color(0.22, 0.25, 0.35, 0.85), 1, Color.TRANSPARENT, 0)
-	_style_lock_hover = _create_card_style(Color(0.09, 0.09, 0.16, 0.92), Color(0.32, 0.36, 0.48, 0.90), 2, Color.TRANSPARENT, 0)
-	_style_planned_normal = _create_card_style(Color(0.05, 0.05, 0.09, 0.80), Color(0.18, 0.20, 0.28, 0.70), 1, Color.TRANSPARENT, 0)
-	_style_planned_hover = _create_card_style(Color(0.08, 0.08, 0.13, 0.88), Color(0.26, 0.28, 0.38, 0.85), 1, Color.TRANSPARENT, 0)
+	_style_lock_normal = _create_card_style(Color(0.06, 0.06, 0.11, 0.88), Color(0.24, 0.27, 0.38, 0.85), 1, Color.TRANSPARENT, 0)
+	_style_lock_hover = _create_card_style(Color(0.09, 0.09, 0.16, 0.94), Color(0.35, 0.40, 0.54, 0.95), 2, Color.TRANSPARENT, 0)
+	_style_planned_normal = _create_card_style(Color(0.05, 0.05, 0.09, 0.82), Color(0.18, 0.20, 0.28, 0.70), 1, Color.TRANSPARENT, 0)
+	_style_planned_hover = _create_card_style(Color(0.08, 0.08, 0.13, 0.90), Color(0.28, 0.30, 0.40, 0.85), 1, Color.TRANSPARENT, 0)
 
 	# Dev Bypass Styles
 	_style_dev_normal = _create_card_style(Color(0.05, 0.12, 0.18, 0.95), Color(0.0, 0.80, 1.0, 1.0), 2, Color(0.0, 0.7, 1.0, 0.3), 5)
@@ -390,6 +390,7 @@ func _build_level_tiles() -> void:
 			btn.name = "LevelBtn_%d" % lvl_id
 
 			var vbox := VBoxContainer.new()
+			vbox.name = "VBox"
 			vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
 			vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 			vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -577,17 +578,17 @@ func _on_level_tile_pressed(level_id: int) -> void:
 	var is_unlocked: bool = SaveManager.is_level_unlocked(level_id)
 	var is_implemented: bool = GameManager.can_play_level(level_id)
 
-	if not is_unlocked and not (is_debug_mode and dev_bypass_active):
-		AudioManager.play_sfx("warning")
-		modal_title.text = "LEVEL %d IS LOCKED" % level_id
-		modal_label.text = "Locked! Beat the previous level first. The developer has enough problems already."
-		message_modal.visible = true
-		return
-
 	if not is_implemented:
 		AudioManager.play_sfx("warning")
 		modal_title.text = "LEVEL %d IN PROGRESS" % level_id
 		modal_label.text = "Level %d is still being built. Replay an earlier level for now." % level_id
+		message_modal.visible = true
+		return
+
+	if not is_unlocked and not (is_debug_mode and dev_bypass_active):
+		AudioManager.play_sfx("warning")
+		modal_title.text = "LEVEL %d IS LOCKED" % level_id
+		modal_label.text = "Locked! Beat the previous level first. The developer has enough problems already."
 		message_modal.visible = true
 		return
 

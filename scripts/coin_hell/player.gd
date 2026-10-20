@@ -20,6 +20,7 @@ var _jump_buffer_timer: float = 0.0
 var _was_on_floor: bool = false
 var _is_alive: bool = true
 var _input_disabled: bool = false
+var _grounded_safety_timer: float = 0.0
 
 # Temporary spawn protection / invulnerability (used during rewarded revive)
 var is_invulnerable: bool = false
@@ -67,9 +68,8 @@ func _physics_process(delta: float) -> void:
 		die(true)
 		return
 
-	# Record safe foothold position when stably resting on ground safely above pits
-	if is_on_floor() and not is_invulnerable and global_position.y < 460.0 and GameManager:
-		GameManager.record_safe_position(global_position)
+	# Check and record safe foothold position when stably resting on ground safely above pits
+	_check_and_record_safe_anchor(delta)
 
 	# Handle gravity
 	if not is_on_floor():
@@ -125,6 +125,41 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 
+func _check_and_record_safe_anchor(delta: float) -> void:
+	if not _is_alive or _input_disabled or is_invulnerable:
+		_grounded_safety_timer = 0.0
+		return
+
+	if is_on_floor() and abs(velocity.y) < 1.0 and global_position.y < 460.0:
+		var floor_is_safe := true
+		for i in range(get_slide_collision_count()):
+			var coll := get_slide_collision(i)
+			if coll.get_normal().y < -0.7:
+				var collider := coll.get_collider()
+				if collider is Node:
+					if collider.is_in_group("hazard") or collider.is_in_group("traps"):
+						floor_is_safe = false
+						break
+					if collider.get_script():
+						var s_path: String = collider.get_script().resource_path.to_lower()
+						if "falling" in s_path or "crumbling" in s_path or "fake" in s_path or "greedy" in s_path or "phantom" in s_path or "moving" in s_path:
+							floor_is_safe = false
+							break
+					if collider.has_method("is_triggered") and collider.call("is_triggered"):
+						floor_is_safe = false
+						break
+
+		if floor_is_safe:
+			_grounded_safety_timer += delta
+			if _grounded_safety_timer >= 0.15:
+				_grounded_safety_timer = 0.0
+				if GameManager:
+					GameManager.record_safe_position(global_position)
+		else:
+			_grounded_safety_timer = 0.0
+	else:
+		_grounded_safety_timer = 0.0
+
 func die(force_pit: bool = false) -> void:
 	if not _is_alive:
 		return
@@ -164,12 +199,13 @@ func disable_input() -> void:
 	Input.action_release("jump")
 	velocity.x = 0.0
 
-func apply_spawn_protection(duration: float = 1.0) -> void:
+func apply_spawn_protection(duration: float = 1.5) -> void:
 	is_invulnerable = true
 	_invulnerability_timer = duration
 	visible = true
 	if sprite:
 		sprite.visible = true
+		sprite.modulate = Color.WHITE
 
 func revive() -> void:
 	_is_alive = true

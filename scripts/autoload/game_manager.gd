@@ -13,8 +13,10 @@ var current_coins: int = 0
 var total_coins_required: int = 10
 var is_gameplay_active: bool = false
 
-# Player reference and revive tracking
+# Player reference and safe checkpoint / revive tracking
 var active_player: CharacterBody2D = null
+var level_spawn_point: Vector2 = Vector2.ZERO
+var safe_anchors: Array[Vector2] = []
 var last_safe_position: Vector2 = Vector2.ZERO
 var last_death_position: Vector2 = Vector2.ZERO
 var revives_used_this_death: int = 0
@@ -102,6 +104,12 @@ func start_new_run() -> void:
 	current_run_id += 1
 	revives_used_this_run = 0
 	revives_used_this_death = 0
+	safe_anchors.clear()
+	if level_spawn_point != Vector2.ZERO:
+		safe_anchors.append(level_spawn_point)
+		last_safe_position = level_spawn_point
+	else:
+		last_safe_position = Vector2.ZERO
 
 func can_revive_this_run() -> bool:
 	return is_gameplay_active and (revives_used_this_run < MAX_REVIVES_PER_RUN)
@@ -181,20 +189,103 @@ func register_player(p: CharacterBody2D) -> void:
 func _on_player_tree_exiting() -> void:
 	active_player = null
 
+func set_level_spawn_point(pos: Vector2) -> void:
+	level_spawn_point = pos
+	safe_anchors.clear()
+	if pos != Vector2.ZERO:
+		safe_anchors.append(pos)
+	last_safe_position = pos
+
+func register_safe_anchor(pos: Vector2) -> void:
+	record_safe_position(pos)
+
 func record_safe_position(pos: Vector2) -> void:
-	# Keep track of solid ground location safely above pits (y < 460.0)
-	if pos.y < 460.0:
+	# Only register candidate foothold if it is within reasonable bounds above pits
+	if pos.y >= 480.0 or pos.y <= 0.0:
+		return
+	if safe_anchors.is_empty():
+		safe_anchors.append(pos)
 		last_safe_position = pos
+		return
+	var last_pos: Vector2 = safe_anchors.back()
+	if pos.distance_to(last_pos) >= 48.0:
+		safe_anchors.append(pos)
+		last_safe_position = pos
+		if safe_anchors.size() > 15:
+			safe_anchors.pop_front()
 
 func record_death_position(pos: Vector2) -> void:
 	last_death_position = pos
 
-func find_safe_revive_position(death_pos: Vector2) -> Vector2:
-	# Priority 1: Use last stable grounded safe foothold if available and elevated safely above pits
-	if last_safe_position != Vector2.ZERO and last_safe_position.y < 460.0:
-		return last_safe_position
+func is_position_safe_for_spawn(pos: Vector2) -> bool:
+	if pos.y >= 480.0 or pos.y <= 0.0:
+		return false
 
-	# Priority 2: Use level SpawnPoint if available
+	var p: CharacterBody2D = active_player
+	if p == null or not is_instance_valid(p) or not p.is_inside_tree():
+		var players := get_tree().get_nodes_in_group("player")
+		if players.size() > 0:
+			p = players[0]
+
+	if p and is_instance_valid(p) and p.is_inside_tree() and p.get_world_2d():
+		var space_state := p.get_world_2d().direct_space_state
+		var col_shape := p.get_node_or_null("CollisionShape2D") as CollisionShape2D
+		if space_state and col_shape and col_shape.shape:
+			# 1. Physics query for overlapping hazards (layer 4)
+			var shape_query := PhysicsShapeQueryParameters2D.new()
+			shape_query.shape = col_shape.shape
+			shape_query.transform = Transform2D(0.0, pos + col_shape.position)
+			shape_query.collision_mask = 4 # Hazard layer (spikes, crushers, etc.)
+			shape_query.collide_with_areas = true
+			shape_query.collide_with_bodies = true
+			var hazard_hits := space_state.intersect_shape(shape_query, 1)
+			if not hazard_hits.is_empty():
+				print("[GameManager] Candidate anchor %s rejected: intersects lethal hazard." % str(pos))
+				return false
+
+			# 2. Physics query for overlapping walls (layer 2)
+			shape_query.collision_mask = 2 # Solid wall layer
+			shape_query.collide_with_areas = false
+			shape_query.collide_with_bodies = true
+			var wall_hits := space_state.intersect_shape(shape_query, 1)
+			if not wall_hits.is_empty():
+				print("[GameManager] Candidate anchor %s rejected: inside wall geometry." % str(pos))
+				return false
+
+			# 3. Physics raycast down 32px to ensure solid ground support
+			var ray_query := PhysicsRayQueryParameters2D.create(pos, pos + Vector2(0, 32), 2)
+			var ground_hit := space_state.intersect_ray(ray_query)
+			if ground_hit.is_empty():
+				print("[GameManager] Candidate anchor %s rejected: no ground support beneath." % str(pos))
+				return false
+
+			var collider = ground_hit.get("collider")
+			if collider is Node:
+				if collider.is_in_group("hazard") or collider.is_in_group("traps"):
+					return false
+				if collider.get_script():
+					var s_path: String = collider.get_script().resource_path.to_lower()
+					if "falling" in s_path or "crumbling" in s_path or "fake" in s_path or "greedy" in s_path:
+						return false
+				if collider.has_method("is_triggered") and collider.call("is_triggered"):
+					return false
+
+	return true
+
+func find_safe_revive_position(death_pos: Vector2) -> Vector2:
+	# Priority 1: Search backwards through verified safe anchors history
+	for i in range(safe_anchors.size() - 1, -1, -1):
+		var candidate: Vector2 = safe_anchors[i]
+		if is_position_safe_for_spawn(candidate):
+			print("[GameManager] Selected verified safe anchor from history: %s" % str(candidate))
+			return candidate
+
+	# Priority 2: Use validated level spawn point
+	if level_spawn_point != Vector2.ZERO and is_position_safe_for_spawn(level_spawn_point):
+		print("[GameManager] Selected validated level spawn point: %s" % str(level_spawn_point))
+		return level_spawn_point
+
+	# Priority 3: Fallback to level SpawnPoint node in active tree
 	var players := get_tree().get_nodes_in_group("player")
 	if players.size() > 0:
 		var p = players[0]
@@ -203,11 +294,8 @@ func find_safe_revive_position(death_pos: Vector2) -> Vector2:
 			if spawn_node is Marker2D or spawn_node is Node2D:
 				return spawn_node.global_position
 
-	# Fallback: Slightly elevated from death position to clear ground hazards if above pit
-	if death_pos.y < 480.0:
-		return Vector2(death_pos.x, clampf(death_pos.y - 32.0, 50.0, 450.0))
-
-	return Vector2(100.0, 360.0)
+	# Safe elevated fallback above pits
+	return Vector2(100.0, 350.0)
 
 func revive_current_player() -> bool:
 	if not can_revive_this_run():
@@ -224,19 +312,27 @@ func revive_current_player() -> bool:
 		push_warning("[GameManager] Revive requested but no active player found.")
 		return false
 
+	# 1. Select verified safe target position
 	var target_safe_pos := find_safe_revive_position(last_death_position)
+
+	# 2. Reset dynamic traps and platforms to intact state BEFORE placing player
+	player_revived.emit(target_safe_pos)
+
+	# 3. Position and restore player state authoritatively
 	p.global_position = target_safe_pos
 	p.revive()
-	p.apply_spawn_protection(1.0) # 1.0s bounded spawn protection with flicker
+	p.apply_spawn_protection(1.5) # 1.5s bounded spawn protection with flicker
 
-	is_gameplay_active = true
-	get_tree().paused = false
+	# 4. Consume 1-revive allowance
 	revives_used_this_run += 1
 	revives_used_this_death += 1
 
+	# 5. Restore gameplay
+	is_gameplay_active = true
+	get_tree().paused = false
+
 	AudioManager.play_sfx("coin")
-	player_revived.emit(target_safe_pos)
-	print("[GameManager] Player successfully revived at safe position: %s (run revives: %d/%d)" % [str(target_safe_pos), revives_used_this_run, MAX_REVIVES_PER_RUN])
+	print("[GameManager] Player successfully revived at verified safe anchor: %s (run revives: %d/%d)" % [str(target_safe_pos), revives_used_this_run, MAX_REVIVES_PER_RUN])
 	return true
 
 func get_world_id_for_stage(stage_id: int) -> int:
@@ -303,11 +399,12 @@ func setup_level_hud(level_root: Node, stage_id: int) -> void:
 			target_lbl = top_bar.get_node("LevelName")
 		elif top_bar.has_node("LevelTitle"):
 			target_lbl = top_bar.get_node("LevelTitle")
-		elif top_bar.has_node("LevelInfoBox/LevelTitle"):
-			target_lbl = top_bar.get_node("LevelInfoBox/LevelTitle")
-			
 		if target_lbl:
 			target_lbl.text = world_stage_text
+
+	var spawn_node = level_root.get_node_or_null("SpawnPoint")
+	if spawn_node is Marker2D or spawn_node is Node2D:
+		set_level_spawn_point(spawn_node.global_position)
 
 	present_stage_intro(level_root, stage_id)
 
