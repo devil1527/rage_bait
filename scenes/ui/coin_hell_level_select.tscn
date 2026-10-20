@@ -1,18 +1,165 @@
-[gd_scene load_steps=3 format=3 uid="uid://d1g0e4r5c8v3w"]
+[gd_scene load_steps=15 format=3 uid="uid://d1g0e4r5c8v3w"]
 
 [ext_resource type="Script" path="res://scripts/ui/coin_hell_level_select.gd" id="1_lsel"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal"]
-bg_color = Color(0.12549, 0.101961, 0.211765, 0.96)
+bg_color = Color(0.08, 0.06, 0.15, 0.98)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0, 0.898039, 1, 1)
+border_color = Color(0, 0.92, 1, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0.85, 1, 0.25)
+shadow_size = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_modal"]
+bg_color = Color(0.12, 0.16, 0.28, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0, 0.9, 1, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
+shadow_color = Color(0, 0.8, 1, 0.3)
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_modal_hover"]
+bg_color = Color(0.18, 0.24, 0.40, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3, 1, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0.9, 1, 0.5)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_back_btn"]
+bg_color = Color(0.10, 0.08, 0.18, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.0, 0.85, 1.0, 0.85)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0.8, 1, 0.2)
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_back_btn_hover"]
+bg_color = Color(0.15, 0.12, 0.26, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3, 0.95, 1.0, 1.0)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0.9, 1, 0.4)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_progress_bg"]
+bg_color = Color(0.06, 0.05, 0.12, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.25, 0.38, 0.8)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_progress_fill"]
+bg_color = Color(0.0, 0.95, 0.65, 1.0)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+shadow_color = Color(0, 0.9, 0.6, 0.4)
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wcard_base"]
+bg_color = Color(0.08, 0.07, 0.15, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.25, 0.28, 0.40, 0.8)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wcard_w1"]
+bg_color = Color(0.06, 0.12, 0.18, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.0, 0.90, 1.0, 0.9)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0.0, 0.8, 1.0, 0.3)
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wcard_w2"]
+bg_color = Color(0.11, 0.08, 0.18, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.75, 0.55, 1.0, 0.9)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0.7, 0.4, 1.0, 0.3)
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wcard_w3"]
+bg_color = Color(0.14, 0.09, 0.06, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1.0, 0.65, 0.15, 0.9)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(1.0, 0.6, 0.1, 0.3)
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wcard_w4"]
+bg_color = Color(0.10, 0.06, 0.08, 0.90)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85, 0.25, 0.35, 0.8)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0.8, 0.2, 0.3, 0.25)
+shadow_size = 4
 
 [node name="CoinHellLevelSelect" type="Control"]
 layout_mode = 3
@@ -30,7 +177,15 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.0666667, 0.0509804, 0.117647, 1)
+color = Color(0.047, 0.035, 0.082, 1)
+
+[node name="AmbientTopBar" type="ColorRect" parent="Background"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 3.0
+grow_horizontal = 2
+color = Color(1, 0.82, 0.15, 0.6)
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -39,26 +194,33 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 16
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 12
 
 [node name="VBox" type="VBoxContainer" parent="MarginContainer"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 8
 
 [node name="HeaderBar" type="HBoxContainer" parent="MarginContainer/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 14
 
 [node name="BackButton" type="Button" parent="MarginContainer/VBox/HeaderBar"]
-custom_minimum_size = Vector2(100, 40)
+custom_minimum_size = Vector2(110, 38)
 layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_back_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_back_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_back_btn")
+theme_override_styles/focus = SubResource("StyleBoxFlat_back_btn_hover")
+theme_override_colors/font_color = Color(0, 0.94, 1, 1)
+theme_override_font_sizes/font_size = 13
 text = "◀ MENU"
 
 [node name="TitleBox" type="VBoxContainer" parent="MarginContainer/VBox/HeaderBar"]
 layout_mode = 2
+theme_override_constants/separation = 0
 
 [node name="TitleLabel" type="Label" parent="MarginContainer/VBox/HeaderBar/TitleBox"]
 layout_mode = 2
@@ -66,38 +228,46 @@ theme_override_colors/font_color = Color(1, 0.843137, 0, 1)
 theme_override_colors/font_shadow_color = Color(0.85, 0.2, 0.3, 1)
 theme_override_constants/shadow_offset_x = 2
 theme_override_constants/shadow_offset_y = 2
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 22
 text = "COIN HELL"
 
 [node name="SubtitleLabel" type="Label" parent="MarginContainer/VBox/HeaderBar/TitleBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0.941176, 1, 1)
-theme_override_font_sizes/font_size = 13
-text = "20 levels. Zero trust."
+theme_override_font_sizes/font_size = 12
+text = "Stages 1–11 Active · 20 Planned"
 
 [node name="Spacer" type="Control" parent="MarginContainer/VBox/HeaderBar"]
 layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="ProgressBox" type="VBoxContainer" parent="MarginContainer/VBox/HeaderBar"]
-custom_minimum_size = Vector2(220, 0)
+custom_minimum_size = Vector2(230, 0)
 layout_mode = 2
+theme_override_constants/separation = 3
 alignment = 1
 
 [node name="ProgressLabel" type="Label" parent="MarginContainer/VBox/HeaderBar/ProgressBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.9, 1, 1)
-theme_override_font_sizes/font_size = 13
-text = "LEVELS CLEARED: 0 / 20"
+theme_override_colors/font_color = Color(0.85, 0.92, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "STAGES CLEARED: 0 / 11"
 horizontal_alignment = 2
 
 [node name="ProgressBar" type="ProgressBar" parent="MarginContainer/VBox/HeaderBar/ProgressBox"]
-custom_minimum_size = Vector2(0, 14)
+custom_minimum_size = Vector2(0, 12)
 layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_progress_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_progress_fill")
 show_percentage = false
 
 [node name="HSeparator" type="HSeparator" parent="MarginContainer/VBox"]
 layout_mode = 2
+modulate = Color(1, 0.82, 0.15, 0.35)
+
+[node name="WorldCardsBar" type="HBoxContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
 
 [node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBox"]
 layout_mode = 2
@@ -108,7 +278,7 @@ horizontal_scroll_mode = 0
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/separation = 18
+theme_override_constants/separation = 16
 
 [node name="MessageModal" type="ColorRect" parent="."]
 visible = false
@@ -118,7 +288,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.65)
+color = Color(0, 0, 0, 0.75)
 
 [node name="Panel" type="PanelContainer" parent="MessageModal"]
 custom_minimum_size = Vector2(460, 200)
@@ -138,7 +308,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
 
 [node name="VBox" type="VBoxContainer" parent="MessageModal/Panel"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 14
 alignment = 1
 
 [node name="TitleLabel" type="Label" parent="MessageModal/Panel/VBox"]
@@ -152,14 +322,20 @@ horizontal_alignment = 1
 custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_colors/font_color = Color(0.9, 0.9, 0.95, 1)
+theme_override_colors/font_color = Color(0.92, 0.94, 1, 1)
 theme_override_font_sizes/font_size = 14
 text = "Text goes here"
 horizontal_alignment = 1
 autowrap_mode = 2
 
 [node name="OkButton" type="Button" parent="MessageModal/Panel/VBox"]
-custom_minimum_size = Vector2(120, 36)
+custom_minimum_size = Vector2(120, 38)
 layout_mode = 2
 size_flags_horizontal = 4
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_modal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_modal_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_modal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_btn_modal_hover")
+theme_override_colors/font_color = Color(0, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 13
 text = "GOT IT"

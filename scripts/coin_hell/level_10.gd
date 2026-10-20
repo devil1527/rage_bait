@@ -110,6 +110,8 @@ func _ready() -> void:
 	
 	GameManager.coin_collected.connect(_on_coin_collected)
 	GameManager.player_died.connect(_on_player_died)
+	if GameManager.has_signal("player_revived"):
+		GameManager.player_revived.connect(_on_player_revived)
 	
 	pause_button.pressed.connect(_on_pause_pressed)
 	death_overlay.retry_requested.connect(_on_retry)
@@ -703,6 +705,15 @@ func _on_player_died() -> void:
 		round_banner.visible = false
 	_reset_all_hazards()
 	death_overlay.open()
+
+func _on_player_revived(_pos: Vector2) -> void:
+	_is_surviving = true
+	_reset_all_hazards()
+	alert_banner.visible = false
+	if round_banner:
+		round_banner.visible = false
+	if death_overlay:
+		death_overlay.visible = false
 
 func _on_pit_entered(body: Node2D) -> void:
 	if body == player or body.is_in_group("player"):

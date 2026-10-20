@@ -25,6 +25,8 @@ func _ready() -> void:
 	collision_mask = 1
 	body_entered.connect(_on_body_entered)
 	GameManager.coins_reset.connect(reset)
+	if GameManager.has_signal("player_revived"):
+		GameManager.player_revived.connect(func(_pos): reset())
 	
 	if trigger_area_path != NodePath(""):
 		var trigger = get_node_or_null(trigger_area_path)

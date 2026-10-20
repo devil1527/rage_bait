@@ -111,6 +111,7 @@ func run_all_tests() -> void:
 	test_three_star_rating_and_persistence_rules()
 	test_disappearing_platform_respawn_and_visibility()
 	test_android_package_identity_and_version_code()
+	test_ui_redesign_and_world_navigation()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -4495,6 +4496,110 @@ func test_android_package_identity_and_version_code() -> void:
 	assert_true(content.contains('version/code=12'), "Version Monotonicity: version/code is 12 (monotonically increased)")
 	assert_true(content.contains('version/name="0.12.0"'), "Version Name: version/name is 0.12.0")
 	assert_true(content.contains('package/retain_data_on_uninstall=true'), "Package Config: retain_data_on_uninstall is enabled")
+
+func test_ui_redesign_and_world_navigation() -> void:
+	print("\n--- TEST: UI Redesign & World Navigation ---")
+
+	# 1. Main Menu Hierarchy & Styling
+	var menu_scene: PackedScene = load("res://scenes/ui/main_menu.tscn")
+	assert_true(menu_scene != null, "UI Redesign: Main menu scene loads")
+	var menu = menu_scene.instantiate()
+	add_child(menu)
+
+	var title_lbl: Label = menu.get_node("MarginContainer/VBoxContainer/HeaderBar/TitleBox/TitleLabel")
+	assert_eq(title_lbl.text, "RETRO RAGE ARCADE", "UI Redesign: Overall title is strictly RETRO RAGE ARCADE")
+
+	var sub_lbl: Label = menu.get_node("MarginContainer/VBoxContainer/HeaderBar/TitleBox/SubtitleLabel")
+	assert_eq(sub_lbl.text, "Four games. One very bad idea.", "UI Redesign: Subtitle preserved")
+
+	var ver_lbl: Label = menu.get_node("MarginContainer/VBoxContainer/HeaderBar/VersionLabel")
+	assert_true(ver_lbl.text.contains("0.12.0"), "UI Redesign: Version label reflects v0.12.0")
+
+	var card_chel = menu.get_node("MarginContainer/VBoxContainer/CardsGrid/CardCoinHell")
+	var card_bbet = menu.get_node("MarginContainer/VBoxContainer/CardsGrid/CardBulletBetrayal")
+	var card_nnig = menu.get_node("MarginContainer/VBoxContainer/CardsGrid/CardNinjaNightmare")
+	var card_clie = menu.get_node("MarginContainer/VBoxContainer/CardsGrid/CardCastleOfLies")
+	assert_true(card_chel != null and card_bbet != null and card_nnig != null and card_clie != null, "UI Redesign: All 4 mode cards exist")
+
+	var chel_title: Label = card_chel.get_node("VBox/Title")
+	assert_eq(chel_title.text, "COIN HELL", "UI Redesign: Card 1 is COIN HELL")
+	var chel_status: Label = card_chel.get_node("VBox/Status")
+	assert_eq(chel_status.text, "▶ PLAY NOW", "UI Redesign: Coin Hell status is ▶ PLAY NOW")
+
+	menu.queue_free()
+
+	# 2. Coin Hell Level Select & World Navigation
+	var lsel_scene: PackedScene = load("res://scenes/ui/coin_hell_level_select.tscn")
+	assert_true(lsel_scene != null, "UI Redesign: Level select scene loads")
+	var lsel = lsel_scene.instantiate()
+	add_child(lsel)
+
+	var world_bar = lsel.get_node("MarginContainer/VBox/WorldCardsBar")
+	assert_true(world_bar != null, "UI Redesign: WorldCardsBar exists")
+
+	var tab_all: Button = world_bar.get_node_or_null("TabAllWorlds")
+	var nav_w1: Button = world_bar.get_node_or_null("WorldNavCard_1")
+	var nav_w2: Button = world_bar.get_node_or_null("WorldNavCard_2")
+	var nav_w3: Button = world_bar.get_node_or_null("WorldNavCard_3")
+	var nav_w4: Button = world_bar.get_node_or_null("WorldNavCard_4")
+	assert_true(tab_all != null and nav_w1 != null and nav_w2 != null and nav_w3 != null and nav_w4 != null, "UI Redesign: 4 World Cards and All Worlds tab exist")
+
+	# Honest progress label format
+	lsel._update_ui()
+	var prog_lbl: Label = lsel.get_node("MarginContainer/VBox/HeaderBar/ProgressBox/ProgressLabel")
+	assert_true(prog_lbl.text.begins_with("STAGES CLEARED:"), "UI Redesign: Progress label starts with STAGES CLEARED:")
+	assert_true(prog_lbl.text.ends_with("/ 11"), "UI Redesign: Progress label shows honest numerator out of 11 implemented stages")
+
+	# World filtering and navigation
+	lsel._select_world_tab(1)
+	assert_eq(lsel.current_selected_world, 1, "UI Redesign: World 1 tab selected")
+	assert_eq(lsel.back_button.text, "◀ WORLDS", "UI Redesign: Back button updates to ◀ WORLDS when in specific world view")
+
+	var sec1 = lsel.worlds_container.get_node("WorldSection_1")
+	var sec2 = lsel.worlds_container.get_node("WorldSection_2")
+	assert_true(sec1.visible, "UI Redesign: WorldSection_1 visible when World 1 selected")
+	assert_true(not sec2.visible, "UI Redesign: WorldSection_2 hidden when World 1 selected")
+
+	# Back button resets to all worlds
+	lsel._on_back_pressed()
+	assert_eq(lsel.current_selected_world, 0, "UI Redesign: Back resets to all worlds view")
+	assert_eq(lsel.back_button.text, "◀ MENU", "UI Redesign: Back button returns to ◀ MENU when in all worlds view")
+	assert_true(sec1.visible and sec2.visible, "UI Redesign: All world sections visible in all worlds view")
+
+	# Unimplemented Stage 12 Planned State
+	var btn12 = lsel.get_level_button(12)
+	assert_true(btn12 != null, "UI Redesign: Stage 12 button exists")
+	var state12_lbl: Label = btn12.get_node("VBox/StateLabel")
+	assert_eq(state12_lbl.text, "PLANNED", "UI Redesign: Stage 12 state is visibly PLANNED")
+
+	lsel._on_level_tile_pressed(12)
+	assert_true(lsel.message_modal.visible, "UI Redesign: Clicking Stage 12 shows modal")
+	assert_eq(lsel.modal_title.text, "LEVEL 12 IN PROGRESS", "UI Redesign: Modal title explains Level 12 is in progress")
+	lsel.message_modal.visible = false
+
+	lsel.queue_free()
+
+	# 3. Traps & Hazards Revive Reset Verification
+	var bridge_scene: PackedScene = load("res://scenes/coin_hell/crumbling_bridge_section.tscn")
+	if bridge_scene:
+		var bridge = bridge_scene.instantiate()
+		add_child(bridge)
+		bridge.trigger_collapse()
+		assert_true(bridge._is_triggered, "Respawn Fix: CrumblingBridgeSection triggered")
+		GameManager.player_revived.emit(Vector2.ZERO)
+		assert_true(not bridge._is_triggered and not bridge._is_falling, "Respawn Fix: CrumblingBridgeSection resets on player_revived")
+		bridge.queue_free()
+
+	var fake_plat_scene: PackedScene = load("res://scenes/coin_hell/fake_safe_platform.tscn")
+	if fake_plat_scene:
+		var fake_plat = fake_plat_scene.instantiate()
+		add_child(fake_plat)
+		fake_plat.trigger_trap_with_warning(0.5)
+		assert_true(fake_plat._in_warning, "Respawn Fix: FakeSafePlatform in warning state")
+		GameManager.player_revived.emit(Vector2.ZERO)
+		assert_true(not fake_plat._in_warning and not fake_plat._triggered, "Respawn Fix: FakeSafePlatform resets on player_revived")
+		fake_plat.queue_free()
+
 
 
 

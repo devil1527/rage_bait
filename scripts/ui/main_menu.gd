@@ -22,7 +22,12 @@ func _ready() -> void:
 	_update_sfx_button_text()
 
 func _update_sfx_button_text() -> void:
-	sfx_toggle_btn.text = "SFX: ON" if SaveManager.sfx_enabled else "SFX: OFF"
+	if SaveManager.sfx_enabled:
+		sfx_toggle_btn.text = "SFX: ON"
+		sfx_toggle_btn.add_theme_color_override("font_color", Color(0.0, 1.0, 0.7, 1.0))
+	else:
+		sfx_toggle_btn.text = "SFX: OFF"
+		sfx_toggle_btn.add_theme_color_override("font_color", Color(0.7, 0.7, 0.8, 0.7))
 
 func _on_sfx_toggle_pressed() -> void:
 	var enabled := SaveManager.toggle_sfx()

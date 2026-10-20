@@ -73,6 +73,8 @@ func _ready() -> void:
 		spikes_area.body_entered.connect(_on_spikes_body_entered)
 		
 	GameManager.coins_reset.connect(reset_hazard)
+	if GameManager.has_signal("player_revived"):
+		GameManager.player_revived.connect(func(_pos): reset_hazard())
 
 func _physics_process(delta: float) -> void:
 	if current_state == PlatformState.SAFE:

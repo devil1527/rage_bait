@@ -33,6 +33,8 @@ func _ready() -> void:
 	if spikes_area:
 		spikes_area.body_entered.connect(_on_spikes_body_entered)
 	GameManager.coins_reset.connect(reset)
+	if GameManager.has_signal("player_revived"):
+		GameManager.player_revived.connect(func(_pos): reset())
 	_setup_initial_spikes_state()
 
 func _setup_initial_spikes_state() -> void:

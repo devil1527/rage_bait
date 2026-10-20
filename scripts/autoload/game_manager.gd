@@ -91,6 +91,13 @@ func can_play_level(level_id: int) -> bool:
 	var info: Dictionary = get_level_info(level_id)
 	return bool(info.get("implemented", false))
 
+func get_implemented_level_count() -> int:
+	var count: int = 0
+	for lvl_id in levels.keys():
+		if bool(levels[lvl_id].get("implemented", false)):
+			count += 1
+	return count
+
 func start_new_run() -> void:
 	current_run_id += 1
 	revives_used_this_run = 0

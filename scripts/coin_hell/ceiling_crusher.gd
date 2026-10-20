@@ -54,6 +54,8 @@ func _ready() -> void:
 		_slammed_pos = Vector2(0.0, travel_distance)
 		
 	GameManager.coins_reset.connect(reset)
+	if GameManager.has_signal("player_revived"):
+		GameManager.player_revived.connect(func(_pos): reset())
 	
 	if trigger_area:
 		trigger_area.collision_layer = 0

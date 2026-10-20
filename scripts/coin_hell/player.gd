@@ -196,6 +196,11 @@ func revive() -> void:
 		sprite.modulate = Color.WHITE
 	if collision_shape:
 		collision_shape.disabled = false
+	var cam := get_node_or_null("Camera2D") as Camera2D
+	if cam:
+		cam.make_current()
+		if cam.position_smoothing_enabled:
+			cam.reset_smoothing()
 
 func reset_to(spawn_position: Vector2) -> void:
 	global_position = spawn_position

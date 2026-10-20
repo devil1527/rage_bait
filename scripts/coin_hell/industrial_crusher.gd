@@ -48,6 +48,8 @@ func _ready() -> void:
 	_retracted_pos = Vector2.ZERO
 	_slammed_pos = Vector2(0.0, travel_distance)
 	GameManager.coins_reset.connect(reset)
+	if GameManager.has_signal("player_revived"):
+		GameManager.player_revived.connect(func(_pos): reset())
 	_setup_nodes()
 	reset()
 

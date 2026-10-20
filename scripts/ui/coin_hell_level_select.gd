@@ -1,9 +1,14 @@
 extends Control
 
+## CoinHellLevelSelect provides the world and stage selection UI
+## for Coin Hell, featuring 4 thematic worlds and stages 1–11 (20 planned).
+
 @onready var back_button: Button = $MarginContainer/VBox/HeaderBar/BackButton
 @onready var progress_label: Label = $MarginContainer/VBox/HeaderBar/ProgressBox/ProgressLabel
 @onready var progress_bar: ProgressBar = $MarginContainer/VBox/HeaderBar/ProgressBox/ProgressBar
+@onready var world_cards_bar: HBoxContainer = $MarginContainer/VBox/WorldCardsBar
 @onready var worlds_container: VBoxContainer = $MarginContainer/VBox/ScrollContainer/WorldsContainer
+@onready var scroll_container: ScrollContainer = $MarginContainer/VBox/ScrollContainer
 @onready var message_modal: Control = $MessageModal
 @onready var modal_title: Label = $MessageModal/Panel/VBox/TitleLabel
 @onready var modal_label: Label = $MessageModal/Panel/VBox/MessageLabel
@@ -12,12 +17,30 @@ extends Control
 var lock_icon: Texture2D = preload("res://assets/sprites/icon_lock.png")
 var completed_icon: Texture2D = preload("res://assets/sprites/icon_completed.png")
 
-var _style_comp_normal: StyleBoxFlat
-var _style_comp_hover: StyleBoxFlat
-var _style_avail_normal: StyleBoxFlat
-var _style_avail_hover: StyleBoxFlat
+# Styles per world
+var _style_w1_comp_normal: StyleBoxFlat
+var _style_w1_comp_hover: StyleBoxFlat
+var _style_w1_avail_normal: StyleBoxFlat
+var _style_w1_avail_hover: StyleBoxFlat
+
+var _style_w2_comp_normal: StyleBoxFlat
+var _style_w2_comp_hover: StyleBoxFlat
+var _style_w2_avail_normal: StyleBoxFlat
+var _style_w2_avail_hover: StyleBoxFlat
+
+var _style_w3_comp_normal: StyleBoxFlat
+var _style_w3_comp_hover: StyleBoxFlat
+var _style_w3_avail_normal: StyleBoxFlat
+var _style_w3_avail_hover: StyleBoxFlat
+
+var _style_w4_normal: StyleBoxFlat
+var _style_w4_hover: StyleBoxFlat
+
 var _style_lock_normal: StyleBoxFlat
 var _style_lock_hover: StyleBoxFlat
+var _style_planned_normal: StyleBoxFlat
+var _style_planned_hover: StyleBoxFlat
+
 var _style_dev_normal: StyleBoxFlat
 var _style_dev_hover: StyleBoxFlat
 
@@ -25,65 +48,56 @@ var is_debug_mode: bool = OS.is_debug_build()
 var dev_bypass_active: bool = false
 var dev_toggle_btn: Button = null
 
+# Active world view: 0 = Show All, 1..4 = Focused on World 1..4
+var current_selected_world: int = 0
+var world_card_buttons: Dictionary = {}
+
 func _init() -> void:
 	_init_styles()
 
 func _init_styles() -> void:
-	_style_comp_normal = StyleBoxFlat.new()
-	_style_comp_normal.bg_color = Color(0.08, 0.18, 0.16, 0.95)
-	_style_comp_normal.set_border_width_all(2)
-	_style_comp_normal.border_color = Color(0.0, 0.95, 0.65, 1.0)
-	_style_comp_normal.set_corner_radius_all(8)
-	
-	_style_comp_hover = StyleBoxFlat.new()
-	_style_comp_hover.bg_color = Color(0.12, 0.24, 0.22, 0.98)
-	_style_comp_hover.set_border_width_all(2)
-	_style_comp_hover.border_color = Color(0.2, 1.0, 0.75, 1.0)
-	_style_comp_hover.set_corner_radius_all(8)
+	# World 1: Neon Cyan Styles
+	_style_w1_comp_normal = _create_card_style(Color(0.04, 0.14, 0.18, 0.95), Color(0.0, 0.92, 1.0, 0.95), 2, Color(0.0, 0.85, 1.0, 0.35), 6)
+	_style_w1_comp_hover = _create_card_style(Color(0.07, 0.18, 0.24, 0.98), Color(0.3, 1.0, 1.0, 1.0), 2, Color(0.0, 0.95, 1.0, 0.6), 8)
+	_style_w1_avail_normal = _create_card_style(Color(0.07, 0.10, 0.18, 0.95), Color(1.0, 0.82, 0.15, 1.0), 2, Color(1.0, 0.75, 0.1, 0.3), 5)
+	_style_w1_avail_hover = _create_card_style(Color(0.10, 0.15, 0.26, 0.98), Color(1.0, 0.94, 0.35, 1.0), 3, Color(1.0, 0.85, 0.2, 0.55), 8)
 
-	_style_avail_normal = StyleBoxFlat.new()
-	_style_avail_normal.bg_color = Color(0.15, 0.12, 0.26, 0.95)
-	_style_avail_normal.set_border_width_all(2)
-	_style_avail_normal.border_color = Color(1.0, 0.82, 0.15, 1.0)
-	_style_avail_normal.set_corner_radius_all(8)
-	_style_avail_normal.shadow_color = Color(1.0, 0.75, 0.1, 0.3)
-	_style_avail_normal.shadow_size = 4
+	# World 2: The Haunted Hall (Spectral Violet Styles)
+	_style_w2_comp_normal = _create_card_style(Color(0.12, 0.08, 0.20, 0.95), Color(0.78, 0.55, 1.0, 0.95), 2, Color(0.7, 0.4, 1.0, 0.35), 6)
+	_style_w2_comp_hover = _create_card_style(Color(0.16, 0.11, 0.26, 0.98), Color(0.9, 0.7, 1.0, 1.0), 2, Color(0.8, 0.5, 1.0, 0.6), 8)
+	_style_w2_avail_normal = _create_card_style(Color(0.10, 0.08, 0.16, 0.95), Color(1.0, 0.82, 0.15, 1.0), 2, Color(1.0, 0.75, 0.1, 0.3), 5)
+	_style_w2_avail_hover = _create_card_style(Color(0.14, 0.11, 0.22, 0.98), Color(1.0, 0.94, 0.35, 1.0), 3, Color(1.0, 0.85, 0.2, 0.55), 8)
 
-	_style_avail_hover = StyleBoxFlat.new()
-	_style_avail_hover.bg_color = Color(0.20, 0.16, 0.34, 0.98)
-	_style_avail_hover.set_border_width_all(3)
-	_style_avail_hover.border_color = Color(1.0, 0.92, 0.35, 1.0)
-	_style_avail_hover.set_corner_radius_all(8)
-	_style_avail_hover.shadow_color = Color(1.0, 0.85, 0.2, 0.5)
-	_style_avail_hover.shadow_size = 6
+	# World 3: Rage Factory (Hazard Amber/Orange Styles)
+	_style_w3_comp_normal = _create_card_style(Color(0.15, 0.10, 0.06, 0.95), Color(1.0, 0.68, 0.15, 0.95), 2, Color(1.0, 0.6, 0.1, 0.35), 6)
+	_style_w3_comp_hover = _create_card_style(Color(0.20, 0.13, 0.08, 0.98), Color(1.0, 0.82, 0.30, 1.0), 2, Color(1.0, 0.7, 0.15, 0.6), 8)
+	_style_w3_avail_normal = _create_card_style(Color(0.12, 0.08, 0.05, 0.95), Color(1.0, 0.55, 0.12, 1.0), 2, Color(1.0, 0.5, 0.1, 0.35), 5)
+	_style_w3_avail_hover = _create_card_style(Color(0.17, 0.11, 0.07, 0.98), Color(1.0, 0.75, 0.25, 1.0), 3, Color(1.0, 0.65, 0.15, 0.55), 8)
 
-	_style_lock_normal = StyleBoxFlat.new()
-	_style_lock_normal.bg_color = Color(0.08, 0.08, 0.13, 0.85)
-	_style_lock_normal.set_border_width_all(1)
-	_style_lock_normal.border_color = Color(0.22, 0.25, 0.35, 0.85)
-	_style_lock_normal.set_corner_radius_all(8)
+	# World 4: Final Hell (Infernal Crimson Styles)
+	_style_w4_normal = _create_card_style(Color(0.10, 0.05, 0.07, 0.90), Color(0.70, 0.22, 0.28, 0.85), 1, Color(0.6, 0.15, 0.2, 0.2), 4)
+	_style_w4_hover = _create_card_style(Color(0.14, 0.07, 0.10, 0.95), Color(0.95, 0.30, 0.40, 0.95), 2, Color(0.9, 0.2, 0.3, 0.4), 6)
 
-	_style_lock_hover = StyleBoxFlat.new()
-	_style_lock_hover.bg_color = Color(0.12, 0.12, 0.18, 0.92)
-	_style_lock_hover.set_border_width_all(2)
-	_style_lock_hover.border_color = Color(0.32, 0.36, 0.48, 0.9)
-	_style_lock_hover.set_corner_radius_all(8)
+	# Locked and Planned Styles
+	_style_lock_normal = _create_card_style(Color(0.06, 0.06, 0.11, 0.85), Color(0.22, 0.25, 0.35, 0.85), 1, Color.TRANSPARENT, 0)
+	_style_lock_hover = _create_card_style(Color(0.09, 0.09, 0.16, 0.92), Color(0.32, 0.36, 0.48, 0.90), 2, Color.TRANSPARENT, 0)
+	_style_planned_normal = _create_card_style(Color(0.05, 0.05, 0.09, 0.80), Color(0.18, 0.20, 0.28, 0.70), 1, Color.TRANSPARENT, 0)
+	_style_planned_hover = _create_card_style(Color(0.08, 0.08, 0.13, 0.88), Color(0.26, 0.28, 0.38, 0.85), 1, Color.TRANSPARENT, 0)
 
-	_style_dev_normal = StyleBoxFlat.new()
-	_style_dev_normal.bg_color = Color(0.06, 0.14, 0.22, 0.95)
-	_style_dev_normal.set_border_width_all(2)
-	_style_dev_normal.border_color = Color(0.0, 0.75, 1.0, 1.0)
-	_style_dev_normal.set_corner_radius_all(8)
-	_style_dev_normal.shadow_color = Color(0.0, 0.6, 1.0, 0.3)
-	_style_dev_normal.shadow_size = 4
+	# Dev Bypass Styles
+	_style_dev_normal = _create_card_style(Color(0.05, 0.12, 0.18, 0.95), Color(0.0, 0.80, 1.0, 1.0), 2, Color(0.0, 0.7, 1.0, 0.3), 5)
+	_style_dev_hover = _create_card_style(Color(0.08, 0.17, 0.26, 0.98), Color(0.4, 0.95, 1.0, 1.0), 3, Color(0.0, 0.9, 1.0, 0.55), 8)
 
-	_style_dev_hover = StyleBoxFlat.new()
-	_style_dev_hover.bg_color = Color(0.10, 0.20, 0.32, 0.98)
-	_style_dev_hover.set_border_width_all(3)
-	_style_dev_hover.border_color = Color(0.3, 0.9, 1.0, 1.0)
-	_style_dev_hover.set_corner_radius_all(8)
-	_style_dev_hover.shadow_color = Color(0.0, 0.8, 1.0, 0.5)
-	_style_dev_hover.shadow_size = 6
+func _create_card_style(bg: Color, border: Color, b_width: int, shadow: Color = Color.TRANSPARENT, s_size: int = 0) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = bg
+	sb.set_border_width_all(b_width)
+	sb.border_color = border
+	sb.set_corner_radius_all(8)
+	if s_size > 0:
+		sb.shadow_color = shadow
+		sb.shadow_size = s_size
+	return sb
 
 func _ready() -> void:
 	back_button.pressed.connect(_on_back_pressed)
@@ -103,6 +117,7 @@ func _ready() -> void:
 		header_bar.add_child(dev_toggle_btn)
 
 	_setup_secret_developer_tap()
+	_build_world_navigation_cards()
 	_build_level_tiles()
 	_update_ui()
 
@@ -184,10 +199,125 @@ func _on_dev_toggle_pressed() -> void:
 	_refresh_tile_states()
 	AudioManager.play_sfx("click")
 
+func _build_world_navigation_cards() -> void:
+	if not world_cards_bar:
+		return
+	for c in world_cards_bar.get_children():
+		c.queue_free()
+	world_card_buttons.clear()
+
+	# 1. "ALL WORLDS" Tab Button
+	var btn_all := Button.new()
+	btn_all.name = "TabAllWorlds"
+	btn_all.custom_minimum_size = Vector2(100, 48)
+	btn_all.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn_all.pressed.connect(func(): _select_world_tab(0))
+	_style_nav_card(btn_all, 0, "ALL WORLDS", "Stages 1–11", Color(1.0, 0.82, 0.15))
+	world_cards_bar.add_child(btn_all)
+	world_card_buttons[0] = btn_all
+
+	# 2. 4 Dedicated World Cards
+	var world_configs: Array[Dictionary] = [
+		{"id": 1, "title": "W1: NEON RUINS", "sub": "Stages 1–5", "col": Color(0.0, 0.92, 1.0)},
+		{"id": 2, "title": "W2: HAUNTED HALL", "sub": "Stages 6–10", "col": Color(0.78, 0.55, 1.0)},
+		{"id": 3, "title": "W3: RAGE FACTORY", "sub": "Stages 11–15", "col": Color(1.0, 0.65, 0.15)},
+		{"id": 4, "title": "W4: FINAL HELL", "sub": "Stages 16–20", "col": Color(1.0, 0.30, 0.40)}
+	]
+
+	for cfg in world_configs:
+		var wid: int = int(cfg["id"])
+		var btn := Button.new()
+		btn.name = "WorldNavCard_%d" % wid
+		btn.custom_minimum_size = Vector2(170, 48)
+		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		btn.pressed.connect(func(): _select_world_tab(wid))
+		_style_nav_card(btn, wid, str(cfg["title"]), str(cfg["sub"]), Color(cfg["col"]))
+		world_cards_bar.add_child(btn)
+		world_card_buttons[wid] = btn
+
+func _style_nav_card(btn: Button, wid: int, title: String, sub: String, theme_col: Color) -> void:
+	var vbox := VBoxContainer.new()
+	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_theme_constant_override("separation", 1)
+
+	var title_lbl := Label.new()
+	title_lbl.name = "Title"
+	title_lbl.text = title
+	title_lbl.add_theme_font_size_override("font_size", 12)
+	title_lbl.add_theme_color_override("font_color", theme_col)
+	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_child(title_lbl)
+
+	var sub_lbl := Label.new()
+	sub_lbl.name = "Sub"
+	sub_lbl.text = sub
+	sub_lbl.add_theme_font_size_override("font_size", 10)
+	sub_lbl.add_theme_color_override("font_color", Color(0.7, 0.75, 0.85, 0.8))
+	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_child(sub_lbl)
+
+	btn.add_child(vbox)
+
+	var sb_normal := _create_card_style(Color(0.08, 0.07, 0.15, 0.9), theme_col * 0.6, 2, Color.TRANSPARENT, 0)
+	var sb_hover := _create_card_style(Color(0.12, 0.10, 0.22, 0.98), theme_col, 2, theme_col * 0.35, 6)
+	btn.add_theme_stylebox_override("normal", sb_normal)
+	btn.add_theme_stylebox_override("hover", sb_hover)
+	btn.add_theme_stylebox_override("focus", sb_hover)
+
+func _select_world_tab(wid: int) -> void:
+	AudioManager.play_sfx("click")
+	current_selected_world = wid
+	_update_world_filter()
+	_update_back_button_text()
+
+func _update_world_filter() -> void:
+	# Update active state of world navigation cards
+	for wid in world_card_buttons.keys():
+		var btn: Button = world_card_buttons[wid]
+		if not btn:
+			continue
+		var is_selected := (wid == current_selected_world)
+		var theme_col: Color = Color(1.0, 0.82, 0.15)
+		match wid:
+			1: theme_col = Color(0.0, 0.92, 1.0)
+			2: theme_col = Color(0.78, 0.55, 1.0)
+			3: theme_col = Color(1.0, 0.65, 0.15)
+			4: theme_col = Color(1.0, 0.30, 0.40)
+		if is_selected:
+			var sb_active := _create_card_style(Color(0.14, 0.12, 0.26, 0.98), theme_col, 3, theme_col * 0.5, 8)
+			btn.add_theme_stylebox_override("normal", sb_active)
+		else:
+			var sb_normal := _create_card_style(Color(0.08, 0.07, 0.15, 0.9), theme_col * 0.6, 2, Color.TRANSPARENT, 0)
+			btn.add_theme_stylebox_override("normal", sb_normal)
+
+	# Filter or highlight world sections in scroll container
+	for wid in range(1, 5):
+		var sec = worlds_container.get_node_or_null("WorldSection_%d" % wid)
+		if sec:
+			sec.visible = (current_selected_world == 0 or current_selected_world == wid)
+
+	# Reset scroll offset when switching
+	if scroll_container:
+		scroll_container.scroll_vertical = 0
+
+func _update_back_button_text() -> void:
+	if current_selected_world != 0:
+		back_button.text = "◀ WORLDS"
+	else:
+		back_button.text = "◀ MENU"
+
 func _update_ui() -> void:
 	var cleared: int = SaveManager.get_completed_count()
-	progress_label.text = "LEVELS CLEARED: %d / 20" % cleared
-	progress_bar.value = float(cleared) / 20.0 * 100.0
+	var implemented_count: int = GameManager.get_implemented_level_count()
+	progress_label.text = "STAGES CLEARED: %d / %d" % [cleared, implemented_count]
+	progress_bar.value = (float(cleared) / float(implemented_count)) * 100.0 if implemented_count > 0 else 0.0
+
+	_update_world_filter()
+	_update_back_button_text()
 	_refresh_tile_states()
 
 func get_level_button(lvl_id: int) -> Button:
@@ -201,46 +331,46 @@ func _build_level_tiles() -> void:
 		var w_info: Dictionary = GameManager.worlds.get(wid, {})
 		var w_name: String = str(w_info.get("name", "WORLD %d" % wid))
 		var stages: Array = w_info.get("stages", [])
-		
+
 		# Section Container
 		var section := VBoxContainer.new()
 		section.name = "WorldSection_%d" % wid
 		section.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		section.add_theme_constant_override("separation", 8)
-		
+
 		# Header Bar
 		var header_bar := HBoxContainer.new()
 		header_bar.name = "WorldHeader_%d" % wid
 		header_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		
+
 		var title_label := Label.new()
 		title_label.name = "TitleLabel"
 		title_label.text = "WORLD %d — %s" % [wid, w_name]
 		title_label.add_theme_font_size_override("font_size", 14)
-		
-		var header_color: Color = Color(0.0, 0.9, 1.0)
+
+		var header_color: Color = Color(0.0, 0.92, 1.0)
 		match wid:
-			1: header_color = Color(0.0, 0.9, 1.0) # Neon Cyan
-			2: header_color = Color(0.75, 0.55, 1.0) # Spectral Violet
-			3: header_color = Color(1.0, 0.75, 0.2) # Hazard Amber
-			4: header_color = Color(1.0, 0.35, 0.35) # Hellfire Red
+			1: header_color = Color(0.0, 0.92, 1.0) # Neon Cyan
+			2: header_color = Color(0.78, 0.55, 1.0) # Spectral Violet
+			3: header_color = Color(1.0, 0.65, 0.15) # Hazard Amber
+			4: header_color = Color(1.0, 0.30, 0.40) # Hellfire Red
 		title_label.add_theme_color_override("font_color", header_color)
 		header_bar.add_child(title_label)
-		
+
 		var spacer := Control.new()
 		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		header_bar.add_child(spacer)
-		
+
 		var stage_range_label := Label.new()
 		var s_start: int = stages.front() if stages.size() > 0 else (wid * 5 - 4)
 		var s_end: int = stages.back() if stages.size() > 0 else (wid * 5)
 		stage_range_label.text = "STAGES %d–%d" % [s_start, s_end]
 		stage_range_label.add_theme_font_size_override("font_size", 11)
-		stage_range_label.add_theme_color_override("font_color", Color(0.5, 0.55, 0.65))
+		stage_range_label.add_theme_color_override("font_color", Color(0.55, 0.60, 0.70))
 		header_bar.add_child(stage_range_label)
-		
+
 		section.add_child(header_bar)
-		
+
 		# Grid for this world's 5 stages
 		var grid := GridContainer.new()
 		grid.name = "WorldGrid_%d" % wid
@@ -248,50 +378,50 @@ func _build_level_tiles() -> void:
 		grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		grid.add_theme_constant_override("h_separation", 10)
 		grid.add_theme_constant_override("v_separation", 10)
-		
+
 		for lvl_id in stages:
 			var info: Dictionary = GameManager.get_level_info(lvl_id)
 			var lvl_name: String = info.get("name", "Stage %d" % lvl_id)
-			
+
 			var btn := Button.new()
 			btn.custom_minimum_size = Vector2(170, 94)
 			btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			btn.size_flags_vertical = Control.SIZE_EXPAND_FILL
 			btn.name = "LevelBtn_%d" % lvl_id
-			
+
 			var vbox := VBoxContainer.new()
 			vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
 			vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 			vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			vbox.add_theme_constant_override("separation", 3)
-			
+
 			var header_box := HBoxContainer.new()
 			header_box.alignment = BoxContainer.ALIGNMENT_CENTER
 			header_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			header_box.add_theme_constant_override("separation", 6)
-			
+
 			var num_label := Label.new()
 			num_label.text = "STAGE %d" % lvl_id
 			num_label.add_theme_font_size_override("font_size", 14)
 			num_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			header_box.add_child(num_label)
-			
+
 			var status_icon := TextureRect.new()
 			status_icon.name = "StatusIcon"
 			status_icon.custom_minimum_size = Vector2(16, 16)
 			status_icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 			status_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			header_box.add_child(status_icon)
-			
+
 			vbox.add_child(header_box)
-			
+
 			var name_label := Label.new()
 			name_label.text = lvl_name
 			name_label.add_theme_font_size_override("font_size", 11)
 			name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			vbox.add_child(name_label)
-			
+
 			var state_label := Label.new()
 			state_label.name = "StateLabel"
 			state_label.add_theme_font_size_override("font_size", 10)
@@ -305,13 +435,13 @@ func _build_level_tiles() -> void:
 			stars_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			stars_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			vbox.add_child(stars_label)
-			
+
 			btn.add_child(vbox)
-			
+
 			# Connect button click
 			btn.pressed.connect(func(): _on_level_tile_pressed(lvl_id))
 			grid.add_child(btn)
-			
+
 		section.add_child(grid)
 		worlds_container.add_child(section)
 
@@ -320,7 +450,7 @@ func _refresh_tile_states() -> void:
 		var btn: Button = get_level_button(lvl_id)
 		if not btn:
 			continue
-			
+
 		var vbox: VBoxContainer = btn.get_child(0)
 		var header_box: HBoxContainer = vbox.get_child(0)
 		var num_label: Label = header_box.get_child(0)
@@ -328,21 +458,43 @@ func _refresh_tile_states() -> void:
 		var name_label: Label = vbox.get_child(1)
 		var state_label: Label = vbox.get_child(2)
 		var stars_label: Label = vbox.get_node_or_null("StarsLabel")
-		
+
 		var is_unlocked: bool = SaveManager.is_level_unlocked(lvl_id)
 		var is_completed: bool = SaveManager.is_level_completed(lvl_id)
 		var is_implemented: bool = GameManager.can_play_level(lvl_id)
 		var can_dev_access: bool = is_debug_mode and dev_bypass_active and is_implemented
 		var star_rating: int = SaveManager.get_level_stars(lvl_id)
+		var world_id: int = GameManager.get_world_id_for_stage(lvl_id)
 
 		if is_completed:
-			btn.add_theme_stylebox_override("normal", _style_comp_normal)
-			btn.add_theme_stylebox_override("hover", _style_comp_hover)
-			btn.add_theme_stylebox_override("focus", _style_comp_hover)
-			num_label.add_theme_color_override("font_color", Color(0.0, 0.95, 0.8))
-			name_label.add_theme_color_override("font_color", Color(0.8, 1.0, 0.9))
+			var sb_norm: StyleBoxFlat = _style_w1_comp_normal
+			var sb_hov: StyleBoxFlat = _style_w1_comp_hover
+			var num_col: Color = Color(0.0, 0.95, 0.8)
+			match world_id:
+				1:
+					sb_norm = _style_w1_comp_normal
+					sb_hov = _style_w1_comp_hover
+					num_col = Color(0.0, 0.92, 1.0)
+				2:
+					sb_norm = _style_w2_comp_normal
+					sb_hov = _style_w2_comp_hover
+					num_col = Color(0.85, 0.65, 1.0)
+				3:
+					sb_norm = _style_w3_comp_normal
+					sb_hov = _style_w3_comp_hover
+					num_col = Color(1.0, 0.75, 0.25)
+				4:
+					sb_norm = _style_w4_normal
+					sb_hov = _style_w4_hover
+					num_col = Color(1.0, 0.45, 0.5)
+
+			btn.add_theme_stylebox_override("normal", sb_norm)
+			btn.add_theme_stylebox_override("hover", sb_hov)
+			btn.add_theme_stylebox_override("focus", sb_hov)
+			num_label.add_theme_color_override("font_color", num_col)
+			name_label.add_theme_color_override("font_color", Color(0.9, 0.95, 1.0))
 			state_label.text = "COMPLETED"
-			state_label.add_theme_color_override("font_color", Color(0.0, 1.0, 0.6))
+			state_label.add_theme_color_override("font_color", Color(0.0, 1.0, 0.65))
 			status_icon.texture = completed_icon
 			status_icon.visible = true
 			if stars_label:
@@ -356,9 +508,25 @@ func _refresh_tile_states() -> void:
 					stars_label.text = "★ ☆ ☆" if star_rating == 1 else ""
 					stars_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
 		elif is_unlocked:
-			btn.add_theme_stylebox_override("normal", _style_avail_normal)
-			btn.add_theme_stylebox_override("hover", _style_avail_hover)
-			btn.add_theme_stylebox_override("focus", _style_avail_hover)
+			var sb_norm: StyleBoxFlat = _style_w1_avail_normal
+			var sb_hov: StyleBoxFlat = _style_w1_avail_hover
+			match world_id:
+				1:
+					sb_norm = _style_w1_avail_normal
+					sb_hov = _style_w1_avail_hover
+				2:
+					sb_norm = _style_w2_avail_normal
+					sb_hov = _style_w2_avail_hover
+				3:
+					sb_norm = _style_w3_avail_normal
+					sb_hov = _style_w3_avail_hover
+				4:
+					sb_norm = _style_w4_normal
+					sb_hov = _style_w4_hover
+
+			btn.add_theme_stylebox_override("normal", sb_norm)
+			btn.add_theme_stylebox_override("hover", sb_hov)
+			btn.add_theme_stylebox_override("focus", sb_hov)
 			num_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
 			name_label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.8))
 			state_label.text = "AVAILABLE"
@@ -366,7 +534,7 @@ func _refresh_tile_states() -> void:
 			status_icon.visible = false
 			if stars_label:
 				stars_label.text = "☆ ☆ ☆"
-				stars_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.6, 0.5))
+				stars_label.add_theme_color_override("font_color", Color(0.55, 0.58, 0.7, 0.5))
 		elif can_dev_access:
 			btn.add_theme_stylebox_override("normal", _style_dev_normal)
 			btn.add_theme_stylebox_override("hover", _style_dev_hover)
@@ -378,7 +546,21 @@ func _refresh_tile_states() -> void:
 			status_icon.visible = false
 			if stars_label:
 				stars_label.text = ""
+		elif not is_implemented:
+			# Unimplemented / Planned Stages (Stages 12–20)
+			btn.add_theme_stylebox_override("normal", _style_planned_normal)
+			btn.add_theme_stylebox_override("hover", _style_planned_hover)
+			btn.add_theme_stylebox_override("focus", _style_planned_hover)
+			num_label.add_theme_color_override("font_color", Color(0.40, 0.44, 0.52))
+			name_label.add_theme_color_override("font_color", Color(0.35, 0.38, 0.46))
+			state_label.text = "PLANNED"
+			state_label.add_theme_color_override("font_color", Color(0.55, 0.45, 0.45))
+			status_icon.texture = lock_icon
+			status_icon.visible = true
+			if stars_label:
+				stars_label.text = ""
 		else:
+			# Locked legitimate stages (Stages 2–11)
 			btn.add_theme_stylebox_override("normal", _style_lock_normal)
 			btn.add_theme_stylebox_override("hover", _style_lock_hover)
 			btn.add_theme_stylebox_override("focus", _style_lock_hover)
@@ -415,7 +597,14 @@ func _on_level_tile_pressed(level_id: int) -> void:
 
 func _on_back_pressed() -> void:
 	AudioManager.play_sfx("click")
-	GameManager.go_to_main_menu()
+	if current_selected_world != 0:
+		# Return from specific world view to all worlds view
+		current_selected_world = 0
+		_update_world_filter()
+		_update_back_button_text()
+	else:
+		# Return to main menu
+		GameManager.go_to_main_menu()
 
 func _on_modal_close() -> void:
 	AudioManager.play_sfx("click")

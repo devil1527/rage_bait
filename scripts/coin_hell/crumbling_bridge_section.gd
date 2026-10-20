@@ -33,6 +33,8 @@ func _ready() -> void:
 	if step_area:
 		step_area.body_entered.connect(_on_step_entered)
 	GameManager.coins_reset.connect(reset)
+	if GameManager.has_signal("player_revived"):
+		GameManager.player_revived.connect(func(_pos): reset())
 
 func _on_step_entered(body: Node2D) -> void:
 	if not _is_triggered and (body.is_in_group("player") or body.name == "Player"):
