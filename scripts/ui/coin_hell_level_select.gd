@@ -298,6 +298,13 @@ func _build_level_tiles() -> void:
 			state_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			state_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			vbox.add_child(state_label)
+
+			var stars_label := Label.new()
+			stars_label.name = "StarsLabel"
+			stars_label.add_theme_font_size_override("font_size", 11)
+			stars_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			stars_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			vbox.add_child(stars_label)
 			
 			btn.add_child(vbox)
 			
@@ -320,11 +327,13 @@ func _refresh_tile_states() -> void:
 		var status_icon: TextureRect = header_box.get_child(1)
 		var name_label: Label = vbox.get_child(1)
 		var state_label: Label = vbox.get_child(2)
+		var stars_label: Label = vbox.get_node_or_null("StarsLabel")
 		
 		var is_unlocked: bool = SaveManager.is_level_unlocked(lvl_id)
 		var is_completed: bool = SaveManager.is_level_completed(lvl_id)
 		var is_implemented: bool = GameManager.can_play_level(lvl_id)
 		var can_dev_access: bool = is_debug_mode and dev_bypass_active and is_implemented
+		var star_rating: int = SaveManager.get_level_stars(lvl_id)
 
 		if is_completed:
 			btn.add_theme_stylebox_override("normal", _style_comp_normal)
@@ -336,6 +345,16 @@ func _refresh_tile_states() -> void:
 			state_label.add_theme_color_override("font_color", Color(0.0, 1.0, 0.6))
 			status_icon.texture = completed_icon
 			status_icon.visible = true
+			if stars_label:
+				if star_rating == 3:
+					stars_label.text = "★ ★ ★"
+					stars_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.1))
+				elif star_rating == 2:
+					stars_label.text = "★ ★ ☆"
+					stars_label.add_theme_color_override("font_color", Color(1.0, 0.75, 0.2))
+				else:
+					stars_label.text = "★ ☆ ☆" if star_rating == 1 else ""
+					stars_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
 		elif is_unlocked:
 			btn.add_theme_stylebox_override("normal", _style_avail_normal)
 			btn.add_theme_stylebox_override("hover", _style_avail_hover)
@@ -345,6 +364,9 @@ func _refresh_tile_states() -> void:
 			state_label.text = "AVAILABLE"
 			state_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2))
 			status_icon.visible = false
+			if stars_label:
+				stars_label.text = "☆ ☆ ☆"
+				stars_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.6, 0.5))
 		elif can_dev_access:
 			btn.add_theme_stylebox_override("normal", _style_dev_normal)
 			btn.add_theme_stylebox_override("hover", _style_dev_hover)
@@ -354,6 +376,8 @@ func _refresh_tile_states() -> void:
 			state_label.text = "DEV TEST"
 			state_label.add_theme_color_override("font_color", Color(0.2, 0.9, 1.0))
 			status_icon.visible = false
+			if stars_label:
+				stars_label.text = ""
 		else:
 			btn.add_theme_stylebox_override("normal", _style_lock_normal)
 			btn.add_theme_stylebox_override("hover", _style_lock_hover)
@@ -364,6 +388,8 @@ func _refresh_tile_states() -> void:
 			state_label.add_theme_color_override("font_color", Color(0.8, 0.35, 0.35))
 			status_icon.texture = lock_icon
 			status_icon.visible = true
+			if stars_label:
+				stars_label.text = ""
 
 func _on_level_tile_pressed(level_id: int) -> void:
 	var is_unlocked: bool = SaveManager.is_level_unlocked(level_id)

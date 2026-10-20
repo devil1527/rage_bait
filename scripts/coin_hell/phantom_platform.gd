@@ -69,6 +69,10 @@ func _ready() -> void:
 		step_area.body_entered.connect(_on_step_area_body_entered)
 		
 	GameManager.coins_reset.connect(reset)
+	GameManager.player_revived.connect(_on_player_revived)
+	reset()
+
+func _on_player_revived(_pos: Vector2) -> void:
 	reset()
 
 func _update_dimensions() -> void:

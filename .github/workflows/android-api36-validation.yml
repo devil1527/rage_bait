@@ -64,10 +64,29 @@ jobs:
             chmod +x android/build/gradlew
           fi
 
+      - name: Cache Persistent Android Keystore
+        id: cache-keystore
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: android-debug-keystore-v1
+          restore-keys: |
+            android-debug-keystore-
+
       - name: Setup Android Keystore and Editor Settings
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_BASE64 || secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
           mkdir -p ~/.config/godot ~/.local/share/godot ~/.android
-          keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore ~/.android/debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "Using debug keystore provided via repository secret."
+            echo "$KEYSTORE_BASE64" | base64 -d > ~/.android/debug.keystore
+          elif [ ! -f ~/.android/debug.keystore ]; then
+            echo "Generating persistent debug keystore (cached across subsequent builds)..."
+            keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore ~/.android/debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999
+          else
+            echo "Reusing cached persistent debug keystore."
+          fi
           for d in ~/.config/godot ~/.local/share/godot; do
             for f in "$d/editor_settings-4.tres" "$d/editor_settings-4.7.tres"; do
               echo '[gd_resource type="EditorSettings" format=3]' > "$f"
@@ -96,7 +115,6 @@ jobs:
             cat /tmp/test_runner.log
             exit $TEST_STATUS
           fi
-
 
       - name: Export Android Test APK
         run: |
@@ -148,8 +166,8 @@ jobs:
 
           EXPECTED = {
               "package": "com.antigravity.retroragearcade",
-              "versionCode": "11",
-              "versionName": "0.11.0",
+              "versionCode": "12",
+              "versionName": "0.12.0",
               "targetSdkVersion": "36",
               "minSdkVersion": "24",
           }

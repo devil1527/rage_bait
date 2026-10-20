@@ -107,6 +107,10 @@ func run_all_tests() -> void:
 	test_native_admob_plugin_lifecycle_and_security()
 	test_admob_initialization_not_ready_regression()
 	test_admob_mediation_readiness_and_distinct_errors_regression()
+	test_one_rewarded_revive_per_run_lifecycle()
+	test_three_star_rating_and_persistence_rules()
+	test_disappearing_platform_respawn_and_visibility()
+	test_android_package_identity_and_version_code()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -3951,6 +3955,7 @@ func test_native_admob_plugin_lifecycle_and_security() -> void:
 	assert_true(player._is_alive, "AdMob Native: Unexpected reward callback safely ignored")
 
 	# 15. Show failure handling
+	lvl._on_retry()
 	AdManager.reset_cooldown()
 	var test_ad_id_4 := "ad_revive_session_404"
 	mock_plugin.rewarded_ad_loaded.emit({"ad_id": test_ad_id_4}, {})
@@ -4261,6 +4266,235 @@ func test_admob_mediation_readiness_and_distinct_errors_regression() -> void:
 	AdManager.reset_cooldown()
 	remove_child(lvl)
 	lvl.free()
+
+func test_one_rewarded_revive_per_run_lifecycle() -> void:
+	print("\n--- TEST: Change A — One Rewarded Revive Per Run Lifecycle ---")
+	var lvl1_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_1.tscn")
+	var lvl = lvl1_scene.instantiate()
+	add_child(lvl)
+
+	var player = lvl.player
+	var death_overlay = lvl.death_overlay
+
+	# 1. Starting a new level run grants one available rewarded revive
+	GameManager.start_level(1)
+	assert_true(GameManager.can_revive_this_run(), "Run Lifecycle: New run begins with 1 available rewarded revive")
+	assert_eq(GameManager.revives_used_this_run, 0, "Run Lifecycle: revives_used_this_run starts at 0")
+
+	# Mock Ad setup
+	AdManager.set_mock_ad_available(true)
+
+	# 2. First death: revive available
+	player.global_position = Vector2(1340, 280)
+	player.die()
+	death_overlay.open()
+	death_overlay._update_ad_status()
+	assert_true(not death_overlay.revive_btn.disabled, "Run Lifecycle: Revive button enabled on first death")
+	assert_eq(death_overlay.ad_status_label.text, "Watch a short ad to revive here!", "Run Lifecycle: Ready prompt displayed")
+
+	# 3. Apply first verified rewarded revive
+	death_overlay._on_revive_pressed()
+	AdManager.simulate_mock_reward("Revive", 1)
+	assert_true(player._is_alive, "Run Lifecycle: Player revived upon verified reward")
+	assert_eq(GameManager.revives_used_this_run, 1, "Run Lifecycle: revives_used_this_run increments to 1")
+	assert_true(not GameManager.can_revive_this_run(), "Run Lifecycle: can_revive_this_run is false after 1st revive")
+
+	# 4. Pause / resume does NOT reset allowance
+	get_tree().paused = true
+	get_tree().paused = false
+	assert_true(not GameManager.can_revive_this_run(), "Run Lifecycle: Pause/resume does not restore allowance")
+
+	# 5. Second death in the SAME run: revive must NO LONGER be available
+	player.is_invulnerable = false
+	player.global_position = Vector2(1340, 280)
+	player.die()
+	death_overlay.open()
+	death_overlay._update_ad_status()
+	assert_true(death_overlay.revive_btn.disabled, "Run Lifecycle: Revive button disabled on second death in same run")
+	assert_eq(death_overlay.ad_status_label.text, "Revive already used this run", "Run Lifecycle: Communicates revive already used this run")
+	assert_true(not death_overlay.retry_btn.disabled, "Run Lifecycle: Retry button remains responsive")
+	assert_true(not death_overlay.level_select_btn.disabled, "Run Lifecycle: Level Select button remains responsive")
+
+	# Reopening death screen must NOT reset allowance
+	death_overlay.visible = false
+	death_overlay.open()
+	assert_true(death_overlay.revive_btn.disabled, "Run Lifecycle: Reopening death overlay does not restore allowance")
+
+	# Pressing revive when disabled/consumed must NOT initiate ad or grant revive
+	death_overlay._on_revive_pressed()
+	assert_true(not player._is_alive, "Run Lifecycle: Pressing revive when consumed does NOT revive player")
+
+	# 6. Late/stale reward callback from previous run must NOT revive player
+	var stale_run_id: int = GameManager.current_run_id - 1
+	death_overlay._on_revive_reward_granted(stale_run_id)
+	assert_true(not player._is_alive, "Run Lifecycle: Stale callback from past run rejected")
+
+	# 7. Restarting the level begins a new run and restores the one-revive allowance
+	lvl._on_retry()
+	assert_true(GameManager.can_revive_this_run(), "Run Lifecycle: Level retry starts new run and restores 1-revive allowance")
+	assert_eq(GameManager.revives_used_this_run, 0, "Run Lifecycle: revives_used_this_run reset to 0 upon retry")
+	assert_true(player._is_alive, "Run Lifecycle: Player alive after retry")
+
+	# 8. Dying in the new run allows revive again
+	AdManager.set_mock_ad_available(true)
+	player.is_invulnerable = false
+	player.global_position = Vector2(1340, 280)
+	player.die()
+	death_overlay.open()
+	death_overlay._update_ad_status()
+	assert_true(not death_overlay.revive_btn.disabled, "Run Lifecycle: Revive button enabled in new run after retry")
+
+	AdManager.disable_mock_mode()
+	remove_child(lvl)
+	lvl.free()
+
+func test_three_star_rating_and_persistence_rules() -> void:
+	print("\n--- TEST: Change C & D — Three-Star Rating Rules & Persistence ---")
+	SaveManager._apply_defaults()
+	SaveManager.save_data()
+
+	# 1. Level completion without revive usage earns 3 stars
+	GameManager.start_level(1)
+	assert_eq(GameManager.revives_used_this_run, 0, "Star System: 0 revives used in fresh run")
+	GameManager.trigger_level_complete()
+	assert_eq(GameManager.last_run_stars, 3, "Star System: Clean completion without revives earns 3 stars")
+	assert_eq(SaveManager.get_level_stars(1), 3, "Star System: 3 stars saved in SaveManager for Level 1")
+
+	# 2. Level completion after using a revive earns 2 stars
+	GameManager.start_level(2)
+	GameManager.revives_used_this_run = 1
+	GameManager.trigger_level_complete()
+	assert_eq(GameManager.last_run_stars, 2, "Star System: Completion with revive usage earns 2 stars")
+	assert_eq(SaveManager.get_level_stars(2), 2, "Star System: 2 stars saved in SaveManager for Level 2")
+
+	# 3. Improving rating: 2 stars improves to 3 stars
+	GameManager.start_level(2)
+	assert_eq(GameManager.revives_used_this_run, 0, "Star System: Starting run 2 for Level 2 has 0 revives")
+	GameManager.trigger_level_complete()
+	assert_eq(GameManager.last_run_stars, 3, "Star System: Replay without revive earns 3 stars")
+	assert_eq(SaveManager.get_level_stars(2), 3, "Star System: Saved rating upgraded from 2 to 3 stars")
+
+	# 4. Non-downgrading: 3 stars cannot be downgraded to 2 stars by a later revived run
+	GameManager.start_level(2)
+	GameManager.revives_used_this_run = 1
+	GameManager.trigger_level_complete()
+	assert_eq(GameManager.last_run_stars, 2, "Star System: Current run earned 2 stars")
+	assert_eq(SaveManager.get_level_stars(2), 3, "Star System: Best saved rating PRESERVED at 3 stars (no downgrade)")
+
+	# 5. Ordinary deaths do NOT disqualify 3-star rating
+	GameManager.start_level(3)
+	# Simulate 3 ordinary deaths and retries
+	for _i in range(3):
+		GameManager.trigger_player_death()
+		GameManager.reset_coins() # Simulates level retry
+	assert_eq(GameManager.revives_used_this_run, 0, "Star System: Ordinary deaths/retries leave revives_used_this_run at 0")
+	GameManager.trigger_level_complete()
+	assert_eq(GameManager.last_run_stars, 3, "Star System: Clean completion after ordinary deaths still earns 3 stars")
+	assert_eq(SaveManager.get_level_stars(3), 3, "Star System: Level 3 saved with 3 stars")
+
+	# 6. Incomplete / failed run does NOT record rating
+	GameManager.start_level(4)
+	GameManager.trigger_player_death()
+	assert_eq(SaveManager.get_level_stars(4), 0, "Star System: Incomplete run earns no rating (0 stars)")
+
+	# 7. Backward-compatible save migration
+	var legacy_save_data = {
+		"schema_version": 1,
+		"highest_unlocked_level": 5,
+		"completed_levels": [1, 2, 3, 4],
+		"sfx_enabled": true,
+		"music_enabled": false
+	}
+	SaveManager._apply_dict(legacy_save_data)
+	assert_eq(SaveManager.highest_unlocked_level, 5, "Save Migration: Unlocked level preserved")
+	assert_eq(SaveManager.completed_levels.size(), 4, "Save Migration: Completed levels preserved")
+	assert_eq(SaveManager.get_level_stars(1), 0, "Save Migration: Missing star fields default safely to 0 without fabricating ratings")
+	assert_eq(SaveManager.get_level_stars(5), 0, "Save Migration: Uncompleted level is 0 stars")
+
+	# Now earn stars on migrated save
+	SaveManager.complete_level(1, 3)
+	assert_eq(SaveManager.get_level_stars(1), 3, "Save Migration: Newly earned rating saved on migrated profile")
+
+	# Save serialization & reload round-trip
+	SaveManager.save_data()
+	SaveManager.load_save()
+	assert_eq(SaveManager.get_level_stars(1), 3, "Save Round-Trip: 3 stars persist after reload")
+	assert_eq(SaveManager.highest_unlocked_level, 5, "Save Round-Trip: highest unlocked level persists")
+
+func test_disappearing_platform_respawn_and_visibility() -> void:
+	print("\n--- TEST: Change B — Disappearing Platform Respawn & Player Visibility ---")
+	var lvl1_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_1.tscn")
+	var lvl = lvl1_scene.instantiate()
+	add_child(lvl)
+
+	var player = lvl.player
+	var plat2 = lvl.get_node("Platforms/Platform2") # FallingPlatform
+	var platgreedy = lvl.get_node("Platforms/PlatformGreedy") # GreedyPlatform
+
+	# 1. Falling Platform Trigger & Fall
+	plat2.trigger()
+	for _i in range(35):
+		plat2._physics_process(0.016)
+	assert_true(plat2._falling, "Respawn Fix: FallingPlatform is falling")
+	assert_true(plat2.collision_shape.disabled, "Respawn Fix: FallingPlatform collision disabled while falling")
+
+	# 2. Player death from falling
+	player.global_position = Vector2(plat2.global_position.x, 520.0)
+	player.die(true)
+	assert_true(not player._is_alive, "Respawn Fix: Player died from pit")
+
+	# 3. Revive restores platform AND player visibility
+	GameManager.current_coins = 5
+	GameManager.start_new_run()
+	GameManager.revive_current_player()
+	assert_true(player._is_alive, "Respawn Fix: Player alive after revive")
+	assert_true(player.visible, "Respawn Fix: Player root node visible after revive")
+	assert_true(player.sprite.visible, "Respawn Fix: Player Sprite2D visible after revive")
+	assert_true(not player.collision_shape.disabled, "Respawn Fix: Player collision enabled after revive")
+	assert_eq(player.modulate, Color.WHITE, "Respawn Fix: Player modulate restored to Color.WHITE")
+	assert_true(not plat2._falling and not plat2._triggered, "Respawn Fix: FallingPlatform reset to intact state on revive")
+	assert_true(not plat2.collision_shape.disabled, "Respawn Fix: FallingPlatform collision re-enabled on revive")
+
+	# 4. Greedy Platform Trigger & Revive
+	platgreedy.trigger_greedy_drop()
+	for _i in range(35):
+		platgreedy._physics_process(0.016)
+	assert_true(platgreedy._falling, "Respawn Fix: GreedyPlatform is falling")
+	assert_true(platgreedy.collision_shape.disabled, "Respawn Fix: GreedyPlatform collision disabled while falling")
+
+	# Revive resets greedy platform
+	GameManager.start_new_run() # Fresh run for test
+	GameManager.revive_current_player()
+	assert_true(not platgreedy._falling and not platgreedy._has_dropped, "Respawn Fix: GreedyPlatform reset on revive")
+	assert_true(not platgreedy.collision_shape.disabled, "Respawn Fix: GreedyPlatform collision restored on revive")
+
+	# 5. Out-of-bounds safety boundary catch
+	player.revive()
+	player.global_position = Vector2(500, 550) # In the void
+	player._physics_process(0.016)
+	assert_true(not player._is_alive, "Respawn Fix: Safety boundary at y>540 catches void fall and kills player")
+
+	# 6. Level retry restores complete clean state
+	lvl._on_retry()
+	assert_true(player._is_alive, "Respawn Fix: Player alive after retry")
+	assert_true(player.visible, "Respawn Fix: Player visible after retry")
+	assert_true(player.sprite.visible, "Respawn Fix: Player Sprite2D visible after retry")
+	assert_true(not player.collision_shape.disabled, "Respawn Fix: Player collision enabled after retry")
+
+	remove_child(lvl)
+	lvl.free()
+
+func test_android_package_identity_and_version_code() -> void:
+	print("\n--- TEST: Change F — Android Package Identity, Keystore & Version Code ---")
+	var preset_file = FileAccess.open("res://export_presets.cfg", FileAccess.READ)
+	assert_true(preset_file != null, "Export Config: export_presets.cfg is readable")
+	var content = preset_file.get_as_text()
+	preset_file.close()
+
+	assert_true(content.contains('package/unique_name="com.antigravity.retroragearcade"'), "Package Identity: Canonical package ID is com.antigravity.retroragearcade")
+	assert_true(content.contains('version/code=12'), "Version Monotonicity: version/code is 12 (monotonically increased)")
+	assert_true(content.contains('version/name="0.12.0"'), "Version Name: version/name is 0.12.0")
+	assert_true(content.contains('package/retain_data_on_uninstall=true'), "Package Config: retain_data_on_uninstall is enabled")
 
 
 

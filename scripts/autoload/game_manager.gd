@@ -18,6 +18,10 @@ var active_player: CharacterBody2D = null
 var last_safe_position: Vector2 = Vector2.ZERO
 var last_death_position: Vector2 = Vector2.ZERO
 var revives_used_this_death: int = 0
+var revives_used_this_run: int = 0
+var current_run_id: int = 1
+const MAX_REVIVES_PER_RUN: int = 1
+var last_run_stars: int = 3
 
 # 4 Worlds definitions organizing all 20 planned stages
 var worlds: Dictionary = {
@@ -87,13 +91,23 @@ func can_play_level(level_id: int) -> bool:
 	var info: Dictionary = get_level_info(level_id)
 	return bool(info.get("implemented", false))
 
+func start_new_run() -> void:
+	current_run_id += 1
+	revives_used_this_run = 0
+	revives_used_this_death = 0
+
+func can_revive_this_run() -> bool:
+	return is_gameplay_active and (revives_used_this_run < MAX_REVIVES_PER_RUN)
+
 func go_to_main_menu() -> void:
 	is_gameplay_active = false
+	start_new_run()
 	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
 
 func go_to_level_select() -> void:
 	is_gameplay_active = false
+	start_new_run()
 	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/ui/coin_hell_level_select.tscn")
 
@@ -106,6 +120,7 @@ func start_level(level_id: int) -> bool:
 	total_coins_required = int(info.get("coin_count", 10))
 	current_coins = 0
 	is_gameplay_active = true
+	start_new_run()
 	get_tree().paused = false
 
 	var scene_path: String = info.get("scene", "")
@@ -124,6 +139,7 @@ func restart_current_level() -> void:
 
 func reset_coins() -> void:
 	current_coins = 0
+	start_new_run()
 	coin_collected.emit(current_coins, total_coins_required)
 	coins_reset.emit()
 
@@ -139,7 +155,8 @@ func trigger_level_complete() -> void:
 	if not is_gameplay_active:
 		return
 	is_gameplay_active = false
-	SaveManager.complete_level(current_level_id)
+	last_run_stars = 2 if revives_used_this_run > 0 else 3
+	SaveManager.complete_level(current_level_id, last_run_stars)
 	AudioManager.play_sfx("complete")
 	level_completed.emit(current_level_id)
 
@@ -158,16 +175,16 @@ func _on_player_tree_exiting() -> void:
 	active_player = null
 
 func record_safe_position(pos: Vector2) -> void:
-	# Keep track of solid ground location above pits
-	if pos.y < 510.0:
+	# Keep track of solid ground location safely above pits (y < 460.0)
+	if pos.y < 460.0:
 		last_safe_position = pos
 
 func record_death_position(pos: Vector2) -> void:
 	last_death_position = pos
 
 func find_safe_revive_position(death_pos: Vector2) -> Vector2:
-	# Priority 1: Use last stable grounded safe foothold if available
-	if last_safe_position != Vector2.ZERO and last_safe_position.y < 510.0:
+	# Priority 1: Use last stable grounded safe foothold if available and elevated safely above pits
+	if last_safe_position != Vector2.ZERO and last_safe_position.y < 460.0:
 		return last_safe_position
 
 	# Priority 2: Use level SpawnPoint if available
@@ -179,10 +196,17 @@ func find_safe_revive_position(death_pos: Vector2) -> Vector2:
 			if spawn_node is Marker2D or spawn_node is Node2D:
 				return spawn_node.global_position
 
-	# Fallback: Slightly elevated from death position to clear ground hazards
-	return Vector2(death_pos.x, clampf(death_pos.y - 32.0, 50.0, 480.0))
+	# Fallback: Slightly elevated from death position to clear ground hazards if above pit
+	if death_pos.y < 480.0:
+		return Vector2(death_pos.x, clampf(death_pos.y - 32.0, 50.0, 450.0))
+
+	return Vector2(100.0, 360.0)
 
 func revive_current_player() -> bool:
+	if not can_revive_this_run():
+		push_warning("[GameManager] Revive rejected: Run allowance exceeded (%d/%d) or gameplay inactive." % [revives_used_this_run, MAX_REVIVES_PER_RUN])
+		return false
+
 	var p: CharacterBody2D = active_player
 	if p == null or not is_instance_valid(p):
 		var players := get_tree().get_nodes_in_group("player")
@@ -200,11 +224,12 @@ func revive_current_player() -> bool:
 
 	is_gameplay_active = true
 	get_tree().paused = false
+	revives_used_this_run += 1
 	revives_used_this_death += 1
 
 	AudioManager.play_sfx("coin")
 	player_revived.emit(target_safe_pos)
-	print("[GameManager] Player successfully revived at safe position: %s" % str(target_safe_pos))
+	print("[GameManager] Player successfully revived at safe position: %s (run revives: %d/%d)" % [str(target_safe_pos), revives_used_this_run, MAX_REVIVES_PER_RUN])
 	return true
 
 func get_world_id_for_stage(stage_id: int) -> int:

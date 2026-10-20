@@ -4,11 +4,12 @@ extends Node
 ## Gracefully recovers from missing or corrupted save files.
 
 const SAVE_PATH: String = "user://retro_rage_save.json"
-const CURRENT_SCHEMA_VERSION: int = 1
+const CURRENT_SCHEMA_VERSION: int = 2
 
 var schema_version: int = CURRENT_SCHEMA_VERSION
 var highest_unlocked_level: int = 1
 var completed_levels: Array = []
+var stage_stars: Dictionary = {}
 var sfx_enabled: bool = true
 var music_enabled: bool = true
 
@@ -22,6 +23,7 @@ func get_default_data() -> Dictionary:
 		"schema_version": CURRENT_SCHEMA_VERSION,
 		"highest_unlocked_level": 1,
 		"completed_levels": [],
+		"stage_stars": {},
 		"sfx_enabled": true,
 		"music_enabled": true
 	}
@@ -60,6 +62,7 @@ func _apply_defaults() -> void:
 	schema_version = CURRENT_SCHEMA_VERSION
 	highest_unlocked_level = 1
 	completed_levels = []
+	stage_stars = {}
 	sfx_enabled = true
 	music_enabled = true
 	progress_updated.emit()
@@ -76,6 +79,15 @@ func _apply_dict(data: Dictionary) -> void:
 			if lvl >= 1 and lvl <= 20 and not completed_levels.has(lvl):
 				completed_levels.append(lvl)
 
+	var raw_stars = data.get("stage_stars", {})
+	stage_stars = {}
+	if typeof(raw_stars) == TYPE_DICTIONARY:
+		for k in raw_stars.keys():
+			var lvl_id := int(k)
+			var stars_val := clampi(int(raw_stars[k]), 0, 3)
+			if lvl_id >= 1 and lvl_id <= 20:
+				stage_stars[str(lvl_id)] = stars_val
+
 	sfx_enabled = bool(data.get("sfx_enabled", true))
 	music_enabled = bool(data.get("music_enabled", true))
 	progress_updated.emit()
@@ -85,6 +97,7 @@ func save_data() -> bool:
 		"schema_version": CURRENT_SCHEMA_VERSION,
 		"highest_unlocked_level": highest_unlocked_level,
 		"completed_levels": completed_levels,
+		"stage_stars": stage_stars,
 		"sfx_enabled": sfx_enabled,
 		"music_enabled": music_enabled
 	}
@@ -108,7 +121,22 @@ func is_level_unlocked(level_id: int) -> bool:
 func is_level_completed(level_id: int) -> bool:
 	return completed_levels.has(level_id)
 
-func complete_level(level_id: int) -> void:
+func get_level_stars(level_id: int) -> int:
+	var key := str(level_id)
+	if stage_stars.has(key):
+		return int(stage_stars[key])
+	if stage_stars.has(level_id):
+		return int(stage_stars[level_id])
+	return 0
+
+func record_level_stars(level_id: int, earned_stars: int) -> int:
+	var current_best := get_level_stars(level_id)
+	var new_best := maxi(current_best, clampi(earned_stars, 0, 3))
+	stage_stars[str(level_id)] = new_best
+	save_data()
+	return new_best
+
+func complete_level(level_id: int, earned_stars: int = 0) -> void:
 	var changed := false
 	if not completed_levels.has(level_id):
 		completed_levels.append(level_id)
@@ -118,6 +146,13 @@ func complete_level(level_id: int) -> void:
 	if next_level <= 20 and next_level > highest_unlocked_level:
 		highest_unlocked_level = next_level
 		changed = true
+
+	if earned_stars > 0:
+		var current_best := get_level_stars(level_id)
+		var new_best := maxi(current_best, clampi(earned_stars, 0, 3))
+		if new_best != current_best or not stage_stars.has(str(level_id)):
+			stage_stars[str(level_id)] = new_best
+			changed = true
 
 	if changed:
 		save_data()

@@ -30,8 +30,12 @@ func _ready() -> void:
 	if visual_rect:
 		_initial_visual_pos = visual_rect.position
 	GameManager.coins_reset.connect(reset)
+	GameManager.player_revived.connect(_on_player_revived)
 	if step_area:
 		step_area.body_entered.connect(_on_step_entered)
+
+func _on_player_revived(_pos: Vector2) -> void:
+	reset()
 
 func _on_step_entered(body: Node2D) -> void:
 	if body.is_in_group("player") or body.name == "Player":

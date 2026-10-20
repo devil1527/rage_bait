@@ -62,8 +62,13 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 
-	# Record safe foothold position when stably resting on ground
-	if is_on_floor() and not is_invulnerable and GameManager:
+	# Catch falling out of bounds into the pit void
+	if global_position.y > 540.0:
+		die(true)
+		return
+
+	# Record safe foothold position when stably resting on ground safely above pits
+	if is_on_floor() and not is_invulnerable and global_position.y < 460.0 and GameManager:
 		GameManager.record_safe_position(global_position)
 
 	# Handle gravity
@@ -120,11 +125,15 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 
-func die() -> void:
-	if not _is_alive or is_invulnerable:
+func die(force_pit: bool = false) -> void:
+	if not _is_alive:
+		return
+	if is_invulnerable and not force_pit:
 		return
 	_is_alive = false
 	_input_disabled = true
+	is_invulnerable = false
+	_invulnerability_timer = 0.0
 	wind_velocity = 0.0
 	touch_left = false
 	touch_right = false
@@ -158,6 +167,9 @@ func disable_input() -> void:
 func apply_spawn_protection(duration: float = 1.0) -> void:
 	is_invulnerable = true
 	_invulnerability_timer = duration
+	visible = true
+	if sprite:
+		sprite.visible = true
 
 func revive() -> void:
 	_is_alive = true
@@ -176,9 +188,14 @@ func revive() -> void:
 	Input.action_release("move_left")
 	Input.action_release("move_right")
 	Input.action_release("jump")
+	visible = true
+	modulate = Color.WHITE
 	if sprite:
+		sprite.visible = true
 		sprite.flip_h = false
-		sprite.modulate.a = 1.0
+		sprite.modulate = Color.WHITE
+	if collision_shape:
+		collision_shape.disabled = false
 
 func reset_to(spawn_position: Vector2) -> void:
 	global_position = spawn_position

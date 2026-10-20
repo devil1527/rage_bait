@@ -24,9 +24,10 @@ func _ready() -> void:
 func open() -> void:
 	visible = true
 	_update_ad_status()
-	# Proactively request ad if not ready yet, not loading, and native SDK is initialized
-	if AdManager and not AdManager.is_rewarded_ad_ready() and not AdManager.is_loading() and AdManager.is_plugin_initialized():
-		AdManager.load_rewarded_ad()
+	# Proactively request ad if eligible, not ready yet, not loading, and native SDK is initialized
+	if GameManager and GameManager.can_revive_this_run():
+		if AdManager and not AdManager.is_rewarded_ad_ready() and not AdManager.is_loading() and AdManager.is_plugin_initialized():
+			AdManager.load_rewarded_ad()
 
 func _exit_tree() -> void:
 	if get_tree():
@@ -34,6 +35,14 @@ func _exit_tree() -> void:
 
 func _update_ad_status() -> void:
 	if not is_inside_tree() or not visible:
+		return
+
+	# Authoritative run allowance check
+	if GameManager and not GameManager.can_revive_this_run():
+		revive_btn.disabled = true
+		revive_btn.text = "🎬 WATCH AD — REVIVE"
+		ad_status_label.text = "Revive already used this run"
+		ad_status_label.modulate = Color(0.8, 0.8, 0.8, 0.7)
 		return
 
 	if not AdManager:
@@ -100,6 +109,10 @@ func _on_network_state_changed(_available: bool) -> void:
 		_update_ad_status()
 
 func _on_revive_pressed() -> void:
+	if not GameManager or not GameManager.can_revive_this_run():
+		_update_ad_status()
+		return
+
 	AudioManager.play_sfx("click")
 	# Prevent repeated taps while ad request is in progress
 	revive_btn.disabled = true
@@ -108,8 +121,9 @@ func _on_revive_pressed() -> void:
 	ad_status_label.modulate = Color(1.0, 0.9, 0.4, 1.0)
 	get_tree().paused = true
 
+	var target_run_id: int = GameManager.current_run_id if GameManager else -1
 	var started := AdManager.show_rewarded_ad_for_revive(
-		_on_revive_reward_granted,
+		func(): _on_revive_reward_granted(target_run_id),
 		_on_revive_ad_failed
 	)
 	if not started:
@@ -117,8 +131,20 @@ func _on_revive_pressed() -> void:
 		retry_btn.disabled = false
 		_update_ad_status()
 
-func _on_revive_reward_granted() -> void:
-	print("[DeathOverlay] Authoritative revive reward received.")
+func _on_revive_reward_granted(expected_run_id: int = -1) -> void:
+	if expected_run_id != -1 and (not GameManager or GameManager.current_run_id != expected_run_id):
+		print("[DeathOverlay] Rejecting stale revive reward for run %d (active run: %d)." % [expected_run_id, GameManager.current_run_id if GameManager else -1])
+		get_tree().paused = false
+		visible = false
+		return
+
+	if not GameManager or not GameManager.can_revive_this_run():
+		print("[DeathOverlay] Rejecting revive: allowance already consumed for this run.")
+		get_tree().paused = false
+		_update_ad_status()
+		return
+
+	print("[DeathOverlay] Authoritative revive reward received for run %d." % (expected_run_id if expected_run_id != -1 else GameManager.current_run_id))
 	get_tree().paused = false
 	visible = false
 	revive_btn.disabled = false

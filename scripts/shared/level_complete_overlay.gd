@@ -3,6 +3,8 @@ extends Control
 signal replay_requested
 
 @onready var coins_label: Label = $Panel/VBox/CoinsLabel
+@onready var stars_label: Label = $Panel/VBox/StarsLabel
+@onready var rating_status_label: Label = $Panel/VBox/RatingStatusLabel
 @onready var next_level_btn: Button = $Panel/VBox/NextLevelBtn
 @onready var replay_btn: Button = $Panel/VBox/ReplayBtn
 @onready var level_select_btn: Button = $Panel/VBox/LevelSelectBtn
@@ -20,8 +22,29 @@ func _ready() -> void:
 	modal_ok_btn.pressed.connect(_on_modal_ok_pressed)
 	message_modal.visible = false
 
-func open(coins_collected: int, total_coins: int) -> void:
+func open(coins_collected: int, total_coins: int, earned_stars: int = -1) -> void:
 	coins_label.text = "COINS COLLECTED: %d / %d" % [coins_collected, total_coins]
+	var stars: int = earned_stars if earned_stars > 0 else (GameManager.last_run_stars if GameManager else 3)
+	
+	if stars_label:
+		if stars == 3:
+			stars_label.text = "★ ★ ★"
+			stars_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.1, 1.0))
+			if rating_status_label:
+				rating_status_label.text = "PERFECT CLEAR! (NO REVIVES)"
+				rating_status_label.add_theme_color_override("font_color", Color(0.2, 1.0, 0.6, 1.0))
+		elif stars == 2:
+			stars_label.text = "★ ★ ☆"
+			stars_label.add_theme_color_override("font_color", Color(1.0, 0.75, 0.2, 1.0))
+			if rating_status_label:
+				rating_status_label.text = "REVIVED CLEAR (2 STARS)"
+				rating_status_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.3, 1.0))
+		else:
+			stars_label.text = "★ ☆ ☆"
+			stars_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8, 1.0))
+			if rating_status_label:
+				rating_status_label.text = "LEVEL COMPLETED"
+				rating_status_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8, 1.0))
 	visible = true
 
 func _on_next_level_pressed() -> void:
