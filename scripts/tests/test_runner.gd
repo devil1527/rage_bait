@@ -4529,6 +4529,7 @@ func test_ui_redesign_and_world_navigation() -> void:
 	menu.queue_free()
 
 	# 2. Coin Hell Level Select & World Navigation
+	SaveManager._apply_defaults()
 	var lsel_scene: PackedScene = load("res://scenes/ui/coin_hell_level_select.tscn")
 	assert_true(lsel_scene != null, "UI Redesign: Level select scene loads")
 	var lsel = lsel_scene.instantiate()
@@ -4580,25 +4581,21 @@ func test_ui_redesign_and_world_navigation() -> void:
 	lsel.queue_free()
 
 	# 3. Traps & Hazards Revive Reset Verification
-	var bridge_scene: PackedScene = load("res://scenes/coin_hell/crumbling_bridge_section.tscn")
-	if bridge_scene:
-		var bridge = bridge_scene.instantiate()
-		add_child(bridge)
-		bridge.trigger_collapse()
-		assert_true(bridge._is_triggered, "Respawn Fix: CrumblingBridgeSection triggered")
-		GameManager.player_revived.emit(Vector2.ZERO)
-		assert_true(not bridge._is_triggered and not bridge._is_falling, "Respawn Fix: CrumblingBridgeSection resets on player_revived")
-		bridge.queue_free()
+	var bridge = CrumblingBridgeSection.new()
+	add_child(bridge)
+	bridge.trigger_collapse()
+	assert_true(bridge._is_triggered, "Respawn Fix: CrumblingBridgeSection triggered")
+	GameManager.player_revived.emit(Vector2.ZERO)
+	assert_true(not bridge._is_triggered and not bridge._is_falling, "Respawn Fix: CrumblingBridgeSection resets on player_revived")
+	bridge.queue_free()
 
-	var fake_plat_scene: PackedScene = load("res://scenes/coin_hell/fake_safe_platform.tscn")
-	if fake_plat_scene:
-		var fake_plat = fake_plat_scene.instantiate()
-		add_child(fake_plat)
-		fake_plat.trigger_trap_with_warning(0.5)
-		assert_true(fake_plat._in_warning, "Respawn Fix: FakeSafePlatform in warning state")
-		GameManager.player_revived.emit(Vector2.ZERO)
-		assert_true(not fake_plat._in_warning and not fake_plat._triggered, "Respawn Fix: FakeSafePlatform resets on player_revived")
-		fake_plat.queue_free()
+	var fake_plat = FakeSafePlatform.new()
+	add_child(fake_plat)
+	fake_plat.trigger_trap_with_warning(0.5)
+	assert_true(fake_plat._in_warning, "Respawn Fix: FakeSafePlatform in warning state")
+	GameManager.player_revived.emit(Vector2.ZERO)
+	assert_true(not fake_plat._in_warning and not fake_plat._triggered, "Respawn Fix: FakeSafePlatform resets on player_revived")
+	fake_plat.queue_free()
 
 
 

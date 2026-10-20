@@ -466,7 +466,20 @@ func _refresh_tile_states() -> void:
 		var star_rating: int = SaveManager.get_level_stars(lvl_id)
 		var world_id: int = GameManager.get_world_id_for_stage(lvl_id)
 
-		if is_completed:
+		if not is_implemented:
+			# Unimplemented / Planned Stages (Stages 12–20)
+			btn.add_theme_stylebox_override("normal", _style_planned_normal)
+			btn.add_theme_stylebox_override("hover", _style_planned_hover)
+			btn.add_theme_stylebox_override("focus", _style_planned_hover)
+			num_label.add_theme_color_override("font_color", Color(0.40, 0.44, 0.52))
+			name_label.add_theme_color_override("font_color", Color(0.35, 0.38, 0.46))
+			state_label.text = "PLANNED"
+			state_label.add_theme_color_override("font_color", Color(0.55, 0.45, 0.45))
+			status_icon.texture = lock_icon
+			status_icon.visible = true
+			if stars_label:
+				stars_label.text = ""
+		elif is_completed:
 			var sb_norm: StyleBoxFlat = _style_w1_comp_normal
 			var sb_hov: StyleBoxFlat = _style_w1_comp_hover
 			var num_col: Color = Color(0.0, 0.95, 0.8)
@@ -544,19 +557,6 @@ func _refresh_tile_states() -> void:
 			state_label.text = "DEV TEST"
 			state_label.add_theme_color_override("font_color", Color(0.2, 0.9, 1.0))
 			status_icon.visible = false
-			if stars_label:
-				stars_label.text = ""
-		elif not is_implemented:
-			# Unimplemented / Planned Stages (Stages 12–20)
-			btn.add_theme_stylebox_override("normal", _style_planned_normal)
-			btn.add_theme_stylebox_override("hover", _style_planned_hover)
-			btn.add_theme_stylebox_override("focus", _style_planned_hover)
-			num_label.add_theme_color_override("font_color", Color(0.40, 0.44, 0.52))
-			name_label.add_theme_color_override("font_color", Color(0.35, 0.38, 0.46))
-			state_label.text = "PLANNED"
-			state_label.add_theme_color_override("font_color", Color(0.55, 0.45, 0.45))
-			status_icon.texture = lock_icon
-			status_icon.visible = true
 			if stars_label:
 				stars_label.text = ""
 		else:
