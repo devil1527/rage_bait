@@ -142,14 +142,14 @@ func _setup_secret_developer_tap() -> void:
 				child.mouse_filter = Control.MOUSE_FILTER_PASS
 
 func _on_secret_tap_input(event: InputEvent) -> void:
-	var is_tap := false
+	var is_tap: bool = false
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		is_tap = true
 	elif event is InputEventScreenTouch and event.pressed:
 		is_tap = true
 
 	if is_tap:
-		var now := Time.get_ticks_msec() / 1000.0
+		var now: float = float(Time.get_ticks_msec()) / 1000.0
 		if now - _secret_tap_last_time > 2.5:
 			_secret_tap_count = 0
 		_secret_tap_last_time = now
@@ -280,7 +280,7 @@ func _update_world_filter() -> void:
 		var btn: Button = world_card_buttons[wid]
 		if not btn:
 			continue
-		var is_selected := (wid == current_selected_world)
+		var is_selected: bool = (int(wid) == current_selected_world)
 		var theme_col: Color = Color(1.0, 0.82, 0.15)
 		match wid:
 			1: theme_col = Color(0.0, 0.92, 1.0)
