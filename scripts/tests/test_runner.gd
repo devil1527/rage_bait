@@ -22,6 +22,8 @@ const ConveyorPlatformClass = preload("res://scripts/coin_hell/conveyor_platform
 const IndustrialCrusherClass = preload("res://scripts/coin_hell/industrial_crusher.gd")
 const RisingLavaClass = preload("res://scripts/coin_hell/rising_lava.gd")
 const SteamVentClass = preload("res://scripts/coin_hell/steam_vent.gd")
+const RollingBoulderClass = preload("res://scripts/coin_hell/rolling_boulder.gd")
+const SecretHiddenPlatformClass = preload("res://scripts/coin_hell/secret_hidden_platform.gd")
 
 var passed_count: int = 0
 var failed_count: int = 0
@@ -122,6 +124,10 @@ func run_all_tests() -> void:
 	test_level_13_platform4_jump_fix()
 	test_level_14_overpressure_gameplay()
 	test_level_14_jump_physics_and_reachability()
+	test_level_15_rage_furnace_gameplay()
+	test_level_15_rolling_boulder_mechanics()
+	test_level_15_secret_hidden_platform_reveal_state_machine()
+	test_level_15_jump_physics_and_reachability()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -242,7 +248,14 @@ func test_game_manager_level_definitions() -> void:
 	assert_true(GameManager.can_play_level(14), "Level 14 is playable")
 	assert_eq(lvl14.get("coin_count"), 10, "Level 14 coin count is 10")
 	
-	for lvl_id in range(15, 21):
+	var lvl15: Dictionary = GameManager.get_level_info(15)
+	assert_eq(lvl15.get("name"), "Rage Furnace", "Level 15 name is 'Rage Furnace'")
+	assert_eq(GameManager.get_world_name_for_stage(15), "RAGE FACTORY", "Level 15 world is 'RAGE FACTORY'")
+	assert_true(lvl15.get("implemented"), "Level 15 is marked implemented")
+	assert_true(GameManager.can_play_level(15), "Level 15 is playable")
+	assert_eq(lvl15.get("coin_count"), 10, "Level 15 coin count is 10")
+	
+	for lvl_id in range(16, 21):
 		assert_true(not GameManager.can_play_level(lvl_id), "Level %d is marked not implemented" % lvl_id)
 		
 	# Test coin counter clamping
@@ -436,14 +449,20 @@ func test_level_select_logic_and_states() -> void:
 	assert_true(SaveManager.is_level_unlocked(14), "Level 14 is unlocked after completing Level 13")
 	assert_true(GameManager.can_play_level(14), "Level 14 is playable")
 
-	# Complete level 14 to unlock level 15 and test unimplemented level press
+	# Complete level 14 to unlock level 15 and verify Level 15 is playable
 	SaveManager.complete_level(14)
 	lsel._update_ui()
 	assert_true(SaveManager.is_level_unlocked(15), "Level 15 is unlocked after completing Level 14")
-	assert_true(not GameManager.can_play_level(15), "Level 15 is not implemented yet")
-	lsel._on_level_tile_pressed(15)
+	assert_true(GameManager.can_play_level(15), "Level 15 is playable")
+
+	# Complete level 15 to unlock level 16 and test unimplemented level press
+	SaveManager.complete_level(15)
+	lsel._update_ui()
+	assert_true(SaveManager.is_level_unlocked(16), "Level 16 is unlocked after completing Level 15")
+	assert_true(not GameManager.can_play_level(16), "Level 16 is not implemented yet")
+	lsel._on_level_tile_pressed(16)
 	assert_true(modal.visible, "Pressing unlocked but unimplemented level shows modal")
-	assert_eq(modal_label.text, "Level 15 is still being built. Replay an earlier level for now.", "Modal shows exact unimplemented level message")
+	assert_eq(modal_label.text, "Level 16 is still being built. Replay an earlier level for now.", "Modal shows exact unimplemented level message")
 	
 	lsel.queue_free()
 
@@ -1811,13 +1830,13 @@ func test_developer_only_level_access() -> void:
 	# Level 14 can be launched with dev mode on
 	lsel._on_dev_toggle_pressed()
 	assert_true(lsel.dev_bypass_active, "Dev bypass toggled on")
-	lsel._on_level_tile_pressed(14)
-	assert_eq(GameManager.current_level_id, 14, "Developer mode allows direct launch into Level 14 when explicitly enabled")
-
-	# Unimplemented level (e.g. Level 15) cannot be launched even with dev mode on
 	lsel._on_level_tile_pressed(15)
-	assert_true(lsel.message_modal.visible, "Unimplemented Level 15 displays in-progress modal")
-	assert_eq(lsel.modal_title.text, "LEVEL 15 IN PROGRESS", "Modal indicates Level 15 is in progress")
+	assert_eq(GameManager.current_level_id, 15, "Developer mode allows direct launch into Level 15 when explicitly enabled")
+
+	# Unimplemented level (e.g. Level 16) cannot be launched even with dev mode on
+	lsel._on_level_tile_pressed(16)
+	assert_true(lsel.message_modal.visible, "Unimplemented Level 16 displays in-progress modal")
+	assert_eq(lsel.modal_title.text, "LEVEL 16 IN PROGRESS", "Modal indicates Level 16 is in progress")
 	
 	# Release mode simulation: verify that when is_debug_mode is false, bypass cannot be activated
 	lsel.dev_bypass_active = false
@@ -4602,7 +4621,7 @@ func test_ui_redesign_and_world_navigation() -> void:
 	lsel._update_ui()
 	var prog_lbl: Label = lsel.get_node("MarginContainer/VBox/HeaderBar/ProgressBox/ProgressLabel")
 	assert_true(prog_lbl.text.begins_with("STAGES CLEARED:"), "UI Redesign: Progress label starts with STAGES CLEARED:")
-	assert_true(prog_lbl.text.ends_with("/ 14"), "UI Redesign: Progress label shows honest numerator out of 14 implemented stages")
+	assert_true(prog_lbl.text.ends_with("/ 15"), "UI Redesign: Progress label shows honest numerator out of 15 implemented stages")
 
 	# World filtering and navigation
 	lsel._select_world_tab(1)
@@ -4638,15 +4657,21 @@ func test_ui_redesign_and_world_navigation() -> void:
 	var state14_lbl: Label = btn14.get_node("VBox/StateLabel")
 	assert_eq(state14_lbl.text, "LOCKED", "UI Redesign: Stage 14 state is LOCKED before completing prior stages")
 
-	# Unimplemented Stage 15 Planned State
+	# Stage 15 Implemented State (Locked initially on fresh save)
 	var btn15 = lsel.get_level_button(15)
 	assert_true(btn15 != null, "UI Redesign: Stage 15 button exists")
 	var state15_lbl: Label = btn15.get_node("VBox/StateLabel")
-	assert_eq(state15_lbl.text, "PLANNED", "UI Redesign: Stage 15 state is visibly PLANNED")
+	assert_eq(state15_lbl.text, "LOCKED", "UI Redesign: Stage 15 state is LOCKED before completing prior stages")
 
-	lsel._on_level_tile_pressed(15)
-	assert_true(lsel.message_modal.visible, "UI Redesign: Clicking Stage 15 shows modal")
-	assert_eq(lsel.modal_title.text, "LEVEL 15 IN PROGRESS", "UI Redesign: Modal title explains Level 15 is in progress")
+	# Unimplemented Stage 16 Planned State
+	var btn16 = lsel.get_level_button(16)
+	assert_true(btn16 != null, "UI Redesign: Stage 16 button exists")
+	var state16_lbl: Label = btn16.get_node("VBox/StateLabel")
+	assert_eq(state16_lbl.text, "PLANNED", "UI Redesign: Stage 16 state is visibly PLANNED")
+
+	lsel._on_level_tile_pressed(16)
+	assert_true(lsel.message_modal.visible, "UI Redesign: Clicking Stage 16 shows modal")
+	assert_eq(lsel.modal_title.text, "LEVEL 16 IN PROGRESS", "UI Redesign: Modal title explains Level 16 is in progress")
 	lsel.message_modal.visible = false
 
 	lsel.queue_free()
@@ -5396,6 +5421,343 @@ func test_level_14_jump_physics_and_reachability() -> void:
 		{"from": Vector2(550, -912), "to": Vector2(430, -960), "name": "Conveyor3 -> FallingPlatform3"},
 		{"from": Vector2(430, -960), "to": Vector2(300, -1015), "name": "FallingPlatform3 -> Platform17"},
 		{"from": Vector2(300, -1015), "to": Vector2(160, -1075), "name": "Platform17 -> ExitPlatform"},
+	]
+
+	for jt in jump_tests:
+		var p0: Vector2 = jt["from"]
+		var p1: Vector2 = jt["to"]
+		var dx: float = p1.x - p0.x
+		var dy: float = p1.y - p0.y
+		var a: float = 0.5 * grav
+		var b: float = jmp_vel
+		var c: float = -dy
+		var disc: float = b * b - 4.0 * a * c
+		assert_true(disc >= 0.0, "Jump height is achievable: %s" % str(jt["name"]))
+		var t_land: float = (-b + sqrt(disc)) / (2.0 * a)
+		var max_horiz: float = move_spd * t_land
+		assert_true(absf(dx) <= max_horiz, "Jump distance %.1f is within max reach %.1f: %s" % [absf(dx), max_horiz, str(jt["name"])])
+
+	remove_child(lvl)
+	lvl.free()
+
+func test_level_15_rage_furnace_gameplay() -> void:
+	print("\n--- TEST: Level 15 'Rage Furnace' Core Layout & Exact 10 Coins ---")
+	var lvl15_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_15.tscn")
+	assert_true(lvl15_scene != null, "Level 15 scene loads successfully")
+	var lvl = lvl15_scene.instantiate()
+	add_child(lvl)
+
+	# 1. Player, Spawn & Camera Boundaries
+	var player = lvl.get_node_or_null("Player")
+	assert_true(player != null, "Player instance exists in Level 15")
+	assert_true(player.is_in_group("player"), "Player is registered in group 'player'")
+	var spawn: Marker2D = lvl.get_node_or_null("SpawnPoint")
+	assert_true(spawn != null, "SpawnPoint exists in Level 15")
+	assert_eq(spawn.position, Vector2(140, 400), "Spawn point is at Vector2(140, 400)")
+	assert_eq(player.position, Vector2(140, 400), "Player starts at Vector2(140, 400)")
+
+	var camera: Camera2D = player.get_node_or_null("Camera2D")
+	assert_true(camera != null, "Camera2D exists under Player")
+	assert_eq(camera.limit_left, 0, "Camera limit_left is 0")
+	assert_eq(camera.limit_top, -1060, "Camera limit_top is -1060 (encompasses summit)")
+	assert_eq(camera.limit_right, 960, "Camera limit_right is 960")
+	assert_eq(camera.limit_bottom, 540, "Camera limit_bottom is 540")
+
+	# 2. Phase Structure & Key Platforms
+	var platforms = lvl.get_node_or_null("Platforms")
+	assert_true(platforms != null, "Platforms container exists in Level 15")
+
+	# Phase A
+	assert_true(platforms.has_node("Ground1"), "Phase A: Ground1 exists")
+	assert_true(platforms.has_node("Platform1"), "Phase A: Platform1 exists")
+	assert_true(platforms.has_node("FallingPlatform1"), "Phase A: FallingPlatform1 exists")
+	assert_true(platforms.has_node("Platform2"), "Phase A: Platform2 exists")
+	assert_true(platforms.has_node("PhantomPlatform1"), "Phase A: PhantomPlatform1 exists")
+	assert_true(platforms.has_node("Platform3"), "Phase A: Platform3 safe rest ledge exists")
+
+	# Phase B: Boulder Run
+	assert_true(platforms.has_node("BoulderRunway2"), "Phase B: BoulderRunway2 exists")
+	assert_true(platforms.has_node("PlatformHurdle"), "Phase B: PlatformHurdle exists")
+	assert_true(platforms.has_node("BoulderRunway3"), "Phase B: BoulderRunway3 exists")
+	assert_true(platforms.has_node("Platform4"), "Phase B: Platform4 junction exists")
+
+	# Phase C: Vanishing Hall
+	assert_true(platforms.has_node("PhantomPlatform2"), "Phase C: PhantomPlatform2 exists")
+	assert_true(platforms.has_node("PhantomPlatform3"), "Phase C: PhantomPlatform3 exists")
+	assert_true(platforms.has_node("Platform5"), "Phase C: Platform5 midpoint exists")
+	assert_true(platforms.has_node("PhantomPlatform4"), "Phase C: PhantomPlatform4 exists")
+	assert_true(platforms.has_node("Platform6"), "Phase C: Platform6 safe rest ledge exists")
+
+	# Phase D: Final Furnace Ascent
+	assert_true(platforms.has_node("Conveyor1"), "Phase D: Conveyor1 counter belt exists")
+	assert_true(platforms.has_node("FallingPlatform2"), "Phase D: FallingPlatform2 exists")
+	assert_true(platforms.has_node("MovingPlatform1"), "Phase D: MovingPlatform1 (Piston Elevator) exists")
+	assert_true(platforms.has_node("Platform7"), "Phase D: Platform7 exists")
+	assert_true(platforms.has_node("FallingPlatform3"), "Phase D: FallingPlatform3 exists")
+	assert_true(platforms.has_node("Platform8"), "Phase D: Platform8 pre-summit ledge exists")
+
+	# Phase E: Impossible Final Jump & Secret
+	assert_true(platforms.has_node("TakeoffPlatform"), "Phase E: TakeoffPlatform exists")
+	assert_true(platforms.has_node("SecretHiddenPlatform"), "Phase E: SecretHiddenPlatform exists")
+	assert_true(platforms.has_node("ExitPlatform"), "Phase E: ExitPlatform exists")
+	assert_true(lvl.has_node("FinalGapFallArea"), "Phase E: FinalGapFallArea exists")
+
+	# 3. Hazards Container
+	var hazards = lvl.get_node_or_null("Hazards")
+	assert_true(hazards != null, "Hazards container exists in Level 15")
+	assert_true(hazards.has_node("SteamVent1_Up"), "SteamVent1_Up exists in Hazards")
+	assert_true(hazards.has_node("RollingBoulder1"), "RollingBoulder1 exists in Hazards")
+	assert_true(hazards.has_node("SteamVent2_Down"), "SteamVent2_Down exists in Hazards")
+	assert_true(hazards.has_node("IndustrialCrusher1"), "IndustrialCrusher1 exists in Hazards")
+	assert_true(hazards.has_node("SteamVent3_Horiz"), "SteamVent3_Horiz exists in Hazards")
+	assert_true(hazards.has_node("SteamVent4_Up"), "SteamVent4_Up exists in Hazards")
+	assert_true(hazards.has_node("SteamVent5_Down"), "SteamVent5_Down exists in Hazards")
+	assert_true(lvl.has_node("PitHazardArea"), "PitHazardArea exists at bottom")
+
+	# 4. Exactly 10 Coins
+	var coins = lvl.get_node_or_null("Coins")
+	assert_true(coins != null, "Coins container exists in Level 15")
+	assert_eq(coins.get_child_count(), 10, "Coins container has exactly 10 child nodes")
+	GameManager.current_level_id = 15
+	GameManager.total_coins_required = 10
+	GameManager.reset_coins()
+
+	for i in range(1, 11):
+		var c = coins.get_node_or_null("Coin%d" % i)
+		assert_true(c != null, "Coin %d exists in Level 15" % i)
+		assert_true(not c._collected, "Coin %d is uncollected before pickup" % i)
+		c.collect()
+		assert_true(c._collected, "Coin %d is collected after pickup" % i)
+
+	assert_eq(GameManager.current_coins, 10, "All 10 Level 15 coins successfully collected")
+
+	# 5. ExitGate Unlock
+	var gate = lvl.get_node_or_null("ExitGate")
+	assert_true(gate != null, "ExitGate exists in Level 15")
+	assert_true(gate._is_open, "ExitGate unlocks when all 10 coins are collected")
+	assert_eq(gate.position, Vector2(670, -885), "ExitGate is positioned on summit ExitPlatform")
+
+	# 6. HUD and Controls
+	var title_lbl: Label = lvl.get_node_or_null("HUD/MarginContainer/TopBar/LevelTitle")
+	assert_true(title_lbl != null, "LevelTitle exists in HUD TopBar")
+	var temp_lbl: Label = lvl.get_node_or_null("HUD/MarginContainer/TopBar/FurnaceIndicator")
+	assert_true(temp_lbl != null, "FurnaceIndicator exists in HUD TopBar")
+	var pause_btn: Button = lvl.get_node_or_null("HUD/MarginContainer/TopBar/PauseBtn")
+	assert_true(pause_btn != null, "PauseBtn exists in HUD TopBar")
+	assert_true(pause_btn.text.contains("PAUSE"), "Level 15 PauseBtn displays '⏸ PAUSE'")
+
+	var touch_ctrls: Control = lvl.get_node_or_null("HUD/TouchControls")
+	assert_true(touch_ctrls != null, "TouchControls container exists in Level 15 HUD")
+	assert_true(touch_ctrls.has_node("LeftBtn") and touch_ctrls.has_node("RightBtn") and touch_ctrls.has_node("JumpBtn"), "All 3 touch buttons exist in Level 15")
+
+	# 7. Level Reset
+	lvl._reset_level()
+	assert_eq(GameManager.current_coins, 0, "Reset coins restores 0 coins")
+	assert_eq(player.position, spawn.position, "Reset returns player to spawn point")
+
+	remove_child(lvl)
+	lvl.free()
+
+func test_level_15_rolling_boulder_mechanics() -> void:
+	print("\n--- TEST: Level 15 Rolling Boulder Mechanics ---")
+	var bould_scene: PackedScene = load("res://scenes/coin_hell/rolling_boulder.tscn")
+	assert_true(bould_scene != null, "RollingBoulder scene loads successfully")
+	var bould = bould_scene.instantiate()
+	add_child(bould)
+
+	assert_eq(bould.collision_layer, 4, "RollingBoulder is on hazard collision layer 4")
+	assert_eq(bould.collision_mask, 1, "RollingBoulder detects player mask 1")
+	assert_eq(bould.roll_speed, 160.0, "RollingBoulder roll_speed is 160.0")
+	assert_eq(bould.roll_direction, -1.0, "RollingBoulder roll_direction is -1.0 (rolls left toward ascending player)")
+
+	# State progression: DORMANT -> WARNING -> ROLLING -> RESETTING
+	assert_eq(bould.current_state, RollingBoulderClass.State.DORMANT, "Initial boulder state is DORMANT")
+	bould._physics_process(bould.dormant_duration + 0.05)
+	assert_eq(bould.current_state, RollingBoulderClass.State.WARNING, "After dormant duration, boulder enters WARNING state")
+
+	bould._physics_process(bould.warning_duration + 0.05)
+	assert_eq(bould.current_state, RollingBoulderClass.State.ROLLING, "After warning duration, boulder enters ROLLING state")
+
+	# Step rolling
+	var start_x: float = bould.position.x
+	bould._physics_process(0.5)
+	assert_eq(bould.position.x, start_x - (160.0 * 0.5), "Boulder travels left at roll_speed during ROLLING")
+
+	# Test reset()
+	bould.reset()
+	assert_eq(bould.current_state, RollingBoulderClass.State.DORMANT, "Calling reset() returns boulder to DORMANT")
+	assert_eq(bould.position.x, bould._initial_pos.x, "Calling reset() restores initial position")
+
+	# Test player revive reset signal
+	bould._physics_process(bould.dormant_duration + 0.05)
+	bould._physics_process(bould.warning_duration + 0.05)
+	assert_eq(bould.current_state, RollingBoulderClass.State.ROLLING, "Boulder rolling before revive")
+	GameManager.player_revived.emit(Vector2.ZERO)
+	assert_eq(bould.current_state, RollingBoulderClass.State.DORMANT, "GameManager.player_revived restores boulder to DORMANT")
+	assert_eq(bould.position.x, bould._initial_pos.x, "GameManager.player_revived restores initial boulder position")
+
+	remove_child(bould)
+	bould.free()
+
+func test_level_15_secret_hidden_platform_reveal_state_machine() -> void:
+	print("\n--- TEST: Level 15 Secret Hidden Platform Reveal State Machine ---")
+	SaveManager.set_level_15_secret_revealed(false)
+
+	var shplat_scene: PackedScene = load("res://scenes/coin_hell/secret_hidden_platform.tscn")
+	assert_true(shplat_scene != null, "SecretHiddenPlatform scene loads successfully")
+	var shplat = shplat_scene.instantiate()
+	add_child(shplat)
+
+	assert_eq(shplat.collision_layer, 2, "SecretHiddenPlatform is on terrain collision layer 2")
+	assert_true(not shplat.is_revealed, "Secret platform is initially NOT revealed")
+	assert_true(not shplat.visible, "Secret platform is initially INVISIBLE")
+	assert_eq(shplat.modulate.a, 0.0, "Secret platform initial alpha is 0.0")
+	assert_true(shplat.collision_shape.disabled, "Secret platform collision is initially DISABLED")
+
+	# Reveal transition
+	shplat.reveal()
+	assert_true(shplat.is_revealed, "Calling reveal() sets is_revealed to true")
+	assert_true(shplat.visible, "Calling reveal() makes platform visible")
+	assert_true(not shplat.collision_shape.disabled, "Calling reveal() enables solid collision shape")
+	assert_true(SaveManager.is_level_15_secret_revealed(), "Calling reveal() updates SaveManager persistence")
+
+	# Verify reset preserves revealed state
+	shplat.set_revealed_instant(true)
+	GameManager.coins_reset.emit()
+	assert_true(shplat.is_revealed, "Secret platform remains revealed after coins_reset")
+	assert_true(not shplat.collision_shape.disabled, "Secret platform remains solid after coins_reset")
+
+	GameManager.player_revived.emit(Vector2.ZERO)
+	assert_true(shplat.is_revealed, "Secret platform remains revealed after player_revived")
+	assert_true(not shplat.collision_shape.disabled, "Secret platform remains solid after player_revived")
+
+	remove_child(shplat)
+	shplat.free()
+
+	# Integrated isolation test: Early deaths do NOT reveal secret platform
+	SaveManager.set_level_15_secret_revealed(false)
+	var lvl15_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_15.tscn")
+	var lvl = lvl15_scene.instantiate()
+	add_child(lvl)
+
+	var sec_plat = lvl.get_node("Platforms/SecretHiddenPlatform")
+	var p = lvl.get_node("Player")
+	assert_true(not sec_plat.is_revealed, "Secret platform starts unrevealed on fresh run")
+
+	# Death in Phase A (x=150, y=350)
+	p.global_position = Vector2(150, 350)
+	lvl._on_player_died()
+	assert_true(not sec_plat.is_revealed, "Death in Phase A does NOT trigger secret reveal")
+
+	# Death in Phase B (x=450, y=100)
+	p.global_position = Vector2(450, 100)
+	lvl._on_player_died()
+	assert_true(not sec_plat.is_revealed, "Death in Phase B does NOT trigger secret reveal")
+
+	# Death in Phase C (x=300, y=-100)
+	p.global_position = Vector2(300, -100)
+	lvl._on_player_died()
+	assert_true(not sec_plat.is_revealed, "Death in Phase C does NOT trigger secret reveal")
+
+	# Death in Phase D (x=480, y=-400)
+	p.global_position = Vector2(480, -400)
+	lvl._on_player_died()
+	assert_true(not sec_plat.is_revealed, "Death in Phase D does NOT trigger secret reveal")
+
+	# Genuine failure in Final Gap: trigger area entry
+	var final_gap_area: Area2D = lvl.get_node("FinalGapFallArea")
+	assert_true(final_gap_area != null, "FinalGapFallArea exists")
+	lvl._on_final_gap_fall_area_entered(p)
+	assert_true(sec_plat.is_revealed, "Entering FinalGapFallArea triggers genuine secret reveal")
+	assert_true(SaveManager.is_level_15_secret_revealed(), "SaveManager records secret discovery")
+
+	# Clean reset check: Platform stays revealed
+	lvl._reset_level()
+	assert_true(sec_plat.is_revealed, "Secret platform remains revealed after retry")
+	assert_true(not sec_plat.collision_shape.disabled, "Secret platform remains solid after retry")
+
+	# Progression integration: completing Level 15 unlocks Level 16
+	SaveManager.complete_level(15)
+	assert_true(SaveManager.is_level_completed(15), "Level 15 marked completed in SaveManager")
+	assert_true(SaveManager.is_level_unlocked(16), "Completing Level 15 unlocks Level 16 (World 4)")
+
+	remove_child(lvl)
+	lvl.free()
+
+func test_level_15_jump_physics_and_reachability() -> void:
+	print("\n--- TEST: Level 15 Jump Physics & Kinematic Reachability ---")
+	var lvl15_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_15.tscn")
+	assert_true(lvl15_scene != null, "Level 15 scene loads for jump validation")
+	var lvl = lvl15_scene.instantiate()
+	add_child(lvl)
+
+	var player = lvl.get_node("Player")
+	var move_spd: float = float(player.move_speed)
+	var jmp_vel: float = float(player.jump_velocity)
+	var grav: float = float(player.gravity)
+
+	assert_eq(move_spd, 240.0, "Level 15 Player horizontal speed is 240.0")
+	assert_eq(jmp_vel, -470.0, "Level 15 Player jump velocity is -470.0")
+	assert_eq(grav, 1150.0, "Level 15 Player gravity is 1150.0")
+
+	# 1. Physics reach limits:
+	# Flat jump: t_flight = 2 * (470 / 1150) = 0.81739s -> max_horiz = 240 * 0.81739 = 196.17px
+	var flat_flight_time: float = 2.0 * (-jmp_vel / grav)
+	var max_flat_reach: float = move_spd * flat_flight_time
+	assert_true(max_flat_reach < 196.2 and max_flat_reach > 196.1, "Max flat single jump horizontal reach is 196.17px")
+
+	# Final gap geometry check
+	var takeoff_plat: StaticBody2D = lvl.get_node("Platforms/TakeoffPlatform")
+	var exit_plat: StaticBody2D = lvl.get_node("Platforms/ExitPlatform")
+	var secret_plat = lvl.get_node("Platforms/SecretHiddenPlatform")
+
+	var takeoff_right_edge: float = takeoff_plat.position.x + 30.0 # width 60 -> half 30 (370)
+	var exit_left_edge: float = exit_plat.position.x - 50.0       # width 100 -> half 50 (600)
+	var final_gap_width: float = exit_left_edge - takeoff_right_edge
+	assert_eq(final_gap_width, 230.0, "Final gap edge-to-edge width is exactly 230.0px")
+	assert_true(final_gap_width > max_flat_reach, "Final gap width (230.0px) strictly exceeds single jump reach (196.17px) — bypass is impossible")
+
+	# Two-jump solution check:
+	# Jump 1: TakeoffPlatform (340, -830) -> SecretHiddenPlatform (490, -830)
+	var jump1_dx: float = secret_plat.position.x - takeoff_plat.position.x
+	assert_eq(jump1_dx, 150.0, "Jump 1 center-to-center distance is 150.0px")
+	assert_true(jump1_dx <= max_flat_reach, "Jump 1 (150.0px) is well within flat jump reach (196.17px)")
+
+	# Jump 2: SecretHiddenPlatform (490, -830) -> ExitPlatform (650, -830)
+	var jump2_dx: float = exit_plat.position.x - secret_plat.position.x
+	assert_eq(jump2_dx, 160.0, "Jump 2 center-to-center distance is 160.0px")
+	assert_true(jump2_dx <= max_flat_reach, "Jump 2 (160.0px) is well within flat jump reach (196.17px)")
+
+	# 2. Comprehensive kinematic verification of all jumps in Level 15:
+	var jump_tests: Array[Dictionary] = [
+		# Phase A
+		{"from": Vector2(140, 420), "to": Vector2(250, 360), "name": "Ground1 -> Platform1"},
+		{"from": Vector2(250, 360), "to": Vector2(370, 305), "name": "Platform1 -> FallingPlatform1"},
+		{"from": Vector2(370, 305), "to": Vector2(490, 250), "name": "FallingPlatform1 -> Platform2"},
+		{"from": Vector2(490, 250), "to": Vector2(610, 200), "name": "Platform2 -> PhantomPlatform1"},
+		{"from": Vector2(610, 200), "to": Vector2(740, 160), "name": "PhantomPlatform1 -> Platform3 (Rest Ledge)"},
+		# Phase B
+		{"from": Vector2(740, 160), "to": Vector2(670, 110), "name": "Platform3 -> BoulderRunway2 (Right end)"},
+		{"from": Vector2(510, 110), "to": Vector2(440, 60), "name": "BoulderRunway2 -> PlatformHurdle"},
+		{"from": Vector2(440, 60), "to": Vector2(360, 30), "name": "PlatformHurdle -> BoulderRunway3"},
+		{"from": Vector2(240, 30), "to": Vector2(160, -20), "name": "BoulderRunway3 -> Platform4"},
+		# Phase C
+		{"from": Vector2(160, -20), "to": Vector2(280, -70), "name": "Platform4 -> PhantomPlatform2"},
+		{"from": Vector2(280, -70), "to": Vector2(400, -120), "name": "PhantomPlatform2 -> PhantomPlatform3"},
+		{"from": Vector2(400, -120), "to": Vector2(520, -170), "name": "PhantomPlatform3 -> Platform5"},
+		{"from": Vector2(520, -170), "to": Vector2(640, -220), "name": "Platform5 -> PhantomPlatform4"},
+		{"from": Vector2(640, -220), "to": Vector2(760, -270), "name": "PhantomPlatform4 -> Platform6 (Rest Ledge)"},
+		# Phase D
+		{"from": Vector2(760, -270), "to": Vector2(670, -330), "name": "Platform6 -> Conveyor1"},
+		{"from": Vector2(590, -330), "to": Vector2(480, -390), "name": "Conveyor1 -> FallingPlatform2"},
+		{"from": Vector2(480, -390), "to": Vector2(350, -470), "name": "FallingPlatform2 -> MovingPlatform1 (Elevator bottom)"},
+		{"from": Vector2(350, -610), "to": Vector2(460, -665), "name": "MovingPlatform1 (Elevator apex) -> Platform7"},
+		{"from": Vector2(460, -665), "to": Vector2(580, -720), "name": "Platform7 -> FallingPlatform3"},
+		{"from": Vector2(580, -720), "to": Vector2(460, -775), "name": "FallingPlatform3 -> Platform8"},
+		{"from": Vector2(460, -775), "to": Vector2(340, -830), "name": "Platform8 -> TakeoffPlatform"},
+		# Phase E (with revealed platform)
+		{"from": Vector2(340, -830), "to": Vector2(490, -830), "name": "TakeoffPlatform -> SecretHiddenPlatform"},
+		{"from": Vector2(490, -830), "to": Vector2(650, -830), "name": "SecretHiddenPlatform -> ExitPlatform"},
 	]
 
 	for jt in jump_tests:
