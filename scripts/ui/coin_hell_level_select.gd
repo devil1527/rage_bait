@@ -212,7 +212,7 @@ func _build_world_navigation_cards() -> void:
 	btn_all.custom_minimum_size = Vector2(100, 48)
 	btn_all.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn_all.pressed.connect(func(): _select_world_tab(0))
-	_style_nav_card(btn_all, 0, "ALL WORLDS", "Stages 1–12", Color(1.0, 0.82, 0.15))
+	_style_nav_card(btn_all, 0, "ALL WORLDS", "Stages 1–13", Color(1.0, 0.82, 0.15))
 	world_cards_bar.add_child(btn_all)
 	world_card_buttons[0] = btn_all
 

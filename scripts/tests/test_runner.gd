@@ -116,6 +116,9 @@ func run_all_tests() -> void:
 	test_level_12_pressure_overload_gameplay()
 	test_level_12_steam_vent_mechanics()
 	test_level_12_jump_physics_and_reachability()
+	test_level_12_pause_label()
+	test_level_13_factory_climb_gameplay()
+	test_level_13_jump_physics_and_reachability()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -222,8 +225,14 @@ func test_game_manager_level_definitions() -> void:
 	assert_true(lvl12.get("implemented"), "Level 12 is marked implemented")
 	assert_true(GameManager.can_play_level(12), "Level 12 is playable")
 	assert_eq(lvl12.get("coin_count"), 10, "Level 12 coin count is 10")
+	var lvl13: Dictionary = GameManager.get_level_info(13)
+	assert_eq(lvl13.get("name"), "Factory Climb", "Level 13 name is 'Factory Climb'")
+	assert_eq(GameManager.get_world_name_for_stage(13), "RAGE FACTORY", "Level 13 world is 'RAGE FACTORY'")
+	assert_true(lvl13.get("implemented"), "Level 13 is marked implemented")
+	assert_true(GameManager.can_play_level(13), "Level 13 is playable")
+	assert_eq(lvl13.get("coin_count"), 10, "Level 13 coin count is 10")
 	
-	for lvl_id in range(13, 21):
+	for lvl_id in range(14, 21):
 		assert_true(not GameManager.can_play_level(lvl_id), "Level %d is marked not implemented" % lvl_id)
 		
 	# Test coin counter clamping
@@ -405,13 +414,20 @@ func test_level_select_logic_and_states() -> void:
 	assert_true(SaveManager.is_level_unlocked(12), "Level 12 is unlocked after completing Level 11")
 	assert_true(GameManager.can_play_level(12), "Level 12 is playable")
 
-	# Complete level 12 to unlock level 13 and test unimplemented level press
+	# Complete level 12 to unlock level 13 and verify Level 13 is playable
 	SaveManager.complete_level(12)
 	lsel._update_ui()
 	assert_true(SaveManager.is_level_unlocked(13), "Level 13 is unlocked after completing Level 12")
-	lsel._on_level_tile_pressed(13)
+	assert_true(GameManager.can_play_level(13), "Level 13 is playable")
+
+	# Complete level 13 to unlock level 14 and test unimplemented level press
+	SaveManager.complete_level(13)
+	lsel._update_ui()
+	assert_true(SaveManager.is_level_unlocked(14), "Level 14 is unlocked after completing Level 13")
+	assert_true(not GameManager.can_play_level(14), "Level 14 is not implemented yet")
+	lsel._on_level_tile_pressed(14)
 	assert_true(modal.visible, "Pressing unlocked but unimplemented level shows modal")
-	assert_eq(modal_label.text, "Level 13 is still being built. Replay an earlier level for now.", "Modal shows exact unimplemented level message")
+	assert_eq(modal_label.text, "Level 14 is still being built. Replay an earlier level for now.", "Modal shows exact unimplemented level message")
 	
 	lsel.queue_free()
 
@@ -1776,12 +1792,12 @@ func test_developer_only_level_access() -> void:
 	assert_true(lsel.message_modal.visible, "Locked modal dialog displayed")
 	assert_eq(lsel.modal_title.text, "LEVEL 6 IS LOCKED", "Modal explains Level 6 is locked")
 	
-	# Unimplemented level (e.g. Level 13) cannot be launched even with dev mode on
+	# Unimplemented level (e.g. Level 14) cannot be launched even with dev mode on
 	lsel._on_dev_toggle_pressed()
 	assert_true(lsel.dev_bypass_active, "Dev bypass toggled on")
-	lsel._on_level_tile_pressed(13)
-	assert_true(lsel.message_modal.visible, "Unimplemented Level 13 displays in-progress modal")
-	assert_eq(lsel.modal_title.text, "LEVEL 13 IN PROGRESS", "Modal indicates Level 13 is in progress")
+	lsel._on_level_tile_pressed(14)
+	assert_true(lsel.message_modal.visible, "Unimplemented Level 14 displays in-progress modal")
+	assert_eq(lsel.modal_title.text, "LEVEL 14 IN PROGRESS", "Modal indicates Level 14 is in progress")
 	
 	# Release mode simulation: verify that when is_debug_mode is false, bypass cannot be activated
 	lsel.dev_bypass_active = false
@@ -4566,7 +4582,7 @@ func test_ui_redesign_and_world_navigation() -> void:
 	lsel._update_ui()
 	var prog_lbl: Label = lsel.get_node("MarginContainer/VBox/HeaderBar/ProgressBox/ProgressLabel")
 	assert_true(prog_lbl.text.begins_with("STAGES CLEARED:"), "UI Redesign: Progress label starts with STAGES CLEARED:")
-	assert_true(prog_lbl.text.ends_with("/ 12"), "UI Redesign: Progress label shows honest numerator out of 12 implemented stages")
+	assert_true(prog_lbl.text.ends_with("/ 13"), "UI Redesign: Progress label shows honest numerator out of 13 implemented stages")
 
 	# World filtering and navigation
 	lsel._select_world_tab(1)
@@ -4590,15 +4606,21 @@ func test_ui_redesign_and_world_navigation() -> void:
 	var state12_lbl: Label = btn12.get_node("VBox/StateLabel")
 	assert_eq(state12_lbl.text, "LOCKED", "UI Redesign: Stage 12 state is LOCKED before completing prior stages")
 
-	# Unimplemented Stage 13 Planned State
+	# Stage 13 Implemented State (Locked initially on fresh save)
 	var btn13 = lsel.get_level_button(13)
 	assert_true(btn13 != null, "UI Redesign: Stage 13 button exists")
 	var state13_lbl: Label = btn13.get_node("VBox/StateLabel")
-	assert_eq(state13_lbl.text, "PLANNED", "UI Redesign: Stage 13 state is visibly PLANNED")
+	assert_eq(state13_lbl.text, "LOCKED", "UI Redesign: Stage 13 state is LOCKED before completing prior stages")
 
-	lsel._on_level_tile_pressed(13)
-	assert_true(lsel.message_modal.visible, "UI Redesign: Clicking Stage 13 shows modal")
-	assert_eq(lsel.modal_title.text, "LEVEL 13 IN PROGRESS", "UI Redesign: Modal title explains Level 13 is in progress")
+	# Unimplemented Stage 14 Planned State
+	var btn14 = lsel.get_level_button(14)
+	assert_true(btn14 != null, "UI Redesign: Stage 14 button exists")
+	var state14_lbl: Label = btn14.get_node("VBox/StateLabel")
+	assert_eq(state14_lbl.text, "PLANNED", "UI Redesign: Stage 14 state is visibly PLANNED")
+
+	lsel._on_level_tile_pressed(14)
+	assert_true(lsel.message_modal.visible, "UI Redesign: Clicking Stage 14 shows modal")
+	assert_eq(lsel.modal_title.text, "LEVEL 14 IN PROGRESS", "UI Redesign: Modal title explains Level 14 is in progress")
 	lsel.message_modal.visible = false
 
 	lsel.queue_free()
@@ -4858,6 +4880,230 @@ func test_level_12_jump_physics_and_reachability() -> void:
 		{"from": Vector2(1830, -160), "to": Vector2(1930, -182), "name": "Platform10 -> Conveyor4"},
 		{"from": Vector2(1990, -182), "to": Vector2(2080, -190), "name": "Conveyor4 -> FallingPlatform3"},
 		{"from": Vector2(2080, -190), "to": Vector2(2170, -194), "name": "FallingPlatform3 -> ExitPlatform"},
+	]
+
+	for jt in jump_tests:
+		var p0: Vector2 = jt["from"]
+		var p1: Vector2 = jt["to"]
+		var dx: float = p1.x - p0.x
+		var dy: float = p1.y - p0.y
+		var a: float = 0.5 * grav
+		var b: float = jmp_vel
+		var c: float = -dy
+		var disc: float = b * b - 4.0 * a * c
+		assert_true(disc >= 0.0, "Jump height is achievable: %s" % str(jt["name"]))
+		var t_land: float = (-b + sqrt(disc)) / (2.0 * a)
+		var max_horiz: float = move_spd * t_land
+		assert_true(absf(dx) <= max_horiz, "Jump distance %.1f is within max reach %.1f: %s" % [absf(dx), max_horiz, str(jt["name"])])
+
+	remove_child(lvl)
+	lvl.free()
+
+func test_level_12_pause_label() -> void:
+	print("\n--- TEST: Level 12 HUD Pause Button & PAUSE Label ---")
+	var lvl12_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_12.tscn")
+	assert_true(lvl12_scene != null, "Level 12 scene loads successfully for HUD validation")
+	var lvl = lvl12_scene.instantiate()
+	add_child(lvl)
+
+	var top_bar = lvl.get_node_or_null("HUD/MarginContainer/TopBar")
+	assert_true(top_bar != null, "HUD TopBar exists in Level 12")
+
+	var pause_btn: Button = lvl.get_node_or_null("HUD/MarginContainer/TopBar/PauseBtn")
+	assert_true(pause_btn != null, "PauseBtn exists in Level 12 HUD TopBar")
+	assert_eq(pause_btn.text, "⏸ PAUSE", "Level 12 PauseBtn displays '⏸ PAUSE' label matching other levels")
+	assert_eq(pause_btn.custom_minimum_size, Vector2(80, 32), "Level 12 PauseBtn custom_minimum_size is Vector2(80, 32)")
+
+	# Verify pause/resume functionality
+	var pause_overlay = lvl.get_node_or_null("HUD/PauseOverlay")
+	assert_true(pause_overlay != null, "PauseOverlay exists in Level 12")
+	assert_true(not pause_overlay.visible, "PauseOverlay is initially hidden")
+
+	# Trigger pause
+	lvl._on_pause_pressed()
+	assert_true(pause_overlay.visible, "Pressing pause opens PauseOverlay")
+
+	# Resume
+	pause_overlay._on_resume_pressed()
+	assert_true(not pause_overlay.visible, "Closing PauseOverlay resumes gameplay")
+
+	remove_child(lvl)
+	lvl.free()
+
+func test_level_13_factory_climb_gameplay() -> void:
+	print("\n--- TEST: Level 13 'Factory Climb' Core Layout & Exact 10 Coins ---")
+	var lvl13_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_13.tscn")
+	assert_true(lvl13_scene != null, "Level 13 scene loads successfully")
+	var lvl = lvl13_scene.instantiate()
+	add_child(lvl)
+
+	# 1. Verify Player, Group & Safe Initial Spawn
+	var player = lvl.get_node_or_null("Player")
+	assert_true(player != null, "Player instance exists in Level 13")
+	assert_true(player.is_in_group("player"), "Player is registered in group 'player'")
+	var spawn = lvl.get_node_or_null("SpawnPoint")
+	assert_true(spawn != null, "SpawnPoint marker exists in Level 13")
+	assert_eq(spawn.position, Vector2(140, 400), "Spawn point is at Vector2(140, 400)")
+	assert_eq(player.position, Vector2(140, 400), "Player starts at Vector2(140, 400)")
+
+	# 2. Camera Configuration for High-Altitude Vertical Ascent
+	var cam: Camera2D = player.get_node_or_null("Camera2D")
+	assert_true(cam != null, "Camera2D exists on Player in Level 13")
+	assert_eq(cam.limit_left, 0, "Camera limit_left is 0")
+	assert_eq(cam.limit_right, 1140, "Camera limit_right is 1140")
+	assert_eq(cam.limit_top, -1200, "Camera limit_top is -1200 for deep vertical climbing headroom")
+	assert_eq(cam.limit_bottom, 540, "Camera limit_bottom is 540")
+
+	# 3. Exactly 10 Coins Placed & Collectible
+	var coins_container = lvl.get_node_or_null("Coins")
+	assert_true(coins_container != null, "Coins container exists in Level 13")
+	assert_eq(coins_container.get_child_count(), 10, "Exactly 10 coins exist in Level 13")
+
+	GameManager.current_level_id = 13
+	GameManager.total_coins_required = 10
+	GameManager.reset_coins()
+	assert_eq(GameManager.current_coins, 0, "GameManager starts with 0 coins for Level 13")
+
+	var coin_nodes = coins_container.get_children()
+	for i in range(10):
+		var coin = coin_nodes[i]
+		assert_true(coin != null, "Coin %d exists" % (i + 1))
+		assert_true(not coin._collected, "Coin %d is uncollected before pickup" % (i + 1))
+		coin.collect()
+		assert_true(coin._collected, "Coin %d is collected after pickup" % (i + 1))
+	assert_eq(GameManager.current_coins, 10, "All 10 Level 13 coins successfully collected")
+
+	# 4. Exit Gate Locked Initially, Unlocks After All 10 Coins
+	var exit_gate = lvl.get_node_or_null("ExitGate")
+	assert_true(exit_gate != null, "ExitGate exists in Level 13")
+	assert_true(exit_gate._is_open, "ExitGate unlocks when all 10 coins are collected")
+	assert_eq(exit_gate.position, Vector2(170, -1075), "ExitGate is positioned on summit ExitPlatform")
+
+	# 5. Platforms & Conveyors Integrity
+	var platforms = lvl.get_node_or_null("Platforms")
+	assert_true(platforms != null, "Platforms container exists in Level 13")
+	assert_true(platforms.get_node_or_null("Ground1") != null, "Ground1 exists")
+	assert_true(platforms.get_node_or_null("Platform1") != null, "Platform1 exists")
+	assert_true(platforms.get_node_or_null("Platform5") != null, "Platform5 safe rest ledge exists")
+	assert_true(platforms.get_node_or_null("Conveyor1") != null, "Conveyor1 exists")
+	assert_true(platforms.get_node_or_null("Conveyor2") != null, "Conveyor2 exists")
+	assert_true(platforms.get_node_or_null("Conveyor3") != null, "Conveyor3 exists")
+	assert_true(platforms.get_node_or_null("MovingPlatform1") != null, "MovingPlatform1 exists")
+	assert_true(platforms.get_node_or_null("MovingPlatform2") != null, "MovingPlatform2 exists")
+	assert_true(platforms.get_node_or_null("MovingPlatform3") != null, "MovingPlatform3 (Elevator Piston) exists")
+	assert_true(platforms.get_node_or_null("FallingPlatform1") != null, "FallingPlatform1 exists")
+	assert_true(platforms.get_node_or_null("FallingPlatform2") != null, "FallingPlatform2 exists")
+	assert_true(platforms.get_node_or_null("FallingPlatform3") != null, "FallingPlatform3 exists")
+	assert_true(platforms.get_node_or_null("ExitPlatform") != null, "ExitPlatform exists")
+
+	# 6. Hazards: Crushers & Directional Steam Vents
+	var hazards = lvl.get_node_or_null("Hazards")
+	assert_true(hazards != null, "Hazards container exists in Level 13")
+	assert_true(hazards.get_node_or_null("IndustrialCrusher1") != null, "IndustrialCrusher1 exists")
+	assert_true(hazards.get_node_or_null("IndustrialCrusher2") != null, "IndustrialCrusher2 exists")
+	assert_true(hazards.get_node_or_null("IndustrialCrusher3") != null, "IndustrialCrusher3 exists")
+	assert_true(hazards.get_node_or_null("IndustrialCrusherG") != null, "Greed Detour IndustrialCrusherG exists")
+	assert_true(hazards.get_node_or_null("SteamVent1_Horiz") != null, "SteamVent1_Horiz exists")
+	assert_true(hazards.get_node_or_null("SteamVent2_Down") != null, "SteamVent2_Down exists")
+	assert_true(hazards.get_node_or_null("SteamVent3_Down") != null, "SteamVent3_Down exists")
+	assert_true(hazards.get_node_or_null("SteamVent4A_Up") != null, "SteamVent4A_Up exists")
+	assert_true(hazards.get_node_or_null("SteamVent4B_Down") != null, "SteamVent4B_Down exists")
+	assert_true(hazards.get_node_or_null("SteamVent5_Horiz") != null, "SteamVent5_Horiz exists")
+	assert_true(hazards.get_node_or_null("SteamVent6_Up") != null, "SteamVent6_Up exists")
+	assert_true(hazards.get_node_or_null("SteamVent7_Horiz") != null, "SteamVent7_Horiz exists")
+	assert_true(hazards.get_node_or_null("SteamVent8_Down") != null, "SteamVent8_Down exists")
+	assert_true(hazards.get_node_or_null("SteamVent9_Up") != null, "SteamVent9_Up exists")
+
+	# Verify crusher and vent reset methods
+	var crusher1 = hazards.get_node("IndustrialCrusher1")
+	assert_true(crusher1.has_method("reset"), "IndustrialCrusher1 has reset() method")
+	var vent1 = hazards.get_node("SteamVent1_Horiz")
+	assert_true(vent1.has_method("reset"), "SteamVent1 has reset() method")
+
+	# 7. Fall Pit Hazard
+	var pit = lvl.get_node_or_null("PitHazardArea")
+	assert_true(pit != null, "PitHazardArea exists at bottom")
+
+	# 8. HUD & Altitude Meter
+	var hud_title = lvl.get_node_or_null("HUD/MarginContainer/TopBar/LevelTitle")
+	assert_true(hud_title != null, "LevelTitle exists in HUD TopBar")
+	var altitude_lbl = lvl.get_node_or_null("HUD/MarginContainer/TopBar/AltitudeIndicator")
+	assert_true(altitude_lbl != null, "AltitudeIndicator exists in HUD TopBar")
+	var pause_btn = lvl.get_node_or_null("HUD/MarginContainer/TopBar/PauseBtn")
+	assert_true(pause_btn != null, "PauseBtn exists in HUD TopBar")
+	assert_eq(pause_btn.text, "⏸ PAUSE", "Level 13 PauseBtn displays '⏸ PAUSE'")
+
+	# 9. Touch Controls
+	var touch_ctrl = lvl.get_node_or_null("HUD/TouchControls")
+	assert_true(touch_ctrl != null, "TouchControls container exists in Level 13 HUD")
+	var btn_l = touch_ctrl.get_node_or_null("LeftBtn")
+	var btn_r = touch_ctrl.get_node_or_null("RightBtn")
+	var btn_j = touch_ctrl.get_node_or_null("JumpBtn")
+	assert_true(btn_l != null and btn_r != null and btn_j != null, "All 3 touch buttons (Left, Right, Jump) exist in Level 13")
+
+	# 10. Level Reset & Lifecycle
+	lvl._reset_level()
+	assert_eq(GameManager.current_coins, 0, "Reset coins restores 0 coins")
+	assert_eq(player.position, Vector2(140, 400), "Reset returns player to spawn point")
+
+	remove_child(lvl)
+	lvl.free()
+
+func test_level_13_jump_physics_and_reachability() -> void:
+	print("\n--- TEST: Level 13 Jump Physics & Kinematic Reachability ---")
+	var lvl13_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_13.tscn")
+	assert_true(lvl13_scene != null, "Level 13 scene loads for jump trajectory validation")
+	var lvl = lvl13_scene.instantiate()
+	add_child(lvl)
+
+	var player = lvl.get_node("Player")
+	var move_spd: float = float(player.move_speed)
+	var jmp_vel: float = float(player.jump_velocity)
+	var grav: float = float(player.gravity)
+
+	assert_eq(move_spd, 240.0, "Level 13 Player horizontal speed is 240.0")
+	assert_eq(jmp_vel, -470.0, "Level 13 Player jump velocity is -470.0")
+	assert_eq(grav, 1150.0, "Level 13 Player gravity is 1150.0")
+
+	var jump_tests: Array[Dictionary] = [
+		{"from": Vector2(140, 400), "to": Vector2(260, 360), "name": "Ground1 -> Platform1"},
+		{"from": Vector2(260, 360), "to": Vector2(380, 300), "name": "Platform1 -> Platform2"},
+		{"from": Vector2(380, 300), "to": Vector2(500, 240), "name": "Platform2 -> Platform3"},
+		{"from": Vector2(500, 240), "to": Vector2(630, 200), "name": "Platform3 -> Platform4"},
+		{"from": Vector2(630, 200), "to": Vector2(760, 170), "name": "Platform4 -> Platform5 (Ledge)"},
+		# Section 2
+		{"from": Vector2(760, 170), "to": Vector2(640, 118), "name": "Platform5 -> Conveyor1"},
+		{"from": Vector2(640, 118), "to": Vector2(490, 70), "name": "Conveyor1 -> Platform6"},
+		{"from": Vector2(490, 70), "to": Vector2(370, 20), "name": "Platform6 -> FallingPlatform1"},
+		{"from": Vector2(370, 20), "to": Vector2(250, -20), "name": "FallingPlatform1 -> Platform7"},
+		{"from": Vector2(250, -20), "to": Vector2(140, -60), "name": "Platform7 -> Platform8 (Ledge)"},
+		# Section 3
+		{"from": Vector2(140, -60), "to": Vector2(260, -100), "name": "Platform8 -> MovingPlatform1"},
+		{"from": Vector2(390, -100), "to": Vector2(510, -150), "name": "MovingPlatform1 (apex) -> Platform9"},
+		{"from": Vector2(510, -150), "to": Vector2(630, -210), "name": "Platform9 -> Platform10"},
+		{"from": Vector2(630, -210), "to": Vector2(750, -270), "name": "Platform10 -> FallingPlatform2"},
+		{"from": Vector2(750, -270), "to": Vector2(870, -330), "name": "FallingPlatform2 -> Platform11 (Junction)"},
+		# Section 4 - Main Route
+		{"from": Vector2(870, -330), "to": Vector2(750, -372), "name": "Platform11 -> Conveyor2"},
+		{"from": Vector2(710, -372), "to": Vector2(600, -420), "name": "Conveyor2 -> Platform12"},
+		{"from": Vector2(600, -420), "to": Vector2(480, -470), "name": "Platform12 -> MovingPlatform2"},
+		{"from": Vector2(360, -470), "to": Vector2(250, -520), "name": "MovingPlatform2 (apex) -> Platform13"},
+		# Section 4 - High-Risk Greed Detour
+		{"from": Vector2(870, -330), "to": Vector2(840, -389), "name": "Platform11 -> GreedDuct1 (Steep Hop)"},
+		{"from": Vector2(840, -389), "to": Vector2(720, -449), "name": "GreedDuct1 -> GreedFallingPlat1"},
+		{"from": Vector2(720, -449), "to": Vector2(590, -509), "name": "GreedFallingPlat1 -> GreedDuct2"},
+		{"from": Vector2(590, -509), "to": Vector2(440, -519), "name": "GreedDuct2 -> GreedDuct3"},
+		{"from": Vector2(440, -519), "to": Vector2(250, -520), "name": "GreedDuct3 -> Platform13"},
+		# Section 5
+		{"from": Vector2(250, -520), "to": Vector2(370, -580), "name": "Platform13 -> Platform14"},
+		{"from": Vector2(370, -580), "to": Vector2(490, -640), "name": "Platform14 -> Platform15"},
+		{"from": Vector2(490, -640), "to": Vector2(610, -660), "name": "Platform15 -> MovingPlatform3 (Elevator bottom)"},
+		{"from": Vector2(610, -810), "to": Vector2(730, -830), "name": "MovingPlatform3 (Elevator top) -> Platform16"},
+		# Section 6
+		{"from": Vector2(730, -830), "to": Vector2(600, -882), "name": "Platform16 -> Conveyor3"},
+		{"from": Vector2(560, -882), "to": Vector2(440, -930), "name": "Conveyor3 -> FallingPlatform3"},
+		{"from": Vector2(440, -930), "to": Vector2(310, -980), "name": "FallingPlatform3 -> Platform17"},
+		{"from": Vector2(310, -980), "to": Vector2(160, -1035), "name": "Platform17 -> ExitPlatform"},
 	]
 
 	for jt in jump_tests:
