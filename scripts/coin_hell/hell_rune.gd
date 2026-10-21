@@ -12,9 +12,9 @@ enum State { DORMANT, WARNING, ACTIVE, COOLDOWN }
 signal state_changed(new_state: State)
 signal rune_triggered
 
-@export var warning_duration: float = 0.70
-@export var active_duration: float = 0.60
-@export var cooldown_duration: float = 1.40
+@export var warning_duration: float = 0.38
+@export var active_duration: float = 0.75
+@export var cooldown_duration: float = 1.20
 
 var current_state: State = State.DORMANT
 var _state_timer: float = 0.0
@@ -64,17 +64,18 @@ func _physics_process(delta: float) -> void:
 	_state_timer -= delta
 
 	if current_state == State.WARNING:
-		# Rapid warning oscillation between ember orange and glowing crimson
+		# Rapid, intense warning oscillation between ember orange and searing crimson
 		if rune_plate:
-			var pulse := sin((warning_duration - _state_timer) * 25.0)
-			rune_plate.modulate = Color(1.0, 0.35 + pulse * 0.25, 0.2, 1.0)
+			var pulse := sin((warning_duration - _state_timer) * 40.0)
+			rune_plate.modulate = Color(1.0, 0.25 + pulse * 0.25, 0.15, 1.0)
 		if _state_timer <= 0.0:
 			_apply_state(State.ACTIVE)
 
 	elif current_state == State.ACTIVE:
-		# Flame column flickering
+		# Aggressive flame column flickering and roaring scale oscillation
 		if flame_burst:
-			flame_burst.scale.y = 1.0 + sin((active_duration - _state_timer) * 30.0) * 0.15
+			flame_burst.scale.x = 1.0 + sin((active_duration - _state_timer) * 35.0) * 0.12
+			flame_burst.scale.y = 1.05 + sin((active_duration - _state_timer) * 28.0) * 0.20
 		if _state_timer <= 0.0:
 			_apply_state(State.COOLDOWN)
 
@@ -116,10 +117,10 @@ func _apply_state(new_state: State) -> void:
 			_state_timer = active_duration
 			AudioManager.play_sfx("laser")
 			if rune_plate:
-				rune_plate.modulate = Color(1.0, 0.9, 0.8, 1.0)
+				rune_plate.modulate = Color(1.0, 0.95, 0.85, 1.0)
 			if flame_burst:
 				flame_burst.visible = true
-				flame_burst.scale = Vector2.ONE
+				flame_burst.scale = Vector2(1.25, 1.35)
 			if hazard_shape:
 				hazard_shape.disabled = false
 				hazard_shape.set_deferred("disabled", false)

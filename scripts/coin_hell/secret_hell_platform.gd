@@ -15,6 +15,7 @@ var is_revealed: bool = false
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 @onready var visual_rect: NinePatchRect = get_node_or_null("NinePatchRect")
 @onready var rune_particles: CPUParticles2D = get_node_or_null("RuneParticles")
+@onready var landing_area: Area2D = get_node_or_null("LandingArea")
 
 func _ready() -> void:
 	sync_to_physics = false
@@ -47,6 +48,27 @@ func _setup_collision() -> void:
 		visual_rect.offset_top = -platform_size.y * 0.5
 		visual_rect.offset_right = platform_size.x * 0.5
 		visual_rect.offset_bottom = platform_size.y * 0.5
+
+	if not landing_area:
+		landing_area = get_node_or_null("LandingArea")
+	if landing_area:
+		landing_area.body_entered.connect(_on_landing_area_body_entered)
+		var lshape = landing_area.get_node_or_null("CollisionShape2D")
+		if lshape and lshape.shape is RectangleShape2D:
+			(lshape.shape as RectangleShape2D).size = Vector2(platform_size.x, 24.0)
+			lshape.position = Vector2(0.0, -6.0)
+
+func _on_landing_area_body_entered(body: Node2D) -> void:
+	if not is_revealed and (body.is_in_group("player") or body.name == "Player"):
+		reveal_for_landing(body)
+
+func reveal_for_landing(body: Node2D) -> void:
+	reveal()
+	if body is CharacterBody2D and body.velocity.y > 0.0:
+		# Catch downward falling player so they land reliably on the surface
+		body.velocity.y = 0.0
+		var surface_y: float = global_position.y - (platform_size.y * 0.5)
+		body.global_position.y = minf(body.global_position.y, surface_y - 16.0)
 
 func reveal() -> void:
 	if is_revealed:

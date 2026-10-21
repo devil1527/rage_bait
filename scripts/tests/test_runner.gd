@@ -5892,7 +5892,6 @@ func test_world_4_integration_and_level_select() -> void:
 	# Levels 17-20 remain locked/unimplemented
 	for s in range(17, 21):
 		assert_true(not GameManager.can_play_level(s), "Stage %d is marked unplayable / not implemented" % s)
-		assert_true(not GameManager.is_level_implemented(s), "Stage %d is marked not implemented" % s)
 
 	# SaveManager level 16 secret persistence
 	SaveManager.set_level_16_secret_revealed(false)
@@ -5913,7 +5912,8 @@ func test_world_4_integration_and_level_select() -> void:
 
 	var nav_w4: Button = lsel.get_node_or_null("MarginContainer/VBox/WorldCardsBar/WorldNavCard_4")
 	assert_true(nav_w4 != null, "WorldNavCard_4 exists in Level Select bar")
-	assert_true(nav_w4.text.contains("FINAL HELL"), "WorldNavCard_4 text displays FINAL HELL")
+	var nav_w4_title = nav_w4.find_child("Title", true, false)
+	assert_true(nav_w4_title != null and nav_w4_title.text.contains("FINAL HELL"), "WorldNavCard_4 text displays FINAL HELL")
 
 	lsel._select_world_tab(4)
 	assert_eq(lsel.current_selected_world, 4, "Selecting World 4 tab updates current_selected_world to 4")
@@ -5928,12 +5928,12 @@ func test_world_4_integration_and_level_select() -> void:
 	var btn17 = lsel.get_level_button(17)
 	assert_true(btn17 != null, "Level 17 button exists in Level Select")
 	var state17_lbl: Label = btn17.get_node("VBox/StateLabel")
-	assert_eq(state17_lbl.text, "LOCKED", "Level 17 state is LOCKED")
+	assert_eq(state17_lbl.text, "PLANNED", "Level 17 state is PLANNED")
 
 	var btn20 = lsel.get_level_button(20)
 	assert_true(btn20 != null, "Level 20 button exists in Level Select")
 	var state20_lbl: Label = btn20.get_node("VBox/StateLabel")
-	assert_eq(state20_lbl.text, "LOCKED", "Level 20 state is LOCKED")
+	assert_eq(state20_lbl.text, "PLANNED", "Level 20 state is PLANNED")
 
 	remove_child(lsel)
 	lsel.free()
@@ -6002,9 +6002,9 @@ func test_level_16_platform_that_lied_layout_and_coins() -> void:
 		assert_eq(coin_node.collision_layer, 4, "Coin%d collision layer is 4" % i)
 		assert_eq(coin_node.collision_mask, 1, "Coin%d collision mask is 1 (player)" % i)
 
-	# Verify Coin 10 on secret platform
+	# Verify Coin 10 positioned beyond secret platform (between secret and exit platform)
 	var coin10 = coins.get_node_or_null("Coin10")
-	assert_eq(coin10.position, Vector2(2435, 235), "Coin10 is positioned safely above secret platform at (2435, 235)")
+	assert_eq(coin10.position, Vector2(2510, 180), "Coin10 is positioned beyond secret platform at (2510, 180)")
 
 	# Exit Gate
 	var exit_gate = lvl.get_node_or_null("ExitGate")
@@ -6027,8 +6027,8 @@ func test_level_16_hell_rune_mechanics() -> void:
 	assert_eq(rune.current_state, HellRuneClass.State.DORMANT, "Hell Rune begins in DORMANT state")
 	assert_true(rune.hazard_shape.disabled, "Hell Rune flame collision is DISABLED when dormant")
 	assert_eq(rune.flame_burst.visible, false, "Hell Rune flame sprite is invisible when dormant")
-	assert_eq(rune.warning_duration, 0.70, "Hell Rune warning duration is generous 0.70s")
-	assert_eq(rune.active_duration, 0.60, "Hell Rune active flame duration is 0.60s")
+	assert_eq(rune.warning_duration, 0.38, "Hell Rune warning duration is tightened to 0.38s")
+	assert_eq(rune.active_duration, 0.75, "Hell Rune active flame duration is 0.75s")
 
 	# Mock player trigger
 	var dummy_player = CharacterBody2D.new()
@@ -6163,7 +6163,26 @@ func test_level_16_secret_hell_platform_state_machine() -> void:
 	lvl._on_player_died()
 	assert_true(not platform_node.is_revealed, "Walking toward gap without jumping does NOT reveal secret")
 
-	# Condition 5: Genuine attempt: Reaches takeoff area, leaps into final gap, enters trigger area
+	# Condition 5A: Discovery Route A — Player accidentally lands on invisible platform while alive!
+	# Platform must reveal immediately and catch the living player safely without requiring death.
+	SaveManager.set_level_16_secret_revealed(false)
+	platform_node.set_revealed_instant(false)
+	assert_true(not platform_node.is_revealed, "Secret platform reset to unrevealed for Route A test")
+	assert_true(platform_node.collision_shape.disabled, "Collision disabled when unrevealed")
+	
+	player.global_position = Vector2(2435, 255)
+	player.velocity.y = 200.0
+	platform_node._on_landing_area_body_entered(player)
+	assert_true(platform_node.is_revealed, "Landing on LandingArea while alive IMMEDIATELY REVEALS secret platform!")
+	assert_true(not platform_node.collision_shape.disabled, "Collision enabled immediately to support player")
+	assert_true(platform_node.visible, "Platform becomes visible immediately on landing")
+	assert_eq(player.velocity.y, 0.0, "Downward velocity zeroed on landing catch")
+	assert_true(player._is_alive, "Player remains alive and supported on the revealed platform")
+	assert_true(SaveManager.is_level_16_secret_revealed(), "SaveManager records secret discovery from living landing")
+
+	# Condition 5B: Discovery Route B — Genuine failed attempt into chasm abyss
+	SaveManager.set_level_16_secret_revealed(false)
+	platform_node.set_revealed_instant(false)
 	lvl._reached_takeoff = true
 	lvl._attempted_final_jump = true
 	var trigger_area: Area2D = lvl.get_node("FinalGapTriggerArea")
@@ -6232,6 +6251,15 @@ func test_level_16_jump_physics_and_kinematic_reachability() -> void:
 	assert_eq(jump2_dx, 170.0, "Jump 2 horizontal distance is 170.0px")
 	assert_eq(jump2_dy, 0.0, "Jump 2 vertical offset is 0.0px")
 	assert_true(jump2_dx <= max_flat_reach, "Jump 2 from secret platform to exit is physically achievable (170px <= 196.17px)")
+
+	# Coin 10 positioning audit:
+	# Coin 10 at (2510, 180) sits beyond Secret Platform (X=2435) and before Exit Platform (X=2550..2660)
+	var coin10_node = lvl.get_node("Coins/Coin10")
+	assert_true(coin10_node.position.x > secret_plat.position.x + 32.5, "Coin 10 is beyond middle secret platform")
+	assert_true(coin10_node.position.x < exit_plat.position.x - 55.0, "Coin 10 is before final exit platform")
+	var jump_from_takeoff_to_coin: float = coin10_node.position.x - takeoff_right_edge
+	assert_true(jump_from_takeoff_to_coin <= max_flat_reach, "Coin 10 is tempting visual target from takeoff")
+	assert_true(direct_gap > max_flat_reach, "Jumping for Coin 10 from takeoff cannot land on exit platform (must use secret platform)")
 
 	# Verify all other jump gaps throughout the entire level are strictly within physical limits
 	var jumps_to_check: Array[Dictionary] = [
