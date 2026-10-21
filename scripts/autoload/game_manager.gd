@@ -48,7 +48,7 @@ var levels: Dictionary = {
 	11: {"id": 11, "name": "Meltdown", "world_id": 3, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_11.tscn", "coin_count": 10},
 	12: {"id": 12, "name": "Pressure Overload", "world_id": 3, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_12.tscn", "coin_count": 10},
 	13: {"id": 13, "name": "Factory Climb", "world_id": 3, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_13.tscn", "coin_count": 10},
-	14: {"id": 14, "name": "Overpressure", "world_id": 3, "implemented": false, "scene": "", "coin_count": 10},
+	14: {"id": 14, "name": "Overpressure", "world_id": 3, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_14.tscn", "coin_count": 10},
 	15: {"id": 15, "name": "Rage Furnace", "world_id": 3, "implemented": false, "scene": "", "coin_count": 10},
 	16: {"id": 16, "name": "Chaos Theory", "world_id": 4, "implemented": false, "scene": "", "coin_count": 18},
 	17: {"id": 17, "name": "No Turning Back", "world_id": 4, "implemented": false, "scene": "", "coin_count": 20},
