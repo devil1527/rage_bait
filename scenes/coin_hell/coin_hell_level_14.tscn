@@ -229,6 +229,10 @@ axis_stretch_vertical = 1
 position = Vector2(630, 120)
 belt_speed = 70.0
 platform_size = Vector2(90, 24)
+one_way = true
+
+[node name="CollisionShape2D" parent="Platforms/Conveyor1" index="0"]
+one_way_collision = true
 
 [node name="Platform6" type="StaticBody2D" parent="Platforms"]
 position = Vector2(490, 70)
@@ -819,7 +823,7 @@ blast_direction = Vector2(1, 0)
 blast_length = 85.0
 
 [node name="IndustrialCrusherG" parent="Hazards" instance=ExtResource("17_crush")]
-position = Vector2(590, -550)
+position = Vector2(590, -600)
 travel_distance = 75.0
 warning_duration = 0.65
 slam_duration = 0.15
@@ -907,7 +911,7 @@ position = Vector2(640, -255)
 position = Vector2(720, -495)
 
 [node name="Coin7" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(590, -555)
+position = Vector2(590, -545)
 
 [node name="Coin8" parent="Coins" instance=ExtResource("3_coin")]
 position = Vector2(440, -565)

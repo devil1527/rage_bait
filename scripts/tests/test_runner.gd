@@ -5096,9 +5096,9 @@ func test_level_13_jump_physics_and_reachability() -> void:
 		{"from": Vector2(260, 360), "to": Vector2(380, 300), "name": "Platform1 -> Platform2"},
 		{"from": Vector2(380, 300), "to": Vector2(500, 240), "name": "Platform2 -> Platform3"},
 		{"from": Vector2(500, 240), "to": Vector2(630, 200), "name": "Platform3 -> Platform4"},
-		{"from": Vector2(630, 200), "to": Vector2(735, 170), "name": "Platform4 -> Platform5 (Ledge)"},
+		{"from": Vector2(630, 200), "to": Vector2(760, 170), "name": "Platform4 -> Platform5 (Ledge)"},
 		# Section 2
-		{"from": Vector2(735, 170), "to": Vector2(640, 118), "name": "Platform5 -> Conveyor1"},
+		{"from": Vector2(760, 170), "to": Vector2(640, 118), "name": "Platform5 -> Conveyor1"},
 		{"from": Vector2(640, 118), "to": Vector2(490, 70), "name": "Conveyor1 -> Platform6"},
 		{"from": Vector2(490, 70), "to": Vector2(370, 20), "name": "Platform6 -> FallingPlatform1"},
 		{"from": Vector2(370, 20), "to": Vector2(250, -20), "name": "FallingPlatform1 -> Platform7"},
@@ -5166,27 +5166,29 @@ func test_level_13_platform4_jump_fix() -> void:
 
 	# Platform 4 geometry
 	assert_eq(plat4.position, Vector2(630, 210), "Platform 4 position is at Vector2(630, 210)")
-	# Platform 5 geometry (adjusted by 25px gap reduction from 760 to 735)
-	assert_eq(plat5.position, Vector2(735, 180), "Platform 5 adjusted position is at Vector2(735, 180)")
+	# Platform 5 restored original geometry
+	assert_eq(plat5.position, Vector2(760, 180), "Platform 5 position is restored to Vector2(760, 180)")
 
-	# Check gap between Platform 4 right edge (630 + 30 = 660) and Platform 5 left edge (735 - 32.5 = 702.5)
-	var plat4_right: float = 630.0 + 30.0 # 660
-	var plat5_left: float = 735.0 - 32.5  # 702.5
+	# Conveyor 1 one-way collision pass-through verification
+	var conv_cs = conv1.get_node_or_null("CollisionShape2D")
+	assert_true(conv_cs != null, "Conveyor 1 has CollisionShape2D")
+	assert_true(conv1.one_way, "Conveyor 1 export variable one_way is true")
+	assert_true(conv_cs.one_way_collision, "Conveyor 1 CollisionShape2D one_way_collision is enabled")
+
+	# Gap and reachability analysis
+	# Plat 4 right edge: 630 + 30 = 660, top Y = 200
+	# Plat 5 left edge: 760 - 32.5 = 727.5, top Y = 170
+	var plat4_right: float = 630.0 + 30.0
+	var plat5_left: float = 760.0 - 32.5
 	var horizontal_gap: float = plat5_left - plat4_right
-	assert_eq(horizontal_gap, 42.5, "Horizontal gap between Plat 4 and Plat 5 reduced to 42.5px (from punishing 67.5px)")
+	assert_eq(horizontal_gap, 67.5, "Horizontal gap between Plat 4 and Plat 5 is 67.5px")
 
-	# Head clearance check: Conveyor 1 right edge is at 640 + 45 = 685, bottom Y is 142
-	# Clear horizontal window after conveyor edge (x >= 685) before landing on Plat 5 (x <= 710)
-	var conv_right: float = 640.0 + 45.0 # 685.0
-	assert_true(plat5_left > conv_right, "Platform 5 landing begins after Conveyor 1 ceiling obstruction")
-
-	# Kinematic simulation of running jump from X=685 (just clear of conveyor overhead) to Platform 5 landing (X=735)
 	var player = lvl.get_node("Player")
 	var move_spd: float = float(player.move_speed) # 240.0
 	var jmp_vel: float = float(player.jump_velocity) # -470.0
 	var grav: float = float(player.gravity) # 1150.0
 
-	var dx: float = 735.0 - 685.0 # 50px forward
+	var dx: float = 760.0 - 630.0 # 130px center-to-center
 	var dy: float = 170.0 - 200.0 # -30px upward
 	var a: float = 0.5 * grav
 	var b: float = jmp_vel
@@ -5196,7 +5198,17 @@ func test_level_13_platform4_jump_fix() -> void:
 	var t_land: float = (-b + sqrt(disc)) / (2.0 * a)
 	var max_reach: float = move_spd * t_land
 	assert_true(dx <= max_reach, "Running jump reaches Platform 5 comfortably (dx=%.1f <= max=%.1f)" % [dx, max_reach])
-	assert_true(max_reach - dx >= 20.0, "Jump has at least 20px of safety margin for reproducible landing")
+	assert_true(max_reach - dx >= 40.0, "Jump has generous 49.4px safety margin for reliable landing")
+
+	# Verify return jump from Platform 5 to Conveyor 1
+	var dx_return: float = 760.0 - 640.0 # 120px
+	var dy_return: float = 118.0 - 170.0 # -52px upward
+	var c_ret: float = -dy_return
+	var disc_ret: float = b * b - 4.0 * a * c_ret
+	assert_true(disc_ret >= 0.0, "Return jump to Conveyor 1 is achievable")
+	var t_land_ret: float = (-b + sqrt(disc_ret)) / (2.0 * a)
+	var max_reach_ret: float = move_spd * t_land_ret
+	assert_true(dx_return <= max_reach_ret, "Return jump to Conveyor 1 is within reach (dx=%.1f <= max=%.1f)" % [dx_return, max_reach_ret])
 
 	remove_child(lvl)
 	lvl.free()
@@ -5273,7 +5285,15 @@ func test_level_14_overpressure_gameplay() -> void:
 	assert_true(hazards.get_node_or_null("IndustrialCrusher1") != null, "IndustrialCrusher1 exists")
 	assert_true(hazards.get_node_or_null("IndustrialCrusher2") != null, "IndustrialCrusher2 exists")
 	assert_true(hazards.get_node_or_null("IndustrialCrusher3") != null, "IndustrialCrusher3 exists")
-	assert_true(hazards.get_node_or_null("IndustrialCrusher4") != null, "Greed Detour IndustrialCrusher4 exists")
+	assert_true(hazards.get_node_or_null("IndustrialCrusherG") != null, "Greed Detour IndustrialCrusherG exists")
+	assert_true(hazards.get_node_or_null("IndustrialCrusher4") != null, "Summit IndustrialCrusher4 exists")
+
+	var crusher_g = hazards.get_node("IndustrialCrusherG")
+	assert_eq(crusher_g.position, Vector2(590, -600), "IndustrialCrusherG position is at Vector2(590, -600)")
+	var coin7 = coins_container.get_node("Coin7")
+	assert_eq(coin7.position, Vector2(590, -545), "Coin7 position is at Vector2(590, -545) in open air")
+	assert_true(coin7.position.y > -582.0, "Coin 7 is clear of retracted crusher bottom (-582px)")
+	assert_true(coin7.position.y < -519.0, "Coin 7 is above GreedDuct2 surface (-519px)")
 	assert_true(hazards.get_node_or_null("SteamVent1_Up") != null, "SteamVent1_Up exists")
 	assert_true(hazards.get_node_or_null("SteamVent2_Horiz") != null, "SteamVent2_Horiz exists")
 	assert_true(hazards.get_node_or_null("SteamVent3_Down") != null, "SteamVent3_Down exists")
@@ -5394,6 +5414,7 @@ func test_level_14_jump_physics_and_reachability() -> void:
 
 	remove_child(lvl)
 	lvl.free()
+
 
 
 

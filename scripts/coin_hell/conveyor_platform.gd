@@ -15,6 +15,11 @@ signal direction_reversed
 @export var warning_duration: float = 1.2
 @export var reversed_speed: float = -110.0
 @export var platform_size: Vector2 = Vector2(140.0, 24.0)
+@export var one_way: bool = false:
+	set(val):
+		one_way = val
+		if collision_shape:
+			collision_shape.one_way_collision = one_way
 
 var _elapsed_time: float = 0.0
 var _current_speed: float = 0.0
@@ -41,6 +46,9 @@ func _setup_collision() -> void:
 		add_child(collision_shape)
 	elif collision_shape.shape is RectangleShape2D:
 		(collision_shape.shape as RectangleShape2D).size = platform_size
+
+	if collision_shape:
+		collision_shape.one_way_collision = one_way
 
 	collision_layer = 2 # Terrain / platform layer
 	collision_mask = 0

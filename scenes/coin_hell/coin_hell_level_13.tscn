@@ -204,7 +204,7 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Platform5" type="StaticBody2D" parent="Platforms"]
-position = Vector2(735, 180)
+position = Vector2(760, 180)
 collision_layer = 2
 collision_mask = 0
 
@@ -229,6 +229,10 @@ axis_stretch_vertical = 1
 position = Vector2(640, 130)
 belt_speed = 70.0
 platform_size = Vector2(90, 24)
+one_way = true
+
+[node name="CollisionShape2D" parent="Platforms/Conveyor1" index="0"]
+one_way_collision = true
 
 [node name="Platform6" type="StaticBody2D" parent="Platforms"]
 position = Vector2(490, 80)
