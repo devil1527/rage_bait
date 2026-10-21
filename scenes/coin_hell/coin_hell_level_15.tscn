@@ -372,41 +372,34 @@ one_way = true
 one_way_collision = true
 
 [node name="FallingPlatform2" type="StaticBody2D" parent="Platforms"]
-position = Vector2(480, -390)
+position = Vector2(490, -385)
 collision_layer = 2
 collision_mask = 0
-script = ExtResource("20_fplat")
-shake_duration = 0.5
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/FallingPlatform2"]
-shape = SubResource("RectangleShape2D_plat50")
+shape = SubResource("RectangleShape2D_plat60")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/FallingPlatform2"]
-self_modulate = Color(0.7, 0.35, 0.3, 1)
-offset_left = -25.0
+self_modulate = Color(0.6, 0.45, 0.35, 1)
+offset_left = -30.0
 offset_top = -10.0
-offset_right = 25.0
+offset_right = 30.0
 offset_bottom = 10.0
 texture = ExtResource("8_ptil")
 patch_margin_left = 4
 patch_margin_top = 4
 patch_margin_right = 4
 patch_margin_bottom = 4
-
-[node name="StepArea" type="Area2D" parent="Platforms/FallingPlatform2"]
-position = Vector2(0, -11)
-collision_layer = 0
-collision_mask = 1
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/FallingPlatform2/StepArea"]
-shape = SubResource("RectangleShape2D_fplat_step")
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
 
 [node name="MovingPlatform1" parent="Platforms" instance=ExtResource("19_mvplat")]
-position = Vector2(350, -470)
-move_offset = Vector2(0, -140)
-move_speed = 70.0
-pause_duration = 0.5
-platform_size = Vector2(65, 20)
+position = Vector2(360, -450)
+move_direction = Vector2(0, -1)
+move_distance = 160.0
+move_speed = 80.0
+pause_at_ends = 0.5
+platform_size = Vector2(70, 20)
 
 [node name="Platform7" type="StaticBody2D" parent="Platforms"]
 position = Vector2(460, -665)
@@ -627,7 +620,7 @@ position = Vector2(520, -225)
 position = Vector2(630, -375)
 
 [node name="Coin8" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(350, -570)
+position = Vector2(360, -530)
 
 [node name="Coin9" parent="Coins" instance=ExtResource("3_coin")]
 position = Vector2(580, -775)

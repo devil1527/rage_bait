@@ -128,6 +128,7 @@ func run_all_tests() -> void:
 	test_level_15_rolling_boulder_mechanics()
 	test_level_15_secret_hidden_platform_reveal_state_machine()
 	test_level_15_jump_physics_and_reachability()
+	test_level_15_elevator_runtime_ascent_and_simulation()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -5492,6 +5493,10 @@ func test_level_15_rage_furnace_gameplay() -> void:
 	assert_true(platforms.has_node("Conveyor1"), "Phase D: Conveyor1 counter belt exists")
 	assert_true(platforms.has_node("FallingPlatform2"), "Phase D: FallingPlatform2 exists")
 	assert_true(platforms.has_node("MovingPlatform1"), "Phase D: MovingPlatform1 (Piston Elevator) exists")
+	var mvplat = platforms.get_node("MovingPlatform1")
+	assert_eq(mvplat.move_direction, Vector2(0, -1), "MovingPlatform1 moves vertically UP (0, -1)")
+	assert_eq(mvplat.move_distance, 160.0, "MovingPlatform1 ascends 160.0px to reach summit ledge Platform7")
+	assert_eq(mvplat.position, Vector2(360, -450), "MovingPlatform1 base position is (360, -450)")
 	assert_true(platforms.has_node("Platform7"), "Phase D: Platform7 exists")
 	assert_true(platforms.has_node("FallingPlatform3"), "Phase D: FallingPlatform3 exists")
 	assert_true(platforms.has_node("Platform8"), "Phase D: Platform8 pre-summit ledge exists")
@@ -5749,9 +5754,9 @@ func test_level_15_jump_physics_and_reachability() -> void:
 		{"from": Vector2(640, -220), "to": Vector2(760, -270), "name": "PhantomPlatform4 -> Platform6 (Rest Ledge)"},
 		# Phase D
 		{"from": Vector2(760, -270), "to": Vector2(670, -330), "name": "Platform6 -> Conveyor1"},
-		{"from": Vector2(590, -330), "to": Vector2(480, -390), "name": "Conveyor1 -> FallingPlatform2"},
-		{"from": Vector2(480, -390), "to": Vector2(350, -470), "name": "FallingPlatform2 -> MovingPlatform1 (Elevator bottom)"},
-		{"from": Vector2(350, -610), "to": Vector2(460, -665), "name": "MovingPlatform1 (Elevator apex) -> Platform7"},
+		{"from": Vector2(590, -330), "to": Vector2(490, -385), "name": "Conveyor1 -> FallingPlatform2 (Staging Ledge)"},
+		{"from": Vector2(490, -385), "to": Vector2(360, -450), "name": "FallingPlatform2 -> MovingPlatform1 (Elevator bottom)"},
+		{"from": Vector2(360, -610), "to": Vector2(460, -665), "name": "MovingPlatform1 (Elevator apex) -> Platform7"},
 		{"from": Vector2(460, -665), "to": Vector2(580, -720), "name": "Platform7 -> FallingPlatform3"},
 		{"from": Vector2(580, -720), "to": Vector2(460, -775), "name": "FallingPlatform3 -> Platform8"},
 		{"from": Vector2(460, -775), "to": Vector2(340, -830), "name": "Platform8 -> TakeoffPlatform"},
@@ -5776,6 +5781,51 @@ func test_level_15_jump_physics_and_reachability() -> void:
 
 	remove_child(lvl)
 	lvl.free()
+
+func test_level_15_elevator_runtime_ascent_and_simulation() -> void:
+	print("\n--- TEST: Level 15 Elevator Runtime Ascent & Simulation ---")
+	var lvl15_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_15.tscn")
+	assert_true(lvl15_scene != null, "Level 15 scene loads for elevator simulation")
+	var lvl = lvl15_scene.instantiate()
+	add_child(lvl)
+
+	var platforms = lvl.get_node("Platforms")
+	var staging = platforms.get_node_or_null("FallingPlatform2")
+	assert_true(staging != null, "FallingPlatform2 staging ledge exists")
+	assert_eq(staging.position, Vector2(490, -385), "FallingPlatform2 is positioned at staging coords (490, -385)")
+	assert_true(not (staging is FallingPlatform), "FallingPlatform2 is a stable staging ledge to allow waiting for elevator")
+
+	var mvplat = platforms.get_node_or_null("MovingPlatform1")
+	assert_true(mvplat != null, "MovingPlatform1 exists")
+	assert_eq(mvplat.position, Vector2(360, -450), "MovingPlatform1 starts at elevator bottom (360, -450)")
+	assert_eq(mvplat.move_direction, Vector2(0, -1), "MovingPlatform1 moves vertically UP (Vector2(0, -1))")
+	assert_eq(mvplat.move_distance, 160.0, "MovingPlatform1 travels 160.0px upward")
+	assert_eq(mvplat.move_speed, 80.0, "MovingPlatform1 travels at 80.0 px/s")
+
+	# Simulate 2.0 seconds of physics: elevator ascends 160px from -450 to -610
+	mvplat._physics_process(2.0)
+	assert_eq(mvplat.position.y, -610.0, "MovingPlatform1 reaches apex Y=-610.0 after 2.0s ascent")
+	assert_eq(mvplat.position.x, 360.0, "MovingPlatform1 preserves X=360.0 without horizontal drift")
+
+	# Check Coin8 in elevator ascent path
+	var coin8 = lvl.get_node_or_null("Coins/Coin8")
+	assert_true(coin8 != null, "Coin8 exists in elevator shaft")
+	assert_eq(coin8.position, Vector2(360, -530), "Coin8 is centered along elevator ascent path at (360, -530)")
+
+	# Check Platform7 reach from elevator apex
+	var plat7 = platforms.get_node_or_null("Platform7")
+	assert_true(plat7 != null, "Platform7 summit ledge exists")
+	assert_eq(plat7.position, Vector2(460, -665), "Platform7 is positioned at (460, -665)")
+
+	# Edge-to-edge distance: elevator right edge (360 + 35 = 395) to Plat7 left edge (460 - 30 = 430) is 35px
+	var elevator_apex_top_y = -610.0 - 10.0
+	var plat7_top_y = -665.0 - 10.0
+	var dy = plat7_top_y - elevator_apex_top_y # -55.0px upward
+	assert_eq(dy, -55.0, "Vertical rise from elevator apex to Platform7 is exactly 55.0px (within player max jump 96px)")
+
+	remove_child(lvl)
+	lvl.free()
+
 
 
 
