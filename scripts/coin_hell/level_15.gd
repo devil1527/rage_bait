@@ -40,6 +40,7 @@ extends Node2D
 @onready var pit_hazard_area: Area2D = get_node_or_null("PitHazardArea")
 
 var _facility_elapsed: float = 0.0
+var _reached_takeoff: bool = false
 var _attempted_final_jump: bool = false
 
 func _ready() -> void:
@@ -99,6 +100,16 @@ func _process(delta: float) -> void:
 		else:
 			furnace_indicator_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3, 1.0))
 
+	# Track takeoff platform arrival and final leap into the exit gap
+	if player:
+		var p_pos := player.global_position
+		# Player reaches TakeoffPlatform (x: 310 to 370, y <= -820)
+		if not _reached_takeoff and player.is_on_floor() and p_pos.x >= 310.0 and p_pos.x <= 370.0 and p_pos.y <= -820.0:
+			_reached_takeoff = true
+		# Player leaps forward into the final gap from takeoff platform (x > 370, summit altitude y <= -800)
+		if _reached_takeoff and not _attempted_final_jump and p_pos.x > 370.0 and p_pos.y <= -800.0:
+			_attempted_final_jump = true
+
 func _setup_touch_controls() -> void:
 	touch_btn_left.action_name = "move_left"
 	touch_btn_right.action_name = "move_right"
@@ -142,17 +153,15 @@ func _on_coin_collected(current: int, total: int) -> void:
 func _on_player_died() -> void:
 	_clear_touch_controls()
 	# Check if death occurred during a genuine final gap leap
-	if player:
-		var p_pos := player.global_position
-		# Final gap is bounded horizontally by 350 to 580 and vertically at the summit (y < -650)
-		if p_pos.x >= 350.0 and p_pos.x <= 580.0 and p_pos.y <= -650.0:
-			_trigger_final_jump_reveal()
+	if _attempted_final_jump:
+		_trigger_final_jump_reveal()
 
 	death_overlay.open()
 
 func _on_final_gap_fall_area_entered(body: Node2D) -> void:
 	if body == player or (body and body.is_in_group("player")):
-		_trigger_final_jump_reveal()
+		if _reached_takeoff or _attempted_final_jump:
+			_trigger_final_jump_reveal()
 
 func _trigger_final_jump_reveal() -> void:
 	if secret_platform and not secret_platform.is_revealed:
@@ -170,6 +179,8 @@ func _on_pit_entered(body: Node2D) -> void:
 func _on_player_revived(_pos: Vector2) -> void:
 	_clear_touch_controls()
 	_facility_elapsed = 0.0
+	_reached_takeoff = false
+	_attempted_final_jump = false
 	death_overlay.visible = false
 	pause_overlay.visible = false
 	level_complete_overlay.visible = false
@@ -182,6 +193,8 @@ func _on_retry() -> void:
 func _reset_level() -> void:
 	_clear_touch_controls()
 	_facility_elapsed = 0.0
+	_reached_takeoff = false
+	_attempted_final_jump = false
 	death_overlay.visible = false
 	level_complete_overlay.visible = false
 	pause_overlay.visible = false

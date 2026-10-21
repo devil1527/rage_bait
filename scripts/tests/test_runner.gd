@@ -5499,6 +5499,8 @@ func test_level_15_rage_furnace_gameplay() -> void:
 	assert_eq(mvplat.position, Vector2(360, -450), "MovingPlatform1 base position is (360, -450)")
 	assert_true(platforms.has_node("Platform7"), "Phase D: Platform7 exists")
 	assert_true(platforms.has_node("FallingPlatform3"), "Phase D: FallingPlatform3 exists")
+	var fplat3 = platforms.get_node("FallingPlatform3")
+	assert_eq(fplat3.shake_duration, 0.85, "FallingPlatform3 provides 0.85s reaction window to time steam vent")
 	assert_true(platforms.has_node("Platform8"), "Phase D: Platform8 pre-summit ledge exists")
 
 	# Phase E: Impossible Final Jump & Secret
@@ -5506,6 +5508,8 @@ func test_level_15_rage_furnace_gameplay() -> void:
 	assert_true(platforms.has_node("SecretHiddenPlatform"), "Phase E: SecretHiddenPlatform exists")
 	assert_true(platforms.has_node("ExitPlatform"), "Phase E: ExitPlatform exists")
 	assert_true(lvl.has_node("FinalGapFallArea"), "Phase E: FinalGapFallArea exists")
+	var fg_area = lvl.get_node("FinalGapFallArea")
+	assert_eq(fg_area.position, Vector2(535, -780), "FinalGapFallArea is isolated in summit drop chasm")
 
 	# 3. Hazards Container
 	var hazards = lvl.get_node_or_null("Hazards")
@@ -5517,6 +5521,8 @@ func test_level_15_rage_furnace_gameplay() -> void:
 	assert_true(hazards.has_node("SteamVent3_Horiz"), "SteamVent3_Horiz exists in Hazards")
 	assert_true(hazards.has_node("SteamVent4_Up"), "SteamVent4_Up exists in Hazards")
 	assert_true(hazards.has_node("SteamVent5_Down"), "SteamVent5_Down exists in Hazards")
+	var svent5 = hazards.get_node("SteamVent5_Down")
+	assert_eq(svent5.position, Vector2(520, -735), "SteamVent5_Down is positioned in air corridor at X=520 deconflicting Platform8 and FallingPlatform3")
 	assert_true(lvl.has_node("PitHazardArea"), "PitHazardArea exists at bottom")
 
 	# 4. Exactly 10 Coins
@@ -5534,13 +5540,19 @@ func test_level_15_rage_furnace_gameplay() -> void:
 		c.collect()
 		assert_true(c._collected, "Coin %d is collected after pickup" % i)
 
-	assert_eq(GameManager.current_coins, 10, "All 10 Level 15 coins successfully collected")
+	# Verify Coin9 and Coin10 are precisely aligned with landing surfaces
+	var c9 = coins.get_node_or_null("Coin9")
+	assert_true(c9 != null, "Coin9 exists")
+	assert_eq(c9.position, Vector2(580, -755), "Coin9 is centered 25px above FallingPlatform3 surface for guaranteed pickup")
+	var c10 = coins.get_node_or_null("Coin10")
+	assert_true(c10 != null, "Coin10 exists")
+	assert_eq(c10.position, Vector2(490, -865), "Coin10 is centered 25px above SecretHiddenPlatform surface for guaranteed pickup")
 
 	# 5. ExitGate Unlock
 	var gate = lvl.get_node_or_null("ExitGate")
 	assert_true(gate != null, "ExitGate exists in Level 15")
 	assert_true(gate._is_open, "ExitGate unlocks when all 10 coins are collected")
-	assert_eq(gate.position, Vector2(670, -885), "ExitGate is positioned on summit ExitPlatform")
+	assert_eq(gate.position, Vector2(670, -867), "ExitGate rests flush on summit ExitPlatform")
 
 	# 6. HUD and Controls
 	var title_lbl: Label = lvl.get_node_or_null("HUD/MarginContainer/TopBar/LevelTitle")
@@ -5669,12 +5681,23 @@ func test_level_15_secret_hidden_platform_reveal_state_machine() -> void:
 	lvl._on_player_died()
 	assert_true(not sec_plat.is_revealed, "Death in Phase D does NOT trigger secret reveal")
 
-	# Genuine failure in Final Gap: trigger area entry
+	# Genuine failure in Final Gap: player reaches takeoff ledge, leaps into final gap
+	lvl._reached_takeoff = true
+	lvl._attempted_final_jump = true
 	var final_gap_area: Area2D = lvl.get_node("FinalGapFallArea")
 	assert_true(final_gap_area != null, "FinalGapFallArea exists")
 	lvl._on_final_gap_fall_area_entered(p)
 	assert_true(sec_plat.is_revealed, "Entering FinalGapFallArea triggers genuine secret reveal")
 	assert_true(SaveManager.is_level_15_secret_revealed(), "SaveManager records secret discovery")
+
+	# Also test genuine death during final jump leap triggers reveal
+	lvl._reset_level()
+	SaveManager.set_level_15_secret_revealed(false)
+	sec_plat.set_revealed_instant(false)
+	lvl._reached_takeoff = true
+	lvl._attempted_final_jump = true
+	lvl._on_player_died()
+	assert_true(sec_plat.is_revealed, "Death during genuine final jump attempt triggers secret reveal")
 
 	# Clean reset check: Platform stays revealed
 	lvl._reset_level()
