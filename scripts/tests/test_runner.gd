@@ -115,6 +115,7 @@ func run_all_tests() -> void:
 	test_ui_redesign_and_world_navigation()
 	test_level_12_pressure_overload_gameplay()
 	test_level_12_steam_vent_mechanics()
+	test_level_12_jump_physics_and_reachability()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -4632,14 +4633,14 @@ func test_level_12_pressure_overload_gameplay() -> void:
 	assert_true(player.is_in_group("player"), "Player is registered in group 'player'")
 	var spawn = lvl.get_node_or_null("SpawnPoint")
 	assert_true(spawn != null, "SpawnPoint marker exists in Level 12")
-	assert_eq(spawn.position, Vector2(120, 400), "SpawnPoint located at safe initial platform (120, 400)")
+	assert_eq(spawn.position, Vector2(120, 390), "SpawnPoint located at safe initial platform (120, 390)")
 
-	# 2. Verify Camera Bounds for Horizontal Industrial Manifold
+	# 2. Verify Camera Bounds for Multitier Vertical & Horizontal Industrial Manifold
 	var cam: Camera2D = lvl.get_node_or_null("Player/Camera2D")
 	assert_true(cam != null, "Camera2D attached to player")
 	assert_eq(cam.limit_left, 0, "Camera limit_left is 0")
 	assert_true(cam.limit_right >= 2400, "Camera limit_right covers full factory run (>=2400)")
-	assert_eq(cam.limit_top, 0, "Camera limit_top is 0")
+	assert_true(cam.limit_top <= -400, "Camera limit_top accommodates vertical elevation (<= -400)")
 	assert_eq(cam.limit_bottom, 540, "Camera limit_bottom is 540")
 
 	# 3. Verify Exactly 10 Coins in Coins Container
@@ -4658,28 +4659,30 @@ func test_level_12_pressure_overload_gameplay() -> void:
 	var c9 = lvl.get_node_or_null("Coins/Coin9")
 	var c10 = lvl.get_node_or_null("Coins/Coin10")
 
-	assert_true(c1 != null and c2 != null, "Section 1: Calibration Chamber contains Coins 1 and 2")
-	assert_eq(c1.position, Vector2(260, 355), "Coin 1 positioned above Platform 1 (260, 355)")
-	assert_eq(c2.position, Vector2(430, 355), "Coin 2 positioned above Platform 2 (430, 355)")
+	assert_true(c1 != null and c2 != null, "Section 1: Pressure Inlet contains Coins 1 and 2")
+	assert_eq(c1.position, Vector2(230, 335), "Coin 1 positioned above Platform 1 (230, 335)")
+	assert_eq(c2.position, Vector2(470, 265), "Coin 2 positioned above Platform 3 under Vent 2 (470, 265)")
 
-	assert_true(c3 != null and c4 != null and c5 != null, "Section 2: Compression Corridor contains Coins 3, 4, and 5")
-	assert_eq(c3.position, Vector2(550, 325), "Coin 3 positioned above Platform 3 (550, 325)")
-	assert_eq(c4.position, Vector2(680, 330), "Coin 4 positioned under Crusher 1 on Platform 4 (680, 330)")
-	assert_eq(c5.position, Vector2(830, 325), "Coin 5 positioned on Conveyor 1 under downward Vent 2 (830, 325)")
+	assert_true(c3 != null and c4 != null, "Section 2: Piston Gauntlet contains Coins 3 and 4")
+	assert_eq(c3.position, Vector2(690, 200), "Coin 3 positioned under Crusher 1 on Conveyor 1 (690, 200)")
+	assert_eq(c4.position, Vector2(900, 125), "Coin 4 positioned above FallingPlatform 1 under downward Vent 3 (900, 125)")
 
-	assert_true(c6 != null and c7 != null, "Section 3: Overload Manifold Upper Risk/Reward Detour contains Coins 6 and 7")
-	assert_eq(c6.position, Vector2(1190, 190), "Coin 6 positioned on upper risk duct over Vent 3 (1190, 190)")
-	assert_eq(c7.position, Vector2(1380, 190), "Coin 7 positioned under secondary duct crusher (1380, 190)")
+	assert_true(c5 != null and c6 != null and c7 != null, "Section 3: Upper Greed Detour contains Coins 5, 6, and 7")
+	assert_eq(c5.position, Vector2(1200, -15), "Coin 5 positioned on upper duct above FallingPlatform 2 (1200, -15)")
+	assert_eq(c6.position, Vector2(1300, -45), "Coin 6 positioned on duct under Crusher 2 (1300, -45)")
+	assert_eq(c7.position, Vector2(1410, 10), "Coin 7 positioned on duct descent platform (1410, 10)")
 
-	assert_true(c8 != null and c9 != null and c10 != null, "Section 4: Core Surge contains Coins 8, 9, and 10")
-	assert_eq(c8.position, Vector2(1820, 255), "Coin 8 positioned on mid-surge platform 10 (1820, 255)")
-	assert_eq(c9.position, Vector2(1990, 170), "Coin 9 positioned at peak of vertical elevator MovingPlatform 2 (1990, 170)")
-	assert_eq(c10.position, Vector2(2120, 185), "Coin 10 positioned above final FallingPlatform 1 (2120, 185)")
+	assert_true(c8 != null and c9 != null, "Section 4: Core Surge & Elevator contains Coins 8 and 9")
+	assert_eq(c8.position, Vector2(1780, -25), "Coin 8 positioned on mid-surge platform 9 between alternating vents (1780, -25)")
+	assert_eq(c9.position, Vector2(1830, -195), "Coin 9 positioned above platform 10 after freight elevator (1830, -195)")
+
+	assert_true(c10 != null, "Section 5: Final Overpressure Exhaust contains Coin 10")
+	assert_eq(c10.position, Vector2(2080, -225), "Coin 10 positioned above final FallingPlatform 3 under Vent 8 (2080, -225)")
 
 	# 4. Verify Exit Gate & Platform
 	var exit = lvl.get_node_or_null("ExitGate")
 	assert_true(exit != null, "Section 5: Exit Gate exists")
-	assert_eq(exit.position, Vector2(2320, 210), "Exit Gate positioned at (2320, 210)")
+	assert_eq(exit.position, Vector2(2230, -240), "Exit Gate positioned at (2230, -240)")
 	assert_true(not exit._is_open, "Exit Gate starts locked")
 
 	# 5. Verify Standardized Mobile Touch Controls
@@ -4708,24 +4711,47 @@ func test_level_12_pressure_overload_gameplay() -> void:
 	lvl._process(1.0)
 	assert_eq(press_lbl.text, "PRESSURE: CRITICAL!", "Pressure status advances to PRESSURE: CRITICAL!")
 
-	# 7. Verify All Hazards Exist with Fair Telegraphing
+	# 7. Verify Hazards with Fair Telegraphing
 	var v1 = lvl.get_node_or_null("Hazards/SteamVent1")
 	var v2 = lvl.get_node_or_null("Hazards/SteamVent2_Down")
-	var v3 = lvl.get_node_or_null("Hazards/SteamVent3_Duct")
-	var v4a = lvl.get_node_or_null("Hazards/SteamVent4A")
-	var v4b = lvl.get_node_or_null("Hazards/SteamVent4B_Down")
-	assert_true(v1 != null and v2 != null and v3 != null and v4a != null and v4b != null, "All 5 Steam Vents exist")
-	assert_true(v1.warning_duration >= 0.6, "SteamVent1 telegraph warning is >= 0.6s (fair reaction window)")
-	assert_true(v2.warning_duration >= 0.6, "SteamVent2 telegraph warning is >= 0.6s (fair reaction window)")
-	assert_true(v3.warning_duration >= 0.6, "SteamVent3 telegraph warning is >= 0.6s (fair reaction window)")
-	assert_true(v4a.warning_duration >= 0.6, "SteamVent4A telegraph warning is >= 0.6s (fair reaction window)")
-	assert_true(v4b.warning_duration >= 0.6, "SteamVent4B telegraph warning is >= 0.6s (fair reaction window)")
+	var v3 = lvl.get_node_or_null("Hazards/SteamVent3_Down")
+	var v4 = lvl.get_node_or_null("Hazards/SteamVent4_Down")
+	var v5a = lvl.get_node_or_null("Hazards/SteamVent5A_Up")
+	var v5b = lvl.get_node_or_null("Hazards/SteamVent5B_Down")
+	var v6a = lvl.get_node_or_null("Hazards/SteamVent6A")
+	var v6b = lvl.get_node_or_null("Hazards/SteamVent6B_Down")
+	var v7 = lvl.get_node_or_null("Hazards/SteamVent7_Horiz")
+	var v8 = lvl.get_node_or_null("Hazards/SteamVent8_Down")
+	assert_true(v1 != null and v2 != null and v3 != null and v4 != null and v5a != null and v5b != null and v6a != null and v6b != null and v7 != null and v8 != null, "All 10 Steam Vents exist")
+	assert_true(v1.warning_duration >= 0.6, "SteamVent1 telegraph warning is >= 0.6s")
+	assert_true(v2.warning_duration >= 0.6, "SteamVent2 telegraph warning is >= 0.6s")
+	assert_true(v3.warning_duration >= 0.6, "SteamVent3 telegraph warning is >= 0.6s")
+	assert_true(v4.warning_duration >= 0.6, "SteamVent4 telegraph warning is >= 0.6s")
+	assert_true(v5a.warning_duration >= 0.6, "SteamVent5A telegraph warning is >= 0.6s")
+	assert_true(v5b.warning_duration >= 0.6, "SteamVent5B telegraph warning is >= 0.6s")
+	assert_true(v6a.warning_duration >= 0.6, "SteamVent6A telegraph warning is >= 0.6s")
+	assert_true(v6b.warning_duration >= 0.6, "SteamVent6B telegraph warning is >= 0.6s")
+	assert_true(v7.warning_duration >= 0.6, "SteamVent7 telegraph warning is >= 0.6s")
+	assert_true(v8.warning_duration >= 0.6, "SteamVent8 telegraph warning is >= 0.6s")
 
 	var crush1 = lvl.get_node_or_null("Hazards/IndustrialCrusher1")
 	var crush2 = lvl.get_node_or_null("Hazards/IndustrialCrusher2_Duct")
-	assert_true(crush1 != null and crush2 != null, "Both Industrial Crushers exist")
+	var crush3 = lvl.get_node_or_null("Hazards/IndustrialCrusher3")
+	assert_true(crush1 != null and crush2 != null and crush3 != null, "All 3 Industrial Crushers exist")
 	assert_true(crush1.warning_duration >= 0.6, "IndustrialCrusher1 telegraph warning is >= 0.6s")
 	assert_true(crush2.warning_duration >= 0.6, "IndustrialCrusher2 telegraph warning is >= 0.6s")
+	assert_true(crush3.warning_duration >= 0.6, "IndustrialCrusher3 telegraph warning is >= 0.6s")
+
+	# Verify Conveyors & Dynamic Platforms
+	assert_true(lvl.get_node_or_null("Platforms/Conveyor1") != null, "Conveyor 1 exists in Section 2")
+	assert_true(lvl.get_node_or_null("Platforms/Conveyor2") != null, "Conveyor 2 exists in Section 3")
+	assert_true(lvl.get_node_or_null("Platforms/Conveyor3") != null, "Conveyor 3 exists in Section 4")
+	assert_true(lvl.get_node_or_null("Platforms/Conveyor4") != null, "Conveyor 4 exists in Section 5")
+	assert_true(lvl.get_node_or_null("Platforms/FallingPlatform1") != null, "FallingPlatform 1 exists in Section 2")
+	assert_true(lvl.get_node_or_null("Platforms/FallingPlatform2") != null, "FallingPlatform 2 exists in Section 3")
+	assert_true(lvl.get_node_or_null("Platforms/FallingPlatform3") != null, "FallingPlatform 3 exists in Section 5")
+	assert_true(lvl.get_node_or_null("Platforms/MovingPlatform1") != null, "MovingPlatform 1 exists in Section 3")
+	assert_true(lvl.get_node_or_null("Platforms/MovingPlatform2") != null, "MovingPlatform 2 exists in Section 4")
 
 	# 8. Verify Coin Collection & Progression Trigger
 	GameManager.reset_coins()
@@ -4791,6 +4817,66 @@ func test_level_12_steam_vent_mechanics() -> void:
 	assert_true(not vent.steam_sprite.visible, "Player revive hides steam plume sprite")
 
 	vent.queue_free()
+
+func test_level_12_jump_physics_and_reachability() -> void:
+	print("\n--- TEST: Level 12 Jump Physics & Platform Reachability ---")
+	var lvl12_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_12.tscn")
+	assert_true(lvl12_scene != null, "Level 12 scene loads for physics reachability test")
+	var lvl: Node2D = lvl12_scene.instantiate()
+	add_child(lvl)
+
+	var player = lvl.get_node("Player")
+	var move_spd: float = float(player.move_speed)
+	var jmp_vel: float = float(player.jump_velocity)
+	var grav: float = float(player.gravity)
+
+	assert_eq(move_spd, 240.0, "Player horizontal speed is 240.0")
+	assert_eq(jmp_vel, -470.0, "Player jump velocity is -470.0")
+	assert_eq(grav, 1150.0, "Player gravity is 1150.0")
+
+	var jump_tests: Array[Dictionary] = [
+		{"from": Vector2(120, 390), "to": Vector2(230, 370), "name": "Ground1 -> Platform1"},
+		{"from": Vector2(230, 370), "to": Vector2(350, 330), "name": "Platform1 -> Platform2"},
+		{"from": Vector2(350, 330), "to": Vector2(470, 300), "name": "Platform2 -> Platform3"},
+		{"from": Vector2(470, 300), "to": Vector2(570, 260), "name": "Platform3 -> Platform4"},
+		{"from": Vector2(570, 260), "to": Vector2(650, 228), "name": "Platform4 -> Conveyor1"},
+		{"from": Vector2(730, 228), "to": Vector2(800, 190), "name": "Conveyor1 -> Platform5"},
+		{"from": Vector2(800, 190), "to": Vector2(900, 160), "name": "Platform5 -> FallingPlatform1"},
+		{"from": Vector2(900, 160), "to": Vector2(1010, 130), "name": "FallingPlatform1 -> Platform6"},
+		# Greed Detour
+		{"from": Vector2(1010, 130), "to": Vector2(1090, 50), "name": "Platform6 -> DuctPlatform1 (High Leap)"},
+		{"from": Vector2(1090, 50), "to": Vector2(1200, 20), "name": "DuctPlatform1 -> FallingPlatform2"},
+		{"from": Vector2(1200, 20), "to": Vector2(1300, -10), "name": "FallingPlatform2 -> DuctPlatform2"},
+		{"from": Vector2(1300, -10), "to": Vector2(1410, 40), "name": "DuctPlatform2 -> DuctPlatform3 (Descent)"},
+		{"from": Vector2(1410, 40), "to": Vector2(1520, 100), "name": "DuctPlatform3 -> Platform8"},
+		# Section 4
+		{"from": Vector2(1520, 100), "to": Vector2(1600, 68), "name": "Platform8 -> Conveyor3"},
+		{"from": Vector2(1680, 68), "to": Vector2(1780, 10), "name": "Conveyor3 -> Platform9"},
+		{"from": Vector2(1780, 10), "to": Vector2(1900, 10), "name": "Platform9 -> MovingPlatform2"},
+		{"from": Vector2(1930, -130), "to": Vector2(1830, -160), "name": "MovingPlatform2 (apex) -> Platform10"},
+		# Section 5
+		{"from": Vector2(1830, -160), "to": Vector2(1930, -182), "name": "Platform10 -> Conveyor4"},
+		{"from": Vector2(1990, -182), "to": Vector2(2080, -190), "name": "Conveyor4 -> FallingPlatform3"},
+		{"from": Vector2(2080, -190), "to": Vector2(2170, -194), "name": "FallingPlatform3 -> ExitPlatform"},
+	]
+
+	for jt in jump_tests:
+		var p0: Vector2 = jt["from"]
+		var p1: Vector2 = jt["to"]
+		var dx: float = p1.x - p0.x
+		var dy: float = p1.y - p0.y
+		var a: float = 0.5 * grav
+		var b: float = jmp_vel
+		var c: float = -dy
+		var disc: float = b * b - 4.0 * a * c
+		assert_true(disc >= 0.0, "Jump height is achievable: %s" % str(jt["name"]))
+		var t_land: float = (-b + sqrt(disc)) / (2.0 * a)
+		var max_horiz: float = move_spd * t_land
+		assert_true(absf(dx) <= max_horiz, "Jump distance %.1f is within max reach %.1f: %s" % [absf(dx), max_horiz, str(jt["name"])])
+
+	remove_child(lvl)
+	lvl.free()
+
 
 
 

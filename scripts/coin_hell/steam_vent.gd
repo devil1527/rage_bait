@@ -56,18 +56,35 @@ func _setup_nodes() -> void:
 		steam_area.name = "SteamArea"
 		steam_area.collision_layer = 4 # Hazard layer
 		steam_area.collision_mask = 1  # Player mask
-		steam_area.body_entered.connect(_on_steam_body_entered)
 		add_child(steam_area)
+
+	if not steam_area.body_entered.is_connected(_on_steam_body_entered):
+		steam_area.body_entered.connect(_on_steam_body_entered)
+
+	var offset_dist: float = blast_length * 0.5 + 4.0
+	var plume_pos: Vector2 = blast_direction.normalized() * offset_dist
+	var plume_rot: float = 0.0
+	if blast_direction == Vector2.DOWN:
+		plume_rot = PI
+	elif blast_direction == Vector2.RIGHT:
+		plume_rot = PI * 0.5
+	elif blast_direction == Vector2.LEFT:
+		plume_rot = -PI * 0.5
 
 	if not steam_collision:
 		steam_collision = CollisionShape2D.new()
 		steam_collision.name = "CollisionShape2D"
-		var r := RectangleShape2D.new()
-		r.size = Vector2(blast_width, blast_length)
-		steam_collision.shape = r
-		# Position along blast direction from nozzle orifice (assumed centered at origin)
-		steam_collision.position = blast_direction.normalized() * (blast_length * 0.5 + 4.0)
 		steam_area.add_child(steam_collision)
+
+	var r: RectangleShape2D
+	if steam_collision.shape and steam_collision.shape is RectangleShape2D:
+		r = (steam_collision.shape as RectangleShape2D).duplicate()
+	else:
+		r = RectangleShape2D.new()
+	r.size = Vector2(blast_width, blast_length)
+	steam_collision.shape = r
+	steam_collision.position = plume_pos
+	steam_collision.rotation = plume_rot
 
 	if not steam_sprite:
 		steam_sprite = Sprite2D.new()
@@ -75,15 +92,14 @@ func _setup_nodes() -> void:
 		var plume_tex: Texture2D = load("res://assets/sprites/steam_plume.png")
 		if plume_tex:
 			steam_sprite.texture = plume_tex
-		steam_sprite.position = blast_direction.normalized() * (blast_length * 0.5 + 4.0)
-		# Orient plume if blasting horizontally or downwards
-		if blast_direction == Vector2.DOWN:
-			steam_sprite.rotation = PI
-		elif blast_direction == Vector2.RIGHT:
-			steam_sprite.rotation = PI * 0.5
-		elif blast_direction == Vector2.LEFT:
-			steam_sprite.rotation = -PI * 0.5
 		steam_area.add_child(steam_sprite)
+
+	steam_sprite.position = plume_pos
+	steam_sprite.rotation = plume_rot
+
+	if nozzle_sprite:
+		nozzle_sprite.rotation = plume_rot
+		_nozzle_orig_pos = nozzle_sprite.position
 
 func reset() -> void:
 	_warning_sound_played = false
@@ -114,10 +130,11 @@ func _physics_process(delta: float) -> void:
 				_set_state(State.WARNING)
 
 		State.WARNING:
-			# Visual shake and pulsating warning glow
+			# Visual shake and pulsating warning glow perpendicular to blast
+			var perp: Vector2 = Vector2(-blast_direction.normalized().y, blast_direction.normalized().x)
 			_shake_offset = sin(_state_timer * 45.0) * 2.0
 			if nozzle_sprite:
-				nozzle_sprite.position = _nozzle_orig_pos + Vector2(_shake_offset, 0.0)
+				nozzle_sprite.position = _nozzle_orig_pos + (perp * _shake_offset)
 				nozzle_sprite.modulate = Color(1.0, 0.75, 0.3, 1.0)
 			if warning_beacon:
 				warning_beacon.modulate = Color(1.0, 0.2, 0.1, 1.0) if int(_state_timer * 15.0) % 2 == 0 else Color(1.0, 0.8, 0.1, 0.5)

@@ -49,6 +49,9 @@ func _ready() -> void:
 	death_overlay.retry_requested.connect(_on_retry)
 	level_complete_overlay.replay_requested.connect(_on_retry)
 
+	if GameManager.has_signal("player_revived"):
+		GameManager.player_revived.connect(_on_player_revived)
+
 	if pit_hazard_area:
 		pit_hazard_area.body_entered.connect(_on_pit_entered)
 
@@ -131,6 +134,14 @@ func _on_level_completed(level_id: int) -> void:
 func _on_pit_entered(body: Node2D) -> void:
 	if body == player:
 		player.die()
+
+func _on_player_revived(_pos: Vector2) -> void:
+	_clear_touch_controls()
+	_facility_elapsed = 0.0
+	death_overlay.visible = false
+	pause_overlay.visible = false
+	level_complete_overlay.visible = false
+	GameManager.is_gameplay_active = true
 
 func _on_retry() -> void:
 	_reset_level()
