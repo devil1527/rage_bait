@@ -21,6 +21,7 @@ const BossVictoryOverlayClass = preload("res://scripts/coin_hell/boss_victory_ov
 const ConveyorPlatformClass = preload("res://scripts/coin_hell/conveyor_platform.gd")
 const IndustrialCrusherClass = preload("res://scripts/coin_hell/industrial_crusher.gd")
 const RisingLavaClass = preload("res://scripts/coin_hell/rising_lava.gd")
+const SteamVentClass = preload("res://scripts/coin_hell/steam_vent.gd")
 
 var passed_count: int = 0
 var failed_count: int = 0
@@ -112,6 +113,8 @@ func run_all_tests() -> void:
 	test_disappearing_platform_respawn_and_visibility()
 	test_android_package_identity_and_version_code()
 	test_ui_redesign_and_world_navigation()
+	test_level_12_pressure_overload_gameplay()
+	test_level_12_steam_vent_mechanics()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -211,8 +214,15 @@ func test_game_manager_level_definitions() -> void:
 	assert_true(lvl11.get("implemented"), "Level 11 is marked implemented")
 	assert_true(GameManager.can_play_level(11), "Level 11 is playable")
 	assert_eq(lvl11.get("coin_count"), 10, "Level 11 coin count is 10")
+
+	var lvl12: Dictionary = GameManager.get_level_info(12)
+	assert_eq(lvl12.get("name"), "Pressure Overload", "Level 12 name is 'Pressure Overload'")
+	assert_eq(GameManager.get_world_name_for_stage(12), "RAGE FACTORY", "Level 12 world is 'RAGE FACTORY'")
+	assert_true(lvl12.get("implemented"), "Level 12 is marked implemented")
+	assert_true(GameManager.can_play_level(12), "Level 12 is playable")
+	assert_eq(lvl12.get("coin_count"), 10, "Level 12 coin count is 10")
 	
-	for lvl_id in range(12, 21):
+	for lvl_id in range(13, 21):
 		assert_true(not GameManager.can_play_level(lvl_id), "Level %d is marked not implemented" % lvl_id)
 		
 	# Test coin counter clamping
@@ -388,13 +398,19 @@ func test_level_select_logic_and_states() -> void:
 	assert_true(SaveManager.is_level_unlocked(11), "Level 11 is unlocked after completing Level 10")
 	assert_true(GameManager.can_play_level(11), "Level 11 is playable")
 
-	# Complete level 11 to unlock level 12 and test unimplemented level press
+	# Complete level 11 to unlock level 12 and verify Level 12 is playable
 	SaveManager.complete_level(11)
 	lsel._update_ui()
 	assert_true(SaveManager.is_level_unlocked(12), "Level 12 is unlocked after completing Level 11")
-	lsel._on_level_tile_pressed(12)
+	assert_true(GameManager.can_play_level(12), "Level 12 is playable")
+
+	# Complete level 12 to unlock level 13 and test unimplemented level press
+	SaveManager.complete_level(12)
+	lsel._update_ui()
+	assert_true(SaveManager.is_level_unlocked(13), "Level 13 is unlocked after completing Level 12")
+	lsel._on_level_tile_pressed(13)
 	assert_true(modal.visible, "Pressing unlocked but unimplemented level shows modal")
-	assert_eq(modal_label.text, "Level 12 is still being built. Replay an earlier level for now.", "Modal shows exact unimplemented level message")
+	assert_eq(modal_label.text, "Level 13 is still being built. Replay an earlier level for now.", "Modal shows exact unimplemented level message")
 	
 	lsel.queue_free()
 
@@ -1759,12 +1775,12 @@ func test_developer_only_level_access() -> void:
 	assert_true(lsel.message_modal.visible, "Locked modal dialog displayed")
 	assert_eq(lsel.modal_title.text, "LEVEL 6 IS LOCKED", "Modal explains Level 6 is locked")
 	
-	# Unimplemented level (e.g. Level 12) cannot be launched even with dev mode on
+	# Unimplemented level (e.g. Level 13) cannot be launched even with dev mode on
 	lsel._on_dev_toggle_pressed()
 	assert_true(lsel.dev_bypass_active, "Dev bypass toggled on")
-	lsel._on_level_tile_pressed(12)
-	assert_true(lsel.message_modal.visible, "Unimplemented Level 12 displays in-progress modal")
-	assert_eq(lsel.modal_title.text, "LEVEL 12 IN PROGRESS", "Modal indicates Level 12 is in progress")
+	lsel._on_level_tile_pressed(13)
+	assert_true(lsel.message_modal.visible, "Unimplemented Level 13 displays in-progress modal")
+	assert_eq(lsel.modal_title.text, "LEVEL 13 IN PROGRESS", "Modal indicates Level 13 is in progress")
 	
 	# Release mode simulation: verify that when is_debug_mode is false, bypass cannot be activated
 	lsel.dev_bypass_active = false
@@ -4549,7 +4565,7 @@ func test_ui_redesign_and_world_navigation() -> void:
 	lsel._update_ui()
 	var prog_lbl: Label = lsel.get_node("MarginContainer/VBox/HeaderBar/ProgressBox/ProgressLabel")
 	assert_true(prog_lbl.text.begins_with("STAGES CLEARED:"), "UI Redesign: Progress label starts with STAGES CLEARED:")
-	assert_true(prog_lbl.text.ends_with("/ 11"), "UI Redesign: Progress label shows honest numerator out of 11 implemented stages")
+	assert_true(prog_lbl.text.ends_with("/ 12"), "UI Redesign: Progress label shows honest numerator out of 12 implemented stages")
 
 	# World filtering and navigation
 	lsel._select_world_tab(1)
@@ -4567,15 +4583,21 @@ func test_ui_redesign_and_world_navigation() -> void:
 	assert_eq(lsel.back_button.text, "◀ MENU", "UI Redesign: Back button returns to ◀ MENU when in all worlds view")
 	assert_true(sec1.visible and sec2.visible, "UI Redesign: All world sections visible in all worlds view")
 
-	# Unimplemented Stage 12 Planned State
+	# Stage 12 Implemented State (Locked initially on fresh save)
 	var btn12 = lsel.get_level_button(12)
 	assert_true(btn12 != null, "UI Redesign: Stage 12 button exists")
 	var state12_lbl: Label = btn12.get_node("VBox/StateLabel")
-	assert_eq(state12_lbl.text, "PLANNED", "UI Redesign: Stage 12 state is visibly PLANNED")
+	assert_eq(state12_lbl.text, "LOCKED", "UI Redesign: Stage 12 state is LOCKED before completing prior stages")
 
-	lsel._on_level_tile_pressed(12)
-	assert_true(lsel.message_modal.visible, "UI Redesign: Clicking Stage 12 shows modal")
-	assert_eq(lsel.modal_title.text, "LEVEL 12 IN PROGRESS", "UI Redesign: Modal title explains Level 12 is in progress")
+	# Unimplemented Stage 13 Planned State
+	var btn13 = lsel.get_level_button(13)
+	assert_true(btn13 != null, "UI Redesign: Stage 13 button exists")
+	var state13_lbl: Label = btn13.get_node("VBox/StateLabel")
+	assert_eq(state13_lbl.text, "PLANNED", "UI Redesign: Stage 13 state is visibly PLANNED")
+
+	lsel._on_level_tile_pressed(13)
+	assert_true(lsel.message_modal.visible, "UI Redesign: Clicking Stage 13 shows modal")
+	assert_eq(lsel.modal_title.text, "LEVEL 13 IN PROGRESS", "UI Redesign: Modal title explains Level 13 is in progress")
 	lsel.message_modal.visible = false
 
 	lsel.queue_free()
@@ -4596,6 +4618,180 @@ func test_ui_redesign_and_world_navigation() -> void:
 	GameManager.player_revived.emit(Vector2.ZERO)
 	assert_true(not fake_plat._in_warning and not fake_plat._triggered, "Respawn Fix: FakeSafePlatform resets on player_revived")
 	fake_plat.queue_free()
+
+func test_level_12_pressure_overload_gameplay() -> void:
+	print("\n--- TEST: Level 12 'Pressure Overload' Core Layout & Exact 10 Coins ---")
+	var lvl12_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_12.tscn")
+	assert_true(lvl12_scene != null, "Level 12 scene loads successfully")
+	var lvl = lvl12_scene.instantiate()
+	add_child(lvl)
+
+	# 1. Verify Player, Group & Safe Initial Spawn
+	var player = lvl.get_node_or_null("Player")
+	assert_true(player != null, "Player instance exists in Level 12")
+	assert_true(player.is_in_group("player"), "Player is registered in group 'player'")
+	var spawn = lvl.get_node_or_null("SpawnPoint")
+	assert_true(spawn != null, "SpawnPoint marker exists in Level 12")
+	assert_eq(spawn.position, Vector2(120, 400), "SpawnPoint located at safe initial platform (120, 400)")
+
+	# 2. Verify Camera Bounds for Horizontal Industrial Manifold
+	var cam: Camera2D = lvl.get_node_or_null("Player/Camera2D")
+	assert_true(cam != null, "Camera2D attached to player")
+	assert_eq(cam.limit_left, 0, "Camera limit_left is 0")
+	assert_true(cam.limit_right >= 2400, "Camera limit_right covers full factory run (>=2400)")
+	assert_eq(cam.limit_top, 0, "Camera limit_top is 0")
+	assert_eq(cam.limit_bottom, 540, "Camera limit_bottom is 540")
+
+	# 3. Verify Exactly 10 Coins in Coins Container
+	var coins = lvl.get_node_or_null("Coins")
+	assert_true(coins != null, "Coins container exists in Level 12")
+	assert_eq(coins.get_child_count(), 10, "Coins container contains exactly 10 collectible coins")
+
+	var c1 = lvl.get_node_or_null("Coins/Coin1")
+	var c2 = lvl.get_node_or_null("Coins/Coin2")
+	var c3 = lvl.get_node_or_null("Coins/Coin3")
+	var c4 = lvl.get_node_or_null("Coins/Coin4")
+	var c5 = lvl.get_node_or_null("Coins/Coin5")
+	var c6 = lvl.get_node_or_null("Coins/Coin6")
+	var c7 = lvl.get_node_or_null("Coins/Coin7")
+	var c8 = lvl.get_node_or_null("Coins/Coin8")
+	var c9 = lvl.get_node_or_null("Coins/Coin9")
+	var c10 = lvl.get_node_or_null("Coins/Coin10")
+
+	assert_true(c1 != null and c2 != null, "Section 1: Calibration Chamber contains Coins 1 and 2")
+	assert_eq(c1.position, Vector2(260, 355), "Coin 1 positioned above Platform 1 (260, 355)")
+	assert_eq(c2.position, Vector2(430, 355), "Coin 2 positioned above Platform 2 (430, 355)")
+
+	assert_true(c3 != null and c4 != null and c5 != null, "Section 2: Compression Corridor contains Coins 3, 4, and 5")
+	assert_eq(c3.position, Vector2(550, 325), "Coin 3 positioned above Platform 3 (550, 325)")
+	assert_eq(c4.position, Vector2(680, 330), "Coin 4 positioned under Crusher 1 on Platform 4 (680, 330)")
+	assert_eq(c5.position, Vector2(830, 325), "Coin 5 positioned on Conveyor 1 under downward Vent 2 (830, 325)")
+
+	assert_true(c6 != null and c7 != null, "Section 3: Overload Manifold Upper Risk/Reward Detour contains Coins 6 and 7")
+	assert_eq(c6.position, Vector2(1190, 190), "Coin 6 positioned on upper risk duct over Vent 3 (1190, 190)")
+	assert_eq(c7.position, Vector2(1380, 190), "Coin 7 positioned under secondary duct crusher (1380, 190)")
+
+	assert_true(c8 != null and c9 != null and c10 != null, "Section 4: Core Surge contains Coins 8, 9, and 10")
+	assert_eq(c8.position, Vector2(1820, 255), "Coin 8 positioned on mid-surge platform 10 (1820, 255)")
+	assert_eq(c9.position, Vector2(1990, 170), "Coin 9 positioned at peak of vertical elevator MovingPlatform 2 (1990, 170)")
+	assert_eq(c10.position, Vector2(2120, 185), "Coin 10 positioned above final FallingPlatform 1 (2120, 185)")
+
+	# 4. Verify Exit Gate & Platform
+	var exit = lvl.get_node_or_null("ExitGate")
+	assert_true(exit != null, "Section 5: Exit Gate exists")
+	assert_eq(exit.position, Vector2(2320, 210), "Exit Gate positioned at (2320, 210)")
+	assert_true(not exit._is_open, "Exit Gate starts locked")
+
+	# 5. Verify Standardized Mobile Touch Controls
+	assert_eq(lvl.touch_btn_left.size, Vector2(104, 104), "Left button size is 104x104 (matches Levels 1-11)")
+	assert_eq(lvl.touch_btn_right.size, Vector2(104, 104), "Right button size is 104x104 (matches Levels 1-11)")
+	assert_eq(lvl.touch_btn_jump.size, Vector2(124, 124), "Jump button size is 124x124 (matches Levels 1-11)")
+	assert_eq(lvl.touch_controls.mouse_filter, Control.MOUSE_FILTER_IGNORE, "TouchControls container mouse_filter is IGNORE")
+	assert_eq(lvl.touch_btn_left.touch_margin, 8.0, "Left button touch margin is 8.0")
+	assert_eq(lvl.touch_btn_right.touch_margin, 8.0, "Right button touch margin is 8.0")
+	assert_eq(lvl.touch_btn_jump.touch_margin, 16.0, "Jump button touch margin is 16.0")
+
+	# 6. Verify TopBar HUD & Dynamic Pressure Indicator
+	var coin_lbl = lvl.get_node_or_null("HUD/MarginContainer/TopBar/CoinCounter")
+	var title_lbl = lvl.get_node_or_null("HUD/MarginContainer/TopBar/LevelTitle")
+	var press_lbl = lvl.get_node_or_null("HUD/MarginContainer/TopBar/PressureIndicator")
+	var pause_btn = lvl.get_node_or_null("HUD/MarginContainer/TopBar/PauseBtn")
+	assert_true(coin_lbl != null, "HUD contains CoinCounter")
+	assert_true(title_lbl != null, "HUD contains LevelTitle")
+	assert_true(press_lbl != null, "HUD contains PressureIndicator")
+	assert_true(pause_btn != null, "HUD contains PauseBtn")
+	assert_eq(press_lbl.text, "PRESSURE: NOMINAL", "Initial pressure indicator reads PRESSURE: NOMINAL")
+
+	# Verify Dynamic Pressure HUD Status Update
+	lvl._process(2.2)
+	assert_eq(press_lbl.text, "PRESSURE: HIGH", "Pressure status advances to PRESSURE: HIGH")
+	lvl._process(1.0)
+	assert_eq(press_lbl.text, "PRESSURE: CRITICAL!", "Pressure status advances to PRESSURE: CRITICAL!")
+
+	# 7. Verify All Hazards Exist with Fair Telegraphing
+	var v1 = lvl.get_node_or_null("Hazards/SteamVent1")
+	var v2 = lvl.get_node_or_null("Hazards/SteamVent2_Down")
+	var v3 = lvl.get_node_or_null("Hazards/SteamVent3_Duct")
+	var v4a = lvl.get_node_or_null("Hazards/SteamVent4A")
+	var v4b = lvl.get_node_or_null("Hazards/SteamVent4B_Down")
+	assert_true(v1 != null and v2 != null and v3 != null and v4a != null and v4b != null, "All 5 Steam Vents exist")
+	assert_true(v1.warning_duration >= 0.6, "SteamVent1 telegraph warning is >= 0.6s (fair reaction window)")
+	assert_true(v2.warning_duration >= 0.6, "SteamVent2 telegraph warning is >= 0.6s (fair reaction window)")
+	assert_true(v3.warning_duration >= 0.6, "SteamVent3 telegraph warning is >= 0.6s (fair reaction window)")
+	assert_true(v4a.warning_duration >= 0.6, "SteamVent4A telegraph warning is >= 0.6s (fair reaction window)")
+	assert_true(v4b.warning_duration >= 0.6, "SteamVent4B telegraph warning is >= 0.6s (fair reaction window)")
+
+	var crush1 = lvl.get_node_or_null("Hazards/IndustrialCrusher1")
+	var crush2 = lvl.get_node_or_null("Hazards/IndustrialCrusher2_Duct")
+	assert_true(crush1 != null and crush2 != null, "Both Industrial Crushers exist")
+	assert_true(crush1.warning_duration >= 0.6, "IndustrialCrusher1 telegraph warning is >= 0.6s")
+	assert_true(crush2.warning_duration >= 0.6, "IndustrialCrusher2 telegraph warning is >= 0.6s")
+
+	# 8. Verify Coin Collection & Progression Trigger
+	GameManager.reset_coins()
+	assert_eq(GameManager.current_coins, 0, "Coins start at 0")
+	for i in range(1, 11):
+		var c = lvl.get_node("Coins/Coin%d" % i)
+		c.collect()
+	assert_eq(GameManager.current_coins, 10, "All 10 coins collected in Level 12")
+	assert_eq(lvl.coin_counter_label.text, "COINS: 10 / 10", "Coin counter displays 10 / 10")
+	assert_true(exit._is_open, "ExitGate unlocks automatically after collecting 10 coins")
+
+	# 9. Verify Reset / Retry
+	lvl._on_retry()
+	assert_eq(GameManager.current_coins, 0, "Coins reset to 0 on retry")
+	assert_eq(lvl.coin_counter_label.text, "COINS: 0 / 10", "Coin counter resets to 0 / 10")
+	assert_true(not exit._is_open, "ExitGate locked on retry")
+
+	remove_child(lvl)
+	lvl.free()
+
+func test_level_12_steam_vent_mechanics() -> void:
+	print("\n--- TEST: SteamVent Hazard Lifecycle, Telegraphing & Revive Reset ---")
+	var vent = SteamVentClass.new()
+	vent.dormant_duration = 1.0
+	vent.warning_duration = 0.8
+	vent.blast_duration = 1.0
+	vent.blast_direction = Vector2.UP
+	vent.blast_length = 90.0
+	vent.blast_width = 24.0
+	add_child(vent)
+
+	# Initial State: DORMANT
+	assert_eq(vent.current_state, SteamVentClass.State.DORMANT, "SteamVent starts in DORMANT state")
+	assert_true(vent.steam_collision.disabled, "Steam collision disabled during DORMANT")
+	assert_true(not vent.steam_sprite.visible, "Steam plume sprite hidden during DORMANT")
+
+	# Advance physics 1.05s -> WARNING state (telegraphed vibration & flashing)
+	vent._physics_process(1.05)
+	assert_eq(vent.current_state, SteamVentClass.State.WARNING, "SteamVent transitions to WARNING state")
+	assert_true(vent.steam_collision.disabled, "Steam collision strictly disabled during WARNING (fair telegraphing window)")
+	assert_true(not vent.steam_sprite.visible, "Steam plume sprite still hidden during WARNING")
+
+	# Advance physics 0.85s -> BLASTING state (lethal eruption)
+	vent._physics_process(0.85)
+	assert_eq(vent.current_state, SteamVentClass.State.BLASTING, "SteamVent transitions to BLASTING state")
+	assert_true(not vent.steam_collision.disabled, "Steam collision enabled during BLASTING")
+	assert_true(vent.steam_sprite.visible, "Steam plume sprite visible during BLASTING")
+
+	# Advance physics 1.05s -> DORMANT cycle reset
+	vent._physics_process(1.05)
+	assert_eq(vent.current_state, SteamVentClass.State.DORMANT, "SteamVent cycles back to DORMANT")
+	assert_true(vent.steam_collision.disabled, "Steam collision disabled again in DORMANT")
+	assert_true(not vent.steam_sprite.visible, "Steam plume sprite hidden in DORMANT")
+
+	# Verify Immediate Safe Reset on Player Revived
+	vent._set_state(SteamVentClass.State.BLASTING)
+	assert_eq(vent.current_state, SteamVentClass.State.BLASTING, "Forced into BLASTING state")
+	assert_true(not vent.steam_collision.disabled, "Collision active during BLASTING")
+
+	GameManager.player_revived.emit(Vector2.ZERO)
+	assert_eq(vent.current_state, SteamVentClass.State.DORMANT, "Player revive resets SteamVent immediately to DORMANT")
+	assert_true(vent.steam_collision.disabled, "Player revive immediately disables lethal collision")
+	assert_true(not vent.steam_sprite.visible, "Player revive hides steam plume sprite")
+
+	vent.queue_free()
+
 
 
 

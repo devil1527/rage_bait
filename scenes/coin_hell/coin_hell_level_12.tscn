@@ -1,0 +1,621 @@
+[gd_scene load_steps=29 format=3 uid="uid://coinhell_lvl12_pressure"]
+
+[ext_resource type="Script" path="res://scripts/coin_hell/level_12.gd" id="1_lev12"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/player.tscn" id="2_play"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/coin.tscn" id="3_coin"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/exit_gate.tscn" id="4_exit"]
+[ext_resource type="PackedScene" path="res://scenes/shared/pause_overlay.tscn" id="5_paus"]
+[ext_resource type="PackedScene" path="res://scenes/shared/death_overlay.tscn" id="6_deat"]
+[ext_resource type="PackedScene" path="res://scenes/shared/level_complete_overlay.tscn" id="7_comp"]
+[ext_resource type="Texture2D" path="res://assets/sprites/platform_tile.png" id="8_ptil"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_left.png" id="9_bleft"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_right.png" id="10_bright"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_jump.png" id="11_bjump"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_left_pressed.png" id="12_bleft_p"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_right_pressed.png" id="13_bright_p"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_jump_pressed.png" id="14_bjump_p"]
+[ext_resource type="Script" path="res://scripts/coin_hell/touch_button.gd" id="15_tbtn"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/steam_vent.tscn" id="16_svent"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/industrial_crusher.tscn" id="17_crush"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/conveyor_platform.tscn" id="18_conv"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/moving_platform.tscn" id="19_mvplat"]
+[ext_resource type="Script" path="res://scripts/coin_hell/falling_platform.gd" id="20_fplat"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground1"]
+size = Vector2(140, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat80"]
+size = Vector2(80, 24)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat100"]
+size = Vector2(100, 24)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat90"]
+size = Vector2(90, 24)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat70"]
+size = Vector2(70, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat70_step"]
+size = Vector2(66, 10)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat60"]
+size = Vector2(60, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_exitplat"]
+size = Vector2(160, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pit"]
+size = Vector2(3000, 80)
+
+[node name="CoinHellLevel12" type="Node2D"]
+script = ExtResource("1_lev12")
+
+[node name="Background" type="CanvasLayer" parent="."]
+layer = -1
+
+[node name="ColorRect" type="ColorRect" parent="Background"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.065, 0.048, 0.085, 1)
+
+[node name="SpawnPoint" type="Marker2D" parent="."]
+position = Vector2(120, 400)
+
+[node name="Player" parent="." instance=ExtResource("2_play")]
+position = Vector2(120, 400)
+
+[node name="Camera2D" type="Camera2D" parent="Player"]
+position_smoothing_enabled = true
+position_smoothing_speed = 6.0
+limit_left = 0
+limit_top = 0
+limit_right = 2450
+limit_bottom = 540
+
+[node name="Platforms" type="Node2D" parent="."]
+
+[node name="Ground1" type="StaticBody2D" parent="Platforms"]
+position = Vector2(120, 440)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Ground1"]
+shape = SubResource("RectangleShape2D_ground1")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Ground1"]
+self_modulate = Color(0.48, 0.42, 0.48, 1)
+offset_left = -70.0
+offset_top = -20.0
+offset_right = 70.0
+offset_bottom = 20.0
+texture = ExtResource("8_ptil")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="Platform1" type="StaticBody2D" parent="Platforms"]
+position = Vector2(260, 400)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform1"]
+shape = SubResource("RectangleShape2D_plat80")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform1"]
+self_modulate = Color(0.48, 0.42, 0.48, 1)
+offset_left = -40.0
+offset_top = -12.0
+offset_right = 40.0
+offset_bottom = 12.0
+texture = ExtResource("8_ptil")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="Platform2" type="StaticBody2D" parent="Platforms"]
+position = Vector2(430, 400)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform2"]
+shape = SubResource("RectangleShape2D_plat80")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform2"]
+self_modulate = Color(0.48, 0.42, 0.48, 1)
+offset_left = -40.0
+offset_top = -12.0
+offset_right = 40.0
+offset_bottom = 12.0
+texture = ExtResource("8_ptil")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="Platform3" type="StaticBody2D" parent="Platforms"]
+position = Vector2(550, 370)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform3"]
+shape = SubResource("RectangleShape2D_plat80")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform3"]
+self_modulate = Color(0.48, 0.42, 0.48, 1)
+offset_left = -40.0
+offset_top = -12.0
+offset_right = 40.0
+offset_bottom = 12.0
+texture = ExtResource("8_ptil")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="Platform4" type="StaticBody2D" parent="Platforms"]
+position = Vector2(680, 370)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform4"]
+shape = SubResource("RectangleShape2D_plat100")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform4"]
+self_modulate = Color(0.52, 0.44, 0.42, 1)
+offset_left = -50.0
+offset_top = -12.0
+offset_right = 50.0
+offset_bottom = 12.0
+texture = ExtResource("8_ptil")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="Platform5_Conveyor1" parent="Platforms" instance=ExtResource("18_conv")]
+position = Vector2(830, 370)
+belt_speed = 75.0
+platform_size = Vector2(120, 24)
+
+[node name="Platform6" type="StaticBody2D" parent="Platforms"]
+position = Vector2(980, 360)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform6"]
+shape = SubResource("RectangleShape2D_plat80")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform6"]
+self_modulate = Color(0.48, 0.42, 0.48, 1)
+offset_left = -40.0
+offset_top = -12.0
+offset_right = 40.0
+offset_bottom = 12.0
+texture = ExtResource("8_ptil")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="MovingPlatform1" parent="Platforms" instance=ExtResource("19_mvplat")]
+position = Vector2(1100, 380)
+move_direction = Vector2(1, 0)
+move_distance = 130.0
+move_speed = 85.0
+pause_at_ends = 0.5
+platform_size = Vector2(80, 20)
+
+[node name="Platform7_Conveyor2" parent="Platforms" instance=ExtResource("18_conv")]
+position = Vector2(1360, 380)
+belt_speed = 70.0
+platform_size = Vector2(110, 24)
+
+[node name="DuctPlat1" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1090, 270)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/DuctPlat1"]
+shape = SubResource("RectangleShape2D_plat60")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/DuctPlat1"]
+self_modulate = Color(0.6, 0.45, 0.35, 1)
+offset_left = -30.0
+offset_top = -10.0
+offset_right = 30.0
+offset_bottom = 10.0
+texture = ExtResource("8_ptil")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+
+[node name="DuctPlat2" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1270, 250)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/DuctPlat2"]
+shape = SubResource("RectangleShape2D_plat60")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/DuctPlat2"]
+self_modulate = Color(0.6, 0.45, 0.35, 1)
+offset_left = -30.0
+offset_top = -10.0
+offset_right = 30.0
+offset_bottom = 10.0
+texture = ExtResource("8_ptil")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+
+[node name="DuctPlat3" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1380, 230)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/DuctPlat3"]
+shape = SubResource("RectangleShape2D_plat70")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/DuctPlat3"]
+self_modulate = Color(0.6, 0.45, 0.35, 1)
+offset_left = -35.0
+offset_top = -10.0
+offset_right = 35.0
+offset_bottom = 10.0
+texture = ExtResource("8_ptil")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+
+[node name="Platform8" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1520, 340)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform8"]
+shape = SubResource("RectangleShape2D_plat90")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform8"]
+self_modulate = Color(0.48, 0.42, 0.48, 1)
+offset_left = -45.0
+offset_top = -12.0
+offset_right = 45.0
+offset_bottom = 12.0
+texture = ExtResource("8_ptil")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+
+[node name="Platform9_Conveyor3" parent="Platforms" instance=ExtResource("18_conv")]
+position = Vector2(1660, 340)
+belt_speed = 80.0
+platform_size = Vector2(110, 24)
+
+[node name="Platform10" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1820, 300)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform10"]
+shape = SubResource("RectangleShape2D_plat70")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform10"]
+self_modulate = Color(0.48, 0.42, 0.48, 1)
+offset_left = -35.0
+offset_top = -10.0
+offset_right = 35.0
+offset_bottom = 10.0
+texture = ExtResource("8_ptil")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+
+[node name="MovingPlatform2" parent="Platforms" instance=ExtResource("19_mvplat")]
+position = Vector2(1990, 320)
+move_direction = Vector2(0, -1)
+move_distance = 110.0
+move_speed = 80.0
+pause_at_ends = 0.5
+platform_size = Vector2(75, 20)
+
+[node name="FallingPlatform1" type="StaticBody2D" parent="Platforms"]
+position = Vector2(2120, 230)
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("20_fplat")
+shake_duration = 0.65
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/FallingPlatform1"]
+shape = SubResource("RectangleShape2D_plat70")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/FallingPlatform1"]
+self_modulate = Color(0.55, 0.4, 0.35, 1)
+offset_left = -35.0
+offset_top = -10.0
+offset_right = 35.0
+offset_bottom = 10.0
+texture = ExtResource("8_ptil")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+
+[node name="StepArea" type="Area2D" parent="Platforms/FallingPlatform1"]
+position = Vector2(0, -11)
+collision_layer = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/FallingPlatform1/StepArea"]
+shape = SubResource("RectangleShape2D_plat70_step")
+
+[node name="ExitPlatform" type="StaticBody2D" parent="Platforms"]
+position = Vector2(2300, 270)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/ExitPlatform"]
+shape = SubResource("RectangleShape2D_exitplat")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/ExitPlatform"]
+self_modulate = Color(0.42, 0.45, 0.52, 1)
+offset_left = -80.0
+offset_top = -20.0
+offset_right = 80.0
+offset_bottom = 20.0
+texture = ExtResource("8_ptil")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+
+[node name="Hazards" type="Node2D" parent="."]
+
+[node name="SteamVent1" parent="Hazards" instance=ExtResource("16_svent")]
+position = Vector2(345, 412)
+dormant_duration = 1.6
+warning_duration = 0.8
+blast_duration = 0.8
+blast_length = 90.0
+
+[node name="IndustrialCrusher1" parent="Hazards" instance=ExtResource("17_crush")]
+position = Vector2(680, 210)
+travel_distance = 110.0
+warning_duration = 0.8
+slam_duration = 0.15
+active_duration = 0.5
+retract_duration = 0.9
+reset_delay = 0.4
+block_size = Vector2(80, 36)
+
+[node name="SteamVent2_Down" parent="Hazards" instance=ExtResource("16_svent")]
+position = Vector2(830, 220)
+dormant_duration = 1.4
+warning_duration = 0.7
+blast_duration = 0.9
+initial_offset = 0.5
+blast_direction = Vector2(0, 1)
+blast_length = 90.0
+
+[node name="SteamVent3_Duct" parent="Hazards" instance=ExtResource("16_svent")]
+position = Vector2(1190, 280)
+dormant_duration = 1.1
+warning_duration = 0.6
+blast_duration = 0.8
+blast_length = 80.0
+
+[node name="IndustrialCrusher2_Duct" parent="Hazards" instance=ExtResource("17_crush")]
+position = Vector2(1380, 100)
+travel_distance = 85.0
+warning_duration = 0.75
+slam_duration = 0.15
+active_duration = 0.45
+retract_duration = 0.85
+reset_delay = 0.35
+block_size = Vector2(65, 30)
+
+[node name="SteamVent4A" parent="Hazards" instance=ExtResource("16_svent")]
+position = Vector2(1730, 350)
+dormant_duration = 1.3
+warning_duration = 0.7
+blast_duration = 0.8
+initial_offset = 0.0
+blast_length = 90.0
+
+[node name="SteamVent4B_Down" parent="Hazards" instance=ExtResource("16_svent")]
+position = Vector2(1910, 170)
+dormant_duration = 1.3
+warning_duration = 0.7
+blast_duration = 0.8
+initial_offset = 1.4
+blast_direction = Vector2(0, 1)
+blast_length = 90.0
+
+[node name="PitHazardArea" type="Area2D" parent="."]
+position = Vector2(1300, 520)
+collision_layer = 4
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PitHazardArea"]
+shape = SubResource("RectangleShape2D_pit")
+
+[node name="Coins" type="Node2D" parent="."]
+
+[node name="Coin1" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(260, 355)
+
+[node name="Coin2" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(430, 355)
+
+[node name="Coin3" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(550, 325)
+
+[node name="Coin4" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(680, 330)
+
+[node name="Coin5" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(830, 325)
+
+[node name="Coin6" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(1190, 190)
+
+[node name="Coin7" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(1380, 190)
+
+[node name="Coin8" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(1820, 255)
+
+[node name="Coin9" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(1990, 170)
+
+[node name="Coin10" parent="Coins" instance=ExtResource("3_coin")]
+position = Vector2(2120, 185)
+
+[node name="ExitGate" parent="." instance=ExtResource("4_exit")]
+position = Vector2(2320, 210)
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="MarginContainer" type="MarginContainer" parent="HUD"]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 50.0
+grow_horizontal = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 16
+
+[node name="TopBar" type="HBoxContainer" parent="HUD/MarginContainer"]
+layout_mode = 2
+
+[node name="CoinCounter" type="Label" parent="HUD/MarginContainer/TopBar"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.84, 0, 1)
+theme_override_font_sizes/font_size = 14
+text = "COINS: 0 / 10"
+
+[node name="Spacer" type="Control" parent="HUD/MarginContainer/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LevelTitle" type="Label" parent="HUD/MarginContainer/TopBar"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.65, 0.15, 1)
+theme_override_font_sizes/font_size = 14
+text = "WORLD 3 — STAGE 12: PRESSURE OVERLOAD"
+
+[node name="Spacer2" type="Control" parent="HUD/MarginContainer/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PressureIndicator" type="Label" parent="HUD/MarginContainer/TopBar"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.95, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+text = "PRESSURE: NOMINAL"
+
+[node name="Spacer3" type="Control" parent="HUD/MarginContainer/TopBar"]
+custom_minimum_size = Vector2(16, 0)
+layout_mode = 2
+
+[node name="PauseBtn" type="Button" parent="HUD/MarginContainer/TopBar"]
+custom_minimum_size = Vector2(40, 32)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "II"
+
+[node name="TouchControls" type="Control" parent="HUD"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="LeftBtn" type="TextureButton" parent="HUD/TouchControls"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -128.0
+offset_right = 128.0
+offset_bottom = -24.0
+grow_vertical = 0
+texture_normal = ExtResource("9_bleft")
+texture_pressed = ExtResource("12_bleft_p")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("15_tbtn")
+action_name = "move_left"
+touch_margin = 8.0
+
+[node name="RightBtn" type="TextureButton" parent="HUD/TouchControls"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 144.0
+offset_top = -128.0
+offset_right = 248.0
+offset_bottom = -24.0
+grow_vertical = 0
+texture_normal = ExtResource("10_bright")
+texture_pressed = ExtResource("13_bright_p")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("15_tbtn")
+action_name = "move_right"
+touch_margin = 8.0
+
+[node name="JumpBtn" type="TextureButton" parent="HUD/TouchControls"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -148.0
+offset_top = -148.0
+offset_right = -24.0
+offset_bottom = -24.0
+grow_horizontal = 0
+grow_vertical = 0
+texture_normal = ExtResource("11_bjump")
+texture_pressed = ExtResource("14_bjump_p")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("15_tbtn")
+action_name = "jump"
+touch_margin = 16.0
+
+[node name="PauseOverlay" parent="HUD" instance=ExtResource("5_paus")]
+visible = false
+
+[node name="DeathOverlay" parent="HUD" instance=ExtResource("6_deat")]
+visible = false
+
+[node name="LevelCompleteOverlay" parent="HUD" instance=ExtResource("7_comp")]
+visible = false
