@@ -33,6 +33,10 @@ var _style_w3_comp_hover: StyleBoxFlat
 var _style_w3_avail_normal: StyleBoxFlat
 var _style_w3_avail_hover: StyleBoxFlat
 
+var _style_w4_comp_normal: StyleBoxFlat
+var _style_w4_comp_hover: StyleBoxFlat
+var _style_w4_avail_normal: StyleBoxFlat
+var _style_w4_avail_hover: StyleBoxFlat
 var _style_w4_normal: StyleBoxFlat
 var _style_w4_hover: StyleBoxFlat
 
@@ -75,8 +79,12 @@ func _init_styles() -> void:
 	_style_w3_avail_hover = _create_card_style(Color(0.18, 0.12, 0.08, 0.98), Color(1.0, 0.95, 0.40, 1.0), 3, Color(1.0, 0.88, 0.25, 0.7), 12)
 
 	# World 4: Final Hell (Infernal Crimson Styles)
-	_style_w4_normal = _create_card_style(Color(0.12, 0.05, 0.08, 0.92), Color(0.85, 0.25, 0.35, 0.85), 1, Color(0.8, 0.18, 0.28, 0.25), 5)
-	_style_w4_hover = _create_card_style(Color(0.16, 0.07, 0.11, 0.96), Color(1.0, 0.35, 0.45, 1.0), 2, Color(0.95, 0.25, 0.35, 0.5), 8)
+	_style_w4_comp_normal = _create_card_style(Color(0.18, 0.05, 0.08, 0.96), Color(1.0, 0.25, 0.35, 1.0), 2, Color(0.9, 0.15, 0.25, 0.4), 8)
+	_style_w4_comp_hover = _create_card_style(Color(0.24, 0.07, 0.11, 0.98), Color(1.0, 0.45, 0.55, 1.0), 2, Color(1.0, 0.25, 0.35, 0.65), 12)
+	_style_w4_avail_normal = _create_card_style(Color(0.15, 0.05, 0.07, 0.96), Color(1.0, 0.85, 0.20, 1.0), 2, Color(1.0, 0.8, 0.15, 0.45), 8)
+	_style_w4_avail_hover = _create_card_style(Color(0.20, 0.08, 0.10, 0.98), Color(1.0, 0.95, 0.40, 1.0), 3, Color(1.0, 0.88, 0.25, 0.7), 12)
+	_style_w4_normal = _style_w4_avail_normal
+	_style_w4_hover = _style_w4_avail_hover
 
 	# Locked and Planned Styles
 	_style_lock_normal = _create_card_style(Color(0.06, 0.06, 0.11, 0.88), Color(0.24, 0.27, 0.38, 0.85), 1, Color.TRANSPARENT, 0)
@@ -212,7 +220,7 @@ func _build_world_navigation_cards() -> void:
 	btn_all.custom_minimum_size = Vector2(100, 48)
 	btn_all.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn_all.pressed.connect(func(): _select_world_tab(0))
-	_style_nav_card(btn_all, 0, "ALL WORLDS", "Stages 1–15", Color(1.0, 0.82, 0.15))
+	_style_nav_card(btn_all, 0, "ALL WORLDS", "Stages 1–16", Color(1.0, 0.82, 0.15))
 	world_cards_bar.add_child(btn_all)
 	world_card_buttons[0] = btn_all
 
@@ -498,8 +506,8 @@ func _refresh_tile_states() -> void:
 					sb_hov = _style_w3_comp_hover
 					num_col = Color(1.0, 0.75, 0.25)
 				4:
-					sb_norm = _style_w4_normal
-					sb_hov = _style_w4_hover
+					sb_norm = _style_w4_comp_normal
+					sb_hov = _style_w4_comp_hover
 					num_col = Color(1.0, 0.45, 0.5)
 
 			btn.add_theme_stylebox_override("normal", sb_norm)
@@ -535,8 +543,8 @@ func _refresh_tile_states() -> void:
 					sb_norm = _style_w3_avail_normal
 					sb_hov = _style_w3_avail_hover
 				4:
-					sb_norm = _style_w4_normal
-					sb_hov = _style_w4_hover
+					sb_norm = _style_w4_avail_normal
+					sb_hov = _style_w4_avail_hover
 
 			btn.add_theme_stylebox_override("normal", sb_norm)
 			btn.add_theme_stylebox_override("hover", sb_hov)

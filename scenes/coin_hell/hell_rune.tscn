@@ -1,0 +1,52 @@
+[gd_scene load_steps=6 format=3 uid="uid://hell_rune_trap"]
+
+[ext_resource type="Script" path="res://scripts/coin_hell/hell_rune.gd" id="1_hrun"]
+[ext_resource type="Texture2D" path="res://assets/sprites/hell_rune.png" id="2_rplt"]
+[ext_resource type="Texture2D" path="res://assets/sprites/hell_rune_active.png" id="3_flam"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_step"]
+size = Vector2(28, 14)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hazard"]
+size = Vector2(26, 30)
+
+[node name="HellRune" type="Node2D"]
+script = ExtResource("1_hrun")
+
+[node name="RunePlate" type="Sprite2D" parent="."]
+texture = ExtResource("2_rplt")
+
+[node name="FlameBurst" type="Sprite2D" parent="."]
+visible = false
+position = Vector2(0, -16)
+texture = ExtResource("3_flam")
+
+[node name="StepArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StepArea"]
+shape = SubResource("RectangleShape2D_step")
+
+[node name="HazardArea" type="Area2D" parent="."]
+collision_layer = 4
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HazardArea"]
+position = Vector2(0, -15)
+shape = SubResource("RectangleShape2D_hazard")
+disabled = true
+
+[node name="WarningParticles" type="CPUParticles2D" parent="."]
+position = Vector2(0, -2)
+emitting = false
+amount = 16
+lifetime = 0.5
+direction = Vector2(0, -1)
+spread = 35.0
+gravity = Vector2(0, -40)
+initial_velocity_min = 25.0
+initial_velocity_max = 50.0
+scale_amount_min = 1.0
+scale_amount_max = 2.5
+color = Color(1, 0.45, 0.15, 1)

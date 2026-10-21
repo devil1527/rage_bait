@@ -50,11 +50,11 @@ var levels: Dictionary = {
 	13: {"id": 13, "name": "Factory Climb", "world_id": 3, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_13.tscn", "coin_count": 10},
 	14: {"id": 14, "name": "Overpressure", "world_id": 3, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_14.tscn", "coin_count": 10},
 	15: {"id": 15, "name": "Rage Furnace", "world_id": 3, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_15.tscn", "coin_count": 10},
-	16: {"id": 16, "name": "Chaos Theory", "world_id": 4, "implemented": false, "scene": "", "coin_count": 18},
-	17: {"id": 17, "name": "No Turning Back", "world_id": 4, "implemented": false, "scene": "", "coin_count": 20},
-	18: {"id": 18, "name": "The Developer Laughs", "world_id": 4, "implemented": false, "scene": "", "coin_count": 15},
-	19: {"id": 19, "name": "Dragon's Doorstep", "world_id": 4, "implemented": false, "scene": "", "coin_count": 22},
-	20: {"id": 20, "name": "Dragon's Den", "world_id": 4, "implemented": false, "scene": "", "coin_count": 25}
+	16: {"id": 16, "name": "The Platform That Lied", "world_id": 4, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_16.tscn", "coin_count": 10},
+	17: {"id": 17, "name": "The Infernal Deception", "world_id": 4, "implemented": false, "scene": "", "coin_count": 10},
+	18: {"id": 18, "name": "The Rising Abyss", "world_id": 4, "implemented": false, "scene": "", "coin_count": 10},
+	19: {"id": 19, "name": "The Soul Gauntlet", "world_id": 4, "implemented": false, "scene": "", "coin_count": 10},
+	20: {"id": 20, "name": "The Final Betrayal", "world_id": 4, "implemented": false, "scene": "", "coin_count": 10}
 }
 
 var shown_stage_intros: Dictionary = {}

@@ -13,6 +13,7 @@ var stage_stars: Dictionary = {}
 var sfx_enabled: bool = true
 var music_enabled: bool = true
 var level_15_secret_revealed: bool = false
+var level_16_secret_revealed: bool = false
 
 signal progress_updated
 
@@ -27,7 +28,8 @@ func get_default_data() -> Dictionary:
 		"stage_stars": {},
 		"sfx_enabled": true,
 		"music_enabled": true,
-		"level_15_secret_revealed": false
+		"level_15_secret_revealed": false,
+		"level_16_secret_revealed": false
 	}
 
 func load_save() -> void:
@@ -68,6 +70,7 @@ func _apply_defaults() -> void:
 	sfx_enabled = true
 	music_enabled = true
 	level_15_secret_revealed = false
+	level_16_secret_revealed = false
 	progress_updated.emit()
 
 func _apply_dict(data: Dictionary) -> void:
@@ -94,6 +97,7 @@ func _apply_dict(data: Dictionary) -> void:
 	sfx_enabled = bool(data.get("sfx_enabled", true))
 	music_enabled = bool(data.get("music_enabled", true))
 	level_15_secret_revealed = bool(data.get("level_15_secret_revealed", false))
+	level_16_secret_revealed = bool(data.get("level_16_secret_revealed", false))
 	progress_updated.emit()
 
 func save_data() -> bool:
@@ -104,7 +108,8 @@ func save_data() -> bool:
 		"stage_stars": stage_stars,
 		"sfx_enabled": sfx_enabled,
 		"music_enabled": music_enabled,
-		"level_15_secret_revealed": level_15_secret_revealed
+		"level_15_secret_revealed": level_15_secret_revealed,
+		"level_16_secret_revealed": level_16_secret_revealed
 	}
 
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
@@ -182,4 +187,13 @@ func set_level_15_secret_revealed(revealed: bool = true) -> void:
 	if level_15_secret_revealed != revealed:
 		level_15_secret_revealed = revealed
 		save_data()
+
+func is_level_16_secret_revealed() -> bool:
+	return level_16_secret_revealed
+
+func set_level_16_secret_revealed(revealed: bool = true) -> void:
+	if level_16_secret_revealed != revealed:
+		level_16_secret_revealed = revealed
+		save_data()
+
 

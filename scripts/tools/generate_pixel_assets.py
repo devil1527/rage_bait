@@ -765,6 +765,148 @@ def create_swinging_chain_assets():
 
     weight.save("assets/sprites/ghost_chain_weight.png")
 
+def create_world_4_assets():
+    # 1. 32x32 obsidian_platform.png - Black obsidian platform tile with glowing crimson runes
+    obs = Image.new("RGBA", (32, 32), (18, 12, 16, 255))
+    d_obs = ImageDraw.Draw(obs)
+    # Beveled edges
+    d_obs.line([(0, 0), (31, 0)], fill=(90, 25, 35, 255)) # Top crimson bevel
+    d_obs.line([(0, 1), (31, 1)], fill=(50, 18, 24, 255))
+    d_obs.line([(0, 0), (0, 31)], fill=(60, 20, 28, 255)) # Left edge
+    d_obs.line([(31, 0), (31, 31)], fill=(10, 6, 8, 255)) # Right shadow
+    d_obs.line([(0, 31), (31, 31)], fill=(8, 5, 7, 255))  # Bottom shadow
+
+    # Dark basalt block fissures
+    d_obs.rectangle([2, 3, 14, 15], fill=(24, 16, 20, 255), outline=(12, 8, 10, 255))
+    d_obs.rectangle([16, 3, 29, 15], fill=(26, 17, 22, 255), outline=(12, 8, 10, 255))
+    d_obs.rectangle([2, 17, 8, 29], fill=(22, 15, 18, 255), outline=(12, 8, 10, 255))
+    d_obs.rectangle([10, 17, 22, 29], fill=(25, 17, 21, 255), outline=(12, 8, 10, 255))
+    d_obs.rectangle([24, 17, 29, 29], fill=(22, 15, 18, 255), outline=(12, 8, 10, 255))
+
+    # Glowing crimson rune vein highlights
+    d_obs.point((6, 8), fill=(255, 45, 60, 255))
+    d_obs.point((7, 8), fill=(255, 100, 110, 255))
+    d_obs.point((22, 9), fill=(255, 45, 60, 255))
+    d_obs.point((16, 22), fill=(255, 50, 65, 255))
+    d_obs.point((17, 22), fill=(255, 110, 120, 255))
+    obs.save("assets/sprites/obsidian_platform.png")
+
+    # 2. 32x16 hell_rune.png - Inactive/Dormant Hell Rune carved into obsidian
+    rune = Image.new("RGBA", (32, 16), (0, 0, 0, 0))
+    d_r = ImageDraw.Draw(rune)
+    # Basalt plate bed
+    d_r.rectangle([1, 8, 30, 15], fill=(20, 14, 18, 255), outline=(10, 7, 9, 255))
+    # Beveled lip
+    d_r.line([(1, 8), (30, 8)], fill=(75, 22, 30, 255))
+    # Central demonic rune glyph (pulsing dormant red)
+    # Inverted pentagram / demonic eye glyph
+    d_r.polygon([(16, 3), (12, 12), (20, 12)], outline=(220, 35, 45, 255), fill=(70, 15, 22, 255))
+    d_r.line([(10, 7), (22, 7)], fill=(255, 60, 70, 255))
+    d_r.point((16, 8), fill=(255, 180, 140, 255)) # Rune eye core
+    d_r.point((13, 11), fill=(255, 40, 50, 255))
+    d_r.point((19, 11), fill=(255, 40, 50, 255))
+    rune.save("assets/sprites/hell_rune.png")
+
+    # 3. 32x32 hell_rune_active.png - Active Hellfire / Erupted Flame Column
+    flame = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+    d_f = ImageDraw.Draw(flame)
+    # Base eruption sparks
+    d_f.ellipse([2, 24, 29, 31], fill=(180, 20, 30, 200))
+    # Outer crimson fire tendrils
+    d_f.polygon([(16, 0), (7, 18), (11, 31), (21, 31), (25, 18)], fill=(240, 35, 45, 240))
+    d_f.polygon([(8, 4), (3, 20), (8, 31), (14, 31)], fill=(220, 30, 40, 210))
+    d_f.polygon([(24, 4), (18, 31), (24, 31), (29, 20)], fill=(220, 30, 40, 210))
+    # Inner orange blaze
+    d_f.polygon([(16, 4), (10, 18), (13, 31), (19, 31), (22, 18)], fill=(255, 140, 30, 255))
+    # White-hot core
+    d_f.polygon([(16, 8), (13, 20), (14, 31), (18, 31), (19, 20)], fill=(255, 240, 180, 255))
+    flame.save("assets/sprites/hell_rune_active.png")
+
+    # 4. 16x24 energy_pylon.png - Demonic obsidian pylon emitter
+    pyl = Image.new("RGBA", (16, 24), (0, 0, 0, 0))
+    d_p = ImageDraw.Draw(pyl)
+    # Stone base
+    d_p.rectangle([1, 14, 14, 23], fill=(22, 16, 20, 255), outline=(10, 7, 9, 255))
+    d_p.line([(2, 14), (13, 14)], fill=(120, 25, 35, 255))
+    # Pylon horn / spire
+    d_p.polygon([(8, 0), (2, 14), (13, 14)], fill=(32, 20, 26, 255), outline=(14, 9, 12, 255))
+    # Glowing plasma conduit channel
+    d_p.line([(8, 4), (8, 14)], fill=(255, 50, 65, 255))
+    # Emitter focal orb
+    d_p.ellipse([6, 2, 10, 6], fill=(255, 200, 210, 255), outline=(255, 30, 50, 255))
+    pyl.save("assets/sprites/energy_pylon.png")
+
+    # 5. 16x16 energy_beam.png - Seamless crimson supernatural energy beam
+    beam = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    d_b = ImageDraw.Draw(beam)
+    # Outer glow
+    d_b.rectangle([0, 0, 15, 15], fill=(200, 20, 40, 60))
+    # Mid energy halo
+    d_b.rectangle([2, 0, 13, 15], fill=(240, 35, 55, 150))
+    # Dense laser plasma core
+    d_b.rectangle([4, 0, 11, 15], fill=(255, 70, 85, 230))
+    # White-hot center filament
+    d_b.rectangle([6, 0, 9, 15], fill=(255, 230, 235, 255))
+    beam.save("assets/sprites/energy_beam.png")
+
+    # 6. 36x54 infernal_exit_locked.png - Demonic crimson exit gate (locked)
+    gate_l = Image.new("RGBA", (36, 54), (0, 0, 0, 0))
+    d_gl = ImageDraw.Draw(gate_l)
+    # Jagged obsidian pillars on sides
+    d_gl.rectangle([0, 6, 8, 53], fill=(24, 16, 22, 255), outline=(12, 8, 11, 255))
+    d_gl.rectangle([27, 6, 35, 53], fill=(24, 16, 22, 255), outline=(12, 8, 11, 255))
+    # Demonic horns on top of pillars
+    d_gl.polygon([(0, 6), (4, 0), (8, 6)], fill=(50, 18, 25, 255), outline=(16, 8, 11, 255))
+    d_gl.polygon([(27, 6), (31, 0), (35, 6)], fill=(50, 18, 25, 255), outline=(16, 8, 11, 255))
+    # Arch lintel
+    d_gl.rectangle([6, 6, 29, 14], fill=(30, 19, 25, 255), outline=(14, 9, 12, 255))
+    # Center demonic skull crest
+    d_gl.polygon([(18, 4), (13, 12), (23, 12)], fill=(45, 15, 22, 255), outline=(18, 6, 9, 255))
+    d_gl.point((16, 8), fill=(255, 40, 50, 255))
+    d_gl.point((20, 8), fill=(255, 40, 50, 255))
+    # Interior void
+    d_gl.rectangle([8, 14, 27, 53], fill=(10, 6, 9, 255))
+    # Locked red energy seal (chains of hellfire crossing)
+    d_gl.line([(9, 18), (26, 48)], fill=(255, 40, 55, 220), width=2)
+    d_gl.line([(9, 48), (26, 18)], fill=(255, 40, 55, 220), width=2)
+    d_gl.ellipse([14, 29, 21, 36], fill=(255, 200, 100, 255), outline=(220, 30, 45, 255))
+    gate_l.save("assets/sprites/infernal_exit_locked.png")
+
+    # 7. 36x54 infernal_exit_open.png - Demonic crimson exit gate (unlocked / portal open)
+    gate_o = Image.new("RGBA", (36, 54), (0, 0, 0, 0))
+    d_go = ImageDraw.Draw(gate_o)
+    # Pillars
+    d_go.rectangle([0, 6, 8, 53], fill=(28, 18, 25, 255), outline=(14, 9, 12, 255))
+    d_go.rectangle([27, 6, 35, 53], fill=(28, 18, 25, 255), outline=(14, 9, 12, 255))
+    d_go.polygon([(0, 6), (4, 0), (8, 6)], fill=(65, 22, 32, 255), outline=(18, 9, 13, 255))
+    d_go.polygon([(27, 6), (31, 0), (35, 6)], fill=(65, 22, 32, 255), outline=(18, 9, 13, 255))
+    d_go.rectangle([6, 6, 29, 14], fill=(36, 22, 30, 255), outline=(16, 10, 14, 255))
+    # Glowing crest
+    d_go.polygon([(18, 4), (13, 12), (23, 12)], fill=(80, 20, 30, 255))
+    d_go.point((16, 8), fill=(0, 255, 200, 255)) # Green/cyan unlock flare eye
+    d_go.point((20, 8), fill=(0, 255, 200, 255))
+    # Interior open swirling portal
+    d_go.rectangle([8, 14, 27, 53], fill=(30, 5, 12, 255))
+    d_go.ellipse([10, 18, 25, 48], fill=(220, 35, 50, 230))
+    d_go.ellipse([12, 22, 23, 44], fill=(255, 140, 30, 255))
+    d_go.ellipse([14, 27, 21, 39], fill=(255, 250, 200, 255))
+    gate_o.save("assets/sprites/infernal_exit_open.png")
+
+    # 8. 24x64 ruined_pillar.png - Demonic obsidian ruined pillar silhouette
+    pil = Image.new("RGBA", (24, 64), (0, 0, 0, 0))
+    d_pi = ImageDraw.Draw(pil)
+    # Column shaft
+    d_pi.rectangle([4, 10, 19, 58], fill=(16, 10, 14, 255), outline=(8, 5, 7, 255))
+    # Capital (broken top)
+    d_pi.polygon([(1, 10), (22, 10), (18, 4), (12, 1), (5, 6)], fill=(22, 14, 18, 255), outline=(10, 6, 9, 255))
+    # Base
+    d_pi.rectangle([2, 58, 21, 63], fill=(20, 13, 17, 255), outline=(9, 6, 8, 255))
+    # Fissures / cracks glowing red
+    d_pi.line([(6, 18), (11, 26), (8, 34), (14, 42)], fill=(180, 30, 42, 220))
+    d_pi.point((11, 26), fill=(255, 80, 90, 255))
+    d_pi.point((8, 34), fill=(255, 80, 90, 255))
+    pil.save("assets/sprites/ruined_pillar.png")
+
 if __name__ == "__main__":
     create_player()
     create_coin()
@@ -780,4 +922,5 @@ if __name__ == "__main__":
     create_haunted_hall_assets()
     create_wind_streak_asset()
     create_swinging_chain_assets()
+    create_world_4_assets()
     print("All pixel assets generated successfully!")

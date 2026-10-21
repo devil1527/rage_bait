@@ -1,0 +1,47 @@
+[gd_scene load_steps=5 format=3 uid="uid://infernal_energy_gate"]
+
+[ext_resource type="Script" path="res://scripts/coin_hell/infernal_energy_gate.gd" id="1_igate"]
+[ext_resource type="Texture2D" path="res://assets/sprites/energy_pylon.png" id="2_pyl"]
+[ext_resource type="Texture2D" path="res://assets/sprites/energy_beam.png" id="3_beam"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_beam"]
+size = Vector2(12, 120)
+
+[node name="InfernalEnergyGate" type="Node2D"]
+script = ExtResource("1_igate")
+
+[node name="PylonStart" type="Sprite2D" parent="."]
+texture = ExtResource("2_pyl")
+
+[node name="PylonEnd" type="Sprite2D" parent="."]
+position = Vector2(0, 140)
+rotation = 3.14159
+texture = ExtResource("2_pyl")
+
+[node name="WarningLine" type="Line2D" parent="."]
+visible = false
+points = PackedVector2Array(0, 0, 0, 140)
+width = 2.0
+default_color = Color(1, 0.25, 0.35, 0.7)
+
+[node name="BeamVisual" type="NinePatchRect" parent="."]
+visible = false
+offset_left = -8.0
+offset_top = 12.0
+offset_right = 8.0
+offset_bottom = 128.0
+texture = ExtResource("3_beam")
+patch_margin_left = 3
+patch_margin_top = 3
+patch_margin_right = 3
+patch_margin_bottom = 3
+axis_stretch_vertical = 1
+
+[node name="HazardArea" type="Area2D" parent="."]
+collision_layer = 4
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HazardArea"]
+position = Vector2(0, 70)
+shape = SubResource("RectangleShape2D_beam")
+disabled = true
