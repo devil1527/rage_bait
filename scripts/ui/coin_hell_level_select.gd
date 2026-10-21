@@ -45,6 +45,13 @@ var _style_lock_hover: StyleBoxFlat
 var _style_planned_normal: StyleBoxFlat
 var _style_planned_hover: StyleBoxFlat
 
+var _style_dev_normal: StyleBoxFlat
+var _style_dev_hover: StyleBoxFlat
+
+var is_debug_mode: bool = OS.is_debug_build()
+var dev_bypass_active: bool = false
+var dev_toggle_btn: Button = null
+
 # Active world view: 0 = Show All, 1..4 = Focused on World 1..4
 var current_selected_world: int = 0
 var world_card_buttons: Dictionary = {}
@@ -85,7 +92,9 @@ func _init_styles() -> void:
 	_style_planned_normal = _create_card_style(Color(0.05, 0.05, 0.09, 0.82), Color(0.18, 0.20, 0.28, 0.70), 1, Color.TRANSPARENT, 0)
 	_style_planned_hover = _create_card_style(Color(0.08, 0.08, 0.13, 0.90), Color(0.28, 0.30, 0.40, 0.85), 1, Color.TRANSPARENT, 0)
 
-
+	# Dev Bypass Styles
+	_style_dev_normal = _create_card_style(Color(0.05, 0.12, 0.18, 0.95), Color(0.0, 0.80, 1.0, 1.0), 2, Color(0.0, 0.7, 1.0, 0.3), 5)
+	_style_dev_hover = _create_card_style(Color(0.08, 0.17, 0.26, 0.98), Color(0.4, 0.95, 1.0, 1.0), 3, Color(0.0, 0.9, 1.0, 0.55), 8)
 
 func _create_card_style(bg: Color, border: Color, b_width: int, shadow: Color = Color.TRANSPARENT, s_size: int = 0) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
@@ -104,9 +113,99 @@ func _ready() -> void:
 	message_modal.visible = false
 	SaveManager.progress_updated.connect(_update_ui)
 
+	# Developer-only level access widget (strictly debug builds only)
+	if is_debug_mode:
+		var header_bar: HBoxContainer = $MarginContainer/VBox/HeaderBar
+		dev_toggle_btn = Button.new()
+		dev_toggle_btn.name = "DevBypassToggle"
+		dev_toggle_btn.custom_minimum_size = Vector2(130, 36)
+		dev_toggle_btn.add_theme_font_size_override("font_size", 11)
+		_update_dev_button_text()
+		dev_toggle_btn.pressed.connect(_on_dev_toggle_pressed)
+		header_bar.add_child(dev_toggle_btn)
+
+	_setup_secret_developer_tap()
 	_build_world_navigation_cards()
 	_build_level_tiles()
 	_update_ui()
+
+var _secret_tap_count: int = 0
+var _secret_tap_last_time: float = 0.0
+
+func _setup_secret_developer_tap() -> void:
+	var title_box: VBoxContainer = get_node_or_null("MarginContainer/VBox/HeaderBar/TitleBox")
+	if title_box:
+		title_box.mouse_filter = Control.MOUSE_FILTER_STOP
+		title_box.gui_input.connect(_on_secret_tap_input)
+		for child in title_box.get_children():
+			if child is Control:
+				child.mouse_filter = Control.MOUSE_FILTER_PASS
+
+	var progress_box: VBoxContainer = get_node_or_null("MarginContainer/VBox/HeaderBar/ProgressBox")
+	if progress_box:
+		progress_box.mouse_filter = Control.MOUSE_FILTER_STOP
+		progress_box.gui_input.connect(_on_secret_tap_input)
+		for child in progress_box.get_children():
+			if child is Control:
+				child.mouse_filter = Control.MOUSE_FILTER_PASS
+
+func _on_secret_tap_input(event: InputEvent) -> void:
+	var is_tap: bool = false
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		is_tap = true
+	elif event is InputEventScreenTouch and event.pressed:
+		is_tap = true
+
+	if is_tap:
+		var now: float = float(Time.get_ticks_msec()) / 1000.0
+		if now - _secret_tap_last_time > 2.5:
+			_secret_tap_count = 0
+		_secret_tap_last_time = now
+		_secret_tap_count += 1
+
+		if _secret_tap_count >= 5:
+			_secret_tap_count = 0
+			_activate_dev_mode_secret()
+
+func _activate_dev_mode_secret() -> void:
+	is_debug_mode = true
+	dev_bypass_active = true
+
+	if not dev_toggle_btn:
+		var header_bar: HBoxContainer = $MarginContainer/VBox/HeaderBar
+		dev_toggle_btn = Button.new()
+		dev_toggle_btn.name = "DevBypassToggle"
+		dev_toggle_btn.custom_minimum_size = Vector2(130, 36)
+		dev_toggle_btn.add_theme_font_size_override("font_size", 11)
+		dev_toggle_btn.pressed.connect(_on_dev_toggle_pressed)
+		header_bar.add_child(dev_toggle_btn)
+
+	_update_dev_button_text()
+	_refresh_tile_states()
+	AudioManager.play_sfx("coin")
+
+	modal_title.text = "🛠 DEV MODE UNLOCKED"
+	modal_label.text = "Developer bypass active! All implemented levels (including Level 11: Meltdown) are unlocked for testing."
+	message_modal.visible = true
+
+func _update_dev_button_text() -> void:
+	if not dev_toggle_btn:
+		return
+	if dev_bypass_active:
+		dev_toggle_btn.text = "🛠 DEV: UNLOCKED"
+		dev_toggle_btn.modulate = Color(0.3, 1.0, 0.7)
+	else:
+		dev_toggle_btn.text = "🛠 DEV: LOCKED"
+		dev_toggle_btn.modulate = Color(0.7, 0.7, 0.7)
+
+func _on_dev_toggle_pressed() -> void:
+	if not is_debug_mode:
+		dev_bypass_active = false
+		return
+	dev_bypass_active = !dev_bypass_active
+	_update_dev_button_text()
+	_refresh_tile_states()
+	AudioManager.play_sfx("click")
 
 func _build_world_navigation_cards() -> void:
 	if not world_cards_bar:
@@ -372,6 +471,7 @@ func _refresh_tile_states() -> void:
 		var is_unlocked: bool = SaveManager.is_level_unlocked(lvl_id)
 		var is_completed: bool = SaveManager.is_level_completed(lvl_id)
 		var is_implemented: bool = GameManager.can_play_level(lvl_id)
+		var can_dev_access: bool = is_debug_mode and dev_bypass_active and is_implemented
 		var star_rating: int = SaveManager.get_level_stars(lvl_id)
 		var world_id: int = GameManager.get_world_id_for_stage(lvl_id)
 
@@ -457,7 +557,17 @@ func _refresh_tile_states() -> void:
 			if stars_label:
 				stars_label.text = "☆ ☆ ☆"
 				stars_label.add_theme_color_override("font_color", Color(0.55, 0.58, 0.7, 0.5))
-
+		elif can_dev_access:
+			btn.add_theme_stylebox_override("normal", _style_dev_normal)
+			btn.add_theme_stylebox_override("hover", _style_dev_hover)
+			btn.add_theme_stylebox_override("focus", _style_dev_hover)
+			num_label.add_theme_color_override("font_color", Color(0.2, 0.85, 1.0))
+			name_label.add_theme_color_override("font_color", Color(0.7, 0.95, 1.0))
+			state_label.text = "DEV TEST"
+			state_label.add_theme_color_override("font_color", Color(0.2, 0.9, 1.0))
+			status_icon.visible = false
+			if stars_label:
+				stars_label.text = ""
 		else:
 			# Locked legitimate stages (Stages 2–11)
 			btn.add_theme_stylebox_override("normal", _style_lock_normal)
@@ -483,7 +593,7 @@ func _on_level_tile_pressed(level_id: int) -> void:
 		message_modal.visible = true
 		return
 
-	if not is_unlocked:
+	if not is_unlocked and not (is_debug_mode and dev_bypass_active):
 		AudioManager.play_sfx("warning")
 		modal_title.text = "LEVEL %d IS LOCKED" % level_id
 		modal_label.text = "Locked! Beat the previous level first. The developer has enough problems already."

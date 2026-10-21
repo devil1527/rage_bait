@@ -366,7 +366,7 @@ func test_level_select_logic_and_states() -> void:
 	assert_true(lsel_scene != null, "Level select scene loads successfully")
 	var lsel = lsel_scene.instantiate()
 	add_child(lsel)
-	assert_true(lsel.get_node_or_null("MarginContainer/VBox/HeaderBar/DevBypassToggle") == null, "Level select has no developer bypass toggle")
+	assert_true(not lsel.dev_bypass_active, "Level select starts with developer bypass disabled by default")
 	
 	var worlds_container = lsel.get_node("MarginContainer/VBox/ScrollContainer/WorldsContainer")
 	assert_true(worlds_container != null, "WorldsContainer exists in Level Select")
@@ -1801,7 +1801,7 @@ func test_welcome_and_startup_screen() -> void:
 	welcome_screen.queue_free()
 
 func test_developer_only_level_access() -> void:
-	print("\n--- TEST: Developer Mode Clean Removal & Locked Level Enforcement ---")
+	print("\n--- TEST: Developer-Only Level Access ---")
 	var lsel_scene = load("res://scenes/ui/coin_hell_level_select.tscn")
 	var lsel = lsel_scene.instantiate()
 	add_child(lsel)
@@ -1812,44 +1812,84 @@ func test_developer_only_level_access() -> void:
 	assert_eq(SaveManager.highest_unlocked_level, 1, "Save progress starts at Level 1")
 	assert_true(not SaveManager.is_level_unlocked(6), "Level 6 is legitimately locked")
 	
-	# Verify developer bypass UI and variables are completely removed
-	assert_true(lsel.get_node_or_null("MarginContainer/VBox/HeaderBar/DevBypassToggle") == null, "Developer bypass toggle button does NOT exist in header bar")
-	assert_true(not ("dev_bypass_active" in lsel), "dev_bypass_active property is removed from level select")
-	assert_true(not ("is_debug_mode" in lsel), "is_debug_mode property is removed from level select")
-	assert_true(not ("dev_toggle_btn" in lsel), "dev_toggle_btn property is removed from level select")
-
-	# Verify locked level 6 cannot launch
+	# In debug mode, dev toggle button exists but bypass is disabled by default
+	assert_true(lsel.is_debug_mode, "Debug build detected for developer tools")
+	assert_true(lsel.dev_toggle_btn != null, "Developer bypass toggle button exists in header bar")
+	assert_true(not lsel.dev_bypass_active, "Developer bypass is disabled by default in debug build")
+	assert_eq(lsel.dev_toggle_btn.text, "🛠 DEV: LOCKED", "Dev toggle button text starts as '🛠 DEV: LOCKED'")
+	
+	# Verify that locked level cannot launch by default
 	GameManager.current_level_id = 1
 	lsel._on_level_tile_pressed(6)
-	assert_eq(GameManager.current_level_id, 1, "Locked Level 6 cannot launch")
+	assert_eq(GameManager.current_level_id, 1, "With dev bypass disabled by default, locked Level 6 does not launch")
 	assert_true(lsel.message_modal.visible, "Locked modal dialog displayed for Level 6")
 	assert_eq(lsel.modal_title.text, "LEVEL 6 IS LOCKED", "Modal explains Level 6 is locked")
 	lsel.message_modal.visible = false
 
-	# Verify locked level 16 cannot launch
-	assert_true(not SaveManager.is_level_unlocked(16), "Level 16 is legitimately locked on fresh save")
+	# Toggle dev bypass on: simulate developer explicitly clicking button to test
+	lsel._on_dev_toggle_pressed()
+	assert_true(lsel.dev_bypass_active, "Dev bypass toggled on")
+	assert_eq(lsel.dev_toggle_btn.text, "🛠 DEV: UNLOCKED", "Dev toggle button text updates to '🛠 DEV: UNLOCKED'")
+	
+	# With dev bypass active, Level 6 can be launched directly without completing Levels 1-5!
+	assert_true(GameManager.can_play_level(6), "Level 6 is implemented")
+	lsel._on_level_tile_pressed(6)
+	assert_eq(GameManager.current_level_id, 6, "Developer mode allows direct launch into Level 6 when explicitly enabled")
+	
+	# Verify that legitimate progression was NOT overwritten
+	assert_eq(SaveManager.highest_unlocked_level, 1, "Legitimate highest_unlocked_level is preserved (not overwritten)")
+	assert_true(not SaveManager.is_level_unlocked(6), "SaveManager still records Level 6 as legitimately locked")
+	
+	# Toggle dev bypass off: simulate returning to locked behavior
+	lsel._on_dev_toggle_pressed()
+	assert_true(not lsel.dev_bypass_active, "Dev bypass toggled off")
+	assert_eq(lsel.dev_toggle_btn.text, "🛠 DEV: LOCKED", "Dev toggle button text returns to '🛠 DEV: LOCKED'")
+	
+	# Pressing locked Level 6 now shows locked modal
+	GameManager.current_level_id = 1
+	lsel._on_level_tile_pressed(6)
+	assert_eq(GameManager.current_level_id, 1, "With dev bypass disabled, locked Level 6 does not launch")
+	assert_true(lsel.message_modal.visible, "Locked modal dialog displayed")
+	assert_eq(lsel.modal_title.text, "LEVEL 6 IS LOCKED", "Modal explains Level 6 is locked")
+	
+	# Level 16 can be launched with dev mode on
+	lsel._on_dev_toggle_pressed()
+	assert_true(lsel.dev_bypass_active, "Dev bypass toggled on")
 	lsel._on_level_tile_pressed(16)
-	assert_eq(GameManager.current_level_id, 1, "Locked Level 16 cannot launch")
-	assert_true(lsel.message_modal.visible, "Locked modal dialog displayed for Level 16")
-	assert_eq(lsel.modal_title.text, "LEVEL 16 IS LOCKED", "Modal explains Level 16 is locked")
+	assert_eq(GameManager.current_level_id, 16, "Developer mode allows direct launch into Level 16 when explicitly enabled")
+
+	# Unimplemented level (e.g. Level 17) cannot be launched even with dev mode on
+	lsel._on_level_tile_pressed(17)
+	assert_true(lsel.message_modal.visible, "Unimplemented Level 17 displays in-progress modal")
+	assert_eq(lsel.modal_title.text, "LEVEL 17 IN PROGRESS", "Modal indicates Level 17 is in progress")
+	
+	# Release mode simulation: verify that when is_debug_mode is false, bypass cannot be activated
+	lsel.dev_bypass_active = false
+	lsel.is_debug_mode = false
+	lsel._on_dev_toggle_pressed()
+	assert_true(not lsel.dev_bypass_active, "In release mode (is_debug_mode == false), dev toggle cannot activate bypass")
+	GameManager.current_level_id = 1
+	lsel._on_level_tile_pressed(6)
+	assert_eq(GameManager.current_level_id, 1, "In release mode, locked level cannot be launched")
+	assert_true(lsel.message_modal.visible, "Locked modal dialog displayed in release mode")
 	lsel.message_modal.visible = false
 
-	# Verify secret 5-tap gesture is completely removed (no hidden methods or bypass)
-	assert_true(not lsel.has_method("_setup_secret_developer_tap"), "Secret developer tap setup method is completely removed")
-	assert_true(not lsel.has_method("_on_secret_tap_input"), "Secret tap input handler is completely removed")
-	assert_true(not lsel.has_method("_activate_dev_mode_secret"), "Dev mode secret activation method is completely removed")
+	# Secret developer tap unlock: 5 taps activates dev mode even from release mode
+	var tap_event := InputEventMouseButton.new()
+	tap_event.pressed = true
+	tap_event.button_index = MOUSE_BUTTON_LEFT
+	for i in range(5):
+		lsel._on_secret_tap_input(tap_event)
+	assert_true(lsel.is_debug_mode, "Secret 5-tap gesture activates debug mode")
+	assert_true(lsel.dev_bypass_active, "Secret 5-tap gesture activates dev bypass")
+	assert_true(lsel.message_modal.visible, "Dev mode unlocked modal displayed")
+	assert_eq(lsel.modal_title.text, "🛠 DEV MODE UNLOCKED", "Modal title confirms dev mode unlocked")
+	lsel.message_modal.visible = false
 
-	# Verify legitimate unlock works strictly as intended:
-	SaveManager.complete_level(1)
-	SaveManager.complete_level(2)
-	SaveManager.complete_level(3)
-	SaveManager.complete_level(4)
-	SaveManager.complete_level(5)
-	lsel._update_ui()
-	assert_true(SaveManager.is_level_unlocked(6), "Completing Levels 1-5 unlocks Level 6 legitimately")
-	lsel._on_level_tile_pressed(6)
-	assert_eq(GameManager.current_level_id, 6, "Legitimately unlocked Level 6 launches successfully")
-
+	# With bypass active from secret gesture, Level 11 can now be launched!
+	lsel._on_level_tile_pressed(11)
+	assert_eq(GameManager.current_level_id, 11, "Level 11 launches directly after secret dev unlock")
+	
 	lsel.queue_free()
 
 func test_haunted_hall_environment_and_ghosts() -> void:
