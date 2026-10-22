@@ -5893,16 +5893,14 @@ func test_world_4_integration_and_level_select() -> void:
 	for s in range(17, 21):
 		assert_true(not GameManager.can_play_level(s), "Stage %d is marked unplayable / not implemented" % s)
 
-	# SaveManager level 16 secret persistence
+	# SaveManager level 16 secret runtime flag verification (does NOT persist across save/load)
 	SaveManager.set_level_16_secret_revealed(false)
 	assert_true(not SaveManager.is_level_16_secret_revealed(), "Secret is initially not revealed in SaveManager")
 	SaveManager.set_level_16_secret_revealed(true)
-	assert_true(SaveManager.is_level_16_secret_revealed(), "Secret revealed state is true after setting")
+	assert_true(SaveManager.is_level_16_secret_revealed(), "Secret revealed state is true during active attempt")
 	SaveManager.save_data()
 	SaveManager.load_save()
-	assert_true(SaveManager.is_level_16_secret_revealed(), "Secret revealed state persists across save/load")
-	SaveManager.set_level_16_secret_revealed(false)
-	SaveManager.save_data()
+	assert_true(not SaveManager.is_level_16_secret_revealed(), "Secret revealed state does NOT persist across save/load, ensuring clean restarts")
 
 	# Coin Hell Level Select integration
 	var lsel_scene: PackedScene = load("res://scenes/ui/coin_hell_level_select.tscn")
@@ -6130,15 +6128,25 @@ func test_level_16_secret_hell_platform_state_machine() -> void:
 	assert_true(not sec_plat.collision_shape.disabled, "Calling reveal() enables solid collision")
 	assert_true(SaveManager.is_level_16_secret_revealed(), "Calling reveal() records discovery in SaveManager")
 
-	# Persistence across level reset signals
-	sec_plat.set_revealed_instant(true)
+	# Reset behavior: full level restart (coins_reset) resets to invisible and undiscovered
+	sec_plat.reveal()
+	assert_true(sec_plat.is_revealed, "Platform is revealed")
 	GameManager.coins_reset.emit()
-	assert_true(sec_plat.is_revealed, "Platform remains revealed after coins_reset")
-	assert_true(not sec_plat.collision_shape.disabled, "Collision remains enabled after coins_reset")
+	assert_true(not sec_plat.is_revealed, "Platform resets to unrevealed after coins_reset")
+	assert_true(not sec_plat.visible, "Platform is invisible after coins_reset")
+	assert_eq(sec_plat.collision_layer, 0, "Platform collision layer is 0 after coins_reset")
+	assert_true(sec_plat.collision_shape.disabled, "Collision is disabled after coins_reset")
 
+	# Ad-revive continuation during active attempt preserves revealed state
+	sec_plat.reveal()
 	GameManager.player_revived.emit(Vector2.ZERO)
-	assert_true(sec_plat.is_revealed, "Platform remains revealed after player_revived")
-	assert_true(not sec_plat.collision_shape.disabled, "Collision remains enabled after player_revived")
+	assert_true(sec_plat.is_revealed, "Platform remains revealed during ad-revive continuation of current attempt")
+	assert_true(not sec_plat.collision_shape.disabled, "Collision remains enabled during ad-revive continuation")
+
+	sec_plat.reset()
+	assert_true(not sec_plat.is_revealed, "Calling reset() explicitly resets to unrevealed")
+	assert_true(not sec_plat.visible, "Calling reset() explicitly hides platform")
+	assert_true(sec_plat.collision_shape.disabled, "Calling reset() disables collision")
 
 	remove_child(sec_plat)
 	sec_plat.free()
@@ -6195,8 +6203,7 @@ func test_level_16_secret_hell_platform_state_machine() -> void:
 
 	# Condition 7A: Discovery Route A — Player actually lands on the designated middle platform while alive!
 	# Platform must reveal immediately, become solid/visible, and catch the living player safely.
-	SaveManager.set_level_16_secret_revealed(false)
-	platform_node.set_revealed_instant(false)
+	platform_node.reset()
 	assert_true(not platform_node.is_revealed, "Secret platform reset to unrevealed for Route A test")
 	assert_true(platform_node.collision_shape.disabled, "Collision disabled when unrevealed")
 	
@@ -6210,11 +6217,9 @@ func test_level_16_secret_hell_platform_state_machine() -> void:
 	assert_eq(player.velocity.y, 0.0, "Downward velocity zeroed on landing catch")
 	assert_true(player._is_alive, "Player remains alive and supported on the revealed platform")
 	assert_eq(player.global_position.y, 245.0 - 16.0, "Player feet placed solidly on platform surface (245 - 16 = 229)")
-	assert_true(SaveManager.is_level_16_secret_revealed(), "SaveManager records secret discovery from living landing")
 
 	# Condition 7B: Discovery Route B — Genuine failed attempt into chasm abyss
-	SaveManager.set_level_16_secret_revealed(false)
-	platform_node.set_revealed_instant(false)
+	platform_node.reset()
 	lvl._reached_takeoff = true
 	lvl._attempted_final_jump = true
 	var trigger_area: Area2D = lvl.get_node("FinalGapTriggerArea")
@@ -6222,14 +6227,33 @@ func test_level_16_secret_hell_platform_state_machine() -> void:
 	player.global_position = Vector2(2400, 360)
 	lvl._on_final_gap_area_entered(player)
 	assert_true(platform_node.is_revealed, "Genuine failed attempt in FinalGapTriggerArea REVEALS secret platform!")
-	assert_true(SaveManager.is_level_16_secret_revealed(), "SaveManager records Level 16 secret discovery")
 
-	# Condition 8: Death and retry preserves revealed state
-	lvl._reset_level()
-	assert_true(platform_node.is_revealed, "Secret platform remains revealed after level retry")
-	assert_true(platform_node.visible, "Secret platform remains visible after level retry")
-	assert_true(not platform_node.collision_shape.disabled, "Secret platform remains solid after level retry")
-	assert_eq(platform_node.collision_layer, 2, "Secret platform remains terrain collision layer after retry")
+	# Condition 8: Player revived via ad continues the attempt; platform remains revealed
+	lvl._on_player_revived(Vector2(2200, 240))
+	assert_true(platform_node.is_revealed, "Platform remains revealed during ad-revive continuation")
+	assert_true(platform_node.visible, "Platform remains visible during ad-revive continuation")
+	assert_true(not platform_node.collision_shape.disabled, "Platform remains solid during ad-revive continuation")
+
+	# Condition 9: Full level restart / retry (die and restart) MUST reset the platform to undiscovered!
+	# Multi-cycle verification (Cycle 1, Cycle 2, Cycle 3) as required by user
+	for cycle in range(1, 4):
+		# Step A: Full level restart
+		lvl._reset_level()
+		assert_true(not platform_node.is_revealed, "Cycle %d: Secret platform is undiscovered on full level restart" % cycle)
+		assert_true(not platform_node.visible, "Cycle %d: Secret platform visibility is OFF on level restart" % cycle)
+		assert_eq(platform_node.modulate.a, 0.0, "Cycle %d: Modulate alpha is 0.0 on level restart" % cycle)
+		assert_eq(platform_node.collision_layer, 0, "Cycle %d: Collision layer is 0 (non-collidable) on level restart" % cycle)
+		assert_true(platform_node.collision_shape.disabled, "Cycle %d: Collision shape is disabled on level restart" % cycle)
+
+		# Step B: Discover platform again
+		player.global_position = Vector2(2395, 232)
+		player.velocity.y = 220.0
+		platform_node._on_landing_area_body_entered(player)
+		assert_true(platform_node.is_revealed, "Cycle %d: Platform becomes revealed upon landing" % cycle)
+		assert_true(platform_node.visible, "Cycle %d: Platform becomes visible upon landing" % cycle)
+		assert_eq(platform_node.collision_layer, 2, "Cycle %d: Collision layer enabled to 2" % cycle)
+		assert_true(not platform_node.collision_shape.disabled, "Cycle %d: Collision shape enabled" % cycle)
+		assert_eq(player.velocity.y, 0.0, "Cycle %d: Downward velocity zeroed on landing catch" % cycle)
 
 	# Progression check: completing Level 16 records progress
 	SaveManager.complete_level(16)

@@ -13,6 +13,7 @@ signal platform_revealed
 @export var platform_size: Vector2 = Vector2(65.0, 20.0)
 
 var is_revealed: bool = false
+var _active_tween: Tween = null
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 @onready var visual_rect: NinePatchRect = get_node_or_null("NinePatchRect")
@@ -24,12 +25,7 @@ func _ready() -> void:
 	_setup_collision()
 	GameManager.coins_reset.connect(_on_coins_reset)
 	GameManager.player_revived.connect(_on_player_revived)
-
-	# Check persistent discovery state
-	if SaveManager and SaveManager.has_method("is_level_16_secret_revealed") and SaveManager.is_level_16_secret_revealed():
-		set_revealed_instant(true)
-	else:
-		set_revealed_instant(false)
+	reset()
 
 func _setup_collision() -> void:
 	if not collision_shape:
@@ -145,10 +141,12 @@ func reveal() -> void:
 	if rune_particles:
 		rune_particles.emitting = true
 
-	var tween := create_tween().set_parallel(true)
+	if _active_tween and _active_tween.is_valid():
+		_active_tween.kill()
+	_active_tween = create_tween().set_parallel(true)
 	if visual_rect:
 		visual_rect.self_modulate = Color(1.0, 0.35, 0.45, 1.0) # Bright crimson ignition
-		tween.tween_property(visual_rect, "self_modulate", Color(0.9, 0.8, 0.85, 1.0), 0.45)
+		_active_tween.tween_property(visual_rect, "self_modulate", Color(0.9, 0.8, 0.85, 1.0), 0.45)
 
 func set_revealed_instant(revealed: bool) -> void:
 	is_revealed = revealed
@@ -170,17 +168,22 @@ func set_revealed_instant(revealed: bool) -> void:
 		if collision_shape:
 			collision_shape.disabled = true
 			collision_shape.set_deferred("disabled", true)
+		if visual_rect:
+			visual_rect.self_modulate = Color(0.9, 0.8, 0.85, 1.0)
 		if rune_particles:
 			rune_particles.emitting = false
 
 func reset() -> void:
-	if SaveManager and SaveManager.has_method("is_level_16_secret_revealed") and SaveManager.is_level_16_secret_revealed():
-		set_revealed_instant(true)
-	else:
-		set_revealed_instant(false)
+	if _active_tween and _active_tween.is_valid():
+		_active_tween.kill()
+		_active_tween = null
+	set_revealed_instant(false)
+	if SaveManager and SaveManager.has_method("set_level_16_secret_revealed"):
+		SaveManager.set_level_16_secret_revealed(false)
 
 func _on_coins_reset() -> void:
 	reset()
 
 func _on_player_revived(_pos: Vector2) -> void:
-	reset()
+	# Revive continues the current attempt; preserve current discovery state
+	pass

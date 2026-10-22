@@ -81,10 +81,7 @@ func _ready() -> void:
 
 func _check_secret_platform_state() -> void:
 	if secret_platform:
-		if SaveManager and SaveManager.has_method("is_level_16_secret_revealed") and SaveManager.is_level_16_secret_revealed():
-			secret_platform.set_revealed_instant(true)
-		else:
-			secret_platform.set_revealed_instant(false)
+		secret_platform.reset()
 
 func _process(delta: float) -> void:
 	_facility_elapsed += delta
@@ -184,7 +181,6 @@ func _on_player_revived(_pos: Vector2) -> void:
 	pause_overlay.visible = false
 	level_complete_overlay.visible = false
 	GameManager.is_gameplay_active = true
-	_check_secret_platform_state()
 
 func _on_retry() -> void:
 	_reset_level()
