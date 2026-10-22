@@ -6118,11 +6118,15 @@ func test_level_16_secret_hell_platform_state_machine() -> void:
 
 	assert_true(not sec_plat.is_revealed, "Secret platform is initially unrevealed")
 	assert_true(not sec_plat.visible, "Secret platform is initially INVISIBLE")
+	assert_eq(sec_plat.modulate.a, 0.0, "Secret platform modulate alpha is initially 0.0")
+	assert_eq(sec_plat.collision_layer, 0, "Secret platform collision layer is initially 0 (non-collidable)")
 	assert_true(sec_plat.collision_shape.disabled, "Secret platform collision is initially DISABLED")
 
 	sec_plat.reveal()
 	assert_true(sec_plat.is_revealed, "Calling reveal() sets is_revealed to true")
 	assert_true(sec_plat.visible, "Calling reveal() makes platform visible")
+	assert_eq(sec_plat.modulate.a, 1.0, "Secret platform modulate alpha is 1.0 when revealed")
+	assert_eq(sec_plat.collision_layer, 2, "Secret platform collision layer is 2 (terrain) when revealed")
 	assert_true(not sec_plat.collision_shape.disabled, "Calling reveal() enables solid collision")
 	assert_true(SaveManager.is_level_16_secret_revealed(), "Calling reveal() records discovery in SaveManager")
 
@@ -6148,6 +6152,9 @@ func test_level_16_secret_hell_platform_state_machine() -> void:
 	var platform_node = lvl.get_node("Platforms/SecretHellPlatform")
 	var player = lvl.get_node("Player")
 	assert_true(not platform_node.is_revealed, "Secret platform starts unrevealed on fresh run")
+	assert_true(not platform_node.visible, "Secret platform starts completely INVISIBLE in level")
+	assert_eq(platform_node.collision_layer, 0, "Secret platform starts non-collidable in level")
+	assert_true(platform_node.collision_shape.disabled, "Secret platform collision shape starts disabled in level")
 
 	# Condition 1: Death in Section A does NOT trigger secret
 	player.global_position = Vector2(150, 250)
@@ -6164,43 +6171,65 @@ func test_level_16_secret_hell_platform_state_machine() -> void:
 	lvl._on_player_died()
 	assert_true(not platform_node.is_revealed, "Death in Section C does NOT reveal secret")
 
-	# Condition 4: Walking toward gap without jumping does NOT trigger secret
+	# Condition 4: Walking toward gap or standing on takeoff does NOT trigger secret
 	player.global_position = Vector2(2100, 250)
 	lvl._on_player_died()
 	assert_true(not platform_node.is_revealed, "Walking toward gap without jumping does NOT reveal secret")
 
-	# Condition 5A: Discovery Route A — Player accidentally lands on invisible platform while alive!
-	# Platform must reveal immediately and catch the living player safely without requiring death.
+	player.global_position = Vector2(2215, 239)
+	player.velocity = Vector2(240, 0)
+	platform_node._on_landing_area_body_entered(player)
+	assert_true(not platform_node.is_revealed, "Approaching or standing on TakeoffPlatform does NOT reveal secret platform")
+
+	# Condition 5: Jumping overhead high in the air does NOT trigger secret
+	player.global_position = Vector2(2395, 185)
+	player.velocity = Vector2(240, 40)
+	platform_node._on_landing_area_body_entered(player)
+	assert_true(not platform_node.is_revealed, "Jumping overhead high in the air does NOT reveal secret platform")
+
+	# Condition 6: Ascending / jumping upward through area does NOT trigger secret
+	player.global_position = Vector2(2395, 235)
+	player.velocity = Vector2(100, -350.0)
+	platform_node._on_landing_area_body_entered(player)
+	assert_true(not platform_node.is_revealed, "Ascending / jumping upward does NOT reveal secret platform")
+
+	# Condition 7A: Discovery Route A — Player actually lands on the designated middle platform while alive!
+	# Platform must reveal immediately, become solid/visible, and catch the living player safely.
 	SaveManager.set_level_16_secret_revealed(false)
 	platform_node.set_revealed_instant(false)
 	assert_true(not platform_node.is_revealed, "Secret platform reset to unrevealed for Route A test")
 	assert_true(platform_node.collision_shape.disabled, "Collision disabled when unrevealed")
 	
-	player.global_position = Vector2(2395, 255)
-	player.velocity.y = 200.0
+	player.global_position = Vector2(2395, 232)
+	player.velocity.y = 220.0
 	platform_node._on_landing_area_body_entered(player)
 	assert_true(platform_node.is_revealed, "Landing on LandingArea while alive IMMEDIATELY REVEALS secret platform!")
 	assert_true(not platform_node.collision_shape.disabled, "Collision enabled immediately to support player")
+	assert_eq(platform_node.collision_layer, 2, "Collision layer set to 2 (solid terrain)")
 	assert_true(platform_node.visible, "Platform becomes visible immediately on landing")
 	assert_eq(player.velocity.y, 0.0, "Downward velocity zeroed on landing catch")
 	assert_true(player._is_alive, "Player remains alive and supported on the revealed platform")
+	assert_eq(player.global_position.y, 245.0 - 16.0, "Player feet placed solidly on platform surface (245 - 16 = 229)")
 	assert_true(SaveManager.is_level_16_secret_revealed(), "SaveManager records secret discovery from living landing")
 
-	# Condition 5B: Discovery Route B — Genuine failed attempt into chasm abyss
+	# Condition 7B: Discovery Route B — Genuine failed attempt into chasm abyss
 	SaveManager.set_level_16_secret_revealed(false)
 	platform_node.set_revealed_instant(false)
 	lvl._reached_takeoff = true
 	lvl._attempted_final_jump = true
 	var trigger_area: Area2D = lvl.get_node("FinalGapTriggerArea")
 	assert_true(trigger_area != null, "FinalGapTriggerArea exists in Level 16")
+	player.global_position = Vector2(2400, 360)
 	lvl._on_final_gap_area_entered(player)
 	assert_true(platform_node.is_revealed, "Genuine failed attempt in FinalGapTriggerArea REVEALS secret platform!")
 	assert_true(SaveManager.is_level_16_secret_revealed(), "SaveManager records Level 16 secret discovery")
 
-	# Condition 6: Death and retry preserves revealed state
+	# Condition 8: Death and retry preserves revealed state
 	lvl._reset_level()
 	assert_true(platform_node.is_revealed, "Secret platform remains revealed after level retry")
+	assert_true(platform_node.visible, "Secret platform remains visible after level retry")
 	assert_true(not platform_node.collision_shape.disabled, "Secret platform remains solid after level retry")
+	assert_eq(platform_node.collision_layer, 2, "Secret platform remains terrain collision layer after retry")
 
 	# Progression check: completing Level 16 records progress
 	SaveManager.complete_level(16)

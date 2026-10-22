@@ -152,8 +152,8 @@ func _on_coin_collected(current: int, total: int) -> void:
 
 func _on_player_died() -> void:
 	_clear_touch_controls()
-	# Check if death occurred during a genuine final gap leap or in the final chasm
-	if (player and player.global_position.x >= 2220.0) or _attempted_final_jump or _reached_takeoff:
+	# Check if death occurred during a genuine final gap leap or in the final chasm abyss
+	if (player and player.global_position.x > 2250.0 and player.global_position.y >= 270.0) or (_attempted_final_jump and player and player.global_position.y >= 270.0):
 		_trigger_final_jump_reveal()
 
 	death_overlay.open()

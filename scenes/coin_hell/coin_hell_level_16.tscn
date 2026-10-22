@@ -362,6 +362,8 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="SecretHellPlatform" parent="Platforms" instance=ExtResource("15_shplat")]
+visible = false
+modulate = Color(1, 1, 1, 0)
 position = Vector2(2395, 255)
 platform_size = Vector2(65, 20)
 

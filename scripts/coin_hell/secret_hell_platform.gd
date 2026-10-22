@@ -21,9 +21,6 @@ var is_revealed: bool = false
 
 func _ready() -> void:
 	sync_to_physics = false
-	collision_layer = 2 # Terrain layer
-	collision_mask = 0
-
 	_setup_collision()
 	GameManager.coins_reset.connect(_on_coins_reset)
 	GameManager.player_revived.connect(_on_player_revived)
@@ -60,12 +57,63 @@ func _setup_collision() -> void:
 			landing_area.body_entered.connect(_on_landing_area_body_entered)
 		var lshape = landing_area.get_node_or_null("CollisionShape2D")
 		if lshape and lshape.shape is RectangleShape2D:
-			(lshape.shape as RectangleShape2D).size = Vector2(platform_size.x + 8.0, 36.0)
-			lshape.position = Vector2(0.0, -12.0)
+			(lshape.shape as RectangleShape2D).size = Vector2(platform_size.x - 4.0, 14.0)
+			lshape.position = Vector2(0.0, -7.0)
+
+func _physics_process(_delta: float) -> void:
+	if is_revealed:
+		return
+	if is_inside_tree():
+		var player_node = get_tree().get_first_node_in_group("player")
+		if player_node and _is_valid_landing(player_node):
+			reveal_for_landing(player_node)
+			return
+	if landing_area:
+		for body in landing_area.get_overlapping_bodies():
+			if _is_valid_landing(body):
+				reveal_for_landing(body)
+				break
 
 func _on_landing_area_body_entered(body: Node2D) -> void:
-	if not is_revealed and (body.is_in_group("player") or body.name == "Player"):
+	if not is_revealed and _is_valid_landing(body):
 		reveal_for_landing(body)
+
+func _is_valid_landing(body: Node2D) -> bool:
+	if is_revealed:
+		return false
+	if not (body.is_in_group("player") or body.name == "Player"):
+		return false
+	if "_is_alive" in body and not body._is_alive:
+		return false
+
+	# The player MUST be falling / descending onto the platform, NOT jumping upward
+	var p_vel: Vector2 = Vector2.ZERO
+	if "velocity" in body:
+		p_vel = body.velocity
+	if p_vel.y < 0.0:
+		# Player is ascending (jumping upward), cannot be landing on platform
+		return false
+
+	var surface_top: float = global_position.y - (platform_size.y * 0.5)
+	var left_edge: float = global_position.x - (platform_size.x * 0.5)
+	var right_edge: float = global_position.x + (platform_size.x * 0.5)
+
+	# Check horizontal alignment: player's center must be horizontally over the platform
+	var px: float = body.global_position.x
+	if px < left_edge - 2.0 or px > right_edge + 2.0:
+		return false
+
+	# Check vertical alignment: player's feet (global_position.y + 16.0) must be
+	# at or crossing the platform's top surface level.
+	# If player is jumping overhead (feet well above surface), this is NOT a landing.
+	var feet_y: float = body.global_position.y + 16.0
+	if feet_y < surface_top - 6.0:
+		return false
+	# If player is already deep below the platform, they fell past it into the chasm
+	if feet_y > surface_top + 30.0:
+		return false
+
+	return true
 
 func reveal_for_landing(body: Node2D) -> void:
 	reveal()
@@ -73,8 +121,8 @@ func reveal_for_landing(body: Node2D) -> void:
 		# Ensure the living player is firmly supported on top of the newly solid platform
 		body.velocity.y = 0.0
 		var surface_top: float = global_position.y - (platform_size.y * 0.5)
-		# Player feet are at origin + 16.0, place origin at surface_top - 15.5
-		body.global_position.y = surface_top - 15.5
+		# Player feet are at origin + 16.0, place origin at surface_top - 16.0
+		body.global_position.y = surface_top - 16.0
 
 func reveal() -> void:
 	if is_revealed:
@@ -82,6 +130,7 @@ func reveal() -> void:
 	is_revealed = true
 	visible = true
 	modulate.a = 1.0
+	collision_layer = 2 # Terrain layer
 
 	if collision_shape:
 		collision_shape.disabled = false
@@ -106,6 +155,7 @@ func set_revealed_instant(revealed: bool) -> void:
 	if is_revealed:
 		visible = true
 		modulate.a = 1.0
+		collision_layer = 2 # Terrain layer
 		if collision_shape:
 			collision_shape.disabled = false
 			collision_shape.set_deferred("disabled", false)
@@ -116,6 +166,7 @@ func set_revealed_instant(revealed: bool) -> void:
 	else:
 		visible = false
 		modulate.a = 0.0
+		collision_layer = 0 # Non-collidable
 		if collision_shape:
 			collision_shape.disabled = true
 			collision_shape.set_deferred("disabled", true)
