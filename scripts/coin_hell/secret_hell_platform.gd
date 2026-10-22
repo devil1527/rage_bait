@@ -3,12 +3,14 @@ extends AnimatableBody2D
 
 ## SecretHellPlatform provides the signature Section E ending mechanism for Level 16: The Platform That Lied.
 ## Initially indistinguishable from empty space (invisible and non-solid).
-## Revealed exclusively upon the player's first genuine failed attempt at the designated final gap.
-## Once revealed, it becomes permanently visible, solid, and reliable across retries.
+## Revealed upon:
+## - Route A: Living player lands on or touches the designated middle platform area while alive.
+## - Route B: A genuine failed jump attempt into the final gap chasm abyss.
+## Once revealed, it becomes permanently visible, solid, and reliable across retries/revives.
 
 signal platform_revealed
 
-@export var platform_size: Vector2 = Vector2(70.0, 20.0)
+@export var platform_size: Vector2 = Vector2(65.0, 20.0)
 
 var is_revealed: bool = false
 
@@ -34,6 +36,8 @@ func _ready() -> void:
 
 func _setup_collision() -> void:
 	if not collision_shape:
+		collision_shape = get_node_or_null("CollisionShape2D")
+	if not collision_shape:
 		collision_shape = CollisionShape2D.new()
 		collision_shape.name = "CollisionShape2D"
 		var rect := RectangleShape2D.new()
@@ -52,11 +56,12 @@ func _setup_collision() -> void:
 	if not landing_area:
 		landing_area = get_node_or_null("LandingArea")
 	if landing_area:
-		landing_area.body_entered.connect(_on_landing_area_body_entered)
+		if not landing_area.body_entered.is_connected(_on_landing_area_body_entered):
+			landing_area.body_entered.connect(_on_landing_area_body_entered)
 		var lshape = landing_area.get_node_or_null("CollisionShape2D")
 		if lshape and lshape.shape is RectangleShape2D:
-			(lshape.shape as RectangleShape2D).size = Vector2(platform_size.x, 24.0)
-			lshape.position = Vector2(0.0, -6.0)
+			(lshape.shape as RectangleShape2D).size = Vector2(platform_size.x + 8.0, 36.0)
+			lshape.position = Vector2(0.0, -12.0)
 
 func _on_landing_area_body_entered(body: Node2D) -> void:
 	if not is_revealed and (body.is_in_group("player") or body.name == "Player"):
@@ -64,16 +69,20 @@ func _on_landing_area_body_entered(body: Node2D) -> void:
 
 func reveal_for_landing(body: Node2D) -> void:
 	reveal()
-	if body is CharacterBody2D and body.velocity.y > 0.0:
-		# Catch downward falling player so they land reliably on the surface
+	if body is CharacterBody2D:
+		# Ensure the living player is firmly supported on top of the newly solid platform
 		body.velocity.y = 0.0
-		var surface_y: float = global_position.y - (platform_size.y * 0.5)
-		body.global_position.y = minf(body.global_position.y, surface_y - 16.0)
+		var surface_top: float = global_position.y - (platform_size.y * 0.5)
+		# Player feet are at origin + 16.0, place origin at surface_top - 15.5
+		body.global_position.y = surface_top - 15.5
 
 func reveal() -> void:
 	if is_revealed:
 		return
 	is_revealed = true
+	visible = true
+	modulate.a = 1.0
+
 	if collision_shape:
 		collision_shape.disabled = false
 		collision_shape.set_deferred("disabled", false)
@@ -84,17 +93,13 @@ func reveal() -> void:
 	AudioManager.play_sfx("unlock")
 	platform_revealed.emit()
 
-	# Brief crimson rune-ignition reveal animation
-	visible = true
-	modulate.a = 0.0
 	if rune_particles:
 		rune_particles.emitting = true
 
 	var tween := create_tween().set_parallel(true)
-	tween.tween_property(self, "modulate:a", 1.0, 0.40).set_trans(Tween.TRANS_SINE)
 	if visual_rect:
-		visual_rect.self_modulate = Color(1.0, 0.35, 0.45, 1.0) # Bright crimson flare
-		tween.chain().tween_property(visual_rect, "self_modulate", Color(0.9, 0.8, 0.85, 1.0), 0.45)
+		visual_rect.self_modulate = Color(1.0, 0.35, 0.45, 1.0) # Bright crimson ignition
+		tween.tween_property(visual_rect, "self_modulate", Color(0.9, 0.8, 0.85, 1.0), 0.45)
 
 func set_revealed_instant(revealed: bool) -> void:
 	is_revealed = revealed
@@ -117,10 +122,14 @@ func set_revealed_instant(revealed: bool) -> void:
 		if rune_particles:
 			rune_particles.emitting = false
 
-func _on_coins_reset() -> void:
+func reset() -> void:
 	if SaveManager and SaveManager.has_method("is_level_16_secret_revealed") and SaveManager.is_level_16_secret_revealed():
 		set_revealed_instant(true)
+	else:
+		set_revealed_instant(false)
+
+func _on_coins_reset() -> void:
+	reset()
 
 func _on_player_revived(_pos: Vector2) -> void:
-	if SaveManager and SaveManager.has_method("is_level_16_secret_revealed") and SaveManager.is_level_16_secret_revealed():
-		set_revealed_instant(true)
+	reset()

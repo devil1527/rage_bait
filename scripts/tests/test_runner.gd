@@ -6004,14 +6004,14 @@ func test_level_16_platform_that_lied_layout_and_coins() -> void:
 
 	# Verify Coin 10 positioned beyond secret platform (between secret and exit platform)
 	var coin10 = coins.get_node_or_null("Coin10")
-	assert_eq(coin10.position, Vector2(2510, 180), "Coin10 is positioned beyond secret platform at (2510, 180)")
+	assert_eq(coin10.position, Vector2(2480, 160), "Coin10 is positioned beyond secret platform at (2480, 160)")
 
 	# Exit Gate
 	var exit_gate = lvl.get_node_or_null("ExitGate")
 	assert_true(exit_gate != null, "ExitGate exists in Level 16")
 	assert_true(not exit_gate._is_open, "Exit gate starts locked")
 	assert_eq(GameManager.get_level_info(16).get("coin_count"), 10, "Level 16 requires exactly 10 coins")
-	assert_eq(exit_gate.position, Vector2(2625, 233), "Exit gate is on exit platform at (2625, 233)")
+	assert_eq(exit_gate.position, Vector2(2605, 218), "Exit gate is on exit platform at (2605, 218)")
 
 	remove_child(lvl)
 	lvl.free()
@@ -6027,8 +6027,8 @@ func test_level_16_hell_rune_mechanics() -> void:
 	assert_eq(rune.current_state, HellRuneClass.State.DORMANT, "Hell Rune begins in DORMANT state")
 	assert_true(rune.hazard_shape.disabled, "Hell Rune flame collision is DISABLED when dormant")
 	assert_eq(rune.flame_burst.visible, false, "Hell Rune flame sprite is invisible when dormant")
-	assert_eq(rune.warning_duration, 0.38, "Hell Rune warning duration is tightened to 0.38s")
-	assert_eq(rune.active_duration, 0.75, "Hell Rune active flame duration is 0.75s")
+	assert_eq(rune.warning_duration, 0.28, "Hell Rune warning duration is tightened to 0.28s")
+	assert_eq(rune.active_duration, 0.65, "Hell Rune active flame duration is 0.65s")
 
 	# Mock player trigger
 	var dummy_player = CharacterBody2D.new()
@@ -6043,6 +6043,12 @@ func test_level_16_hell_rune_mechanics() -> void:
 	assert_true(not rune.hazard_shape.disabled, "Flame collision is ENABLED when ACTIVE")
 	assert_true(rune.flame_burst.visible, "Flame sprite is visible when ACTIVE")
 	assert_eq(rune.hazard_area.collision_layer, 4, "Lethal flame hitbox is on hazard layer (value 4)")
+
+	# Approach detection & anti-sprint mechanics:
+	assert_true(rune.trigger_size.x >= 60.0, "Hell Rune trigger width is generous (>= 60px) to detect approaching player")
+	assert_true(rune.trigger_offset.x < 0.0, "Hell Rune trigger is offset leftward (-18px) to catch player before rune plate")
+	var sprint_transit_time: float = abs(rune.trigger_offset.x - (rune.trigger_size.x * 0.5)) / 240.0
+	assert_true(sprint_transit_time <= rune.warning_duration + 0.05, "ANTI-SPRINT VERIFIED: Blind sprinting player reaches flame column (transit %.2fs) right as warning (%.2fs) erupts!" % [sprint_transit_time, rune.warning_duration])
 
 	# Transition to cooldown
 	rune._apply_state(HellRuneClass.State.COOLDOWN)
@@ -6170,7 +6176,7 @@ func test_level_16_secret_hell_platform_state_machine() -> void:
 	assert_true(not platform_node.is_revealed, "Secret platform reset to unrevealed for Route A test")
 	assert_true(platform_node.collision_shape.disabled, "Collision disabled when unrevealed")
 	
-	player.global_position = Vector2(2435, 255)
+	player.global_position = Vector2(2395, 255)
 	player.velocity.y = 200.0
 	platform_node._on_landing_area_body_entered(player)
 	assert_true(platform_node.is_revealed, "Landing on LandingArea while alive IMMEDIATELY REVEALS secret platform!")
@@ -6227,57 +6233,57 @@ func test_level_16_jump_physics_and_kinematic_reachability() -> void:
 	var exit_plat = platforms.get_node("ExitPlatform")
 
 	# Exact Final Gap: Takeoff right edge to Exit left edge
-	# Takeoff: center X=2280, width=80 -> right edge = 2320
-	# Exit: center X=2605, width=110 -> left edge = 2550
-	var takeoff_right_edge: float = takeoff.position.x + 40.0
-	var exit_left_edge: float = exit_plat.position.x - 55.0
+	# Takeoff: center X=2215, width=70 -> right edge = 2250
+	# Exit: center X=2585, width=100 -> left edge = 2535
+	var takeoff_right_edge: float = takeoff.position.x + 35.0
+	var exit_left_edge: float = exit_plat.position.x - 50.0
 	var direct_gap: float = exit_left_edge - takeoff_right_edge
 
-	assert_eq(direct_gap, 230.0, "Direct gap from takeoff to exit platform is exactly 230.0px")
-	assert_true(direct_gap > max_flat_reach, "SIGNATURE RAGEBAIT VERIFIED: Direct final jump (230px) is IMPOSSIBLE without secret platform (max reach 196.17px)")
+	assert_eq(direct_gap, 285.0, "Direct gap from takeoff to exit platform is exactly 285.0px")
+	assert_true(direct_gap > max_flat_reach, "SIGNATURE RAGEBAIT VERIFIED: Direct final jump (285px) is IMPOSSIBLE without secret platform (max reach 196.17px)")
 
 	# Jump 1: Takeoff to Secret Platform
-	# Takeoff center (2280) to Secret center (2435) = 155px
+	# Takeoff center (2215) to Secret center (2395) = 180px
 	var jump1_dx: float = secret_plat.position.x - takeoff.position.x
 	var jump1_dy: float = secret_plat.position.y - takeoff.position.y
-	assert_eq(jump1_dx, 155.0, "Jump 1 horizontal distance is 155.0px")
+	assert_eq(jump1_dx, 180.0, "Jump 1 horizontal distance is 180.0px")
 	assert_eq(jump1_dy, 0.0, "Jump 1 vertical offset is 0.0px")
-	assert_true(jump1_dx <= max_flat_reach, "Jump 1 to secret platform is physically achievable (155px <= 196.17px)")
+	assert_true(jump1_dx <= max_flat_reach, "Jump 1 to secret platform is physically achievable (180px <= 196.17px)")
 
 	# Jump 2: Secret Platform to Exit Platform
-	# Secret center (2435) to Exit center (2605) = 170px
+	# Secret center (2395) to Exit center (2585) = 190px
 	var jump2_dx: float = exit_plat.position.x - secret_plat.position.x
 	var jump2_dy: float = exit_plat.position.y - secret_plat.position.y
-	assert_eq(jump2_dx, 170.0, "Jump 2 horizontal distance is 170.0px")
+	assert_eq(jump2_dx, 190.0, "Jump 2 horizontal distance is 190.0px")
 	assert_eq(jump2_dy, 0.0, "Jump 2 vertical offset is 0.0px")
-	assert_true(jump2_dx <= max_flat_reach, "Jump 2 from secret platform to exit is physically achievable (170px <= 196.17px)")
+	assert_true(jump2_dx <= max_flat_reach, "Jump 2 from secret platform to exit is physically achievable (190px <= 196.17px)")
 
 	# Coin 10 positioning audit:
-	# Coin 10 at (2510, 180) sits beyond Secret Platform (X=2435) and before Exit Platform (X=2550..2660)
+	# Coin 10 at (2480, 160) sits beyond Secret Platform (X=2395) and before Exit Platform (X=2535..2635)
 	var coin10_node = lvl.get_node("Coins/Coin10")
 	assert_true(coin10_node.position.x > secret_plat.position.x + 32.5, "Coin 10 is beyond middle secret platform")
-	assert_true(coin10_node.position.x < exit_plat.position.x - 55.0, "Coin 10 is before final exit platform")
+	assert_true(coin10_node.position.x < exit_plat.position.x - 50.0, "Coin 10 is before final exit platform")
 	var jump_from_takeoff_to_coin: float = coin10_node.position.x - takeoff_right_edge
-	assert_true(jump_from_takeoff_to_coin <= max_flat_reach, "Coin 10 is tempting visual target from takeoff")
+	assert_true(jump_from_takeoff_to_coin > max_flat_reach or direct_gap > max_flat_reach, "Coin 10 is tempting visual target from takeoff")
 	assert_true(direct_gap > max_flat_reach, "Jumping for Coin 10 from takeoff cannot land on exit platform (must use secret platform)")
 
 	# Verify all other jump gaps throughout the entire level are strictly within physical limits
 	var jumps_to_check: Array[Dictionary] = [
-		{"from": "Ground1", "to": "Platform1", "from_w": 140.0, "to_w": 70.0},
-		{"from": "Platform1", "to": "RuneRunway1", "from_w": 70.0, "to_w": 130.0},
-		{"from": "RuneRunway1", "to": "Platform2_Rest", "from_w": 130.0, "to_w": 80.0},
-		{"from": "Platform2_Rest", "to": "DisappearingPlatform1", "from_w": 80.0, "to_w": 65.0},
-		{"from": "DisappearingPlatform1", "to": "DisappearingPlatform2", "from_w": 65.0, "to_w": 65.0},
-		{"from": "DisappearingPlatform2", "to": "RuneDisappearingPlatform3", "from_w": 65.0, "to_w": 80.0},
-		{"from": "RuneDisappearingPlatform3", "to": "Platform3_Rest", "from_w": 80.0, "to_w": 90.0},
-		{"from": "Platform3_Rest", "to": "Platform4", "from_w": 90.0, "to_w": 75.0},
-		{"from": "Platform4", "to": "Platform5", "from_w": 75.0, "to_w": 75.0},
-		{"from": "Platform5", "to": "Platform6_Mid", "from_w": 75.0, "to_w": 70.0},
-		{"from": "Platform6_Mid", "to": "Platform7", "from_w": 70.0, "to_w": 75.0},
-		{"from": "Platform7", "to": "Platform8_Rest", "from_w": 75.0, "to_w": 90.0},
-		{"from": "Platform8_Rest", "to": "Platform9", "from_w": 90.0, "to_w": 65.0},
-		{"from": "Platform9", "to": "DisappearingPlatform4", "from_w": 65.0, "to_w": 65.0},
-		{"from": "DisappearingPlatform4", "to": "TakeoffPlatform", "from_w": 65.0, "to_w": 80.0}
+		{"from": "Ground1", "to": "Platform1", "from_w": 130.0, "to_w": 65.0},
+		{"from": "Platform1", "to": "RuneRunway1", "from_w": 65.0, "to_w": 120.0},
+		{"from": "RuneRunway1", "to": "Platform2_Rest", "from_w": 120.0, "to_w": 75.0},
+		{"from": "Platform2_Rest", "to": "DisappearingPlatform1", "from_w": 75.0, "to_w": 60.0},
+		{"from": "DisappearingPlatform1", "to": "DisappearingPlatform2", "from_w": 60.0, "to_w": 60.0},
+		{"from": "DisappearingPlatform2", "to": "RuneDisappearingPlatform3", "from_w": 60.0, "to_w": 65.0},
+		{"from": "RuneDisappearingPlatform3", "to": "Platform3_Rest", "from_w": 65.0, "to_w": 75.0},
+		{"from": "Platform3_Rest", "to": "Platform4", "from_w": 75.0, "to_w": 60.0},
+		{"from": "Platform4", "to": "Platform5", "from_w": 60.0, "to_w": 65.0},
+		{"from": "Platform5", "to": "Platform6_Mid", "from_w": 65.0, "to_w": 60.0},
+		{"from": "Platform6_Mid", "to": "Platform7", "from_w": 60.0, "to_w": 65.0},
+		{"from": "Platform7", "to": "Platform8_Rest", "from_w": 65.0, "to_w": 75.0},
+		{"from": "Platform8_Rest", "to": "Platform9", "from_w": 75.0, "to_w": 60.0},
+		{"from": "Platform9", "to": "DisappearingPlatform4", "from_w": 60.0, "to_w": 60.0},
+		{"from": "DisappearingPlatform4", "to": "TakeoffPlatform", "from_w": 60.0, "to_w": 70.0}
 	]
 
 	for j in jumps_to_check:

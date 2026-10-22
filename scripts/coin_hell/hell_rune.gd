@@ -2,9 +2,10 @@ class_name HellRune
 extends Node2D
 
 ## Trap 1: Hell Rune — World 4: Final Hell signature trap.
-## Embedded in platform surfaces. When stepped on, displays a clear, readable
-## warning flash and crackle (0.70s), giving the player time to escape before
-## erupting into a lethal hellfire column (0.60s) on hazard collision layer 4.
+## Embedded in platform surfaces. When the player enters its activation zone,
+## displays an immediate, intense warning flash and crackle (0.28s),
+## erupting into an aggressive, lethal hellfire column (0.65s) on hazard layer 4.
+## Tuned to punish blind sprinting while rewarding skillful jumping or braking.
 ## Resets cleanly on retry and revive.
 
 enum State { DORMANT, WARNING, ACTIVE, COOLDOWN }
@@ -12,9 +13,13 @@ enum State { DORMANT, WARNING, ACTIVE, COOLDOWN }
 signal state_changed(new_state: State)
 signal rune_triggered
 
-@export var warning_duration: float = 0.38
-@export var active_duration: float = 0.75
-@export var cooldown_duration: float = 1.20
+@export var warning_duration: float = 0.28
+@export var active_duration: float = 0.65
+@export var cooldown_duration: float = 1.0
+
+# Activation zone tuning: allows lead distance so the flame erupts in front of sprinting players
+@export var trigger_size: Vector2 = Vector2(64.0, 24.0)
+@export var trigger_offset: Vector2 = Vector2(-18.0, -5.0)
 
 var current_state: State = State.DORMANT
 var _state_timer: float = 0.0
@@ -28,6 +33,8 @@ var _state_timer: float = 0.0
 @onready var warning_particles: CPUParticles2D = get_node_or_null("WarningParticles")
 
 func _ready() -> void:
+	_setup_trigger_shape()
+
 	if step_area:
 		step_area.body_entered.connect(_on_step_area_body_entered)
 	if hazard_area:
@@ -37,6 +44,11 @@ func _ready() -> void:
 	GameManager.player_revived.connect(_on_player_revived)
 
 	_apply_state(State.DORMANT)
+
+func _setup_trigger_shape() -> void:
+	if step_shape and step_shape.shape is RectangleShape2D:
+		(step_shape.shape as RectangleShape2D).size = trigger_size
+		step_shape.position = trigger_offset
 
 func _on_player_revived(_pos: Vector2) -> void:
 	reset()
@@ -64,18 +76,24 @@ func _physics_process(delta: float) -> void:
 	_state_timer -= delta
 
 	if current_state == State.WARNING:
-		# Rapid, intense warning oscillation between ember orange and searing crimson
+		# Rapid warning oscillation
 		if rune_plate:
-			var pulse := sin((warning_duration - _state_timer) * 40.0)
+			var pulse := sin((warning_duration - _state_timer) * 45.0)
 			rune_plate.modulate = Color(1.0, 0.25 + pulse * 0.25, 0.15, 1.0)
 		if _state_timer <= 0.0:
 			_apply_state(State.ACTIVE)
 
 	elif current_state == State.ACTIVE:
-		# Aggressive flame column flickering and roaring scale oscillation
+		# Roaring flame oscillation
 		if flame_burst:
-			flame_burst.scale.x = 1.0 + sin((active_duration - _state_timer) * 35.0) * 0.12
-			flame_burst.scale.y = 1.05 + sin((active_duration - _state_timer) * 28.0) * 0.20
+			flame_burst.scale.x = 1.15 + sin((active_duration - _state_timer) * 35.0) * 0.15
+			flame_burst.scale.y = 1.35 + sin((active_duration - _state_timer) * 28.0) * 0.25
+		# Continuous overlap check to guarantee instant death
+		if hazard_area:
+			for body in hazard_area.get_overlapping_bodies():
+				if (body.is_in_group("player") or body.name == "Player") and body.has_method("die"):
+					body.die()
+					break
 		if _state_timer <= 0.0:
 			_apply_state(State.COOLDOWN)
 
@@ -102,6 +120,12 @@ func _apply_state(new_state: State) -> void:
 				step_shape.set_deferred("disabled", false)
 			if warning_particles:
 				warning_particles.emitting = false
+			# If player is already standing in the trigger, start immediately
+			if step_area:
+				for body in step_area.get_overlapping_bodies():
+					if body.is_in_group("player") or body.name == "Player":
+						trigger()
+						break
 
 		State.WARNING:
 			_state_timer = warning_duration
@@ -120,12 +144,18 @@ func _apply_state(new_state: State) -> void:
 				rune_plate.modulate = Color(1.0, 0.95, 0.85, 1.0)
 			if flame_burst:
 				flame_burst.visible = true
-				flame_burst.scale = Vector2(1.25, 1.35)
+				flame_burst.scale = Vector2(1.25, 1.45)
 			if hazard_shape:
 				hazard_shape.disabled = false
 				hazard_shape.set_deferred("disabled", false)
 			if warning_particles:
 				warning_particles.emitting = false
+			# Instantaneous check on eruption frame
+			if hazard_area:
+				for body in hazard_area.get_overlapping_bodies():
+					if (body.is_in_group("player") or body.name == "Player") and body.has_method("die"):
+						body.die()
+						break
 
 		State.COOLDOWN:
 			_state_timer = cooldown_duration
