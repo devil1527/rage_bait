@@ -81,6 +81,12 @@ timeline
     Milestone 5 : Level 9 HUD Swap Fix : Level 10 Boss Stage Architecture
     Milestone 6 : Level 10 10-Round Schedule : Anti-Camping Engine
     Milestone 7 : Level 10 Dynamic Hazard System : 5 Chains & Attempt Variation
+    Milestone 8 : World 3 Rage Factory : Levels 11-14 Machinery & Traps
+    Milestone 9 : Level 15 Rage Furnace Finale : Elevator & Persistent Secret Platform
+    Milestone 10 : Android API 36 & 16KB Alignment : Godot 4.7.2 Migration
+    Milestone 11 : World 4 Final Hell : Level 16 The Platform That Lied
+    Milestone 12 : Level 16 Difficulty Rebalance : Dual Discovery Routes & Coin 10
+    Milestone 13 : Dual-Branch Architecture : release/play Branch & v0.13.0
 ```
 
 ---
@@ -325,14 +331,119 @@ The system needed full spatial and positional dynamic variation across the arena
 
 ---
 
+### Milestone 8: World 3 "Rage Factory" Implementation (Levels 11–14)
+
+#### Problem Statement
+World 3 needed an industrial foundry identity distinct from the stone ruins of World 1 and gothic halls of World 2. Stages 11 through 14 introduced conveyor belts, pneumatic crushers, and rotating cogs, culminating in the complex climbing gauntlet of Level 14.
+
+#### Key Implementations
+1. **Industrial Mechanics & Conveyor Belt Physics:**
+   - Introduced dynamic conveyor platforms altering player horizontal velocity.
+   - Pneumatic piston crushers with state machines (IDLE $\rightarrow$ WARNING $\rightarrow$ SLAM $\rightarrow$ RETRACT).
+2. **Level 13 ("The Smelting Chasm") Collision Optimization:**
+   - Repaired jump ceiling obstruction over Jump 3, preventing player head collisions on high arcs.
+3. **Level 14 ("Clockwork Furnace") Coin Reachability:**
+   - Corrected uncollectible Coin 7 position, ensuring strict alignment with kinematic jump reach ($dx \le 196.17\text{px}$).
+
+---
+
+### Milestone 9: Level 15 "Rage Furnace" Finale & Secret Ascent
+
+#### Architectural Scope
+Level 15 serves as the grand climax of World 3, featuring 5 escalating vertical and horizontal phases:
+- **Phase A: Molten Siphon** (Conveyors over floor spikes with falling rubble).
+- **Phase B: Pneumatic Ascent** (Alternating crushers and vertical conveyor lifts).
+- **Phase C: Smelter's Gauntlet** (High-speed horizontal conveyors under descending flame jets).
+- **Phase D: The Vertical Elevator** (Narrow volcanic shaft with elevator platform and rolling boulders).
+- **Phase E: The Rage Summit & Signature Deceptive Jump** (Summit leap to the exit).
+
+#### The Signature Ragebait: Secret Hidden Platform
+- Direct gap from the Takeoff Platform ($X = 2275$) to the Exit Platform ($X = 2500$) is $225\text{px}$, strictly exceeding the player's maximum flat jump reach of $196.17\text{px}$.
+- An intermediate secret platform (`SecretHiddenPlatform`) starts invisible and intangible.
+- It reveals upon a genuine failed leap into the abyss pit ($Y = 340$) or upon landing, and persists across deaths and retries via `SaveManager.level_15_secret_revealed`.
+- Elevator mechanics verified with exact $55\text{px}$ rise from apex to summit ledge, and all 10 coins verified collectible to unlock the Exit Gate.
+
+---
+
+### Milestone 10: Android API 36, 16 KB Page Alignment & Godot 4.7.2 Migration
+
+#### Overview
+To comply with Google Play's 2025/2026 technical requirements, the engine and native Android export toolchain were overhauled:
+1. **Godot 4.7.2 Engine Upgrade:** Upgraded engine to `Godot v4.7.2.stable.official.ed1daf0bf`.
+2. **Android API 36 (Android 16 / Baklava):** Set `targetSdkVersion = 36` and `minSdkVersion = 24`.
+3. **16 KB ELF Native Page Alignment:**
+   - Enforced 16 KB segment alignment across all native shared libraries (`libgodot_android.so`) across `arm64-v8a` and `x86_64` ABIs using `readelf -lW`.
+   - Applied Android SDK 16 KB zip alignment (`zipalign -p -f 16384`) to all APK and AAB build artifacts.
+4. **Google Play App Bundle (.aab) Export Pipeline:**
+   - Configured `.github/workflows/android-release-aab.yml` for automated release packaging and validation.
+   - Added `Android-Release-AAB` export preset with persistent release keystore signing.
+
+---
+
+### Milestone 11: World 4 "Final Hell" Introduction & Level 16 Architecture
+
+#### Visual Identity & Infernal Atmosphere
+World 4 ("FINAL HELL") introduces an apocalyptic infernal aesthetic:
+- Obsidian platforms with glowing demonic runes (`obsidian_platform.png`).
+- Molten lava chasm glow and rising ash/ember CPU particles (`final_hell_environment.gd`).
+- Ruined volcanic stone pillars (`ruined_pillar.png`) and demonic archway exit gates (`infernal_exit_locked.png`, `infernal_exit_open.png`).
+
+#### Level 16 ("The Platform That Lied") — 5 Progressive Sections
+- **Section A: The Ashen Approach:** Obsidian ruins introducing the Hell Rune trap in isolation.
+- **Section B: The Burning Passage:** Vanishing obsidian platforms paired with Hell Runes over lava.
+- **Section C: The Infernal Gate:** Dual Infernal Energy Gate laser barriers with rhythmic crossing windows.
+- **Section D: The False Finish:** Demonic approach to deceptive summit gap with subtle visual cues.
+- **Section E: The Platform That Lied:** Signature two-jump finale with an impossible $230\text{px}$ direct gap ($230\text{px} > 196.17\text{px}$ max reach) and intermediate secret platform at $X = 2435$.
+
+---
+
+### Milestone 12: Level 16 Difficulty Rebalance, Tightened Timing & Secret Reveal Fix
+
+#### 1. Hazard Timing Rebalance
+- **Hell Rune Fire Bursts:**
+  - Warning duration reduced from $0.70\text{s}$ to **$0.38\text{s}$** (active flame increased to $0.75\text{s}$ with explosive scale burst $1.25\times, 1.35\times$).
+  - At player speed $240\text{ px/s}$, crossing a $32\text{px}$ rune takes $0.133\text{s}$. The $0.38\text{s}$ warning window ensures fair passage for moving players while punishing hesitation.
+- **Disappearing Platforms:** Shake duration tightened from $0.75\text{s}$ to **$0.50\text{s}$**.
+- **Infernal Energy Gates:** Safe crossing window tightened to $1.4\text{s}$–$1.5\text{s}$, warning pulse to $0.45\text{s}$–$0.50\text{s}$.
+
+#### 2. Middle Invisible Platform Dual Discovery Routes
+- **Previous Bug:** The secret platform only appeared after the player died in the pit.
+- **Solution:** Added a dedicated `LandingArea` (`Area2D`, layer 0, mask 1) to `SecretHellPlatform`:
+  - **Route A (Living Landing Catch):** A player jumping toward the secret platform while alive triggers `reveal_for_landing()`, immediately making the platform visible, enabling solid collision, zeroing downward velocity, and supporting the living player safely.
+  - **Route B (Failed Gap Leap):** A player falling into `FinalGapTriggerArea` ($Y = 340$) reveals the platform upon dying.
+  - Both routes persist discovery in `SaveManager.level_16_secret_revealed`.
+
+#### 3. Strategic Placement of Coin 10
+- Repositioned Coin 10 from $(2435, 235)$ to **`Vector2(2510, 180)`** between the secret platform ($X_{right}=2467.5$) and exit platform ($X_{left}=2550$).
+- Baits players into jumping from the Takeoff Platform ($X = 2320$), falling $14.2\text{px}$ short and plunging into the abyss.
+- From the Secret Platform ($X = 2435$), Jump 2 cleanly sweeps through Coin 10 mid-arc and lands on the Exit Platform.
+
+---
+
+### Milestone 13: Dual-Branch Architecture & Google Play Release Workflow
+
+#### Branch Separation & Roles
+To maintain safe release hygiene without impeding development, a strict dual-branch architecture was established:
+- **`migration/android-api36-godot47` (Active Development):**
+  - Retains the secret 5-tap developer gesture and `DevBypassToggle` button.
+  - Allows developers to open any individual stage (1–16) directly for rapid iteration.
+- **`release/play` (Google Play Production Release Candidate):**
+  - Branched from verified stable commit and tracked at `origin/release/play`.
+  - Developer mode, secret gestures, and bypass mechanisms completely stripped.
+  - Strict normal progression enforced (`SaveManager.is_level_unlocked` required for all stages).
+  - Version incremented to `versionCode = 13` and `versionName = "0.13.0"`.
+  - Tagged milestone release candidate: `v0.13.0`.
+
+---
+
 ## 5. Verification & Testing Framework
 
-All systems are validated using the Godot headless test runner:
+All systems are validated using the Godot 4.7.2 headless test runner:
 ```powershell
-& 'C:\Users\hp\godot\Godot_v4.7.2-stable_win64_console.exe' --headless 'res://scenes/tests/test_runner.tscn'
+& 'C:\Users\hp\AppData\Local\Microsoft\WinGet\Packages\GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe\Godot_v4.7.2-stable_win64_console.exe' --headless 'res://scenes/tests/test_runner.tscn'
 ```
 
-### 5.1 Test Suite Summary: 1,388 Passed, 0 Failed
+### 5.1 Test Suite Summary: 2,777 Passed, 0 Failed
 
 | Test Category | Description | Assertions | Status |
 | :--- | :--- | :---: | :---: |
@@ -341,37 +452,35 @@ All systems are validated using the Godot headless test runner:
 | **World 1 Levels (1–5)** | Mechanics, collision, tricks, coin completion | 180 | **PASS** |
 | **World 2 Levels (6–8)** | Phantoms, bug fixes, wind zones & shelters | 240 | **PASS** |
 | **Level 9 Mechanics** | Pendulum chains, sanctuary platforms, exit gate | 110 | **PASS** |
-| **Level 10 Baseline** | Intro overlay, 60s timer, HUD layout, mobile UI | 145 | **PASS** |
-| **Level 10 Anti-Camping**| P1–P5 camping rotation, coin timing | 85 | **PASS** |
-| **TEST A: Variable Spikes**| Left, Right, Mid, Apex, Dual, Sequential | 120 | **PASS** |
-| **TEST B: Phantom Targets**| Variable platforms phasing out & recovering | 90 | **PASS** |
-| **TEST C: Multiple Chains**| 5 ceiling mounts, dual & triple attacks | 115 | **PASS** |
-| **TEST D: Crumbling Targets**| Variable platforms shaking, falling & restoring | 85 | **PASS** |
-| **TEST E: Round Transitions**| 10 six-second rounds & dynamic coin spawns | 50 | **PASS** |
-| **TEST F: Attempt Variation**| Variant rotation across retries, non-repetition | 35 | **PASS** |
-| **TEST G: Fairness** | Reaction window $\ge 0.6\text{s}$, $\ge 2$ safe platforms | 99 | **PASS** |
-| **Total Test Result** | **Full Automated Test Coverage** | **1,388** | **100% PASS** |
+| **Level 10 Boss Gauntlet**| 10-round dynamic schedule, anti-camping, attempt variation | 674 | **PASS** |
+| **World 3 Levels (11–14)**| Machinery, crushers, conveyors, ceiling collision fix, Coin 7 reachability | 480 | **PASS** |
+| **Level 15 Rage Furnace** | 5 phases, elevator ascent, summit geometry, secret platform reveal | 320 | **PASS** |
+| **World 4 Integration**   | Level select World 4 card, Stage 16 mapping, Stages 17-20 planned | 45 | **PASS** |
+| **Level 16 Architecture**  | 5 sections, exactly 10 coins audit, exit gate unlocking | 110 | **PASS** |
+| **Level 16 Hell Runes**   | Tightened 0.38s warning, 0.75s active flame, hazard layer 4 sync | 65 | **PASS** |
+| **Level 16 Energy Gates** | 1.4s-1.5s crossing windows, 0.45s-0.50s warning pulse, laser lethality | 55 | **PASS** |
+| **Level 16 Secret Platform**| Dual discovery routes (living landing catch + failed jump), persistence | 80 | **PASS** |
+| **Level 16 Kinematics**   | 230px impossible direct gap, Jump 1 (155px), Jump 2 (170px), Coin 10 positioning | 84 | **PASS** |
+| **Release Security Gates**| Dev mode retention (dev branch) vs complete removal (release branch) | 300 | **PASS** |
+| **Total Test Result** | **Full Automated Test Coverage** | **2,777** | **100% PASS** |
 
 ---
 
 ## 6. Android Export & CI/CD Pipeline
 
-The project uses GitHub Actions to automatically test, export, and package the Android APK on every push to `main`.
+The project utilizes automated GitHub Actions workflows for continuous integration and store deployment:
 
-### CI Workflow Configuration (`.github/workflows/android-apk.yml`)
-1. **Environment:** Ubuntu latest, Temurin JDK 17, Android SDK Platform 34, Build Tools 34.0.0.
-2. **Engine:** Godot 4.3 Headless + Godot 4.3 Export Templates.
-3. **Keystore:** Persistent debug keystore cached and managed automatically.
-4. **Automated Verification:** Runs `godot --headless "res://scenes/tests/test_runner.tscn"`. The build aborts if any test fails.
-5. **Export:** Compiles Android Debug APK (`build/coin-hell-debug.apk`) using preset `Android`.
-6. **Artifact Upload:** Publishes artifact `coin-hell-debug-apk`.
-
-### Latest Build Verification
-- **GitHub Workflow Run:** [Run 38512622966](https://github.com/devil1527/rage_bait/actions/runs/38512622966)
-- **Git Commit:** `29f20d5`
-- **Android Version:** Code `11` / Name `0.11.0`
-- **Result:** `success`
-- **Artifact:** `coin-hell-debug-apk` (48,211,423 bytes, ~46 MB)
+### Active CI/CD Workflows
+1. **`.github/workflows/android-api36-validation.yml`**:
+   - Triggers on pushes and pull requests to `main`, `migration/android-api36-godot47`, and `release/play`.
+   - Runs on Ubuntu latest with Temurin JDK 17, Android SDK Platform 36, and Build Tools 36.0.0.
+   - Executes the Godot 4.7.2 headless test suite.
+   - Compiles and validates Android Test APK with 16 KB native ELF alignment (`readelf`) and 16 KB zip alignment (`zipalign`).
+2. **`.github/workflows/android-release-aab.yml`**:
+   - Triggers on pushes to `migration/android-api36-godot47`, `release/play`, and version tags (`v*`).
+   - Compiles signed Google Play Android App Bundle (`.aab`) with `Android-Release-AAB` export preset.
+   - Verifies bundletool manifest metadata (`com.antigravity.retroragearcade`, targetSdk 36, versionCode 13, versionName 0.13.0).
+   - Validates digital signature via `jarsigner` and 16 KB ELF memory alignment.
 
 ---
 
@@ -380,31 +489,20 @@ The project uses GitHub Actions to automatically test, export, and package the A
 ### Running the Test Suite Locally
 ```powershell
 cd c:\AntiGravity\rage_bait
-& 'C:\Users\hp\godot\Godot_v4.7.2-stable_win64_console.exe' --headless 'res://scenes/tests/test_runner.tscn'
+& 'C:\Users\hp\AppData\Local\Microsoft\WinGet\Packages\GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe\Godot_v4.7.2-stable_win64_console.exe' --headless 'res://scenes/tests/test_runner.tscn'
 ```
 
-### Testing a Specific Level 10 Variant Deterministically
-In code or tests:
-```gdscript
-var lvl = load("res://scenes/coin_hell/coin_hell_level_10.tscn").instantiate()
-lvl.variant_override = 1 # 0 = Variant 0, 1 = Variant 1, 2 = Variant 2, -1 = Randomized
-add_child(lvl)
-```
+### Coin Hell Standard Kinematics Table
+| Parameter | Value | Notes |
+| :--- | :--- | :--- |
+| `move_speed` | $240.0\text{ px/s}$ | Horizontal running velocity |
+| `jump_velocity` | $-470.0\text{ px/s}$ | Initial upward vertical impulse |
+| `gravity` | $1150.0\text{ px/s}^2$| Downward acceleration |
+| `t_flight` | $0.8174\text{ s}$ | Full air time on flat ground |
+| `max_flat_reach`| $196.17\text{ px}$ | Maximum horizontal single jump distance |
+| `max_apex_height`| $96.04\text{ px}$ | Maximum vertical rise above platform |
 
-### Triggering Custom Hazards on Any Platform
-```gdscript
-# trigger_hazard(warning_duration, active_duration, optional_hazard_override)
-platform.trigger_hazard(0.75, 1.8, SurvivalArenaPlatform.HazardType.SPIKES)
-```
-Valid types:
-- `HazardType.SPIKES` (0)
-- `HazardType.PHANTOM` (1)
-- `HazardType.CRUMBLING` (2)
-- `HazardType.CHAINS` (3)
-- `HazardType.COUNTDOWN` (4)
+### Branch Management Rules
+- **Development Work:** Commit all features, level additions, and bug fixes to `migration/android-api36-godot47`. Retain developer testing tools.
+- **Production Releases:** Merge stable milestones into `release/play`. Increment `versionCode` monotonically, keep developer tools stripped, and tag release candidates (`vX.Y.Z`).
 
-### Adding Future Levels (World 3: Level 11+)
-1. Create scene under `scenes/coin_hell/coin_hell_level_11.tscn`.
-2. Follow HUD TopBar hierarchy: `CoinCounter` (0), `LevelName` (1), `TimerContainer` (2), `PauseBtn` (3).
-3. Connect exit gate or survival timer to `GameManager.trigger_level_complete()`.
-4. Add unit test suite in `scripts/tests/test_runner.gd` and register in `run_all_tests()`.

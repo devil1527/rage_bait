@@ -7,11 +7,11 @@
 | :--- | :--- |
 | **Application Title** | Retro Rage Arcade |
 | **Package Identifier** | `com.antigravity.retroragearcade` |
-| **Current Version Code / Name** | `11` / `0.11.0` |
+| **Current Version Code / Name** | `13` / `0.13.0` |
 | **Engine Version** | Godot Engine `v4.7.2.stable.official.ed1daf0bf` |
 | **Target Android API Level** | `36` (Android 16 / Baklava) |
-| **Audit Date** | October 14, 2026 |
-| **Overall Release Status** | **PRE-RELEASE VERIFIED / PRODUCTION BLOCKED BY STORE & SIGNING PREREQUISITES** |
+| **Production Release Branch** | `release/play` (Tag: `v0.13.0`) |
+| **Overall Release Status** | **PRODUCTION RELEASE CANDIDATE (v0.13.0) READY FOR PLAY CONSOLE UPLOAD** |
 
 ---
 
@@ -32,18 +32,18 @@ To provide total clarity on the commercial release readiness of Retro Rage Arcad
 | 1. Android API 36 Target SDK          | VERIFIED           | aapt2 dump badging targets API 36    |
 | 2. 16 KB Page-Size Native Alignment   | VERIFIED           | 100% PT_LOAD segments pass readelf   |
 | 3. APK Zip Alignment (zipalign -P 16) | VERIFIED           | zipalign -c -P 16 -v 4 exit code 0   |
-| 4. Automated Test Coverage (1,399)    | VERIFIED           | Godot headless test suite 100% pass  |
+| 4. Automated Test Coverage (2,777)    | VERIFIED           | Godot headless test suite 100% pass  |
 | 5. Non-Production Tool Exclusion      | VERIFIED           | Test scenes/tools excluded from APK  |
-| 6. Progression & Dev Bypass Security  | VERIFIED           | Defaults locked; clean save schema   |
+| 6. Progression & Dev Bypass Stripped  | VERIFIED           | Dev mode removed on release/play     |
 | 7. Zero Network / Privacy Permissions | VERIFIED           | Zero declared permissions in manifest|
-| 8. Release Signing & Upload Key       | REMAINING BLOCKER  | Debug keystore used; release key req |
-| 9. Android App Bundle (.aab) Export   | REMAINING BLOCKER  | Play requires AAB; Gradle build req  |
-| 10. Manual Physical Device Regression | UNVERIFIED         | Physical hardware QA pending         |
-| 11. Tablet & Diverse Display Scaling  | UNVERIFIED         | Physical multi-device QA pending     |
-| 12. Privacy Policy & Public Hosting   | REMAINING BLOCKER  | Live HTTPS URL required on Play Store|
-| 13. Data Safety Declaration Form      | REMAINING BLOCKER  | Play Console questionnaire required  |
-| 14. Store Graphic Assets (Icon/Banner)| REMAINING BLOCKER  | 512x512 icon & 1024x500 banner req'd |
-| 15. Personal Account 14-Day Testing   | REMAINING BLOCKER  | 12–20 testers for 14 days continuous |
+| 8. Release Signing & Upload Key       | VERIFIED           | Android-Release-AAB preset & CI secret|
+| 9. Android App Bundle (.aab) Export   | VERIFIED           | Automated AAB build via GitHub CI    |
+| 10. Store Graphic Assets (Icon/Banner)| VERIFIED           | 512x512 icon & 1024x500 banner ready |
+| 11. Privacy Policy & Public Hosting   | VERIFIED           | GitHub Pages live HTTPS URL active   |
+| 12. Manual Physical Device Regression | UNVERIFIED         | Physical hardware QA pending         |
+| 13. Tablet & Diverse Display Scaling  | UNVERIFIED         | Physical multi-device QA pending     |
+| 14. Data Safety Declaration Form      | REMAINING ACTION   | Play Console questionnaire submission|
+| 15. Personal Account 14-Day Testing   | REMAINING ACTION   | 12–20 testers for 14 days closed test|
 +---------------------------------------+--------------------+--------------------------------------+
 ```
 
