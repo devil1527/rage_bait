@@ -140,6 +140,11 @@ func run_all_tests() -> void:
 	test_level_16_infernal_energy_gate_mechanics()
 	test_level_16_secret_hell_platform_state_machine()
 	test_level_16_jump_physics_and_kinematic_reachability()
+	test_level_17_infernal_deception_layout_and_coins()
+	test_level_17_hazard_mechanics_and_synchronization()
+	test_level_17_jump_physics_and_kinematic_reachability()
+	test_level_17_lifecycle_death_retry_revive_resets()
+	test_level_17_completion_and_progression_advancement()
 
 func test_save_manager_and_persistence() -> void:
 	print("\n--- TEST: SaveManager & Persistence ---")
@@ -277,11 +282,12 @@ func test_game_manager_level_definitions() -> void:
 	var lvl17: Dictionary = GameManager.get_level_info(17)
 	assert_eq(lvl17.get("name"), "The Infernal Deception", "Level 17 name is 'The Infernal Deception'")
 	assert_eq(GameManager.get_world_name_for_stage(17), "FINAL HELL", "Level 17 world is 'FINAL HELL'")
-	assert_true(not lvl17.get("implemented"), "Level 17 is marked not implemented")
-	assert_true(not GameManager.can_play_level(17), "Level 17 is not playable yet")
+	assert_true(lvl17.get("implemented"), "Level 17 is marked implemented")
+	assert_true(GameManager.can_play_level(17), "Level 17 is playable")
 	assert_eq(lvl17.get("coin_count"), 10, "Level 17 coin count is 10")
+	assert_eq(lvl17.get("scene"), "res://scenes/coin_hell/coin_hell_level_17.tscn", "Level 17 scene path is correct")
 	
-	for lvl_id in range(17, 21):
+	for lvl_id in range(18, 21):
 		assert_true(not GameManager.can_play_level(lvl_id), "Level %d is marked not implemented" % lvl_id)
 		
 	# Test coin counter clamping
@@ -487,14 +493,20 @@ func test_level_select_logic_and_states() -> void:
 	assert_true(SaveManager.is_level_unlocked(16), "Level 16 is unlocked after completing Level 15")
 	assert_true(GameManager.can_play_level(16), "Level 16 is playable")
 
-	# Complete level 16 to unlock level 17 and test unimplemented level press
+	# Complete level 16 to unlock level 17; verify Level 17 is playable!
 	SaveManager.complete_level(16)
 	lsel._update_ui()
 	assert_true(SaveManager.is_level_unlocked(17), "Level 17 is unlocked after completing Level 16")
-	assert_true(not GameManager.can_play_level(17), "Level 17 is not implemented yet")
-	lsel._on_level_tile_pressed(17)
+	assert_true(GameManager.can_play_level(17), "Level 17 is playable")
+
+	# Complete level 17 to unlock level 18 and test unimplemented level press
+	SaveManager.complete_level(17)
+	lsel._update_ui()
+	assert_true(SaveManager.is_level_unlocked(18), "Level 18 is unlocked after completing Level 17")
+	assert_true(not GameManager.can_play_level(18), "Level 18 is not implemented yet")
+	lsel._on_level_tile_pressed(18)
 	assert_true(modal.visible, "Pressing unlocked but unimplemented level shows modal")
-	assert_eq(modal_label.text, "Level 17 is still being built. Replay an earlier level for now.", "Modal shows exact unimplemented level message")
+	assert_eq(modal_label.text, "Level 18 is still being built. Replay an earlier level for now.", "Modal shows exact unimplemented level message")
 	
 	lsel.queue_free()
 
@@ -1865,10 +1877,14 @@ func test_developer_only_level_access() -> void:
 	lsel._on_level_tile_pressed(16)
 	assert_eq(GameManager.current_level_id, 16, "Developer mode allows direct launch into Level 16 when explicitly enabled")
 
-	# Unimplemented level (e.g. Level 17) cannot be launched even with dev mode on
+	# Level 17 can be launched with dev mode on
 	lsel._on_level_tile_pressed(17)
-	assert_true(lsel.message_modal.visible, "Unimplemented Level 17 displays in-progress modal")
-	assert_eq(lsel.modal_title.text, "LEVEL 17 IN PROGRESS", "Modal indicates Level 17 is in progress")
+	assert_eq(GameManager.current_level_id, 17, "Developer mode allows direct launch into Level 17 when explicitly enabled")
+
+	# Unimplemented level (e.g. Level 18) cannot be launched even with dev mode on
+	lsel._on_level_tile_pressed(18)
+	assert_true(lsel.message_modal.visible, "Unimplemented Level 18 displays in-progress modal")
+	assert_eq(lsel.modal_title.text, "LEVEL 18 IN PROGRESS", "Modal indicates Level 18 is in progress")
 	
 	# Release mode simulation: verify that when is_debug_mode is false, bypass cannot be activated
 	lsel.dev_bypass_active = false
@@ -4653,7 +4669,7 @@ func test_ui_redesign_and_world_navigation() -> void:
 	lsel._update_ui()
 	var prog_lbl: Label = lsel.get_node("MarginContainer/VBox/HeaderBar/ProgressBox/ProgressLabel")
 	assert_true(prog_lbl.text.begins_with("STAGES CLEARED:"), "UI Redesign: Progress label starts with STAGES CLEARED:")
-	assert_true(prog_lbl.text.ends_with("/ 16"), "UI Redesign: Progress label shows honest numerator out of 16 implemented stages")
+	assert_true(prog_lbl.text.ends_with("/ %d" % GameManager.get_implemented_level_count()), "UI Redesign: Progress label shows honest numerator out of %d implemented stages" % GameManager.get_implemented_level_count())
 
 	# World filtering and navigation
 	lsel._select_world_tab(1)
@@ -4701,18 +4717,24 @@ func test_ui_redesign_and_world_navigation() -> void:
 	var state16_lbl: Label = btn16.get_node("VBox/StateLabel")
 	assert_eq(state16_lbl.text, "LOCKED", "UI Redesign: Stage 16 state is LOCKED before completing prior stages")
 
-	# Unimplemented Stage 17 Planned State
+	# Stage 17 is now implemented (Locked on fresh save, completes to unlock)
 	var btn17 = lsel.get_level_button(17)
 	assert_true(btn17 != null, "UI Redesign: Stage 17 button exists")
 	var state17_lbl: Label = btn17.get_node("VBox/StateLabel")
-	assert_eq(state17_lbl.text, "PLANNED", "UI Redesign: Stage 17 state is visibly PLANNED")
+	assert_eq(state17_lbl.text, "LOCKED", "UI Redesign: Stage 17 state is LOCKED before completing prior stages")
 
-	# When completed up to 16, pressing Level 17 shows in progress modal
-	SaveManager.complete_level(16)
+	# Unimplemented Stage 18 Planned State
+	var btn18 = lsel.get_level_button(18)
+	assert_true(btn18 != null, "UI Redesign: Stage 18 button exists")
+	var state18_lbl: Label = btn18.get_node("VBox/StateLabel")
+	assert_eq(state18_lbl.text, "PLANNED", "UI Redesign: Stage 18 state is visibly PLANNED")
+
+	# When completed up to 17, pressing Level 18 shows in progress modal
+	SaveManager.complete_level(17)
 	lsel._update_ui()
-	lsel._on_level_tile_pressed(17)
-	assert_true(lsel.message_modal.visible, "UI Redesign: Clicking Stage 17 shows modal")
-	assert_eq(lsel.modal_title.text, "LEVEL 17 IN PROGRESS", "UI Redesign: Modal title explains Level 17 is in progress")
+	lsel._on_level_tile_pressed(18)
+	assert_true(lsel.message_modal.visible, "UI Redesign: Clicking Stage 18 shows modal")
+	assert_eq(lsel.modal_title.text, "LEVEL 18 IN PROGRESS", "UI Redesign: Modal title explains Level 18 is in progress")
 	lsel.message_modal.visible = false
 
 	lsel.queue_free()
@@ -5896,8 +5918,10 @@ func test_world_4_integration_and_level_select() -> void:
 	assert_eq(GameManager.get_stage_hud_label(16), "WORLD 4 · STAGE 16", "Stage 16 HUD label is WORLD 4 · STAGE 16")
 	assert_true(GameManager.can_play_level(16), "Level 16 is marked playable in GameManager")
 	
-	# Levels 17-20 remain locked/unimplemented
-	for s in range(17, 21):
+	assert_true(GameManager.can_play_level(17), "Level 17 is marked playable in GameManager")
+	
+	# Levels 18-20 remain locked/unimplemented
+	for s in range(18, 21):
 		assert_true(not GameManager.can_play_level(s), "Stage %d is marked unplayable / not implemented" % s)
 
 	# SaveManager level 16 secret runtime flag verification (does NOT persist across save/load)
@@ -5933,7 +5957,12 @@ func test_world_4_integration_and_level_select() -> void:
 	var btn17 = lsel.get_level_button(17)
 	assert_true(btn17 != null, "Level 17 button exists in Level Select")
 	var state17_lbl: Label = btn17.get_node("VBox/StateLabel")
-	assert_eq(state17_lbl.text, "PLANNED", "Level 17 state is PLANNED")
+	assert_true(state17_lbl.text in ["AVAILABLE", "LOCKED", "COMPLETED"], "Level 17 state is an implemented state (AVAILABLE, LOCKED, or COMPLETED)")
+
+	var btn18 = lsel.get_level_button(18)
+	assert_true(btn18 != null, "Level 18 button exists in Level Select")
+	var state18_lbl: Label = btn18.get_node("VBox/StateLabel")
+	assert_eq(state18_lbl.text, "PLANNED", "Level 18 state is PLANNED")
 
 	var btn20 = lsel.get_level_button(20)
 	assert_true(btn20 != null, "Level 20 button exists in Level Select")
@@ -6356,4 +6385,380 @@ func test_level_16_jump_physics_and_kinematic_reachability() -> void:
 
 	remove_child(lvl)
 	lvl.free()
+
+func test_level_17_infernal_deception_layout_and_coins() -> void:
+	print("\n--- TEST: Level 17 Layout & Exactly 10 Coins Audit ---")
+	var lvl17_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_17.tscn")
+	assert_true(lvl17_scene != null, "Level 17 scene coin_hell_level_17.tscn loads")
+	var lvl = lvl17_scene.instantiate()
+	add_child(lvl)
+
+	# Atmospheric environment
+	var env = lvl.get_node_or_null("FinalHellEnvironment")
+	assert_true(env != null, "FinalHellEnvironment node exists in Level 17")
+	assert_eq(env.stage_width, 2700.0, "Level 17 environment width is 2700.0")
+	assert_eq(env.stage_height, 540.0, "Level 17 environment height is 540.0")
+
+	# Player start
+	var player = lvl.get_node_or_null("Player")
+	assert_true(player != null, "Player exists in Level 17")
+	assert_eq(player.position, Vector2(70, 224), "Player spawns at safe start (70, 224)")
+	assert_true(player.is_in_group("player"), "Player is in 'player' group")
+
+	var spawn = lvl.get_node_or_null("SpawnPoint")
+	assert_true(spawn != null, "SpawnPoint exists in Level 17")
+	assert_eq(spawn.position, Vector2(70, 224), "SpawnPoint is at (70, 224)")
+
+	# Platforms Container & Structure
+	var platforms = lvl.get_node_or_null("Platforms")
+	assert_true(platforms != null, "Platforms container exists")
+	assert_eq(platforms.get_child_count(), 21, "Level 17 has exactly 21 platform structures")
+
+	# Section A platforms
+	assert_true(platforms.get_node_or_null("Ground1") != null, "Section A: Ground1 exists")
+	assert_true(platforms.get_node_or_null("Platform1") != null, "Section A: Platform1 exists")
+	assert_true(platforms.get_node_or_null("Platform2") != null, "Section A: Platform2 exists")
+	assert_true(platforms.get_node_or_null("Platform3") != null, "Section A: Platform3 exists")
+	assert_true(platforms.get_node_or_null("Platform4_Rest") != null, "Section A: Platform4_Rest exists")
+
+	# Section B platforms
+	assert_true(platforms.get_node_or_null("DisappearingPlatform1") != null, "Section B: DisappearingPlatform1 exists")
+	assert_true(platforms.get_node_or_null("Platform6") != null, "Section B: Platform6 exists")
+	assert_true(platforms.get_node_or_null("DisappearingPlatform2") != null, "Section B: DisappearingPlatform2 exists")
+	assert_true(platforms.get_node_or_null("DisappearingPlatform3") != null, "Section B: DisappearingPlatform3 exists")
+	assert_true(platforms.get_node_or_null("Platform9_Rest") != null, "Section B: Platform9_Rest exists")
+
+	# Section C platforms
+	assert_true(platforms.get_node_or_null("Platform10") != null, "Section C: Platform10 exists")
+	assert_true(platforms.get_node_or_null("Platform11") != null, "Section C: Platform11 exists")
+	assert_true(platforms.get_node_or_null("Platform12") != null, "Section C: Platform12 exists")
+	assert_true(platforms.get_node_or_null("DisappearingPlatform4") != null, "Section C: DisappearingPlatform4 exists")
+	assert_true(platforms.get_node_or_null("Platform14") != null, "Section C: Platform14 exists")
+	assert_true(platforms.get_node_or_null("Platform15_Rest") != null, "Section C: Platform15_Rest exists")
+
+	# Section D platforms
+	assert_true(platforms.get_node_or_null("DisappearingPlatform5") != null, "Section D: DisappearingPlatform5 exists")
+	assert_true(platforms.get_node_or_null("DisappearingPlatform6") != null, "Section D: DisappearingPlatform6 exists")
+	assert_true(platforms.get_node_or_null("Platform18") != null, "Section D: Platform18 exists")
+	assert_true(platforms.get_node_or_null("DisappearingPlatform7") != null, "Section D: DisappearingPlatform7 exists")
+	assert_true(platforms.get_node_or_null("ExitPlatform") != null, "Section D: ExitPlatform exists")
+
+	# Hazards Container & Entities
+	var hazards = lvl.get_node_or_null("Hazards")
+	assert_true(hazards != null, "Hazards container exists")
+	assert_true(hazards.get_node_or_null("Spikes1") != null, "Section A: Spikes1 exists")
+	assert_true(hazards.get_node_or_null("HellRune_A1") != null, "Section A: HellRune_A1 exists")
+	assert_true(hazards.get_node_or_null("HellRune_A2") != null, "Section A: HellRune_A2 exists")
+	assert_true(hazards.get_node_or_null("HellRune_A3") != null, "Section A: HellRune_A3 exists")
+	assert_true(hazards.get_node_or_null("HellRune_B1") != null, "Section B: HellRune_B1 exists")
+	assert_true(hazards.get_node_or_null("HellRune_B2") != null, "Section B: HellRune_B2 exists")
+	assert_true(hazards.get_node_or_null("EnergyGate_C1_Vertical") != null, "Section C: EnergyGate_C1_Vertical exists")
+	assert_true(hazards.get_node_or_null("HellRune_C1") != null, "Section C: HellRune_C1 exists")
+	assert_true(hazards.get_node_or_null("EnergyGate_C2_Horizontal") != null, "Section C: EnergyGate_C2_Horizontal exists")
+	assert_true(hazards.get_node_or_null("EnergyGate_D1_Vertical") != null, "Section D: EnergyGate_D1_Vertical exists")
+	assert_true(hazards.get_node_or_null("HellRune_D1") != null, "Section D: HellRune_D1 exists")
+
+	# Pit hazard area
+	var pit = lvl.get_node_or_null("PitHazardArea")
+	assert_true(pit != null, "PitHazardArea exists in Level 17")
+	assert_eq(pit.collision_layer, 4, "PitHazardArea collision layer is 4")
+	assert_eq(pit.collision_mask, 1, "PitHazardArea collision mask is 1")
+
+	# Exact 10 Coins Audit
+	var coins = lvl.get_node_or_null("Coins")
+	assert_true(coins != null, "Coins container exists")
+	assert_eq(coins.get_child_count(), 10, "EXACT COIN AUDIT: Level 17 has exactly 10 coins")
+
+	for i in range(1, 11):
+		var coin_node = coins.get_node_or_null("Coin%d" % i)
+		assert_true(coin_node != null, "Coin%d instance exists and is uniquely named" % i)
+		assert_true(coin_node.has_method("reset"), "Coin%d has reset method" % i)
+		assert_eq(coin_node.collision_layer, 4, "Coin%d collision layer is 4" % i)
+		assert_eq(coin_node.collision_mask, 1, "Coin%d collision mask is 1 (player)" % i)
+
+	# Verify coin positions over platforms
+	assert_eq(coins.get_node("Coin1").position, Vector2(195, 175), "Coin 1 is over Platform1")
+	assert_eq(coins.get_node("Coin2").position, Vector2(315, 150), "Coin 2 is over Platform2")
+	assert_eq(coins.get_node("Coin3").position, Vector2(440, 165), "Coin 3 is over Platform3")
+	assert_eq(coins.get_node("Coin4").position, Vector2(680, 150), "Coin 4 is over DisappearingPlatform1")
+	assert_eq(coins.get_node("Coin5").position, Vector2(910, 125), "Coin 5 is over DisappearingPlatform2")
+	assert_eq(coins.get_node("Coin6").position, Vector2(1025, 140), "Coin 6 is over DisappearingPlatform3")
+	assert_eq(coins.get_node("Coin7").position, Vector2(1385, 160), "Coin 7 is over Platform11")
+	assert_eq(coins.get_node("Coin8").position, Vector2(1630, 170), "Coin 8 is over DisappearingPlatform4")
+	assert_eq(coins.get_node("Coin9").position, Vector2(2080, 115), "Coin 9 is over DisappearingPlatform6")
+	assert_eq(coins.get_node("Coin10").position, Vector2(2320, 95), "Coin 10 is over DisappearingPlatform7")
+
+	# Exit Gate
+	var exit_gate = lvl.get_node_or_null("ExitGate")
+	assert_true(exit_gate != null, "ExitGate exists in Level 17")
+	assert_true(not exit_gate._is_open, "Exit gate starts locked")
+	assert_eq(GameManager.get_level_info(17).get("coin_count"), 10, "Level 17 requires exactly 10 coins")
+	assert_eq(exit_gate.position, Vector2(2455, 123), "Exit gate is on ExitPlatform at (2455, 123)")
+
+	remove_child(lvl)
+	lvl.free()
+
+func test_level_17_hazard_mechanics_and_synchronization() -> void:
+	print("\n--- TEST: Level 17 Hazard Mechanics & Collision Synchronization ---")
+	# 1. Hell Rune Mechanics
+	var rune_scene: PackedScene = load("res://scenes/coin_hell/hell_rune.tscn")
+	assert_true(rune_scene != null, "HellRune scene loads")
+	var rune = rune_scene.instantiate()
+	rune.warning_duration = 0.40
+	rune.active_duration = 0.65
+	add_child(rune)
+
+	assert_eq(rune.current_state, HellRune.State.DORMANT, "HellRune starts DORMANT")
+	var h_shape: CollisionShape2D = rune.hazard_shape
+	assert_true(h_shape.disabled, "HellRune hazard collision is disabled while DORMANT")
+	assert_true(not rune.flame_burst.visible, "HellRune flame visual is invisible while DORMANT")
+
+	rune.trigger()
+	assert_eq(rune.current_state, HellRune.State.WARNING, "Calling trigger() transitions HellRune to WARNING")
+	assert_true(h_shape.disabled, "Hazard collision remains safe/disabled during WARNING phase")
+
+	# Simulate warning elapsed
+	rune._physics_process(0.45)
+	assert_eq(rune.current_state, HellRune.State.ACTIVE, "HellRune transitions to ACTIVE after warning_duration")
+	assert_true(not h_shape.disabled, "Hazard collision is enabled while ACTIVE")
+	assert_true(rune.flame_burst.visible, "Flame visual is visible while ACTIVE")
+	assert_eq(rune.hazard_area.collision_layer, 4, "Hazard layer is 4")
+
+	rune.reset()
+	assert_eq(rune.current_state, HellRune.State.DORMANT, "reset() restores HellRune to DORMANT")
+	assert_true(h_shape.disabled, "Hazard collision is disabled upon reset()")
+	assert_true(not rune.flame_burst.visible, "Flame visual is hidden upon reset()")
+	remove_child(rune)
+	rune.free()
+
+	# 2. Infernal Energy Gate Mechanics
+	var gate_scene: PackedScene = load("res://scenes/coin_hell/infernal_energy_gate.tscn")
+	assert_true(gate_scene != null, "InfernalEnergyGate scene loads")
+	var gate = gate_scene.instantiate()
+	gate.inactive_duration = 2.0
+	gate.warning_duration = 0.70
+	gate.active_duration = 1.10
+	add_child(gate)
+
+	assert_eq(gate.current_state, InfernalEnergyGate.GateState.INACTIVE, "Energy Gate starts INACTIVE")
+	assert_true(gate.hazard_shape.disabled, "Beam collision is DISABLED when inactive")
+	assert_true(not gate.beam_visual.visible, "Beam visual is invisible when inactive")
+
+	# Advance into warning
+	gate._physics_process(2.1)
+	assert_eq(gate.current_state, InfernalEnergyGate.GateState.WARNING, "Gate enters WARNING state")
+	assert_true(gate.hazard_shape.disabled, "Beam collision remains DISABLED during warning pulse")
+
+	# Advance into active
+	gate._physics_process(0.75)
+	assert_eq(gate.current_state, InfernalEnergyGate.GateState.ACTIVE, "Gate enters ACTIVE state")
+	assert_true(not gate.hazard_shape.disabled, "Beam collision is ENABLED when ACTIVE")
+	assert_true(gate.beam_visual.visible, "Beam visual is visible when ACTIVE")
+	assert_eq(gate.hazard_area.collision_layer, 4, "Lethal beam is on hazard layer 4")
+
+	gate.reset()
+	assert_eq(gate.current_state, InfernalEnergyGate.GateState.INACTIVE, "reset() restores Gate to INACTIVE")
+	assert_true(gate.hazard_shape.disabled, "Beam collision is disabled upon reset")
+	assert_true(not gate.beam_visual.visible, "Beam visual is invisible upon reset")
+	remove_child(gate)
+	gate.free()
+
+	# 3. Disappearing Platform Mechanics
+	var plat_scene: PackedScene = load("res://scenes/coin_hell/disappearing_hell_platform.tscn")
+	assert_true(plat_scene != null, "DisappearingHellPlatform scene loads")
+	var dplat = plat_scene.instantiate()
+	dplat.shake_duration = 0.50
+	add_child(dplat)
+
+	assert_eq(dplat.collision_layer, 2, "Disappearing platform starts on terrain layer 2")
+	assert_true(not dplat.collision_shape.disabled, "Platform collision is initially enabled")
+	assert_true(not dplat._triggered, "Platform starts untriggered")
+
+	dplat.trigger()
+	assert_true(dplat._triggered, "trigger() marks platform triggered")
+	assert_true(not dplat._falling, "Platform shakes before falling")
+	assert_true(not dplat.collision_shape.disabled, "Platform remains solid during shake warning")
+
+	# Advance shake time
+	dplat._physics_process(0.55)
+	assert_true(dplat._falling, "Platform collapses after shake duration")
+
+	dplat.reset()
+	assert_true(not dplat._triggered, "reset() restores untriggered state")
+	assert_true(not dplat._falling, "reset() restores non-falling state")
+	assert_true(not dplat.collision_shape.disabled, "reset() restores solid collision")
+	remove_child(dplat)
+	dplat.free()
+
+func test_level_17_jump_physics_and_kinematic_reachability() -> void:
+	print("\n--- TEST: Level 17 Jump Physics & Kinematic Reachability ---")
+	var move_speed: float = 240.0
+	var jump_velocity: float = -470.0
+	var gravity: float = 1150.0
+
+	var t_flight: float = 2.0 * abs(jump_velocity) / gravity
+	var max_flat_reach: float = move_speed * t_flight
+	var max_apex_height: float = (jump_velocity * jump_velocity) / (2.0 * gravity)
+
+	assert_true(abs(max_flat_reach - 196.17) < 0.1, "Player max flat jump reach is approx 196.17px")
+	assert_true(abs(max_apex_height - 96.04) < 0.1, "Player max jump height is approx 96.04px")
+
+	var lvl17_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_17.tscn")
+	var lvl = lvl17_scene.instantiate()
+	add_child(lvl)
+
+	var platforms = lvl.get_node("Platforms")
+
+	var sequential_jumps: Array[Dictionary] = [
+		{"from": "Ground1", "to": "Platform1", "from_w": 110.0, "to_w": 80.0},
+		{"from": "Platform1", "to": "Platform2", "from_w": 80.0, "to_w": 75.0},
+		{"from": "Platform2", "to": "Platform3", "from_w": 75.0, "to_w": 80.0},
+		{"from": "Platform3", "to": "Platform4_Rest", "from_w": 80.0, "to_w": 85.0},
+		{"from": "Platform4_Rest", "to": "DisappearingPlatform1", "from_w": 85.0, "to_w": 65.0},
+		{"from": "DisappearingPlatform1", "to": "Platform6", "from_w": 65.0, "to_w": 75.0},
+		{"from": "Platform6", "to": "DisappearingPlatform2", "from_w": 75.0, "to_w": 65.0},
+		{"from": "DisappearingPlatform2", "to": "DisappearingPlatform3", "from_w": 65.0, "to_w": 70.0},
+		{"from": "DisappearingPlatform3", "to": "Platform9_Rest", "from_w": 70.0, "to_w": 90.0},
+		{"from": "Platform9_Rest", "to": "Platform10", "from_w": 90.0, "to_w": 75.0},
+		{"from": "Platform10", "to": "Platform11", "from_w": 75.0, "to_w": 75.0},
+		{"from": "Platform11", "to": "Platform12", "from_w": 75.0, "to_w": 80.0},
+		{"from": "Platform12", "to": "DisappearingPlatform4", "from_w": 80.0, "to_w": 70.0},
+		{"from": "DisappearingPlatform4", "to": "Platform14", "from_w": 70.0, "to_w": 75.0},
+		{"from": "Platform14", "to": "Platform15_Rest", "from_w": 75.0, "to_w": 85.0},
+		{"from": "Platform15_Rest", "to": "DisappearingPlatform5", "from_w": 85.0, "to_w": 65.0},
+		{"from": "DisappearingPlatform5", "to": "DisappearingPlatform6", "from_w": 65.0, "to_w": 60.0},
+		{"from": "DisappearingPlatform6", "to": "Platform18", "from_w": 60.0, "to_w": 80.0},
+		{"from": "Platform18", "to": "DisappearingPlatform7", "from_w": 80.0, "to_w": 60.0},
+		{"from": "DisappearingPlatform7", "to": "ExitPlatform", "from_w": 60.0, "to_w": 110.0}
+	]
+
+	for j in sequential_jumps:
+		var p_from = platforms.get_node(j["from"])
+		var p_to = platforms.get_node(j["to"])
+		var edge_from: float = p_from.position.x + (j["from_w"] / 2.0)
+		var edge_to: float = p_to.position.x - (j["to_w"] / 2.0)
+		var gap: float = edge_to - edge_from
+		var dy: float = p_to.position.y - p_from.position.y
+
+		assert_true(gap > 0.0, "Gap from %s to %s is strictly positive (%.1fpx)" % [j["from"], j["to"], gap])
+		assert_true(gap <= max_flat_reach, "Gap from %s to %s is %.1fpx (<= 196.17px reachable)" % [j["from"], j["to"], gap])
+		if dy < 0.0:
+			assert_true(abs(dy) <= max_apex_height, "Upward step from %s to %s is %.1fpx (<= 96.04px jump height)" % [j["from"], j["to"], abs(dy)])
+
+	# Verify Section C horizontal gate clearance & jump interception
+	var p12 = platforms.get_node("Platform12")
+	var eg_c2 = lvl.get_node("Hazards/EnergyGate_C2_Horizontal")
+	assert_true(eg_c2 != null, "EnergyGate_C2_Horizontal exists")
+	assert_eq(eg_c2.position, Vector2(1505, 125), "EnergyGate_C2_Horizontal is at (1505, 125)")
+
+	# Player standing on Platform12 (top 170.0): head is at Y = 170 - 28 = 142.0
+	# Beam hazard area at Y=125, height 12 -> bottom edge at 131.0
+	# Headroom clearance = 142.0 - 131.0 = 11.0px (safe standing observation space)
+	var p12_top: float = p12.position.y - 10.0
+	var player_head_y: float = p12_top - 28.0
+	var beam_bottom_y: float = eg_c2.position.y + 6.0
+	assert_true(player_head_y > beam_bottom_y, "Player standing on Platform12 has %.1fpx safe headroom under beam" % [player_head_y - beam_bottom_y])
+
+	# Jump apex from Platform12 is 170.0 - 96.04 = 73.96px, which cleanly intercepts beam at 125px
+	var jump_apex_y: float = p12_top - max_apex_height
+	assert_true(jump_apex_y < eg_c2.position.y, "Jump from Platform12 penetrates beam zone (apex %.1f < beam %.1f)" % [jump_apex_y, eg_c2.position.y])
+
+	remove_child(lvl)
+	lvl.free()
+
+func test_level_17_lifecycle_death_retry_revive_resets() -> void:
+	print("\n--- TEST: Level 17 Lifecycle, Death, Retry & Revive Resets ---")
+	var lvl17_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_17.tscn")
+	var lvl = lvl17_scene.instantiate()
+	add_child(lvl)
+
+	var player = lvl.get_node("Player")
+	var spawn = lvl.get_node("SpawnPoint")
+	var death_overlay = lvl.get_node("HUD/DeathOverlay")
+	var exit_gate = lvl.get_node("ExitGate")
+
+	# Start level state
+	GameManager.start_level(17)
+	assert_eq(GameManager.current_level_id, 17, "GameManager active level is 17")
+	assert_eq(GameManager.current_coins, 0, "Current coins starts at 0")
+
+	# Collect 3 coins
+	GameManager.collect_coin()
+	GameManager.collect_coin()
+	GameManager.collect_coin()
+	assert_eq(GameManager.current_coins, 3, "Current coins is 3")
+
+	# Simulate death
+	player.die()
+	assert_true(not player._is_alive, "Player is dead")
+	assert_true(death_overlay.visible, "Death overlay opened on death")
+
+	# Retry Level
+	lvl._on_retry()
+	assert_true(player._is_alive, "Player is alive after retry")
+	assert_eq(player.global_position, spawn.global_position, "Player reset to spawn point")
+	assert_eq(GameManager.current_coins, 0, "Coins reset to 0 upon retry")
+	assert_true(not death_overlay.visible, "Death overlay closed after retry")
+	assert_true(not exit_gate._is_open, "Exit gate locked after retry")
+
+	# Revive via rewarded ad
+	player.die()
+	assert_true(GameManager.can_revive_this_run(), "Can revive on first death of run")
+	var revived := GameManager.revive_current_player()
+	assert_true(revived, "Revive succeeds")
+	assert_true(player._is_alive, "Player is alive after revive")
+	assert_true(player.is_invulnerable, "Player has spawn protection after revive")
+	assert_true(not GameManager.can_revive_this_run(), "Cannot revive a second time in same run")
+
+	remove_child(lvl)
+	lvl.free()
+
+func test_level_17_completion_and_progression_advancement() -> void:
+	print("\n--- TEST: Level 17 Completion & Progression Advancement ---")
+	SaveManager._apply_defaults()
+	SaveManager.save_data()
+
+	# Complete levels 1 through 16 to set up legitimate unlocked state for Level 17
+	for l in range(1, 17):
+		SaveManager.complete_level(l)
+	assert_true(SaveManager.is_level_unlocked(17), "Level 17 is unlocked after completing Levels 1-16")
+	assert_true(not SaveManager.is_level_completed(17), "Level 17 is initially not completed")
+	assert_true(not SaveManager.is_level_unlocked(18), "Level 18 is initially locked")
+
+	var lvl17_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_17.tscn")
+	var lvl = lvl17_scene.instantiate()
+	add_child(lvl)
+
+	GameManager.start_level(17)
+	var exit_gate = lvl.get_node("ExitGate")
+	var player = lvl.get_node("Player")
+
+	assert_true(not exit_gate._is_open, "Exit gate starts locked")
+
+	# Collect all 10 coins
+	for i in range(10):
+		GameManager.collect_coin()
+	assert_eq(GameManager.current_coins, 10, "Collected all 10 coins")
+	assert_true(GameManager.are_all_coins_collected(), "All coins collected")
+	assert_true(exit_gate._is_open, "Exit gate is unlocked after collecting 10 coins")
+
+	# Enter exit gate
+	exit_gate._on_body_entered(player)
+	assert_true(SaveManager.is_level_completed(17), "Level 17 is marked completed in SaveManager")
+	assert_true(SaveManager.is_level_unlocked(18), "Level 18 is unlocked in progression after completing Level 17")
+	assert_true(SaveManager.highest_unlocked_level >= 18, "Highest unlocked level advanced to 18")
+
+	# Persistence check
+	SaveManager.save_data()
+	SaveManager.load_save()
+	assert_true(SaveManager.is_level_completed(17), "Level 17 completion persists across save reload")
+	assert_true(SaveManager.is_level_unlocked(18), "Level 18 unlocked state persists across save reload")
+
+	# Levels 18-20 remain planned / unplayable in GameManager
+	for lvl_id in range(18, 21):
+		assert_true(not GameManager.can_play_level(lvl_id), "Level %d remains unplayable / planned" % lvl_id)
+
+	remove_child(lvl)
+	lvl.free()
+
 
