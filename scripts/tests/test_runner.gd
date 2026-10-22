@@ -278,7 +278,8 @@ func test_game_manager_level_definitions() -> void:
 	assert_eq(lvl17.get("name"), "The Infernal Deception", "Level 17 name is 'The Infernal Deception'")
 	assert_eq(GameManager.get_world_name_for_stage(17), "FINAL HELL", "Level 17 world is 'FINAL HELL'")
 	assert_true(not lvl17.get("implemented"), "Level 17 is marked not implemented")
-	assert_true(not GameManager.can_play_level(17), "Level 17 is not playable")
+	assert_true(not GameManager.can_play_level(17), "Level 17 is not playable yet")
+	assert_eq(lvl17.get("coin_count"), 10, "Level 17 coin count is 10")
 	
 	for lvl_id in range(17, 21):
 		assert_true(not GameManager.can_play_level(lvl_id), "Level %d is marked not implemented" % lvl_id)
