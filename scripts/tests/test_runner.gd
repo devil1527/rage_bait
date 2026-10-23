@@ -7590,7 +7590,7 @@ func test_level_20_final_betrayal_layout_and_registration() -> void:
 	var dragon = lvl.get_node_or_null("CoinDragon")
 	assert_true(dragon != null, "CoinDragon boss exists in Level 20")
 	assert_true(dragon is CharacterBody2D, "CoinDragon is a CharacterBody2D entity")
-	assert_eq(dragon.position, Vector2(780, 420), "CoinDragon starts on right flank at (780, 420)")
+	assert_eq(dragon.position, Vector2(820, 418), "CoinDragon starts grounded on RightGround at (820, 418)")
 
 	# Coins Audit (Exactly 10 distinct coins)
 	var coins = lvl.get_node_or_null("Coins")
@@ -7653,6 +7653,22 @@ func test_level_20_coin_dragon_mechanics_and_collision() -> void:
 	assert_eq(dragon.jump_velocity, -440.0, "Dragon jump velocity is -440.0 px/s")
 	assert_eq(dragon.gravity, 1150.0, "Dragon uses standard gravity 1150.0 px/s^2")
 
+	# Station Graph & Arena Navigation Audit
+	assert_eq(dragon.STATIONS.size(), 8, "Dragon defines exactly 8 arena platform stations")
+	assert_true(dragon.STATIONS.has("RightGround"), "Station RightGround exists")
+	assert_true(dragon.STATIONS.has("CenterBridge"), "Station CenterBridge exists")
+	assert_true(dragon.STATIONS.has("CentralAltar"), "Station CentralAltar exists")
+	assert_eq(dragon.current_station_id, "RightGround", "Dragon starts stationed at RightGround")
+	assert_eq(dragon.STATIONS["RightGround"]["pos"], Vector2(820.0, 418.0), "RightGround station position is (820, 418)")
+	assert_eq(dragon.STATIONS["RightGround"]["min_x"], 750.0, "RightGround min_x edge limit is 750.0")
+	assert_eq(dragon.STATIONS["RightGround"]["max_x"], 890.0, "RightGround max_x edge limit is 890.0")
+
+	# Telegraph Sequence Audit
+	dragon._start_telegraph("CenterBridge")
+	assert_eq(dragon.current_state, dragon.State.TELEGRAPH, "Dragon transitions to TELEGRAPH state before leap")
+	assert_eq(dragon.target_station_id, "CenterBridge", "Telegraph targets CenterBridge")
+	assert_true(dragon._state_timer > 0.5, "Telegraph has readable duration >= 0.5s")
+
 	# Hazard Area & Collision
 	var hazard_area: Area2D = dragon.get_node_or_null("HazardArea")
 	assert_true(hazard_area != null, "HazardArea exists on CoinDragon")
@@ -7669,8 +7685,8 @@ func test_level_20_coin_dragon_mechanics_and_collision() -> void:
 	assert_true(not dragon.is_active, "Dragon deactivates upon player death")
 
 	# Reset restores dragon position, textures, and hazard collision
-	dragon.reset_to(Vector2(780, 420))
-	assert_eq(dragon.global_position, Vector2(780, 420), "Dragon resets to initial coordinates")
+	dragon.reset_to(Vector2(820, 418))
+	assert_eq(dragon.global_position, Vector2(820, 418), "Dragon resets to initial coordinates")
 	assert_true(dragon.is_active, "Dragon is active after reset")
 	assert_true(not dragon.is_defeated, "Dragon is not defeated after reset")
 
@@ -7698,17 +7714,21 @@ func test_level_20_survival_timer_and_coin_cycle() -> void:
 		assert_true(pos.y >= 150.0 and pos.y <= 450.0, "Coin %d target Y (%.1f) is on a solid elevated platform above pit" % [idx + 1, pos.y])
 
 	# 6-Second cycle execution test
-	# Simulate 6.0s elapsed: Coin 1 released
-	lvl._trigger_coin_release_cycle(1)
+	# Before cycle 1: Coin 1 is NOT_SPAWNED and not visible
+	assert_eq(lvl._coin_states[1], lvl.CoinState.NOT_SPAWNED, "Coin 1 is initially NOT_SPAWNED")
+	assert_true(not lvl.coins_container.get_node("Coin1").visible, "Coin 1 is not visible before release")
+
+	# Simulate 6.0s elapsed: Coin 1 released from snout
+	lvl._on_dragon_coin_released(Vector2(784.0, 404.0), 1)
 	assert_true(lvl.coins_container.get_node("Coin1").visible, "Coin 1 is visible after cycle 1 release")
 
-	# Simulate 12.0s elapsed: Coin 2 released
-	lvl._trigger_coin_release_cycle(2)
+	# Simulate 12.0s elapsed: Coin 2 released from snout
+	lvl._on_dragon_coin_released(Vector2(784.0, 404.0), 2)
 	assert_true(lvl.coins_container.get_node("Coin2").visible, "Coin 2 is visible after cycle 2 release")
 
 	# Release all remaining coins (3 through 10)
 	for i in range(3, 11):
-		lvl._trigger_coin_release_cycle(i)
+		lvl._on_dragon_coin_released(Vector2(784.0, 404.0), i)
 		assert_true(lvl.coins_container.get_node("Coin%d" % i).visible, "Coin %d is visible after cycle %d release" % [i, i])
 
 	# Verify coins remain collectible and not silently destroyed
@@ -7857,7 +7877,7 @@ func test_level_20_lifecycle_death_retry_revive_resets() -> void:
 	assert_eq(lvl._survival_elapsed, 0.0, "Timer reset to 0.0 upon retry")
 	assert_true(not death_overlay.visible, "Death overlay closed after retry")
 	assert_true(not exit_gate._is_open, "Exit gate locked after retry")
-	assert_eq(dragon.global_position, Vector2(780, 420), "Dragon reset to starting position")
+	assert_eq(dragon.global_position, Vector2(820, 418), "Dragon reset to starting position")
 
 	# Revive System
 	assert_true(GameManager.can_revive_this_run(), "Can revive on first death of run")

@@ -142,7 +142,7 @@ position_smoothing_enabled = true
 position_smoothing_speed = 7.0
 
 [node name="CoinDragon" parent="." instance=ExtResource("3_drag")]
-position = Vector2(780, 420)
+position = Vector2(820, 418)
 
 [node name="Platforms" type="Node2D" parent="."]
 

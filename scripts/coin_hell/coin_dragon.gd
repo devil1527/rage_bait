@@ -5,16 +5,30 @@ extends CharacterBody2D
 ## A massive, golden infernal coin-beast commanding the sanctum of Stage 20 ("The Final Betrayal").
 ## Features:
 ## - Distinctive silhouette: coin-shaped embossed torso, obsidian horns, fiery eyes, claws, and spiked tail.
-## - Active traversal AI: patrols platforms, pursues the player with grounded strides and leaping arcs.
+## - Arena-aware navigation: traverses between 8 verified platform stations using exact kinematic trajectories.
+## - Readable attack sequence: chooses target station -> telegraphs ($0.65s$) -> launches -> lands -> recovers ($0.7s$).
+## - Edge protection: never walks off platform edges into lava.
 ## - Instant-kill hazard collision: contact with the dragon immediately slays the player.
 ## - Predictable 6-second coin release routine: halts, roars, and launches collectible coins across the arena.
 ## - Dramatic defeat sequence upon entrance into the unlocked Infernal Exit Gate.
 
-enum State { IDLE, PURSUE, LEAP, RELEASE_COIN, RECOVERY, DEFEATED }
+enum State {
+	IDLE,           # Grounded, observing
+	PATROL,         # Pacing safely along current platform
+	TELEGRAPH,      # Coiling/crouching, audio warning, signaling target platform
+	LEAP,           # Parabolic jump to target station
+	LANDING,        # Landing recovery window
+	RELEASE_COIN,   # Roaring, launching coin
+	RECOVERY,       # Post-coin release recovery
+	DEFEATED        # Defeat dissolve animation
+}
 
 signal coin_release_started(index: int)
 signal coin_released(spawn_pos: Vector2, index: int)
 signal dragon_defeated
+signal leap_telegraphed(target_station: String, target_pos: Vector2)
+signal leap_started(target_station: String, target_pos: Vector2)
+signal leap_landed(station: String, pos: Vector2)
 
 @export var move_speed: float = 160.0
 @export var jump_velocity: float = -440.0
@@ -25,26 +39,73 @@ var is_active: bool = false
 var is_defeated: bool = false
 var target_player: CharacterBody2D = null
 
-# Patrol waypoints across the arena platforms
-var arena_waypoints: Array[Vector2] = [
-	Vector2(140.0, 440.0), # LeftGround
-	Vector2(190.0, 365.0), # LeftStep
-	Vector2(130.0, 290.0), # LeftMid
-	Vector2(320.0, 240.0), # MidLeftPerch
-	Vector2(480.0, 175.0), # CentralAltar
-	Vector2(480.0, 420.0), # CenterBridge
-	Vector2(640.0, 240.0), # MidRightPerch
-	Vector2(830.0, 290.0), # RightMid
-	Vector2(770.0, 365.0), # RightStep
-	Vector2(820.0, 440.0)  # RightGround
-]
+# 8 Verified Arena Platform Stations
+# Each station specifies the exact grounded boss position, platform safe X bounds, and verified connections.
+var STATIONS: Dictionary = {
+	"RightGround": {
+		"pos": Vector2(820.0, 418.0),
+		"min_x": 750.0,
+		"max_x": 890.0,
+		"connections": ["CenterBridge", "RightMid", "MidRightPerch"]
+	},
+	"RightMid": {
+		"pos": Vector2(830.0, 269.0),
+		"min_x": 785.0,
+		"max_x": 875.0,
+		"connections": ["RightGround", "MidRightPerch"]
+	},
+	"MidRightPerch": {
+		"pos": Vector2(640.0, 219.0),
+		"min_x": 605.0,
+		"max_x": 675.0,
+		"connections": ["CenterBridge", "CentralAltar", "RightGround", "RightMid"]
+	},
+	"CenterBridge": {
+		"pos": Vector2(480.0, 398.0),
+		"min_x": 390.0,
+		"max_x": 570.0,
+		"connections": ["LeftGround", "RightGround", "MidLeftPerch", "MidRightPerch", "CentralAltar"]
+	},
+	"CentralAltar": {
+		"pos": Vector2(480.0, 153.0),
+		"min_x": 435.0,
+		"max_x": 525.0,
+		"connections": ["CenterBridge", "MidLeftPerch", "MidRightPerch"]
+	},
+	"MidLeftPerch": {
+		"pos": Vector2(320.0, 219.0),
+		"min_x": 285.0,
+		"max_x": 355.0,
+		"connections": ["CenterBridge", "CentralAltar", "LeftGround", "LeftMid"]
+	},
+	"LeftMid": {
+		"pos": Vector2(130.0, 269.0),
+		"min_x": 85.0,
+		"max_x": 175.0,
+		"connections": ["LeftGround", "MidLeftPerch"]
+	},
+	"LeftGround": {
+		"pos": Vector2(140.0, 418.0),
+		"min_x": 70.0,
+		"max_x": 210.0,
+		"connections": ["CenterBridge", "LeftMid", "MidLeftPerch"]
+	}
+}
 
-var _current_waypoint_idx: int = 5
-var _leap_cooldown: float = 0.0
+var current_station_id: String = "RightGround"
+var target_station_id: String = ""
+var last_station_id: String = ""
+
 var _state_timer: float = 0.0
+var _patrol_dir: float = -1.0
+var _jump_flight_time: float = 0.0
+var _jump_elapsed: float = 0.0
+var _target_land_pos: Vector2 = Vector2.ZERO
+
 var _pending_coin_idx: int = -1
+var _pending_coin_target: Vector2 = Vector2.ZERO
 var _coin_has_spawned_for_cycle: bool = false
-var _initial_spawn_pos: Vector2 = Vector2.ZERO
+var _queued_coin_release: bool = false
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var hazard_area: Area2D = $HazardArea
@@ -59,7 +120,8 @@ var tex_jump: Texture2D = preload("res://assets/sprites/coin_dragon_jump.png")
 var tex_roar: Texture2D = preload("res://assets/sprites/coin_dragon_roar.png")
 
 func _ready() -> void:
-	_initial_spawn_pos = global_position
+	current_station_id = "RightGround"
+	global_position = STATIONS["RightGround"]["pos"]
 	if hazard_area:
 		hazard_area.body_entered.connect(_on_hazard_body_entered)
 	_apply_texture(tex_idle)
@@ -68,7 +130,12 @@ func activate(player_ref: CharacterBody2D) -> void:
 	target_player = player_ref
 	is_active = true
 	is_defeated = false
-	current_state = State.PURSUE
+	current_station_id = "RightGround"
+	global_position = STATIONS["RightGround"]["pos"]
+	velocity = Vector2.ZERO
+	current_state = State.PATROL
+	_state_timer = 1.2
+	_patrol_dir = -1.0
 	if hazard_shape:
 		hazard_shape.set_deferred("disabled", false)
 	if embers_particles:
@@ -86,132 +153,275 @@ func _physics_process(delta: float) -> void:
 	if is_defeated or not is_active:
 		return
 
-	_leap_cooldown = maxf(0.0, _leap_cooldown - delta)
-
 	# Continuous proximity / overlap check to prevent tunneling
 	_check_player_contact()
 
-	# Gravity
-	if not is_on_floor():
-		velocity.y += gravity * delta
+	# Bounds safety: prevent falling into pit under any circumstance
+	_check_bounds()
 
 	match current_state:
 		State.IDLE:
 			velocity.x = move_toward(velocity.x, 0.0, 600.0 * delta)
 			_apply_texture(tex_idle)
+			_state_timer -= delta
+			if _state_timer <= 0.0:
+				_transition_to_next_action()
 
-		State.PURSUE:
-			_process_pursue_state(delta)
+		State.PATROL:
+			_process_patrol_state(delta)
+
+		State.TELEGRAPH:
+			_process_telegraph_state(delta)
 
 		State.LEAP:
-			# Airborne leap
-			_apply_texture(tex_jump)
-			if is_on_floor() and velocity.y >= 0.0:
-				current_state = State.PURSUE
-				_leap_cooldown = 1.0
+			_process_leap_state(delta)
+
+		State.LANDING:
+			_process_landing_state(delta)
 
 		State.RELEASE_COIN:
-			velocity.x = move_toward(velocity.x, 0.0, 800.0 * delta)
-			_state_timer -= delta
-			_apply_texture(tex_roar)
-
-			# Spawn coin at 0.4s into roar
-			if _state_timer <= 0.4 and not _coin_has_spawned_for_cycle:
-				_coin_has_spawned_for_cycle = true
-				coin_released.emit(get_snout_position(), _pending_coin_idx)
-
-			if _state_timer <= 0.0:
-				current_state = State.RECOVERY
-				_state_timer = 0.4
+			_process_release_coin_state(delta)
 
 		State.RECOVERY:
-			velocity.x = move_toward(velocity.x, 0.0, 600.0 * delta)
+			velocity.x = move_toward(velocity.x, 0.0, 800.0 * delta)
 			_apply_texture(tex_idle)
 			_state_timer -= delta
 			if _state_timer <= 0.0:
-				current_state = State.PURSUE
+				if _queued_coin_release:
+					_queued_coin_release = false
+					_start_coin_release(_pending_coin_idx, _pending_coin_target)
+				else:
+					current_state = State.PATROL
+					_state_timer = randf_range(1.2, 1.8)
 
 	move_and_slide()
 
-func _process_pursue_state(delta: float) -> void:
-	if not target_player or not is_instance_valid(target_player):
-		velocity.x = 0.0
+## Safe platform patrol with strict edge limits
+func _process_patrol_state(delta: float) -> void:
+	var st = STATIONS.get(current_station_id, STATIONS["RightGround"])
+	var min_x: float = st["min_x"]
+	var max_x: float = st["max_x"]
+
+	# Turn around before reaching the edge
+	if global_position.x <= min_x:
+		_patrol_dir = 1.0
+	elif global_position.x >= max_x:
+		_patrol_dir = -1.0
+
+	velocity.x = _patrol_dir * move_speed * 0.75
+	sprite.flip_h = _patrol_dir < 0.0
+	_apply_texture(tex_walk)
+
+	_state_timer -= delta
+	if _state_timer <= 0.0:
+		_transition_to_next_action()
+
+## Decides whether to leap to another platform or continue patrol
+func _transition_to_next_action() -> void:
+	if _queued_coin_release:
+		_queued_coin_release = false
+		_start_coin_release(_pending_coin_idx, _pending_coin_target)
 		return
 
-	var p_pos: Vector2 = target_player.global_position
-	var my_pos: Vector2 = global_position
-	var dx: float = p_pos.x - my_pos.x
-	var dy: float = p_pos.y - my_pos.y
-
-	# Face movement / target direction
-	var move_dir: float = signf(dx) if absf(dx) > 20.0 else 0.0
-
-	# Jump conditions:
-	# 1. Player is significantly higher and dragon is grounded
-	# 2. Or dragon reaches a gap and needs to cross toward player
-	if is_on_floor() and _leap_cooldown <= 0.0:
-		if dy < -45.0: # Player is above on higher platform
-			_execute_leap(jump_velocity, move_dir * move_speed)
-			return
-		elif absf(dx) > 120.0 and absf(dy) < 60.0:
-			# Leap across wide horizontal gap between platforms
-			if (my_pos.x < 300.0 and dx > 0.0) or (my_pos.x > 660.0 and dx < 0.0):
-				_execute_leap(jump_velocity * 0.9, move_dir * move_speed * 1.1)
-				return
-
-	# Ground traversal
-	velocity.x = move_toward(velocity.x, move_dir * move_speed, 900.0 * delta)
-
-	# Visual update
-	if not is_on_floor():
-		_apply_texture(tex_jump)
-	elif absf(velocity.x) > 15.0:
-		_apply_texture(tex_walk)
-		sprite.flip_h = velocity.x < 0.0
+	var next_station: String = _choose_next_station()
+	if next_station != "" and next_station != current_station_id:
+		_start_telegraph(next_station)
 	else:
-		_apply_texture(tex_idle)
-		if absf(dx) > 10.0:
-			sprite.flip_h = dx < 0.0
+		current_state = State.PATROL
+		_state_timer = randf_range(1.0, 1.6)
 
-func _execute_leap(vy: float, vx: float) -> void:
+## Selects the smartest connected station based on player position
+func _choose_next_station() -> String:
+	var st = STATIONS.get(current_station_id, STATIONS["RightGround"])
+	var conns: Array = st["connections"]
+	if conns.is_empty():
+		return current_station_id
+
+	var p_pos: Vector2 = target_player.global_position if (target_player and is_instance_valid(target_player)) else Vector2(100.0, 430.0)
+
+	var best_station: String = ""
+	var best_dist: float = 99999.0
+
+	# Filter out immediate back-and-forth oscillation if alternatives exist
+	var candidate_conns: Array = []
+	for c in conns:
+		if c != last_station_id or conns.size() == 1:
+			candidate_conns.append(c)
+	if candidate_conns.is_empty():
+		candidate_conns = conns
+
+	for c in candidate_conns:
+		var c_pos: Vector2 = STATIONS[c]["pos"]
+		var d: float = c_pos.distance_to(p_pos)
+		if d < best_dist:
+			best_dist = d
+			best_station = c
+
+	return best_station
+
+## Readable telegraph phase ($0.65s$) warning the player of upcoming leap
+func _start_telegraph(dest_id: String) -> void:
+	target_station_id = dest_id
+	_target_land_pos = STATIONS[dest_id]["pos"]
+	current_state = State.TELEGRAPH
+	_state_timer = 0.65
+	velocity = Vector2.ZERO
+
+	# Face destination platform
+	var dx: float = _target_land_pos.x - global_position.x
+	if absf(dx) > 5.0:
+		sprite.flip_h = dx < 0.0
+
+	_apply_texture(tex_jump)
+	sprite.scale = Vector2(1.05, 0.85) # Crouch / coil pose
+
+	if AudioManager.has_method("play_sfx"):
+		AudioManager.play_sfx("warning")
+
+	leap_telegraphed.emit(dest_id, _target_land_pos)
+
+func _process_telegraph_state(delta: float) -> void:
+	velocity.x = 0.0
+	_state_timer -= delta
+
+	# Subtle telegraph flash
+	var pulse: float = sin(_state_timer * 20.0) * 0.2 + 0.8
+	sprite.modulate = Color(1.0, pulse, pulse, 1.0)
+
+	if _state_timer <= 0.0:
+		sprite.scale = Vector2.ONE
+		sprite.modulate = Color.WHITE
+		_launch_leap()
+
+## Exact kinematic leap execution
+func _launch_leap() -> void:
 	current_state = State.LEAP
-	velocity.y = vy
-	if absf(vx) > 0.0:
-		velocity.x = vx
-		sprite.flip_h = vx < 0.0
-	_leap_cooldown = 1.2
-	AudioManager.play_sfx("jump")
+	_apply_texture(tex_jump)
 
+	var p1: Vector2 = global_position
+	var p2: Vector2 = _target_land_pos
+
+	var arc_h: float = 65.0
+	if "Ground" in current_station_id or "Ground" in target_station_id or "Bridge" in current_station_id or "Bridge" in target_station_id:
+		arc_h = 75.0
+
+	var y_apex: float = minf(p1.y, p2.y) - arc_h
+	var rise: float = maxf(10.0, p1.y - y_apex)
+	var fall: float = maxf(10.0, p2.y - y_apex)
+
+	var vy: float = -sqrt(2.0 * gravity * rise)
+	var t_up: float = -vy / gravity
+	var t_down: float = sqrt(2.0 * fall / gravity)
+	_jump_flight_time = t_up + t_down
+	_jump_elapsed = 0.0
+
+	var vx: float = (p2.x - p1.x) / _jump_flight_time
+	velocity = Vector2(vx, vy)
+	sprite.flip_h = vx < 0.0
+
+	if AudioManager.has_method("play_sfx"):
+		AudioManager.play_sfx("jump")
+
+	leap_started.emit(target_station_id, _target_land_pos)
+
+func _process_leap_state(delta: float) -> void:
+	_jump_elapsed += delta
+	velocity.y += gravity * delta
+
+	# Landing condition: reached near destination and falling, or time elapsed
+	var reached_y: bool = (global_position.y >= _target_land_pos.y - 8.0) and (velocity.y > 0.0)
+	var time_up: bool = _jump_elapsed >= (_jump_flight_time - 0.05)
+
+	if (reached_y or time_up) and is_on_floor():
+		_complete_landing()
+	elif time_up and global_position.distance_to(_target_land_pos) < 35.0:
+		_complete_landing()
+
+func _complete_landing() -> void:
+	last_station_id = current_station_id
+	current_station_id = target_station_id
+	global_position = _target_land_pos
+	velocity = Vector2.ZERO
+
+	current_state = State.LANDING
+	_state_timer = 0.7 # Generous recovery window for player to react / cross
+	_apply_texture(tex_idle)
+
+	# Impact squash & recover
+	var tw := create_tween()
+	tw.tween_property(sprite, "scale", Vector2(1.2, 0.8), 0.08)
+	tw.tween_property(sprite, "scale", Vector2.ONE, 0.12)
+
+	leap_landed.emit(current_station_id, global_position)
+
+func _process_landing_state(delta: float) -> void:
+	velocity.x = 0.0
+	_state_timer -= delta
+	if _state_timer <= 0.0:
+		if _queued_coin_release:
+			_queued_coin_release = false
+			_start_coin_release(_pending_coin_idx, _pending_coin_target)
+		else:
+			current_state = State.PATROL
+			_state_timer = randf_range(1.0, 1.5)
+
+## 6-Second Coin Release Cycle
 func trigger_coin_release(coin_idx: int, target_land_pos: Vector2) -> void:
 	if is_defeated:
 		return
+
+	_pending_coin_idx = coin_idx
+	_pending_coin_target = target_land_pos
+
+	# If currently airborne in a leap, queue release to execute immediately upon landing
+	if current_state == State.LEAP:
+		_queued_coin_release = true
+		return
+
+	_start_coin_release(coin_idx, target_land_pos)
+
+func _start_coin_release(coin_idx: int, target_land_pos: Vector2) -> void:
 	current_state = State.RELEASE_COIN
 	_state_timer = 0.8
 	_pending_coin_idx = coin_idx
 	_coin_has_spawned_for_cycle = false
-	velocity.x = 0.0
+	velocity = Vector2.ZERO
 
-	# Face the target platform
-	var dx = target_land_pos.x - global_position.x
+	# Face the target coin platform
+	var dx: float = target_land_pos.x - global_position.x
 	if absf(dx) > 5.0:
 		sprite.flip_h = dx < 0.0
 
 	_apply_texture(tex_roar)
-	AudioManager.play_sfx("warning")
+	if AudioManager.has_method("play_sfx"):
+		AudioManager.play_sfx("warning")
 	coin_release_started.emit(coin_idx)
 
+func _process_release_coin_state(delta: float) -> void:
+	velocity.x = 0.0
+	_state_timer -= delta
+	_apply_texture(tex_roar)
+
+	# Spawn coin at 0.35s into roar
+	if _state_timer <= 0.45 and not _coin_has_spawned_for_cycle:
+		_coin_has_spawned_for_cycle = true
+		coin_released.emit(get_snout_position(), _pending_coin_idx)
+
+	if _state_timer <= 0.0:
+		current_state = State.RECOVERY
+		_state_timer = 0.5
+
 func get_snout_position() -> Vector2:
-	var forward_x: float = -32.0 if sprite.flip_h else 32.0
-	return global_position + Vector2(forward_x, -12.0)
+	var forward_x: float = -36.0 if sprite.flip_h else 36.0
+	return global_position + Vector2(forward_x, -14.0)
 
 func _check_player_contact() -> void:
 	if is_defeated or not is_active:
 		return
 	if target_player and is_instance_valid(target_player):
 		if target_player.has_method("die"):
-			var dist = global_position.distance_to(target_player.global_position)
-			# Generous, reliable circular buffer plus area intersection
-			if dist < 48.0 or (hazard_area and hazard_area.overlaps_body(target_player)):
+			var dist: float = global_position.distance_to(target_player.global_position)
+			if dist < 46.0 or (hazard_area and hazard_area.overlaps_body(target_player)):
 				target_player.die()
 
 func _on_hazard_body_entered(body: Node2D) -> void:
@@ -220,6 +430,19 @@ func _on_hazard_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") or body.name == "Player":
 		if body.has_method("die"):
 			body.die()
+
+func _check_bounds() -> void:
+	# Clamp horizontal position inside arena
+	global_position.x = clampf(global_position.x, 50.0, 910.0)
+
+	# Emergency safety: if dragon ever falls below ground tier (e.g. y > 465), recover to safe station
+	if global_position.y > 465.0:
+		var safe_station = "RightGround" if global_position.x > 480.0 else "LeftGround"
+		global_position = STATIONS[safe_station]["pos"]
+		current_station_id = safe_station
+		velocity = Vector2.ZERO
+		current_state = State.PATROL
+		_state_timer = 1.0
 
 func defeat() -> void:
 	if is_defeated:
@@ -254,14 +477,19 @@ func reset_to(pos: Vector2) -> void:
 	velocity = Vector2.ZERO
 	is_defeated = false
 	is_active = true
-	current_state = State.PURSUE
+	current_station_id = "RightGround"
+	target_station_id = ""
+	last_station_id = ""
+	current_state = State.PATROL
 	visible = true
 	sprite.modulate = Color.WHITE
 	sprite.scale = Vector2.ONE
 	sprite.flip_h = false
 	_apply_texture(tex_idle)
-	_leap_cooldown = 0.5
+	_state_timer = 1.2
+	_patrol_dir = -1.0
 	_coin_has_spawned_for_cycle = false
+	_queued_coin_release = false
 
 	if hazard_shape:
 		hazard_shape.set_deferred("disabled", false)

@@ -12,6 +12,12 @@ extends Node2D
 const TOTAL_COINS: int = 10
 const SURVIVAL_DURATION: float = 60.0
 
+enum CoinState {
+	NOT_SPAWNED,
+	AVAILABLE,
+	COLLECTED
+}
+
 # 10 reachable platform target positions for released coins
 const COIN_TARGET_POSITIONS: Array[Vector2] = [
 	Vector2(190.0, 360.0), # Coin 1 (T=6s) -> LeftStep
@@ -56,8 +62,11 @@ var _survival_elapsed: float = 0.0
 var _is_encounter_active: bool = false
 var _is_survived: bool = false
 var _is_completed: bool = false
+
+# Explicit coin lifecycle tracking
+var _coin_states: Dictionary = {} # int -> CoinState
+var _coin_tweens: Dictionary = {} # int -> Tween
 var _executed_cycles: Dictionary = {}
-var _released_coins_map: Dictionary = {}
 
 func _ready() -> void:
 	player.add_to_group("player")
@@ -84,6 +93,7 @@ func _ready() -> void:
 		exit_gate.level_completed.connect(_on_exit_gate_entered)
 
 	_setup_touch_controls()
+	_initialize_coins_system()
 
 	pause_overlay.visible = false
 	death_overlay.visible = false
@@ -96,11 +106,31 @@ func _ready() -> void:
 	_reset_level()
 	_start_encounter()
 
+## Takes authoritative control over the 10 coins, detaching generic reset listeners
+func _initialize_coins_system() -> void:
+	if not coins_container:
+		return
+
+	for i in range(1, TOTAL_COINS + 1):
+		var c = coins_container.get_node_or_null("Coin%d" % i)
+		if not c:
+			continue
+
+		# Detach default Area2D and GameManager signal listeners
+		if c.body_entered.is_connected(c._on_body_entered):
+			c.body_entered.disconnect(c._on_body_entered)
+		if GameManager.coins_reset.is_connected(c.reset):
+			GameManager.coins_reset.disconnect(c.reset)
+
+		# Attach authoritative Level 20 collection listener
+		var coin_idx: int = i
+		c.body_entered.connect(func(body: Node2D): _on_coin_body_entered(body, coin_idx))
+
 func _register_safe_anchors() -> void:
 	GameManager.safe_anchors.clear()
 	GameManager.safe_anchors.append(spawn_point.global_position)
 	GameManager.safe_anchors.append(Vector2(480.0, 410.0)) # CenterBridge
-	GameManager.safe_anchors.append(Vector2(820.0, 430.0)) # RightGround
+	GameManager.safe_anchors.append(Vector2(820.0, 418.0)) # RightGround
 	GameManager.safe_anchors.append(Vector2(480.0, 165.0)) # CentralAltar
 
 func _start_encounter() -> void:
@@ -149,46 +179,112 @@ func _update_timer_hud(remaining: float) -> void:
 		else:
 			timer_label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1.0))
 
+## Triggers the scheduled 6-second coin release via the Coin Dragon
 func _trigger_coin_release_cycle(coin_idx: int) -> void:
 	if coin_idx < 1 or coin_idx > TOTAL_COINS:
 		return
+	if _coin_states.get(coin_idx, CoinState.NOT_SPAWNED) != CoinState.NOT_SPAWNED:
+		return
+
 	var target_land_pos: Vector2 = COIN_TARGET_POSITIONS[coin_idx - 1]
-	var coin_node = coins_container.get_node_or_null("Coin%d" % coin_idx)
-	if coin_node:
-		coin_node.visible = true
+
+	# Inform dragon to roar and launch coin
 	if dragon:
 		dragon.trigger_coin_release(coin_idx, target_land_pos)
 	else:
 		_on_dragon_coin_released(Vector2(480.0, 200.0), coin_idx)
 
+## Receives the dragon's snout release signal and launches the coin along a parabolic arc
 func _on_dragon_coin_released(snout_pos: Vector2, coin_idx: int) -> void:
 	if coin_idx < 1 or coin_idx > TOTAL_COINS:
 		return
+	if _coin_states.get(coin_idx, CoinState.NOT_SPAWNED) != CoinState.NOT_SPAWNED:
+		return
+
 	var coin_node = coins_container.get_node_or_null("Coin%d" % coin_idx)
 	if not coin_node:
 		return
 
-	_released_coins_map[coin_idx] = true
-	coin_node.visible = true
-	coin_node.global_position = snout_pos
-
 	var target_pos: Vector2 = COIN_TARGET_POSITIONS[coin_idx - 1]
+
+	# Place at snout and make visible
+	coin_node.global_position = snout_pos
+	coin_node.visible = true
+	coin_node.scale = Vector2(0.4, 0.4)
+	coin_node.modulate = Color(1.8, 1.6, 0.6, 1.0) # Molten golden glow during flight
+
 	var col_shape = coin_node.get_node_or_null("CollisionShape2D")
 	if col_shape:
 		col_shape.set_deferred("disabled", true)
 
-	# Smooth parabolic arc launch to target platform
-	var apex_y: float = minf(snout_pos.y, target_pos.y) - 35.0
-	var tween_x := create_tween()
-	tween_x.tween_property(coin_node, "global_position:x", target_pos.x, 0.55).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	# Clean up any existing tween
+	if _coin_tweens.has(coin_idx) and is_instance_valid(_coin_tweens[coin_idx]):
+		_coin_tweens[coin_idx].kill()
 
-	var tween_y := create_tween()
-	tween_y.tween_property(coin_node, "global_position:y", apex_y, 0.28).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween_y.tween_property(coin_node, "global_position:y", target_pos.y, 0.27).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tween_y.tween_callback(func():
+	# Launch along smooth parabolic arc to target platform
+	var apex_y: float = minf(snout_pos.y, target_pos.y) - 40.0
+	var flight_duration: float = 0.50
+
+	var tw := create_tween()
+	_coin_tweens[coin_idx] = tw
+
+	# Horizontal motion
+	tw.parallel().tween_property(coin_node, "global_position:x", target_pos.x, flight_duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+	# Vertical arc (rise to apex, then fall to target platform)
+	tw.parallel().tween_property(coin_node, "global_position:y", apex_y, flight_duration * 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.chain().tween_property(coin_node, "global_position:y", target_pos.y, flight_duration * 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+
+	# Scale up to normal size
+	tw.parallel().tween_property(coin_node, "scale", Vector2.ONE, flight_duration)
+	tw.parallel().tween_property(coin_node, "modulate", Color.WHITE, flight_duration)
+
+	# Landing on platform
+	tw.tween_callback(func():
+		if not is_instance_valid(coin_node):
+			return
+		coin_node.global_position = target_pos
+		_coin_states[coin_idx] = CoinState.AVAILABLE
 		if col_shape and is_instance_valid(col_shape):
 			col_shape.set_deferred("disabled", false)
 	)
+
+## Authoritative collection handler for each of the 10 coins
+func _on_coin_body_entered(body: Node2D, coin_idx: int) -> void:
+	if not _is_encounter_active or _is_completed:
+		return
+	if not (body.is_in_group("player") or body.name == "Player"):
+		return
+
+	# Only available coins can be collected
+	if _coin_states.get(coin_idx, CoinState.NOT_SPAWNED) != CoinState.AVAILABLE:
+		return
+
+	_coin_states[coin_idx] = CoinState.COLLECTED
+
+	var coin_node = coins_container.get_node_or_null("Coin%d" % coin_idx)
+	if coin_node:
+		var col_shape = coin_node.get_node_or_null("CollisionShape2D")
+		if col_shape:
+			col_shape.set_deferred("disabled", true)
+
+		# Sparkle collection tween then permanently hide
+		var sprite = coin_node.get_node_or_null("Sprite2D")
+		var tw := create_tween()
+		if sprite:
+			tw.parallel().tween_property(sprite, "position:y", sprite.position.y - 20.0, 0.2)
+			tw.parallel().tween_property(sprite, "scale", Vector2(1.8, 1.8), 0.2)
+			tw.parallel().tween_property(sprite, "modulate:a", 0.0, 0.2)
+		tw.tween_callback(func():
+			if is_instance_valid(coin_node):
+				coin_node.visible = false
+		)
+
+	if AudioManager.has_method("play_sfx"):
+		AudioManager.play_sfx("coin")
+
+	# Increment actual collection counter in GameManager
+	GameManager.collect_coin()
 
 func _check_gate_unlock_conditions() -> void:
 	if not _is_survived:
@@ -268,7 +364,13 @@ func _reset_level() -> void:
 	_is_survived = false
 	_is_completed = false
 	_executed_cycles.clear()
-	_released_coins_map.clear()
+
+	# Kill any active coin tweens
+	for idx in _coin_tweens.keys():
+		var tw: Tween = _coin_tweens[idx]
+		if tw and is_instance_valid(tw):
+			tw.kill()
+	_coin_tweens.clear()
 
 	death_overlay.visible = false
 	level_complete_overlay.visible = false
@@ -286,15 +388,23 @@ func _reset_level() -> void:
 		exit_gate.reset()
 
 	if dragon:
-		dragon.reset_to(Vector2(780.0, 420.0))
+		dragon.reset_to(Vector2(820.0, 418.0))
 
-	# Hide all coins until released by dragon
+	# Initialize all 10 coins into NOT_SPAWNED state
+	_coin_states.clear()
 	if coins_container:
 		for i in range(1, TOTAL_COINS + 1):
+			_coin_states[i] = CoinState.NOT_SPAWNED
 			var c = coins_container.get_node_or_null("Coin%d" % i)
 			if c:
-				c.reset()
 				c.visible = false
+				c.scale = Vector2.ONE
+				c.modulate = Color.WHITE
+				var sprite = c.get_node_or_null("Sprite2D")
+				if sprite:
+					sprite.position = Vector2.ZERO
+					sprite.scale = Vector2.ONE
+					sprite.modulate = Color.WHITE
 				var col_shape = c.get_node_or_null("CollisionShape2D")
 				if col_shape:
 					col_shape.set_deferred("disabled", true)
