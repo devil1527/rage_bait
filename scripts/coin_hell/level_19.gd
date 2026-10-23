@@ -76,18 +76,18 @@ func _register_safe_anchors() -> void:
 	# Spawn anchor
 	GameManager.safe_anchors.append(spawn_point.global_position)
 	# Platform 4 (Section B gateway)
-	GameManager.safe_anchors.append(Vector2(610.0, 195.0))
+	GameManager.safe_anchors.append(Vector2(630.0, 195.0))
 	# Platform 6 (Section C gateway)
-	GameManager.safe_anchors.append(Vector2(1220.0, 30.0))
+	GameManager.safe_anchors.append(Vector2(1255.0, 35.0))
 	# Platform 9 (Section D gateway)
-	GameManager.safe_anchors.append(Vector2(1735.0, -95.0))
+	GameManager.safe_anchors.append(Vector2(1770.0, -90.0))
 
 func _process(delta: float) -> void:
 	_facility_elapsed += delta
 	# Update Soul Gauntlet progress indicator on HUD based on player horizontal progression
 	if gauntlet_indicator_label and player:
 		var start_x: float = 80.0
-		var finish_x: float = 2320.0
+		var finish_x: float = 2365.0
 		var current_x: float = player.global_position.x
 		var pct: float = clampf(((current_x - start_x) / (finish_x - start_x)) * 100.0, 0.0, 100.0)
 		gauntlet_indicator_label.text = "GAUNTLET: %d%%" % int(pct)

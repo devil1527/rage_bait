@@ -20,38 +20,38 @@
 [ext_resource type="Texture2D" path="res://assets/sprites/btn_jump_pressed.png" id="21_bjump_p"]
 [ext_resource type="Script" path="res://scripts/coin_hell/touch_button.gd" id="22_tbtn"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground70"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground90"]
+size = Vector2(90, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat70"]
 size = Vector2(70, 20)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat50"]
-size = Vector2(50, 20)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat64"]
+size = Vector2(64, 20)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat48"]
-size = Vector2(48, 20)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat60"]
+size = Vector2(60, 20)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat55"]
-size = Vector2(55, 20)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat66"]
+size = Vector2(66, 20)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat52"]
-size = Vector2(52, 20)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat65"]
-size = Vector2(65, 20)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat58"]
+size = Vector2(58, 20)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_trapwall"]
 size = Vector2(20, 110)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_exitplat"]
-size = Vector2(80, 24)
+size = Vector2(90, 24)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_pit"]
-size = Vector2(2600, 80)
+size = Vector2(2700, 80)
 
 [node name="CoinHellLevel19" type="Node2D"]
 script = ExtResource("1_lev19")
 
 [node name="FinalHellEnvironment" parent="." instance=ExtResource("8_fenv")]
-stage_width = 2450.0
+stage_width = 2500.0
 stage_height = 800.0
 ember_count = 60
 
@@ -64,7 +64,7 @@ position = Vector2(80, 310)
 [node name="Camera2D" type="Camera2D" parent="Player"]
 limit_left = 0
 limit_top = -450
-limit_right = 2450
+limit_right = 2500
 limit_bottom = 500
 position_smoothing_enabled = true
 position_smoothing_speed = 7.0
@@ -77,9 +77,31 @@ collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Ground1"]
-shape = SubResource("RectangleShape2D_ground70")
+shape = SubResource("RectangleShape2D_ground90")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Ground1"]
+self_modulate = Color(0.85, 0.75, 0.8, 1)
+offset_left = -45.0
+offset_top = -10.0
+offset_right = 45.0
+offset_bottom = 10.0
+texture = ExtResource("9_obs")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="Platform1" type="StaticBody2D" parent="Platforms"]
+position = Vector2(220, 330)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform1"]
+shape = SubResource("RectangleShape2D_plat70")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform1"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
 offset_left = -35.0
 offset_top = -10.0
@@ -93,41 +115,19 @@ patch_margin_bottom = 4
 axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
-[node name="Platform1" type="StaticBody2D" parent="Platforms"]
-position = Vector2(210, 330)
-collision_layer = 2
-collision_mask = 0
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform1"]
-shape = SubResource("RectangleShape2D_plat50")
-
-[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform1"]
-self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -25.0
-offset_top = -10.0
-offset_right = 25.0
-offset_bottom = 10.0
-texture = ExtResource("9_obs")
-patch_margin_left = 4
-patch_margin_top = 4
-patch_margin_right = 4
-patch_margin_bottom = 4
-axis_stretch_horizontal = 1
-axis_stretch_vertical = 1
-
 [node name="Platform2" type="StaticBody2D" parent="Platforms"]
-position = Vector2(345, 295)
+position = Vector2(360, 295)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform2"]
-shape = SubResource("RectangleShape2D_plat50")
+shape = SubResource("RectangleShape2D_plat64")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform2"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -25.0
+offset_left = -32.0
 offset_top = -10.0
-offset_right = 25.0
+offset_right = 32.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -138,18 +138,18 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Platform3" type="StaticBody2D" parent="Platforms"]
-position = Vector2(480, 260)
+position = Vector2(495, 260)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform3"]
-shape = SubResource("RectangleShape2D_plat50")
+shape = SubResource("RectangleShape2D_plat64")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform3"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -25.0
+offset_left = -32.0
 offset_top = -10.0
-offset_right = 25.0
+offset_right = 32.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -160,18 +160,18 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Platform4" type="StaticBody2D" parent="Platforms"]
-position = Vector2(610, 225)
+position = Vector2(630, 225)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform4"]
-shape = SubResource("RectangleShape2D_plat50")
+shape = SubResource("RectangleShape2D_plat64")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform4"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -25.0
+offset_left = -32.0
 offset_top = -10.0
-offset_right = 25.0
+offset_right = 32.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -182,23 +182,23 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="DisappearingPlatform1" parent="Platforms" instance=ExtResource("14_dplat")]
-position = Vector2(735, 185)
-shake_duration = 0.5
-platform_size = Vector2(48, 20)
+position = Vector2(755, 190)
+shake_duration = 0.75
+platform_size = Vector2(60, 20)
 
 [node name="Platform5" type="StaticBody2D" parent="Platforms"]
-position = Vector2(855, 150)
+position = Vector2(880, 155)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform5"]
-shape = SubResource("RectangleShape2D_plat48")
+shape = SubResource("RectangleShape2D_plat64")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform5"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -24.0
+offset_left = -32.0
 offset_top = -10.0
-offset_right = 24.0
+offset_right = 32.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -209,28 +209,28 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="DisappearingPlatform2" parent="Platforms" instance=ExtResource("14_dplat")]
-position = Vector2(975, 120)
-shake_duration = 0.5
-platform_size = Vector2(48, 20)
+position = Vector2(1005, 125)
+shake_duration = 0.75
+platform_size = Vector2(60, 20)
 
 [node name="DisappearingPlatform3" parent="Platforms" instance=ExtResource("14_dplat")]
-position = Vector2(1095, 90)
-shake_duration = 0.5
-platform_size = Vector2(48, 20)
+position = Vector2(1125, 95)
+shake_duration = 0.75
+platform_size = Vector2(60, 20)
 
 [node name="Platform6" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1220, 60)
+position = Vector2(1255, 65)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform6"]
-shape = SubResource("RectangleShape2D_plat55")
+shape = SubResource("RectangleShape2D_plat70")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform6"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -27.5
+offset_left = -35.0
 offset_top = -10.0
-offset_right = 27.5
+offset_right = 35.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -241,18 +241,18 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Platform7" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1350, 35)
+position = Vector2(1385, 35)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform7"]
-shape = SubResource("RectangleShape2D_plat50")
+shape = SubResource("RectangleShape2D_plat64")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform7"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -25.0
+offset_left = -32.0
 offset_top = -10.0
-offset_right = 25.0
+offset_right = 32.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -263,18 +263,18 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Platform8" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1480, 5)
+position = Vector2(1515, 5)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform8"]
-shape = SubResource("RectangleShape2D_plat50")
+shape = SubResource("RectangleShape2D_plat64")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform8"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -25.0
+offset_left = -32.0
 offset_top = -10.0
-offset_right = 25.0
+offset_right = 32.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -285,23 +285,23 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="DisappearingPlatform4" parent="Platforms" instance=ExtResource("14_dplat")]
-position = Vector2(1605, -30)
-shake_duration = 0.5
-platform_size = Vector2(48, 20)
+position = Vector2(1640, -25)
+shake_duration = 0.75
+platform_size = Vector2(60, 20)
 
 [node name="Platform9" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1735, -65)
+position = Vector2(1770, -60)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform9"]
-shape = SubResource("RectangleShape2D_plat52")
+shape = SubResource("RectangleShape2D_plat66")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform9"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -26.0
+offset_left = -33.0
 offset_top = -10.0
-offset_right = 26.0
+offset_right = 33.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -312,23 +312,23 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="DisappearingPlatform5" parent="Platforms" instance=ExtResource("14_dplat")]
-position = Vector2(1860, -105)
-shake_duration = 0.5
-platform_size = Vector2(48, 20)
+position = Vector2(1895, -95)
+shake_duration = 0.75
+platform_size = Vector2(60, 20)
 
 [node name="Platform10" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1985, -145)
+position = Vector2(2020, -135)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform10"]
-shape = SubResource("RectangleShape2D_plat50")
+shape = SubResource("RectangleShape2D_plat64")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform10"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -25.0
+offset_left = -32.0
 offset_top = -10.0
-offset_right = 25.0
+offset_right = 32.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -339,18 +339,18 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Platform11_Trap" type="StaticBody2D" parent="Platforms"]
-position = Vector2(2100, -145)
+position = Vector2(2140, -135)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform11_Trap"]
-shape = SubResource("RectangleShape2D_plat65")
+shape = SubResource("RectangleShape2D_plat70")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform11_Trap"]
 self_modulate = Color(0.7, 0.6, 0.65, 1)
-offset_left = -32.5
+offset_left = -35.0
 offset_top = -10.0
-offset_right = 32.5
+offset_right = 35.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -361,7 +361,7 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="TrapWall" type="StaticBody2D" parent="Platforms"]
-position = Vector2(2140, -210)
+position = Vector2(2185, -200)
 collision_layer = 2
 collision_mask = 0
 
@@ -383,17 +383,17 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="DisappearingPlatform6" parent="Platforms" instance=ExtResource("14_dplat")]
-position = Vector2(2095, -200)
-shake_duration = 0.5
-platform_size = Vector2(48, 20)
+position = Vector2(2135, -190)
+shake_duration = 0.72
+platform_size = Vector2(60, 20)
 
 [node name="DisappearingPlatform7" parent="Platforms" instance=ExtResource("14_dplat")]
-position = Vector2(2205, -240)
-shake_duration = 0.48
-platform_size = Vector2(48, 20)
+position = Vector2(2250, -230)
+shake_duration = 0.7
+platform_size = Vector2(58, 20)
 
 [node name="ExitPlatform" type="StaticBody2D" parent="Platforms"]
-position = Vector2(2320, -270)
+position = Vector2(2365, -260)
 collision_layer = 2
 collision_mask = 0
 
@@ -402,9 +402,9 @@ shape = SubResource("RectangleShape2D_exitplat")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/ExitPlatform"]
 self_modulate = Color(1, 0.85, 0.4, 1)
-offset_left = -40.0
+offset_left = -45.0
 offset_top = -12.0
-offset_right = 40.0
+offset_right = 45.0
 offset_bottom = 12.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -417,100 +417,100 @@ axis_stretch_vertical = 1
 [node name="Hazards" type="Node2D" parent="."]
 
 [node name="HellRune_A1" parent="Hazards" instance=ExtResource("12_hrun")]
-position = Vector2(345, 275)
-warning_duration = 0.32
-active_duration = 0.65
-cooldown_duration = 1.0
+position = Vector2(360, 275)
+warning_duration = 0.48
+active_duration = 0.6
+cooldown_duration = 1.35
 
 [node name="HellRune_A2" parent="Hazards" instance=ExtResource("12_hrun")]
-position = Vector2(610, 205)
-warning_duration = 0.3
-active_duration = 0.65
-cooldown_duration = 0.95
+position = Vector2(630, 205)
+warning_duration = 0.48
+active_duration = 0.6
+cooldown_duration = 1.35
 
 [node name="HellRune_B1" parent="Hazards" instance=ExtResource("12_hrun")]
-position = Vector2(855, 130)
-warning_duration = 0.3
-active_duration = 0.65
-cooldown_duration = 0.95
+position = Vector2(880, 135)
+warning_duration = 0.48
+active_duration = 0.6
+cooldown_duration = 1.35
 
 [node name="HellRune_B2" parent="Hazards" instance=ExtResource("12_hrun")]
-position = Vector2(1220, 40)
-warning_duration = 0.3
-active_duration = 0.65
-cooldown_duration = 0.95
+position = Vector2(1255, 45)
+warning_duration = 0.48
+active_duration = 0.6
+cooldown_duration = 1.35
 
 [node name="EnergyGate_C1_Vertical" parent="Hazards" instance=ExtResource("13_igate")]
-position = Vector2(1315, -60)
-inactive_duration = 1.15
-warning_duration = 0.5
-active_duration = 0.8
+position = Vector2(1345, -60)
+inactive_duration = 1.65
+warning_duration = 0.55
+active_duration = 0.75
 cycle_offset = 0.0
 beam_length = 150.0
 is_vertical = true
 
 [node name="HellRune_C1" parent="Hazards" instance=ExtResource("12_hrun")]
-position = Vector2(1480, -15)
-warning_duration = 0.32
-active_duration = 0.65
-cooldown_duration = 1.0
+position = Vector2(1515, -15)
+warning_duration = 0.48
+active_duration = 0.6
+cooldown_duration = 1.35
 
 [node name="EnergyGate_C2_Horizontal" parent="Hazards" instance=ExtResource("13_igate")]
-position = Vector2(1480, -85)
-inactive_duration = 1.1
-warning_duration = 0.5
-active_duration = 0.85
+position = Vector2(1515, -80)
+inactive_duration = 1.6
+warning_duration = 0.55
+active_duration = 0.75
 cycle_offset = 0.7
-beam_length = 160.0
+beam_length = 150.0
 is_vertical = false
 
 [node name="EnergyGate_C3_Vertical" parent="Hazards" instance=ExtResource("13_igate")]
-position = Vector2(1680, -160)
-inactive_duration = 1.15
-warning_duration = 0.5
-active_duration = 0.8
+position = Vector2(1710, -155)
+inactive_duration = 1.65
+warning_duration = 0.55
+active_duration = 0.75
 cycle_offset = 1.2
-beam_length = 160.0
+beam_length = 155.0
 is_vertical = true
 
 [node name="HellRune_C2" parent="Hazards" instance=ExtResource("12_hrun")]
-position = Vector2(1735, -85)
-warning_duration = 0.3
-active_duration = 0.65
-cooldown_duration = 0.95
+position = Vector2(1770, -80)
+warning_duration = 0.48
+active_duration = 0.6
+cooldown_duration = 1.35
 
 [node name="EnergyGate_D1_Vertical" parent="Hazards" instance=ExtResource("13_igate")]
-position = Vector2(1930, -230)
-inactive_duration = 1.05
-warning_duration = 0.45
-active_duration = 0.75
+position = Vector2(1965, -225)
+inactive_duration = 1.55
+warning_duration = 0.5
+active_duration = 0.7
 cycle_offset = 0.4
-beam_length = 160.0
+beam_length = 155.0
 is_vertical = true
 
 [node name="HellRune_D1" parent="Hazards" instance=ExtResource("12_hrun")]
-position = Vector2(1985, -165)
-warning_duration = 0.3
-active_duration = 0.65
-cooldown_duration = 0.95
+position = Vector2(2020, -155)
+warning_duration = 0.48
+active_duration = 0.6
+cooldown_duration = 1.35
 
 [node name="HellRune_Trap" parent="Hazards" instance=ExtResource("12_hrun")]
-position = Vector2(2100, -165)
-warning_duration = 0.22
-active_duration = 0.7
-cooldown_duration = 0.8
+position = Vector2(2140, -155)
+warning_duration = 0.35
+active_duration = 0.65
+cooldown_duration = 1.0
 
 [node name="EnergyGate_D2_Horizontal" parent="Hazards" instance=ExtResource("13_igate")]
-position = Vector2(2080, -270)
-inactive_duration = 1.1
-warning_duration = 0.45
-active_duration = 0.8
+position = Vector2(2120, -260)
+inactive_duration = 1.6
+warning_duration = 0.5
+active_duration = 0.75
 cycle_offset = 0.9
 beam_length = 140.0
 is_vertical = false
 
 [node name="PitHazardArea" type="Area2D" parent="."]
-position = Vector2(1225, 480)
+position = Vector2(1250, 480)
 collision_layer = 4
 collision_mask = 1
 
@@ -520,37 +520,37 @@ shape = SubResource("RectangleShape2D_pit")
 [node name="Coins" type="Node2D" parent="."]
 
 [node name="Coin1" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(277, 260)
+position = Vector2(290, 260)
 
 [node name="Coin2" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(545, 195)
+position = Vector2(560, 195)
 
 [node name="Coin3" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(673, 145)
+position = Vector2(690, 150)
 
 [node name="Coin4" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(915, 85)
+position = Vector2(940, 90)
 
 [node name="Coin5" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1158, 25)
+position = Vector2(1190, 35)
 
 [node name="Coin6" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1415, -45)
+position = Vector2(1450, -40)
 
 [node name="Coin7" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1670, -115)
+position = Vector2(1710, -110)
 
 [node name="Coin8" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1922, -195)
+position = Vector2(1965, -185)
 
 [node name="Coin9" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(2040, -250)
+position = Vector2(2080, -240)
 
 [node name="Coin10" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(2205, -295)
+position = Vector2(2250, -280)
 
 [node name="ExitGate" parent="." instance=ExtResource("4_exit")]
-position = Vector2(2330, -320)
+position = Vector2(2375, -310)
 
 [node name="HUD" type="CanvasLayer" parent="."]
 
@@ -618,8 +618,8 @@ anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 24.0
-offset_top = -104.0
-offset_right = 104.0
+offset_top = -128.0
+offset_right = 128.0
 offset_bottom = -24.0
 grow_vertical = 0
 texture_normal = ExtResource("16_bleft")
@@ -627,15 +627,17 @@ texture_pressed = ExtResource("19_bleft_p")
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("22_tbtn")
+action_name = "move_left"
+touch_margin = 8.0
 
 [node name="RightBtn" type="TextureButton" parent="HUD/TouchControls"]
 layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = 124.0
-offset_top = -104.0
-offset_right = 204.0
+offset_left = 144.0
+offset_top = -128.0
+offset_right = 248.0
 offset_bottom = -24.0
 grow_vertical = 0
 texture_normal = ExtResource("17_bright")
@@ -643,6 +645,8 @@ texture_pressed = ExtResource("20_bright_p")
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("22_tbtn")
+action_name = "move_right"
+touch_margin = 8.0
 
 [node name="JumpBtn" type="TextureButton" parent="HUD/TouchControls"]
 layout_mode = 1
@@ -651,8 +655,8 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -104.0
-offset_top = -104.0
+offset_left = -148.0
+offset_top = -148.0
 offset_right = -24.0
 offset_bottom = -24.0
 grow_horizontal = 0
@@ -662,6 +666,8 @@ texture_pressed = ExtResource("21_bjump_p")
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("22_tbtn")
+action_name = "jump"
+touch_margin = 16.0
 
 [node name="PauseOverlay" parent="HUD" instance=ExtResource("5_paus")]
 visible = false

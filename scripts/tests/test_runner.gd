@@ -7218,7 +7218,7 @@ func test_level_19_soul_gauntlet_layout_and_coins() -> void:
 	var camera: Camera2D = player.get_node_or_null("Camera2D")
 	assert_true(camera != null, "Camera2D exists on Player")
 	assert_eq(camera.limit_left, 0, "Camera left boundary is 0")
-	assert_eq(camera.limit_right, 2450, "Camera right boundary covers full gauntlet width (2450)")
+	assert_eq(camera.limit_right, 2500, "Camera right boundary covers full gauntlet width (2500)")
 	assert_eq(camera.limit_top, -450, "Camera top boundary covers summit ascent (-450)")
 	assert_eq(camera.limit_bottom, 500, "Camera bottom boundary covers abyss (500)")
 
@@ -7271,23 +7271,38 @@ func test_level_19_soul_gauntlet_layout_and_coins() -> void:
 	var coins = lvl.get_node_or_null("Coins")
 	assert_true(coins != null, "Coins container exists")
 	assert_eq(coins.get_child_count(), 10, "Coins container has exactly 10 coins")
-	assert_eq(coins.get_node("Coin1").position, Vector2(277, 260), "Coin 1 is at Jump 2 apex")
-	assert_eq(coins.get_node("Coin2").position, Vector2(545, 195), "Coin 2 is at Jump 4 apex")
-	assert_eq(coins.get_node("Coin3").position, Vector2(673, 145), "Coin 3 is over Section B chasm")
-	assert_eq(coins.get_node("Coin4").position, Vector2(915, 85), "Coin 4 is at Jump 7 apex")
-	assert_eq(coins.get_node("Coin5").position, Vector2(1158, 25), "Coin 5 is over DisappearingPlatform3 gap")
-	assert_eq(coins.get_node("Coin6").position, Vector2(1415, -45), "Coin 6 is at Section C Jump 11 apex")
-	assert_eq(coins.get_node("Coin7").position, Vector2(1670, -115), "Coin 7 is inside EnergyGate_C3 aperture")
-	assert_eq(coins.get_node("Coin8").position, Vector2(1922, -195), "Coin 8 is inside EnergyGate_D1 aperture")
-	assert_eq(coins.get_node("Coin9").position, Vector2(2040, -250), "Coin 9 is at True Route apex leap")
-	assert_eq(coins.get_node("Coin10").position, Vector2(2205, -295), "Coin 10 is floating over DisappearingPlatform7")
+	assert_eq(coins.get_node("Coin1").position, Vector2(290, 260), "Coin 1 is at Jump 2 apex")
+	assert_eq(coins.get_node("Coin2").position, Vector2(560, 195), "Coin 2 is at Jump 4 apex")
+	assert_eq(coins.get_node("Coin3").position, Vector2(690, 150), "Coin 3 is over Section B chasm")
+	assert_eq(coins.get_node("Coin4").position, Vector2(940, 90), "Coin 4 is at Jump 7 apex")
+	assert_eq(coins.get_node("Coin5").position, Vector2(1190, 35), "Coin 5 is over DisappearingPlatform3 gap")
+	assert_eq(coins.get_node("Coin6").position, Vector2(1450, -40), "Coin 6 is at Section C Jump 11 apex")
+	assert_eq(coins.get_node("Coin7").position, Vector2(1710, -110), "Coin 7 is inside EnergyGate_C3 aperture")
+	assert_eq(coins.get_node("Coin8").position, Vector2(1965, -185), "Coin 8 is inside EnergyGate_D1 aperture")
+	assert_eq(coins.get_node("Coin9").position, Vector2(2080, -240), "Coin 9 is at True Route apex leap")
+	assert_eq(coins.get_node("Coin10").position, Vector2(2250, -280), "Coin 10 is floating over DisappearingPlatform7")
 
 	# Exit Gate
 	var exit_gate = lvl.get_node_or_null("ExitGate")
 	assert_true(exit_gate != null, "ExitGate exists in Level 19")
 	assert_true(not exit_gate._is_open, "Exit gate starts locked")
 	assert_eq(GameManager.get_level_info(19).get("coin_count"), 10, "Level 19 requires exactly 10 coins")
-	assert_eq(exit_gate.position, Vector2(2330, -320), "Exit gate is on ExitPlatform at (2330, -320)")
+	assert_eq(exit_gate.position, Vector2(2375, -310), "Exit gate is on ExitPlatform at (2375, -310)")
+
+	# On-Screen Touch Controls verification (Consistency with Levels 16-18)
+	var touch_controls = lvl.get_node_or_null("HUD/TouchControls")
+	assert_true(touch_controls != null, "TouchControls container exists")
+	var btn_left = touch_controls.get_node_or_null("LeftBtn")
+	var btn_right = touch_controls.get_node_or_null("RightBtn")
+	var btn_jump = touch_controls.get_node_or_null("JumpBtn")
+	assert_true(btn_left != null and btn_right != null and btn_jump != null, "All three movement & jump buttons exist")
+	assert_eq(btn_left.size, Vector2(104, 104), "LeftBtn size is 104x104 matching reference levels")
+	assert_eq(btn_right.size, Vector2(104, 104), "RightBtn size is 104x104 matching reference levels")
+	assert_eq(btn_jump.size, Vector2(124, 124), "JumpBtn size is 124x124 matching reference levels")
+	assert_eq(btn_left.touch_margin, 8.0, "LeftBtn touch_margin is 8.0px")
+	assert_eq(btn_right.touch_margin, 8.0, "RightBtn touch_margin is 8.0px")
+	assert_eq(btn_jump.touch_margin, 16.0, "JumpBtn touch_margin is 16.0px")
+	assert_eq(btn_right.offset_left - btn_left.offset_right, 16.0, "Spacing between Left and Right buttons is 16.0px")
 
 	remove_child(lvl)
 	lvl.free()
@@ -7304,39 +7319,39 @@ func test_level_19_hazard_mechanics_and_timing() -> void:
 
 	# Hell Runes verification
 	var r_a1: HellRune = hazards.get_node("HellRune_A1")
-	assert_eq(r_a1.warning_duration, 0.32, "HellRune_A1 warning duration is 0.32s")
-	assert_eq(r_a1.active_duration, 0.65, "HellRune_A1 active flame duration is 0.65s")
-	assert_eq(r_a1.cooldown_duration, 1.0, "HellRune_A1 cooldown is 1.0s")
+	assert_eq(r_a1.warning_duration, 0.48, "HellRune_A1 warning duration is 0.48s (rebalanced for fair reaction)")
+	assert_eq(r_a1.active_duration, 0.60, "HellRune_A1 active flame duration is 0.60s")
+	assert_eq(r_a1.cooldown_duration, 1.35, "HellRune_A1 cooldown is 1.35s")
 
 	var r_trap: HellRune = hazards.get_node("HellRune_Trap")
-	assert_eq(r_trap.warning_duration, 0.22, "HellRune_Trap has punishing rapid warning 0.22s")
-	assert_eq(r_trap.active_duration, 0.70, "HellRune_Trap has prolonged active eruption 0.70s")
+	assert_eq(r_trap.warning_duration, 0.35, "HellRune_Trap has 0.35s warning")
+	assert_eq(r_trap.active_duration, 0.65, "HellRune_Trap has active duration 0.65s")
 
 	# Energy Gates verification
 	var eg_c1: InfernalEnergyGate = hazards.get_node("EnergyGate_C1_Vertical")
 	assert_true(eg_c1.is_vertical, "EnergyGate_C1 is vertical")
-	assert_eq(eg_c1.inactive_duration, 1.15, "EnergyGate_C1 inactive crossing window is 1.15s")
-	assert_eq(eg_c1.active_duration, 0.80, "EnergyGate_C1 active laser duration is 0.80s")
+	assert_eq(eg_c1.inactive_duration, 1.65, "EnergyGate_C1 inactive crossing window is 1.65s (rebalanced)")
+	assert_eq(eg_c1.active_duration, 0.75, "EnergyGate_C1 active laser duration is 0.75s")
 	assert_eq(eg_c1.beam_length, 150.0, "EnergyGate_C1 beam length is 150.0px")
 
 	var eg_c2: InfernalEnergyGate = hazards.get_node("EnergyGate_C2_Horizontal")
 	assert_true(not eg_c2.is_vertical, "EnergyGate_C2 is horizontal")
-	assert_eq(eg_c2.inactive_duration, 1.10, "EnergyGate_C2 inactive crossing window is 1.10s")
-	assert_eq(eg_c2.active_duration, 0.85, "EnergyGate_C2 active laser duration is 0.85s")
+	assert_eq(eg_c2.inactive_duration, 1.60, "EnergyGate_C2 inactive crossing window is 1.60s (rebalanced)")
+	assert_eq(eg_c2.active_duration, 0.75, "EnergyGate_C2 active laser duration is 0.75s")
 	assert_eq(eg_c2.cycle_offset, 0.7, "EnergyGate_C2 has polyrhythmic cycle offset 0.7s")
 
 	var eg_d2: InfernalEnergyGate = hazards.get_node("EnergyGate_D2_Horizontal")
 	assert_true(not eg_d2.is_vertical, "EnergyGate_D2 is horizontal ceiling hurdle")
-	assert_eq(eg_d2.inactive_duration, 1.10, "EnergyGate_D2 inactive window is 1.10s")
-	assert_eq(eg_d2.active_duration, 0.80, "EnergyGate_D2 active duration is 0.80s")
+	assert_eq(eg_d2.inactive_duration, 1.60, "EnergyGate_D2 inactive window is 1.60s (rebalanced)")
+	assert_eq(eg_d2.active_duration, 0.75, "EnergyGate_D2 active duration is 0.75s")
 
 	# Disappearing Hell Platforms verification
 	for i in range(1, 8):
 		var dp_name = "DisappearingPlatform%d" % i
 		var dp: DisappearingHellPlatform = platforms.get_node(dp_name)
 		assert_true(dp != null, "%s exists" % dp_name)
-		assert_true(dp.shake_duration <= 0.50, "%s shake duration is <= 0.50s (rapid collapse)" % dp_name)
-		assert_true(dp.shake_duration >= 0.48, "%s shake duration is >= 0.48s (fair reaction)" % dp_name)
+		assert_true(dp.shake_duration <= 0.75, "%s shake duration is <= 0.75s" % dp_name)
+		assert_true(dp.shake_duration >= 0.70, "%s shake duration is >= 0.70s (rebalanced for fair reaction)" % dp_name)
 
 	remove_child(lvl)
 	lvl.free()
@@ -7351,24 +7366,24 @@ func test_level_19_jump_physics_and_kinematic_reachability() -> void:
 	var platforms = lvl.get_node("Platforms")
 
 	var sequential_jumps: Array[Dictionary] = [
-		{"from": "Ground1", "to": "Platform1", "from_w": 70.0, "to_w": 50.0},
-		{"from": "Platform1", "to": "Platform2", "from_w": 50.0, "to_w": 50.0},
-		{"from": "Platform2", "to": "Platform3", "from_w": 50.0, "to_w": 50.0},
-		{"from": "Platform3", "to": "Platform4", "from_w": 50.0, "to_w": 50.0},
-		{"from": "Platform4", "to": "DisappearingPlatform1", "from_w": 50.0, "to_w": 48.0},
-		{"from": "DisappearingPlatform1", "to": "Platform5", "from_w": 48.0, "to_w": 48.0},
-		{"from": "Platform5", "to": "DisappearingPlatform2", "from_w": 48.0, "to_w": 48.0},
-		{"from": "DisappearingPlatform2", "to": "DisappearingPlatform3", "from_w": 48.0, "to_w": 48.0},
-		{"from": "DisappearingPlatform3", "to": "Platform6", "from_w": 48.0, "to_w": 55.0},
-		{"from": "Platform6", "to": "Platform7", "from_w": 55.0, "to_w": 50.0},
-		{"from": "Platform7", "to": "Platform8", "from_w": 50.0, "to_w": 50.0},
-		{"from": "Platform8", "to": "DisappearingPlatform4", "from_w": 50.0, "to_w": 48.0},
-		{"from": "DisappearingPlatform4", "to": "Platform9", "from_w": 48.0, "to_w": 52.0},
-		{"from": "Platform9", "to": "DisappearingPlatform5", "from_w": 52.0, "to_w": 48.0},
-		{"from": "DisappearingPlatform5", "to": "Platform10", "from_w": 48.0, "to_w": 50.0},
-		{"from": "Platform10", "to": "DisappearingPlatform6", "from_w": 50.0, "to_w": 48.0},
-		{"from": "DisappearingPlatform6", "to": "DisappearingPlatform7", "from_w": 48.0, "to_w": 48.0},
-		{"from": "DisappearingPlatform7", "to": "ExitPlatform", "from_w": 48.0, "to_w": 80.0}
+		{"from": "Ground1", "to": "Platform1", "from_w": 90.0, "to_w": 70.0},
+		{"from": "Platform1", "to": "Platform2", "from_w": 70.0, "to_w": 64.0},
+		{"from": "Platform2", "to": "Platform3", "from_w": 64.0, "to_w": 64.0},
+		{"from": "Platform3", "to": "Platform4", "from_w": 64.0, "to_w": 64.0},
+		{"from": "Platform4", "to": "DisappearingPlatform1", "from_w": 64.0, "to_w": 60.0},
+		{"from": "DisappearingPlatform1", "to": "Platform5", "from_w": 60.0, "to_w": 64.0},
+		{"from": "Platform5", "to": "DisappearingPlatform2", "from_w": 64.0, "to_w": 60.0},
+		{"from": "DisappearingPlatform2", "to": "DisappearingPlatform3", "from_w": 60.0, "to_w": 60.0},
+		{"from": "DisappearingPlatform3", "to": "Platform6", "from_w": 60.0, "to_w": 70.0},
+		{"from": "Platform6", "to": "Platform7", "from_w": 70.0, "to_w": 64.0},
+		{"from": "Platform7", "to": "Platform8", "from_w": 64.0, "to_w": 64.0},
+		{"from": "Platform8", "to": "DisappearingPlatform4", "from_w": 64.0, "to_w": 60.0},
+		{"from": "DisappearingPlatform4", "to": "Platform9", "from_w": 60.0, "to_w": 66.0},
+		{"from": "Platform9", "to": "DisappearingPlatform5", "from_w": 66.0, "to_w": 60.0},
+		{"from": "DisappearingPlatform5", "to": "Platform10", "from_w": 60.0, "to_w": 64.0},
+		{"from": "Platform10", "to": "DisappearingPlatform6", "from_w": 64.0, "to_w": 60.0},
+		{"from": "DisappearingPlatform6", "to": "DisappearingPlatform7", "from_w": 60.0, "to_w": 58.0},
+		{"from": "DisappearingPlatform7", "to": "ExitPlatform", "from_w": 58.0, "to_w": 90.0}
 	]
 
 	var move_speed: float = 240.0
