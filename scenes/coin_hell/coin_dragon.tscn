@@ -3,8 +3,9 @@
 [ext_resource type="Script" path="res://scripts/coin_hell/coin_dragon.gd" id="1_drag"]
 [ext_resource type="Texture2D" path="res://assets/sprites/coin_dragon_idle.png" id="2_idle"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
-size = Vector2(68, 48)
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]
+radius = 22.0
+height = 50.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hazard"]
 size = Vector2(84, 56)
@@ -26,8 +27,8 @@ script = ExtResource("1_drag")
 texture = ExtResource("2_idle")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, 8)
-shape = SubResource("RectangleShape2D_body")
+position = Vector2(0, 7)
+shape = SubResource("CapsuleShape2D_body")
 
 [node name="HazardArea" type="Area2D" parent="."]
 collision_layer = 4

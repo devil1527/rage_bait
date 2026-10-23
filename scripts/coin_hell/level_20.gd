@@ -11,6 +11,7 @@ extends Node2D
 
 const TOTAL_COINS: int = 10
 const SURVIVAL_DURATION: float = 60.0
+const COIN_RELEASE_INTERVAL: float = 5.5
 
 enum CoinState {
 	NOT_SPAWNED,
@@ -38,6 +39,7 @@ const COIN_TARGET_POSITIONS: Array[Vector2] = [
 @onready var exit_gate: Area2D = $ExitGate
 @onready var coins_container: Node2D = $Coins
 @onready var platforms_container: Node2D = $Platforms
+@onready var burners_container: Node2D = get_node_or_null("Burners")
 @onready var pit_hazard_area: Area2D = get_node_or_null("PitHazardArea")
 
 # HUD
@@ -156,9 +158,9 @@ func _process(delta: float) -> void:
 	var time_remaining: float = maxf(0.0, SURVIVAL_DURATION - _survival_elapsed)
 	_update_timer_hud(time_remaining)
 
-	# 6-Second Coin Release Cycle (10 coins at T = 6, 12, 18, 24, 30, 36, 42, 48, 54, 60)
+	# 5.5-Second Coin Release Cycle (10 coins at T = 5.5, 11.0, 16.5, 22.0, 27.5, 33.0, 38.5, 44.0, 49.5, 55.0)
 	for i in range(1, TOTAL_COINS + 1):
-		var target_time: float = float(i) * 6.0
+		var target_time: float = float(i) * COIN_RELEASE_INTERVAL
 		if _survival_elapsed >= target_time and not _executed_cycles.has(i):
 			_executed_cycles[i] = true
 			_trigger_coin_release_cycle(i)
@@ -350,6 +352,10 @@ func _on_player_revived(_pos: Vector2) -> void:
 	level_complete_overlay.visible = false
 	GameManager.is_gameplay_active = true
 	_is_encounter_active = true
+	if burners_container:
+		for b in burners_container.get_children():
+			if b.has_method("reset"):
+				b.reset()
 	if dragon:
 		dragon.activate(player)
 
@@ -386,6 +392,11 @@ func _reset_level() -> void:
 
 	if exit_gate:
 		exit_gate.reset()
+
+	if burners_container:
+		for b in burners_container.get_children():
+			if b.has_method("reset"):
+				b.reset()
 
 	if dragon:
 		dragon.reset_to(Vector2(820.0, 418.0))

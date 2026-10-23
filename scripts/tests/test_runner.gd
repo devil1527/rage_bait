@@ -30,6 +30,7 @@ const DisappearingHellPlatformClass = preload("res://scripts/coin_hell/disappear
 const SecretHellPlatformClass = preload("res://scripts/coin_hell/secret_hell_platform.gd")
 const FinalHellEnvironmentClass = preload("res://scripts/shared/final_hell_environment.gd")
 const CoinDragonClass = preload("res://scripts/coin_hell/coin_dragon.gd")
+const PlatformFireBurnerClass = preload("res://scripts/coin_hell/platform_fire_burner.gd")
 
 var passed_count: int = 0
 var failed_count: int = 0
@@ -158,6 +159,7 @@ func run_all_tests() -> void:
 	test_level_19_completion_and_progression_advancement()
 	test_level_20_final_betrayal_layout_and_registration()
 	test_level_20_coin_dragon_mechanics_and_collision()
+	test_level_20_platform_fire_burners()
 	test_level_20_survival_timer_and_coin_cycle()
 	test_level_20_jump_physics_and_arena_reachability()
 	test_level_20_gate_unlock_and_dragon_defeat()
@@ -7652,12 +7654,16 @@ func test_level_20_coin_dragon_mechanics_and_collision() -> void:
 	assert_eq(dragon.move_speed, 160.0, "Dragon move speed is 160.0 px/s (formidable yet outrunnable by player at 240 px/s)")
 	assert_eq(dragon.jump_velocity, -440.0, "Dragon jump velocity is -440.0 px/s")
 	assert_eq(dragon.gravity, 1150.0, "Dragon uses standard gravity 1150.0 px/s^2")
+	assert_true(dragon.body_shape.shape is CapsuleShape2D, "Dragon uses CapsuleShape2D body shape for smooth ledge physics without clipping")
 
 	# Station Graph & Arena Navigation Audit
-	assert_eq(dragon.STATIONS.size(), 8, "Dragon defines exactly 8 arena platform stations")
+	assert_eq(dragon.STATIONS.size(), 10, "Dragon defines 10 verified arena platform stations (including LeftStep and RightStep)")
 	assert_true(dragon.STATIONS.has("RightGround"), "Station RightGround exists")
+	assert_true(dragon.STATIONS.has("RightStep"), "Station RightStep exists")
 	assert_true(dragon.STATIONS.has("CenterBridge"), "Station CenterBridge exists")
 	assert_true(dragon.STATIONS.has("CentralAltar"), "Station CentralAltar exists")
+	assert_true(dragon.STATIONS.has("LeftStep"), "Station LeftStep exists")
+	assert_true(dragon.STATIONS.has("LeftGround"), "Station LeftGround exists")
 	assert_eq(dragon.current_station_id, "RightGround", "Dragon starts stationed at RightGround")
 	assert_eq(dragon.STATIONS["RightGround"]["pos"], Vector2(820.0, 418.0), "RightGround station position is (820, 418)")
 	assert_eq(dragon.STATIONS["RightGround"]["min_x"], 750.0, "RightGround min_x edge limit is 750.0")
@@ -7694,16 +7700,100 @@ func test_level_20_coin_dragon_mechanics_and_collision() -> void:
 	lvl.free()
 
 
-func test_level_20_survival_timer_and_coin_cycle() -> void:
-	print("\n--- TEST: Level 20 60s Survival Timer & 10-Coin Release Cycle ---")
+func test_level_20_platform_fire_burners() -> void:
+	print("\n--- TEST: Level 20 Motion-Triggered Platform Fire Burners ---")
 
 	var lvl20_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_20.tscn")
 	var lvl = lvl20_scene.instantiate()
 	add_child(lvl)
 
-	# Initial state: 60-second countdown
+	var player = lvl.get_node("Player")
+	var spawn_point = lvl.get_node("SpawnPoint")
+	var burners = lvl.get_node_or_null("Burners")
+
+	assert_true(burners != null, "Burners container exists in Level 20")
+	assert_eq(burners.get_child_count(), 6, "Exactly 6 motion-triggered fire burners placed across key arena platform bars")
+
+	var expected_burners: Array[String] = [
+		"Burner_BridgeLeft",
+		"Burner_BridgeRight",
+		"Burner_LeftStep",
+		"Burner_RightStep",
+		"Burner_MidLeft",
+		"Burner_MidRight"
+	]
+
+	for b_name in expected_burners:
+		var b = burners.get_node_or_null(b_name)
+		assert_true(b != null, "%s exists in Burners container" % b_name)
+		assert_true(b.get_script() == PlatformFireBurnerClass, "%s is an instance of PlatformFireBurner" % b_name)
+
+		# Fair route safety: verify no burner is near player spawn (100, 430)
+		var dist_to_spawn: float = b.global_position.distance_to(spawn_point.global_position)
+		assert_true(dist_to_spawn > 90.0, "%s is placed away from spawn point (dist: %.1fpx > 90px)" % [b_name, dist_to_spawn])
+
+		# Exit altar sanctuary safety
+		var dist_to_altar: float = b.global_position.distance_to(Vector2(480.0, 185.0))
+		assert_true(dist_to_altar > 60.0, "%s does not obstruct CentralAltar exit gate (dist: %.1fpx > 60px)" % [b_name, dist_to_altar])
+
+	# State machine & collision audit on a representative burner
+	var burner = burners.get_node("Burner_LeftStep")
+	assert_eq(burner.current_state, PlatformFireBurnerClass.State.IDLE, "Burner starts in IDLE state")
+	assert_eq(burner.warning_duration, 0.65, "Warning duration is 0.65s (ample time for player to react / step off)")
+	assert_eq(burner.burst_duration, 0.85, "Fire burst duration is 0.85s")
+	assert_eq(burner.cooldown_duration, 1.8, "Cooldown duration is 1.8s")
+
+	# Area collisions: trigger area layer 0 mask 1 (player only), hazard area layer 4 mask 1
+	assert_eq(burner.trigger_area.collision_layer, 0, "TriggerArea collision_layer is 0")
+	assert_eq(burner.trigger_area.collision_mask, 1, "TriggerArea detects player layer 1")
+	assert_eq(burner.hazard_area.collision_layer, 4, "HazardArea collision_layer is 4 (hazard)")
+	assert_eq(burner.hazard_area.collision_mask, 1, "HazardArea targets player layer 1")
+	assert_true(burner.hazard_shape.disabled, "Hazard shape is initially disabled in IDLE state (safe to walk)")
+
+	# Trigger Warning phase
+	burner._trigger_warning()
+	assert_eq(burner.current_state, PlatformFireBurnerClass.State.WARNING, "Transitions to WARNING upon trigger")
+	assert_true(burner.spark_particles.emitting, "Spark particles activate during warning")
+	assert_true(burner.hazard_shape.disabled, "Hazard shape remains disabled during warning phase")
+
+	# Erupt Flame phase
+	burner._erupt_flame()
+	assert_eq(burner.current_state, PlatformFireBurnerClass.State.BURST, "Transitions to BURST state")
+	assert_true(burner.flame_sprite.visible, "Flame sprite becomes visible during burst")
+	assert_true(not burner.hazard_shape.disabled, "Hazard shape is active during burst")
+
+	# Active flame lethality test
+	assert_true(player._is_alive, "Player is alive before touching burst flame")
+	burner._kill_player(player)
+	assert_true(not player._is_alive, "Player is killed upon contact with active burner burst")
+
+	# Retract Flame into Cooldown
+	burner._retract_flame()
+	assert_eq(burner.current_state, PlatformFireBurnerClass.State.COOLDOWN, "Transitions to COOLDOWN state")
+	assert_true(not burner.flame_sprite.visible, "Flame sprite hidden during cooldown")
+	assert_true(burner.hazard_shape.disabled, "Hazard shape disabled during cooldown (platform traversable)")
+
+	# Full Reset test
+	burner.reset()
+	assert_eq(burner.current_state, PlatformFireBurnerClass.State.IDLE, "Burner resets cleanly to IDLE")
+	assert_true(burner.hazard_shape.disabled, "Hazard shape disabled after reset")
+	assert_true(not burner.flame_sprite.visible, "Flame sprite invisible after reset")
+
+	remove_child(lvl)
+	lvl.free()
+
+
+func test_level_20_survival_timer_and_coin_cycle() -> void:
+	print("\n--- TEST: Level 20 60s Survival Timer & 5.5s Coin Release Cycle ---")
+
+	var lvl20_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_20.tscn")
+	var lvl = lvl20_scene.instantiate()
+	add_child(lvl)
+
+	# Initial state: 60-second countdown with 5.5s interval
 	assert_eq(lvl.SURVIVAL_DURATION, 60.0, "Survival duration is exactly 60.0 seconds")
 	assert_eq(lvl.TOTAL_COINS, 10, "Required coins is exactly 10")
+	assert_eq(lvl.COIN_RELEASE_INTERVAL, 5.5, "Coin release interval is calibrated to 5.5s")
 	assert_eq(lvl._survival_elapsed, 0.0, "Survival timer starts at 0.0 elapsed")
 
 	# Target landing positions verification
@@ -7713,16 +7803,22 @@ func test_level_20_survival_timer_and_coin_cycle() -> void:
 		assert_true(pos.x >= 60.0 and pos.x <= 900.0, "Coin %d target X (%.1f) is within arena bounds" % [idx + 1, pos.x])
 		assert_true(pos.y >= 150.0 and pos.y <= 450.0, "Coin %d target Y (%.1f) is on a solid elevated platform above pit" % [idx + 1, pos.y])
 
-	# 6-Second cycle execution test
-	# Before cycle 1: Coin 1 is NOT_SPAWNED and not visible
+	# 5.5-Second cycle timestamps check (Coin 1: 5.5s, ..., Coin 10: 55.0s, leaving 5.0s survival)
+	for i in range(1, 11):
+		var expected_time: float = float(i) * 5.5
+		var t_rem: float = lvl.SURVIVAL_DURATION - expected_time
+		assert_true(expected_time <= 55.0, "Coin %d timestamp %.1fs <= 55.0s" % [i, expected_time])
+	assert_eq(lvl.SURVIVAL_DURATION - (10.0 * 5.5), 5.0, "Leaves exactly 5.0s of survival after final scheduled coin release")
+
+	# Cycle 1 execution test: Coin 1 is NOT_SPAWNED and not visible initially
 	assert_eq(lvl._coin_states[1], lvl.CoinState.NOT_SPAWNED, "Coin 1 is initially NOT_SPAWNED")
 	assert_true(not lvl.coins_container.get_node("Coin1").visible, "Coin 1 is not visible before release")
 
-	# Simulate 6.0s elapsed: Coin 1 released from snout
+	# Simulate 5.5s elapsed: Coin 1 released from snout
 	lvl._on_dragon_coin_released(Vector2(784.0, 404.0), 1)
 	assert_true(lvl.coins_container.get_node("Coin1").visible, "Coin 1 is visible after cycle 1 release")
 
-	# Simulate 12.0s elapsed: Coin 2 released from snout
+	# Simulate 11.0s elapsed: Coin 2 released from snout
 	lvl._on_dragon_coin_released(Vector2(784.0, 404.0), 2)
 	assert_true(lvl.coins_container.get_node("Coin2").visible, "Coin 2 is visible after cycle 2 release")
 

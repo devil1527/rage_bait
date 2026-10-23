@@ -39,56 +39,68 @@ var is_active: bool = false
 var is_defeated: bool = false
 var target_player: CharacterBody2D = null
 
-# 8 Verified Arena Platform Stations
+# 10 Verified Arena Platform Stations
 # Each station specifies the exact grounded boss position, platform safe X bounds, and verified connections.
 var STATIONS: Dictionary = {
 	"RightGround": {
 		"pos": Vector2(820.0, 418.0),
 		"min_x": 750.0,
 		"max_x": 890.0,
-		"connections": ["CenterBridge", "RightMid", "MidRightPerch"]
+		"connections": ["RightStep", "RightMid"]
+	},
+	"RightStep": {
+		"pos": Vector2(770.0, 344.0),
+		"min_x": 740.0,
+		"max_x": 800.0,
+		"connections": ["RightGround", "CenterBridge", "RightMid"]
 	},
 	"RightMid": {
 		"pos": Vector2(830.0, 269.0),
 		"min_x": 785.0,
 		"max_x": 875.0,
-		"connections": ["RightGround", "MidRightPerch"]
+		"connections": ["RightStep", "MidRightPerch"]
 	},
 	"MidRightPerch": {
 		"pos": Vector2(640.0, 219.0),
 		"min_x": 605.0,
 		"max_x": 675.0,
-		"connections": ["CenterBridge", "CentralAltar", "RightGround", "RightMid"]
-	},
-	"CenterBridge": {
-		"pos": Vector2(480.0, 398.0),
-		"min_x": 390.0,
-		"max_x": 570.0,
-		"connections": ["LeftGround", "RightGround", "MidLeftPerch", "MidRightPerch", "CentralAltar"]
+		"connections": ["CentralAltar", "RightMid", "RightStep"]
 	},
 	"CentralAltar": {
 		"pos": Vector2(480.0, 153.0),
 		"min_x": 435.0,
 		"max_x": 525.0,
-		"connections": ["CenterBridge", "MidLeftPerch", "MidRightPerch"]
+		"connections": ["MidLeftPerch", "MidRightPerch", "CenterBridge"]
+	},
+	"CenterBridge": {
+		"pos": Vector2(480.0, 398.0),
+		"min_x": 390.0,
+		"max_x": 570.0,
+		"connections": ["LeftStep", "RightStep", "CentralAltar"]
 	},
 	"MidLeftPerch": {
 		"pos": Vector2(320.0, 219.0),
 		"min_x": 285.0,
 		"max_x": 355.0,
-		"connections": ["CenterBridge", "CentralAltar", "LeftGround", "LeftMid"]
+		"connections": ["CentralAltar", "LeftMid", "LeftStep"]
 	},
 	"LeftMid": {
 		"pos": Vector2(130.0, 269.0),
 		"min_x": 85.0,
 		"max_x": 175.0,
-		"connections": ["LeftGround", "MidLeftPerch"]
+		"connections": ["LeftStep", "MidLeftPerch"]
+	},
+	"LeftStep": {
+		"pos": Vector2(190.0, 344.0),
+		"min_x": 160.0,
+		"max_x": 220.0,
+		"connections": ["LeftGround", "CenterBridge", "LeftMid"]
 	},
 	"LeftGround": {
 		"pos": Vector2(140.0, 418.0),
 		"min_x": 70.0,
 		"max_x": 210.0,
-		"connections": ["CenterBridge", "LeftMid", "MidLeftPerch"]
+		"connections": ["LeftStep"]
 	}
 }
 
@@ -101,6 +113,7 @@ var _patrol_dir: float = -1.0
 var _jump_flight_time: float = 0.0
 var _jump_elapsed: float = 0.0
 var _target_land_pos: Vector2 = Vector2.ZERO
+var _target_jump_vx: float = 0.0
 
 var _pending_coin_idx: int = -1
 var _pending_coin_target: Vector2 = Vector2.ZERO
@@ -293,7 +306,19 @@ func _process_telegraph_state(delta: float) -> void:
 		sprite.modulate = Color.WHITE
 		_launch_leap()
 
-## Exact kinematic leap execution
+## Helper to compute clean, natural jump arc height based on platform stations
+func _get_arc_height(s_from: String, s_to: String) -> float:
+	if ("Ground" in s_from and "Step" in s_to) or ("Step" in s_from and "Ground" in s_to):
+		return 18.0
+	if ("Step" in s_from and "Mid" in s_to) or ("Mid" in s_from and "Step" in s_to):
+		return 28.0
+	if ("Bridge" in s_from and "Step" in s_to) or ("Step" in s_from and "Bridge" in s_to):
+		return 45.0
+	if "Altar" in s_from or "Altar" in s_to:
+		return 45.0
+	return 35.0
+
+## Exact kinematic leap execution with physical trajectory
 func _launch_leap() -> void:
 	current_state = State.LEAP
 	_apply_texture(tex_jump)
@@ -301,13 +326,11 @@ func _launch_leap() -> void:
 	var p1: Vector2 = global_position
 	var p2: Vector2 = _target_land_pos
 
-	var arc_h: float = 65.0
-	if "Ground" in current_station_id or "Ground" in target_station_id or "Bridge" in current_station_id or "Bridge" in target_station_id:
-		arc_h = 75.0
+	var arc_h: float = _get_arc_height(current_station_id, target_station_id)
 
 	var y_apex: float = minf(p1.y, p2.y) - arc_h
-	var rise: float = maxf(10.0, p1.y - y_apex)
-	var fall: float = maxf(10.0, p2.y - y_apex)
+	var rise: float = maxf(8.0, p1.y - y_apex)
+	var fall: float = maxf(8.0, p2.y - y_apex)
 
 	var vy: float = -sqrt(2.0 * gravity * rise)
 	var t_up: float = -vy / gravity
@@ -316,6 +339,7 @@ func _launch_leap() -> void:
 	_jump_elapsed = 0.0
 
 	var vx: float = (p2.x - p1.x) / _jump_flight_time
+	_target_jump_vx = vx
 	velocity = Vector2(vx, vy)
 	sprite.flip_h = vx < 0.0
 
@@ -328,20 +352,31 @@ func _process_leap_state(delta: float) -> void:
 	_jump_elapsed += delta
 	velocity.y += gravity * delta
 
-	# Landing condition: reached near destination and falling, or time elapsed
-	var reached_y: bool = (global_position.y >= _target_land_pos.y - 8.0) and (velocity.y > 0.0)
-	var time_up: bool = _jump_elapsed >= (_jump_flight_time - 0.05)
+	# Smooth horizontal air stability
+	velocity.x = move_toward(velocity.x, _target_jump_vx, 600.0 * delta)
 
-	if (reached_y or time_up) and is_on_floor():
-		_complete_landing()
-	elif time_up and global_position.distance_to(_target_land_pos) < 35.0:
-		_complete_landing()
+	# Truly physical landing detection:
+	# When falling downward onto platform floor
+	var is_falling: bool = velocity.y >= 0.0
+	var is_grounded: bool = is_on_floor()
+	var near_target_y: bool = global_position.y >= (_target_land_pos.y - 10.0)
+	var flight_timed_out: bool = _jump_elapsed >= (_jump_flight_time + 0.12)
 
-func _complete_landing() -> void:
+	if is_falling and is_grounded and (near_target_y or _jump_elapsed >= _jump_flight_time * 0.70):
+		_complete_physical_landing()
+	elif flight_timed_out and is_grounded:
+		_complete_physical_landing()
+	elif flight_timed_out and global_position.y >= _target_land_pos.y:
+		_complete_physical_landing()
+
+func _complete_physical_landing() -> void:
 	last_station_id = current_station_id
 	current_station_id = target_station_id
-	global_position = _target_land_pos
-	velocity = Vector2.ZERO
+
+	# Smooth physical deceleration on platform - NO TELEPORTATION SNAP
+	velocity.x = 0.0
+	if velocity.y > 0.0:
+		velocity.y = 0.0
 
 	current_state = State.LANDING
 	_state_timer = 0.7 # Generous recovery window for player to react / cross
@@ -349,13 +384,17 @@ func _complete_landing() -> void:
 
 	# Impact squash & recover
 	var tw := create_tween()
-	tw.tween_property(sprite, "scale", Vector2(1.2, 0.8), 0.08)
+	tw.tween_property(sprite, "scale", Vector2(1.15, 0.85), 0.08)
 	tw.tween_property(sprite, "scale", Vector2.ONE, 0.12)
+
+	if AudioManager.has_method("play_sfx"):
+		AudioManager.play_sfx("land")
 
 	leap_landed.emit(current_station_id, global_position)
 
 func _process_landing_state(delta: float) -> void:
-	velocity.x = 0.0
+	velocity.x = move_toward(velocity.x, 0.0, 1000.0 * delta)
+	velocity.y += gravity * delta
 	_state_timer -= delta
 	if _state_timer <= 0.0:
 		if _queued_coin_release:

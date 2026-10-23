@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=3 uid="uid://coin_hell_level_20_final_betrayal"]
+[gd_scene load_steps=32 format=3 uid="uid://coin_hell_level_20_final_betrayal"]
 
 [ext_resource type="Script" path="res://scripts/coin_hell/level_20.gd" id="1_lev20"]
 [ext_resource type="PackedScene" path="res://scenes/coin_hell/player.tscn" id="2_play"]
@@ -17,6 +17,7 @@
 [ext_resource type="Texture2D" path="res://assets/sprites/btn_right_pressed.png" id="15_bright_p"]
 [ext_resource type="Texture2D" path="res://assets/sprites/btn_jump_pressed.png" id="16_bjump_p"]
 [ext_resource type="Script" path="res://scripts/coin_hell/touch_button.gd" id="17_tbtn"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/platform_fire_burner.tscn" id="18_burn"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_v"]
 size = Vector2(30, 540)
@@ -175,6 +176,7 @@ collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/CenterBridge"]
 shape = SubResource("RectangleShape2D_bridge220")
+one_way_collision = true
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/CenterBridge"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
@@ -219,6 +221,7 @@ collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/LeftStep"]
 shape = SubResource("RectangleShape2D_step100")
+one_way_collision = true
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/LeftStep"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
@@ -241,6 +244,7 @@ collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/LeftMid"]
 shape = SubResource("RectangleShape2D_mid130")
+one_way_collision = true
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/LeftMid"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
@@ -263,6 +267,7 @@ collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/MidLeftPerch"]
 shape = SubResource("RectangleShape2D_perch110")
+one_way_collision = true
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/MidLeftPerch"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
@@ -285,6 +290,7 @@ collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/CentralAltar"]
 shape = SubResource("RectangleShape2D_altar130")
+one_way_collision = true
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/CentralAltar"]
 self_modulate = Color(1, 0.85, 0.4, 1)
@@ -307,6 +313,7 @@ collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/MidRightPerch"]
 shape = SubResource("RectangleShape2D_perch110")
+one_way_collision = true
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/MidRightPerch"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
@@ -329,6 +336,7 @@ collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/RightMid"]
 shape = SubResource("RectangleShape2D_mid130")
+one_way_collision = true
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/RightMid"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
@@ -351,6 +359,7 @@ collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/RightStep"]
 shape = SubResource("RectangleShape2D_step100")
+one_way_collision = true
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/RightStep"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
@@ -365,6 +374,26 @@ patch_margin_right = 4
 patch_margin_bottom = 4
 axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
+
+[node name="Burners" type="Node2D" parent="."]
+
+[node name="Burner_BridgeLeft" parent="Burners" instance=ExtResource("18_burn")]
+position = Vector2(415, 430)
+
+[node name="Burner_BridgeRight" parent="Burners" instance=ExtResource("18_burn")]
+position = Vector2(545, 430)
+
+[node name="Burner_LeftStep" parent="Burners" instance=ExtResource("18_burn")]
+position = Vector2(190, 376)
+
+[node name="Burner_RightStep" parent="Burners" instance=ExtResource("18_burn")]
+position = Vector2(770, 376)
+
+[node name="Burner_MidLeft" parent="Burners" instance=ExtResource("18_burn")]
+position = Vector2(320, 251)
+
+[node name="Burner_MidRight" parent="Burners" instance=ExtResource("18_burn")]
+position = Vector2(640, 251)
 
 [node name="Coins" type="Node2D" parent="."]
 
