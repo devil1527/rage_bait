@@ -29,6 +29,7 @@ const InfernalEnergyGateClass = preload("res://scripts/coin_hell/infernal_energy
 const DisappearingHellPlatformClass = preload("res://scripts/coin_hell/disappearing_hell_platform.gd")
 const SecretHellPlatformClass = preload("res://scripts/coin_hell/secret_hell_platform.gd")
 const FinalHellEnvironmentClass = preload("res://scripts/shared/final_hell_environment.gd")
+const CoinDragonClass = preload("res://scripts/coin_hell/coin_dragon.gd")
 
 var passed_count: int = 0
 var failed_count: int = 0
@@ -155,6 +156,12 @@ func run_all_tests() -> void:
 	test_level_19_jump_physics_and_kinematic_reachability()
 	test_level_19_lifecycle_death_retry_revive_resets()
 	test_level_19_completion_and_progression_advancement()
+	test_level_20_final_betrayal_layout_and_registration()
+	test_level_20_coin_dragon_mechanics_and_collision()
+	test_level_20_survival_timer_and_coin_cycle()
+	test_level_20_jump_physics_and_arena_reachability()
+	test_level_20_gate_unlock_and_dragon_defeat()
+	test_level_20_lifecycle_death_retry_revive_resets()
 
 
 func test_save_manager_and_persistence() -> void:
@@ -310,8 +317,11 @@ func test_game_manager_level_definitions() -> void:
 	assert_eq(lvl19.get("coin_count"), 10, "Level 19 coin count is 10")
 	assert_eq(lvl19.get("scene"), "res://scenes/coin_hell/coin_hell_level_19.tscn", "Level 19 scene path is correct")
 
-	# Level 20 remains unplayable / not implemented
-	assert_true(not GameManager.can_play_level(20), "Level 20 is marked not implemented")
+	var lvl20 = GameManager.get_level_info(20)
+	assert_true(lvl20.get("implemented"), "Level 20 is marked implemented")
+	assert_true(GameManager.can_play_level(20), "Level 20 is playable")
+	assert_eq(lvl20.get("coin_count"), 10, "Level 20 coin count is 10")
+	assert_eq(lvl20.get("scene"), "res://scenes/coin_hell/coin_hell_level_20.tscn", "Level 20 scene path is correct")
 		
 	# Test coin counter clamping
 	GameManager.current_level_id = 1
@@ -534,14 +544,13 @@ func test_level_select_logic_and_states() -> void:
 	assert_true(SaveManager.is_level_unlocked(19), "Level 19 is unlocked after completing Level 18")
 	assert_true(GameManager.can_play_level(19), "Level 19 is playable")
 
-	# Complete level 19 to unlock level 20 and test unimplemented level press
+	# Complete level 19 to unlock level 20 and test level press
 	SaveManager.complete_level(19)
 	lsel._update_ui()
 	assert_true(SaveManager.is_level_unlocked(20), "Level 20 is unlocked after completing Level 19")
-	assert_true(not GameManager.can_play_level(20), "Level 20 is not implemented yet")
+	assert_true(GameManager.can_play_level(20), "Level 20 is implemented and playable")
 	lsel._on_level_tile_pressed(20)
-	assert_true(modal.visible, "Pressing unlocked but unimplemented level shows modal")
-	assert_eq(modal_label.text, "Level 20 is still being built. Replay an earlier level for now.", "Modal shows exact unimplemented level message")
+	assert_eq(GameManager.current_level_id, 20, "Pressing unlocked Level 20 sets current_level_id to 20")
 	
 	lsel.queue_free()
 
@@ -1924,10 +1933,9 @@ func test_developer_only_level_access() -> void:
 	lsel._on_level_tile_pressed(19)
 	assert_eq(GameManager.current_level_id, 19, "Developer mode allows direct launch into Level 19 when explicitly enabled")
 
-	# Unimplemented level (e.g. Level 20) cannot be launched even with dev mode on
+	# Level 20 can be launched with dev mode on
 	lsel._on_level_tile_pressed(20)
-	assert_true(lsel.message_modal.visible, "Unimplemented Level 20 displays in-progress modal")
-	assert_eq(lsel.modal_title.text, "LEVEL 20 IN PROGRESS", "Modal indicates Level 20 is in progress")
+	assert_eq(GameManager.current_level_id, 20, "Developer mode allows direct launch into Level 20 when explicitly enabled")
 	
 	# Release mode simulation: verify that when is_debug_mode is false, bypass cannot be activated
 	lsel.dev_bypass_active = false
@@ -4778,20 +4786,19 @@ func test_ui_redesign_and_world_navigation() -> void:
 	var state19_lbl: Label = btn19.get_node("VBox/StateLabel")
 	assert_eq(state19_lbl.text, "LOCKED", "UI Redesign: Stage 19 state is LOCKED before completing prior stages")
 
-	# Unimplemented Stage 20 Planned State
+	# Implemented Stage 20 Available / Locked State
 	var btn20 = lsel.get_level_button(20)
 	assert_true(btn20 != null, "UI Redesign: Stage 20 button exists")
 	var state20_lbl: Label = btn20.get_node("VBox/StateLabel")
-	assert_eq(state20_lbl.text, "PLANNED", "UI Redesign: Stage 20 state is visibly PLANNED")
+	assert_eq(state20_lbl.text, "LOCKED", "UI Redesign: Stage 20 state is LOCKED before completing prior stages")
 
-	# When completed up to 19, pressing Level 20 shows in progress modal
+	# When completed up to 19, Stage 20 transitions to AVAILABLE
 	SaveManager.complete_level(18)
 	SaveManager.complete_level(19)
 	lsel._update_ui()
+	assert_eq(state20_lbl.text, "AVAILABLE", "UI Redesign: Stage 20 state is AVAILABLE after completing Stage 19")
 	lsel._on_level_tile_pressed(20)
-	assert_true(lsel.message_modal.visible, "UI Redesign: Clicking Stage 20 shows modal")
-	assert_eq(lsel.modal_title.text, "LEVEL 20 IN PROGRESS", "UI Redesign: Modal title explains Level 20 is in progress")
-	lsel.message_modal.visible = false
+	assert_eq(GameManager.current_level_id, 20, "Clicking available Stage 20 launches Level 20")
 
 	lsel.queue_free()
 
@@ -5979,8 +5986,8 @@ func test_world_4_integration_and_level_select() -> void:
 	
 	assert_true(GameManager.can_play_level(19), "Level 19 is marked playable in GameManager")
 	
-	# Level 20 remains locked/unimplemented
-	assert_true(not GameManager.can_play_level(20), "Stage 20 is marked unplayable / not implemented")
+	# Level 20 is implemented and playable
+	assert_true(GameManager.can_play_level(20), "Stage 20 is marked playable in GameManager")
 
 	# SaveManager level 16 secret runtime flag verification (does NOT persist across save/load)
 	SaveManager.set_level_16_secret_revealed(false)
@@ -6025,7 +6032,7 @@ func test_world_4_integration_and_level_select() -> void:
 	var btn20 = lsel.get_level_button(20)
 	assert_true(btn20 != null, "Level 20 button exists in Level Select")
 	var state20_lbl: Label = btn20.get_node("VBox/StateLabel")
-	assert_eq(state20_lbl.text, "PLANNED", "Level 20 state is PLANNED")
+	assert_true(state20_lbl.text in ["AVAILABLE", "LOCKED", "COMPLETED"], "Level 20 state is an implemented state (AVAILABLE, LOCKED, or COMPLETED)")
 
 	remove_child(lsel)
 	lsel.free()
@@ -6813,9 +6820,9 @@ func test_level_17_completion_and_progression_advancement() -> void:
 	assert_true(SaveManager.is_level_unlocked(18), "Level 18 unlocked state persists across save reload")
 
 	assert_true(GameManager.can_play_level(18), "Level 18 is playable after Level 17 completion")
-	# Level 19 is playable; Level 20 remains planned / unplayable in GameManager
+	# Level 19 and 20 are playable in GameManager
 	assert_true(GameManager.can_play_level(19), "Level 19 is playable")
-	assert_true(not GameManager.can_play_level(20), "Level 20 remains unplayable / planned")
+	assert_true(GameManager.can_play_level(20), "Level 20 is playable")
 
 	remove_child(lvl)
 	lvl.free()
@@ -7185,9 +7192,9 @@ func test_level_18_completion_and_progression_advancement() -> void:
 	assert_true(SaveManager.is_level_completed(18), "Level 18 completion persists across save reload")
 	assert_true(SaveManager.is_level_unlocked(19), "Level 19 unlocked state persists across save reload")
 
-	# Level 19 is playable; Level 20 remains planned / unplayable in GameManager
+	# Level 19 and 20 are playable in GameManager
 	assert_true(GameManager.can_play_level(19), "Level 19 is playable")
-	assert_true(not GameManager.can_play_level(20), "Level 20 remains unplayable / planned")
+	assert_true(GameManager.can_play_level(20), "Level 20 is playable")
 
 	remove_child(lvl)
 	lvl.free()
@@ -7514,11 +7521,356 @@ func test_level_19_completion_and_progression_advancement() -> void:
 	assert_true(SaveManager.is_level_completed(19), "Level 19 completion persists across save reload")
 	assert_true(SaveManager.is_level_unlocked(20), "Level 20 unlocked state persists across save reload")
 
-	# Level 20 remains planned / unplayable in GameManager
-	assert_true(not GameManager.can_play_level(20), "Level 20 remains unplayable / planned")
+	# Level 20 is implemented and playable in GameManager
+	assert_true(GameManager.can_play_level(20), "Level 20 is playable after completing Level 19")
 
 	remove_child(lvl)
 	lvl.free()
+
+
+func test_level_20_final_betrayal_layout_and_registration() -> void:
+	print("\n--- TEST: Level 20 The Final Betrayal Layout, Nodes & Registration ---")
+
+	# GameManager Level 20 Registration
+	var info: Dictionary = GameManager.get_level_info(20)
+	assert_eq(info.get("id"), 20, "Level 20 ID is 20")
+	assert_eq(info.get("name"), "The Final Betrayal", "Level 20 name is 'The Final Betrayal'")
+	assert_eq(info.get("world_id"), 4, "Level 20 belongs to World 4 (Final Hell)")
+	assert_true(info.get("implemented"), "Level 20 is marked implemented: true in GameManager")
+	assert_eq(info.get("coin_count"), 10, "Level 20 requires exactly 10 coins")
+	assert_eq(info.get("scene"), "res://scenes/coin_hell/coin_hell_level_20.tscn", "Level 20 scene path is registered correctly")
+	assert_true(GameManager.can_play_level(20), "can_play_level(20) returns true")
+
+	# Scene instantiation
+	var lvl20_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_20.tscn")
+	assert_true(lvl20_scene != null, "coin_hell_level_20.tscn loads successfully")
+	var lvl = lvl20_scene.instantiate()
+	assert_true(lvl != null, "coin_hell_level_20 instantiates cleanly")
+	add_child(lvl)
+
+	# SpawnPoint & Player
+	var spawn = lvl.get_node_or_null("SpawnPoint")
+	var player = lvl.get_node_or_null("Player")
+	assert_true(spawn != null, "SpawnPoint exists in Level 20")
+	assert_true(player != null, "Player exists in Level 20")
+	assert_eq(spawn.position, Vector2(100, 430), "Spawn point is at (100, 430)")
+	assert_eq(player.position, Vector2(100, 430), "Player spawns safely on LeftGround at (100, 430)")
+
+	# Camera bounds
+	var camera: Camera2D = player.get_node_or_null("Camera2D")
+	assert_true(camera != null, "Camera2D exists on Player")
+	assert_eq(camera.limit_left, 0, "Camera left boundary is 0")
+	assert_eq(camera.limit_top, 0, "Camera top boundary is 0")
+	assert_eq(camera.limit_right, 960, "Camera right boundary covers full 960px arena width")
+	assert_eq(camera.limit_bottom, 540, "Camera bottom boundary covers 540px arena height")
+
+	# Arena Boundaries
+	var bounds = lvl.get_node_or_null("ArenaBoundaries")
+	assert_true(bounds != null, "ArenaBoundaries node exists")
+	assert_true(bounds.get_node_or_null("LeftWall") != null, "LeftWall exists")
+	assert_true(bounds.get_node_or_null("RightWall") != null, "RightWall exists")
+	assert_true(bounds.get_node_or_null("Ceiling") != null, "Ceiling exists")
+
+	# PitHazardArea
+	var pit = lvl.get_node_or_null("PitHazardArea")
+	assert_true(pit != null, "PitHazardArea exists in Level 20")
+
+	# Platforms Audit (10 arena platforms)
+	var platforms = lvl.get_node_or_null("Platforms")
+	assert_true(platforms != null, "Platforms container exists")
+	var expected_platforms: Array[String] = [
+		"LeftGround", "CenterBridge", "RightGround", "LeftStep", "LeftMid",
+		"MidLeftPerch", "CentralAltar", "MidRightPerch", "RightMid", "RightStep"
+	]
+	for p_name in expected_platforms:
+		var p = platforms.get_node_or_null(p_name)
+		assert_true(p != null, "Platform '%s' exists in Level 20" % p_name)
+
+	# The Coin Dragon Boss Node
+	var dragon = lvl.get_node_or_null("CoinDragon")
+	assert_true(dragon != null, "CoinDragon boss exists in Level 20")
+	assert_true(dragon is CharacterBody2D, "CoinDragon is a CharacterBody2D entity")
+	assert_eq(dragon.position, Vector2(780, 420), "CoinDragon starts on right flank at (780, 420)")
+
+	# Coins Audit (Exactly 10 distinct coins)
+	var coins = lvl.get_node_or_null("Coins")
+	assert_true(coins != null, "Coins container exists")
+	assert_eq(coins.get_child_count(), 10, "Coins container has exactly 10 coins")
+	for i in range(1, 11):
+		var c = coins.get_node_or_null("Coin%d" % i)
+		assert_true(c != null, "Coin%d exists in Level 20" % i)
+
+	# Infernal Exit Gate Audit
+	var exit_gate = lvl.get_node_or_null("ExitGate")
+	assert_true(exit_gate != null, "ExitGate exists in Level 20")
+	assert_true(not exit_gate._is_open, "Exit gate starts locked")
+	assert_eq(exit_gate.position, Vector2(480, 150), "Exit gate is stationed at CentralAltar summit (480, 150)")
+
+	# On-Screen Touch Controls verification (Strict consistency with Levels 16-19)
+	var touch_controls = lvl.get_node_or_null("HUD/TouchControls")
+	assert_true(touch_controls != null, "TouchControls container exists")
+	var btn_left = touch_controls.get_node_or_null("LeftBtn")
+	var btn_right = touch_controls.get_node_or_null("RightBtn")
+	var btn_jump = touch_controls.get_node_or_null("JumpBtn")
+	assert_true(btn_left != null and btn_right != null and btn_jump != null, "All three movement & jump buttons exist")
+	assert_eq(btn_left.size, Vector2(104, 104), "LeftBtn size is 104x104 matching reference levels")
+	assert_eq(btn_right.size, Vector2(104, 104), "RightBtn size is 104x104 matching reference levels")
+	assert_eq(btn_jump.size, Vector2(124, 124), "JumpBtn size is 124x124 matching reference levels")
+	assert_eq(btn_left.touch_margin, 8.0, "LeftBtn touch_margin is 8.0px")
+	assert_eq(btn_right.touch_margin, 8.0, "RightBtn touch_margin is 8.0px")
+	assert_eq(btn_jump.touch_margin, 16.0, "JumpBtn touch_margin is 16.0px")
+	assert_eq(btn_right.offset_left - btn_left.offset_right, 16.0, "Spacing between Left and Right buttons is 16.0px")
+
+	# HUD elements
+	var top_bar = lvl.get_node_or_null("HUD/MarginContainer/TopBar")
+	assert_true(top_bar != null, "TopBar HUD exists")
+	assert_true(top_bar.get_node_or_null("TimerLabel") != null, "TimerLabel HUD exists")
+	assert_true(top_bar.get_node_or_null("CoinCounter") != null, "CoinCounter HUD exists")
+	assert_true(lvl.get_node_or_null("HUD/BossStatusLabel") != null, "BossStatusLabel HUD exists")
+
+	remove_child(lvl)
+	lvl.free()
+
+
+func test_level_20_coin_dragon_mechanics_and_collision() -> void:
+	print("\n--- TEST: Level 20 The Coin Dragon Mechanics, Sprites & Contact Slaying ---")
+
+	var lvl20_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_20.tscn")
+	var lvl = lvl20_scene.instantiate()
+	add_child(lvl)
+
+	var dragon = lvl.get_node("CoinDragon")
+	var player = lvl.get_node("Player")
+
+	# Textures audit
+	assert_true(dragon.tex_idle != null, "Dragon idle sprite texture exists")
+	assert_true(dragon.tex_walk != null, "Dragon walk sprite texture exists")
+	assert_true(dragon.tex_jump != null, "Dragon jump sprite texture exists")
+	assert_true(dragon.tex_roar != null, "Dragon roar sprite texture exists")
+
+	# Physical properties
+	assert_eq(dragon.move_speed, 160.0, "Dragon move speed is 160.0 px/s (formidable yet outrunnable by player at 240 px/s)")
+	assert_eq(dragon.jump_velocity, -440.0, "Dragon jump velocity is -440.0 px/s")
+	assert_eq(dragon.gravity, 1150.0, "Dragon uses standard gravity 1150.0 px/s^2")
+
+	# Hazard Area & Collision
+	var hazard_area: Area2D = dragon.get_node_or_null("HazardArea")
+	assert_true(hazard_area != null, "HazardArea exists on CoinDragon")
+	assert_eq(hazard_area.collision_layer, 4, "HazardArea is on hazard layer 4")
+	assert_eq(hazard_area.collision_mask, 1, "HazardArea monitors player layer 1")
+
+	# Contact Slaying Test: Touching the dragon slays player immediately
+	assert_true(player._is_alive, "Player starts alive")
+	dragon._on_hazard_body_entered(player)
+	assert_true(not player._is_alive, "Player is killed immediately upon touching Coin Dragon")
+
+	# Dragon deactivates on death to prevent background movement / killing loops
+	lvl._on_player_died()
+	assert_true(not dragon.is_active, "Dragon deactivates upon player death")
+
+	# Reset restores dragon position, textures, and hazard collision
+	dragon.reset_to(Vector2(780, 420))
+	assert_eq(dragon.global_position, Vector2(780, 420), "Dragon resets to initial coordinates")
+	assert_true(dragon.is_active, "Dragon is active after reset")
+	assert_true(not dragon.is_defeated, "Dragon is not defeated after reset")
+
+	remove_child(lvl)
+	lvl.free()
+
+
+func test_level_20_survival_timer_and_coin_cycle() -> void:
+	print("\n--- TEST: Level 20 60s Survival Timer & 10-Coin Release Cycle ---")
+
+	var lvl20_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_20.tscn")
+	var lvl = lvl20_scene.instantiate()
+	add_child(lvl)
+
+	# Initial state: 60-second countdown
+	assert_eq(lvl.SURVIVAL_DURATION, 60.0, "Survival duration is exactly 60.0 seconds")
+	assert_eq(lvl.TOTAL_COINS, 10, "Required coins is exactly 10")
+	assert_eq(lvl._survival_elapsed, 0.0, "Survival timer starts at 0.0 elapsed")
+
+	# Target landing positions verification
+	assert_eq(lvl.COIN_TARGET_POSITIONS.size(), 10, "Exactly 10 coin target landing coordinates configured")
+	for idx in range(10):
+		var pos = lvl.COIN_TARGET_POSITIONS[idx]
+		assert_true(pos.x >= 60.0 and pos.x <= 900.0, "Coin %d target X (%.1f) is within arena bounds" % [idx + 1, pos.x])
+		assert_true(pos.y >= 150.0 and pos.y <= 450.0, "Coin %d target Y (%.1f) is on a solid elevated platform above pit" % [idx + 1, pos.y])
+
+	# 6-Second cycle execution test
+	# Simulate 6.0s elapsed: Coin 1 released
+	lvl._trigger_coin_release_cycle(1)
+	assert_true(lvl.coins_container.get_node("Coin1").visible, "Coin 1 is visible after cycle 1 release")
+
+	# Simulate 12.0s elapsed: Coin 2 released
+	lvl._trigger_coin_release_cycle(2)
+	assert_true(lvl.coins_container.get_node("Coin2").visible, "Coin 2 is visible after cycle 2 release")
+
+	# Release all remaining coins (3 through 10)
+	for i in range(3, 11):
+		lvl._trigger_coin_release_cycle(i)
+		assert_true(lvl.coins_container.get_node("Coin%d" % i).visible, "Coin %d is visible after cycle %d release" % [i, i])
+
+	# Verify coins remain collectible and not silently destroyed
+	for i in range(1, 11):
+		var c = lvl.coins_container.get_node("Coin%d" % i)
+		assert_true(is_instance_valid(c), "Coin %d remains alive and collectible in arena" % i)
+
+	# Collect coins and verify HUD updates
+	GameManager.collect_coin()
+	assert_eq(GameManager.current_coins, 1, "GameManager current_coins is 1")
+	assert_eq(lvl.coin_counter_label.text, "COINS: 1 / 10", "HUD displays COINS: 1 / 10")
+
+	remove_child(lvl)
+	lvl.free()
+
+
+func test_level_20_jump_physics_and_arena_reachability() -> void:
+	print("\n--- TEST: Level 20 Platform Jump Kinematics & Reachability Margins ---")
+
+	var lvl20_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_20.tscn")
+	var lvl = lvl20_scene.instantiate()
+	add_child(lvl)
+
+	var move_speed: float = 240.0
+	var jump_velocity: float = -470.0
+	var gravity: float = 1150.0
+	var max_jump_height: float = (jump_velocity * jump_velocity) / (2.0 * gravity) # 96.04px
+	var flat_reach: float = move_speed * (2.0 * (-jump_velocity / gravity)) # 196.17px
+
+	var test_jumps: Array[Dictionary] = [
+		{"name": "LeftGround -> CenterBridge", "gap": 140.0, "step": 20.0},
+		{"name": "CenterBridge -> RightGround", "gap": 140.0, "step": -20.0},
+		{"name": "MidLeftPerch -> CentralAltar", "gap": 40.0, "step": 65.0},
+		{"name": "CentralAltar -> MidRightPerch", "gap": 40.0, "step": -65.0},
+		{"name": "LeftMid -> MidLeftPerch", "gap": 70.0, "step": 50.0},
+		{"name": "MidRightPerch -> RightMid", "gap": 70.0, "step": -50.0}
+	]
+
+	for j in test_jumps:
+		var gap: float = j["gap"]
+		var step: float = j["step"]
+		var jname: String = j["name"]
+
+		assert_true(step <= max_jump_height, "%s upward step (%.1fpx) is <= max jump height (%.2fpx)" % [jname, step, max_jump_height])
+
+		# Kinematic airtime
+		var disc: float = jump_velocity * jump_velocity - 2.0 * gravity * step
+		assert_true(disc >= 0.0, "%s trajectory discriminant is non-negative" % jname)
+		var t_land: float = (-jump_velocity + sqrt(disc)) / gravity
+		var max_reach: float = move_speed * t_land
+		var margin: float = max_reach - gap
+
+		assert_true(margin > 30.0, "%s has generous safety margin (+%.1fpx >= 30.0px)" % [jname, margin])
+
+	remove_child(lvl)
+	lvl.free()
+
+
+func test_level_20_gate_unlock_and_dragon_defeat() -> void:
+	print("\n--- TEST: Level 20 Dual Condition Gate Unlock & Boss Defeat Sequence ---")
+
+	SaveManager._apply_defaults()
+	SaveManager.save_data()
+	for l in range(1, 20):
+		SaveManager.complete_level(l)
+	assert_true(SaveManager.is_level_unlocked(20), "Level 20 is unlocked")
+
+	var lvl20_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_20.tscn")
+	var lvl = lvl20_scene.instantiate()
+	add_child(lvl)
+
+	GameManager.start_level(20)
+	var exit_gate = lvl.get_node("ExitGate")
+	var dragon = lvl.get_node("CoinDragon")
+	var player = lvl.get_node("Player")
+
+	# Condition 1 check: 60s elapsed but < 10 coins -> Gate remains locked!
+	lvl._survival_elapsed = 60.0
+	lvl._is_survived = true
+	GameManager.current_coins = 5 # only 5 coins
+	lvl._check_gate_unlock_conditions()
+	assert_true(not exit_gate._is_open, "Exit gate remains locked if survived 60s but coins < 10")
+
+	# Condition 2 check: 10 coins collected but time < 60s -> Gate remains locked!
+	lvl._survival_elapsed = 45.0
+	lvl._is_survived = false
+	GameManager.current_coins = 10
+	lvl._check_gate_unlock_conditions()
+	assert_true(not exit_gate._is_open, "Exit gate remains locked if 10 coins collected before 60s survival")
+
+	# Condition 3 check: Both conditions met (survived 60s AND collected 10/10 coins) -> Gate unlocks!
+	lvl._survival_elapsed = 60.0
+	lvl._is_survived = true
+	GameManager.current_coins = 10
+	lvl._check_gate_unlock_conditions()
+	assert_true(exit_gate._is_open, "Exit gate unlocks when BOTH 60s survived AND 10/10 coins collected")
+
+	# Entering exit gate defeats the Coin Dragon
+	assert_true(not dragon.is_defeated, "Dragon starts not defeated")
+	lvl._on_exit_gate_entered()
+	assert_true(dragon.is_defeated, "Coin Dragon is defeated upon entering exit gate")
+	assert_true(lvl._is_completed, "Level 20 is marked completed")
+
+	# Completion and persistence
+	assert_true(SaveManager.is_level_completed(20), "Level 20 marked completed in SaveManager")
+	assert_eq(SaveManager.get_level_stars(20), 3, "Awarded 3 stars for Level 20 clear")
+	SaveManager.save_data()
+	SaveManager.load_save()
+	assert_true(SaveManager.is_level_completed(20), "Level 20 completion persists across save reload")
+
+	remove_child(lvl)
+	lvl.free()
+
+
+func test_level_20_lifecycle_death_retry_revive_resets() -> void:
+	print("\n--- TEST: Level 20 Lifecycle, Death, Retry & Revive Resets ---")
+
+	var lvl20_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_20.tscn")
+	var lvl = lvl20_scene.instantiate()
+	add_child(lvl)
+
+	GameManager.start_level(20)
+	var player = lvl.get_node("Player")
+	var dragon = lvl.get_node("CoinDragon")
+	var exit_gate = lvl.get_node("ExitGate")
+	var spawn = lvl.get_node("SpawnPoint")
+	var death_overlay = lvl.get_node("HUD/DeathOverlay")
+
+	# Advance encounter partially
+	lvl._survival_elapsed = 25.0
+	GameManager.current_coins = 4
+	lvl._trigger_coin_release_cycle(1)
+	lvl._trigger_coin_release_cycle(2)
+
+	# Simulate death
+	player.die()
+	assert_true(not player._is_alive, "Player is dead")
+	assert_true(death_overlay.visible, "Death overlay opened on death")
+	assert_true(not lvl._is_encounter_active, "Encounter halts on death")
+
+	# Retry Level
+	lvl._on_retry()
+	assert_true(player._is_alive, "Player is alive after retry")
+	assert_eq(player.global_position, spawn.global_position, "Player reset to spawn point")
+	assert_eq(GameManager.current_coins, 0, "Coins reset to 0 upon retry")
+	assert_eq(lvl._survival_elapsed, 0.0, "Timer reset to 0.0 upon retry")
+	assert_true(not death_overlay.visible, "Death overlay closed after retry")
+	assert_true(not exit_gate._is_open, "Exit gate locked after retry")
+	assert_eq(dragon.global_position, Vector2(780, 420), "Dragon reset to starting position")
+
+	# Revive System
+	assert_true(GameManager.can_revive_this_run(), "Can revive on first death of run")
+	player.die()
+	var revive_ok = GameManager.revive_current_player()
+	assert_true(revive_ok, "Revive succeeds")
+	assert_true(player._is_alive, "Player is alive after revive")
+	assert_true(player.is_invulnerable, "Player has spawn protection after revive")
+	assert_true(not GameManager.can_revive_this_run(), "Cannot revive a second time in same run")
+
+	remove_child(lvl)
+	lvl.free()
+
 
 
 

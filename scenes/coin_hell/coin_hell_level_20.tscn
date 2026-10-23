@@ -1,0 +1,539 @@
+[gd_scene load_steps=31 format=3 uid="uid://coin_hell_level_20_final_betrayal"]
+
+[ext_resource type="Script" path="res://scripts/coin_hell/level_20.gd" id="1_lev20"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/player.tscn" id="2_play"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/coin_dragon.tscn" id="3_drag"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/coin.tscn" id="4_coin"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/infernal_exit_gate.tscn" id="5_exit"]
+[ext_resource type="PackedScene" path="res://scenes/shared/pause_overlay.tscn" id="6_paus"]
+[ext_resource type="PackedScene" path="res://scenes/shared/death_overlay.tscn" id="7_deat"]
+[ext_resource type="PackedScene" path="res://scenes/shared/level_complete_overlay.tscn" id="8_comp"]
+[ext_resource type="PackedScene" path="res://scenes/shared/final_hell_environment.tscn" id="9_fenv"]
+[ext_resource type="Texture2D" path="res://assets/sprites/obsidian_platform.png" id="10_obs"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_left.png" id="11_bleft"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_right.png" id="12_bright"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_jump.png" id="13_bjump"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_left_pressed.png" id="14_bleft_p"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_right_pressed.png" id="15_bright_p"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_jump_pressed.png" id="16_bjump_p"]
+[ext_resource type="Script" path="res://scripts/coin_hell/touch_button.gd" id="17_tbtn"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_v"]
+size = Vector2(30, 540)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_h"]
+size = Vector2(960, 30)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pit"]
+size = Vector2(960, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground180"]
+size = Vector2(180, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bridge220"]
+size = Vector2(220, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_step100"]
+size = Vector2(100, 18)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_mid130"]
+size = Vector2(130, 18)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_perch110"]
+size = Vector2(110, 18)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_altar130"]
+size = Vector2(130, 20)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_topbar"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+bg_color = Color(0.08, 0.02, 0.04, 0.88)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.9, 0.2, 0.25, 0.6)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause_norm"]
+bg_color = Color(0.18, 0.05, 0.08, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.3, 0.35, 0.8)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause_hov"]
+bg_color = Color(0.3, 0.08, 0.12, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.5, 0.55, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="CoinHellLevel20" type="Node2D"]
+script = ExtResource("1_lev20")
+
+[node name="FinalHellEnvironment" parent="." instance=ExtResource("9_fenv")]
+stage_width = 960.0
+stage_height = 540.0
+ember_count = 35
+
+[node name="ArenaBoundaries" type="Node2D" parent="."]
+
+[node name="LeftWall" type="StaticBody2D" parent="ArenaBoundaries"]
+position = Vector2(15, 270)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ArenaBoundaries/LeftWall"]
+shape = SubResource("RectangleShape2D_wall_v")
+
+[node name="RightWall" type="StaticBody2D" parent="ArenaBoundaries"]
+position = Vector2(945, 270)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ArenaBoundaries/RightWall"]
+shape = SubResource("RectangleShape2D_wall_v")
+
+[node name="Ceiling" type="StaticBody2D" parent="ArenaBoundaries"]
+position = Vector2(480, 15)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ArenaBoundaries/Ceiling"]
+shape = SubResource("RectangleShape2D_wall_h")
+
+[node name="PitHazardArea" type="Area2D" parent="."]
+position = Vector2(480, 520)
+collision_layer = 4
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PitHazardArea"]
+shape = SubResource("RectangleShape2D_pit")
+
+[node name="SpawnPoint" type="Marker2D" parent="."]
+position = Vector2(100, 430)
+
+[node name="Player" parent="." instance=ExtResource("2_play")]
+position = Vector2(100, 430)
+
+[node name="Camera2D" type="Camera2D" parent="Player"]
+limit_left = 0
+limit_top = 0
+limit_right = 960
+limit_bottom = 540
+position_smoothing_enabled = true
+position_smoothing_speed = 7.0
+
+[node name="CoinDragon" parent="." instance=ExtResource("3_drag")]
+position = Vector2(780, 420)
+
+[node name="Platforms" type="Node2D" parent="."]
+
+[node name="LeftGround" type="StaticBody2D" parent="Platforms"]
+position = Vector2(140, 460)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/LeftGround"]
+shape = SubResource("RectangleShape2D_ground180")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/LeftGround"]
+self_modulate = Color(0.85, 0.75, 0.8, 1)
+offset_left = -90.0
+offset_top = -10.0
+offset_right = 90.0
+offset_bottom = 10.0
+texture = ExtResource("10_obs")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="CenterBridge" type="StaticBody2D" parent="Platforms"]
+position = Vector2(480, 440)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/CenterBridge"]
+shape = SubResource("RectangleShape2D_bridge220")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/CenterBridge"]
+self_modulate = Color(0.85, 0.75, 0.8, 1)
+offset_left = -110.0
+offset_top = -10.0
+offset_right = 110.0
+offset_bottom = 10.0
+texture = ExtResource("10_obs")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="RightGround" type="StaticBody2D" parent="Platforms"]
+position = Vector2(820, 460)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/RightGround"]
+shape = SubResource("RectangleShape2D_ground180")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/RightGround"]
+self_modulate = Color(0.85, 0.75, 0.8, 1)
+offset_left = -90.0
+offset_top = -10.0
+offset_right = 90.0
+offset_bottom = 10.0
+texture = ExtResource("10_obs")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="LeftStep" type="StaticBody2D" parent="Platforms"]
+position = Vector2(190, 385)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/LeftStep"]
+shape = SubResource("RectangleShape2D_step100")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/LeftStep"]
+self_modulate = Color(0.85, 0.75, 0.8, 1)
+offset_left = -50.0
+offset_top = -9.0
+offset_right = 50.0
+offset_bottom = 9.0
+texture = ExtResource("10_obs")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="LeftMid" type="StaticBody2D" parent="Platforms"]
+position = Vector2(130, 310)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/LeftMid"]
+shape = SubResource("RectangleShape2D_mid130")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/LeftMid"]
+self_modulate = Color(0.85, 0.75, 0.8, 1)
+offset_left = -65.0
+offset_top = -9.0
+offset_right = 65.0
+offset_bottom = 9.0
+texture = ExtResource("10_obs")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="MidLeftPerch" type="StaticBody2D" parent="Platforms"]
+position = Vector2(320, 260)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/MidLeftPerch"]
+shape = SubResource("RectangleShape2D_perch110")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/MidLeftPerch"]
+self_modulate = Color(0.85, 0.75, 0.8, 1)
+offset_left = -55.0
+offset_top = -9.0
+offset_right = 55.0
+offset_bottom = 9.0
+texture = ExtResource("10_obs")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="CentralAltar" type="StaticBody2D" parent="Platforms"]
+position = Vector2(480, 195)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/CentralAltar"]
+shape = SubResource("RectangleShape2D_altar130")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/CentralAltar"]
+self_modulate = Color(1, 0.85, 0.4, 1)
+offset_left = -65.0
+offset_top = -10.0
+offset_right = 65.0
+offset_bottom = 10.0
+texture = ExtResource("10_obs")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="MidRightPerch" type="StaticBody2D" parent="Platforms"]
+position = Vector2(640, 260)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/MidRightPerch"]
+shape = SubResource("RectangleShape2D_perch110")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/MidRightPerch"]
+self_modulate = Color(0.85, 0.75, 0.8, 1)
+offset_left = -55.0
+offset_top = -9.0
+offset_right = 55.0
+offset_bottom = 9.0
+texture = ExtResource("10_obs")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="RightMid" type="StaticBody2D" parent="Platforms"]
+position = Vector2(830, 310)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/RightMid"]
+shape = SubResource("RectangleShape2D_mid130")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/RightMid"]
+self_modulate = Color(0.85, 0.75, 0.8, 1)
+offset_left = -65.0
+offset_top = -9.0
+offset_right = 65.0
+offset_bottom = 9.0
+texture = ExtResource("10_obs")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="RightStep" type="StaticBody2D" parent="Platforms"]
+position = Vector2(770, 385)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/RightStep"]
+shape = SubResource("RectangleShape2D_step100")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/RightStep"]
+self_modulate = Color(0.85, 0.75, 0.8, 1)
+offset_left = -50.0
+offset_top = -9.0
+offset_right = 50.0
+offset_bottom = 9.0
+texture = ExtResource("10_obs")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="Coins" type="Node2D" parent="."]
+
+[node name="Coin1" parent="Coins" instance=ExtResource("4_coin")]
+position = Vector2(190, 360)
+
+[node name="Coin2" parent="Coins" instance=ExtResource("4_coin")]
+position = Vector2(420, 415)
+
+[node name="Coin3" parent="Coins" instance=ExtResource("4_coin")]
+position = Vector2(320, 235)
+
+[node name="Coin4" parent="Coins" instance=ExtResource("4_coin")]
+position = Vector2(770, 360)
+
+[node name="Coin5" parent="Coins" instance=ExtResource("4_coin")]
+position = Vector2(540, 415)
+
+[node name="Coin6" parent="Coins" instance=ExtResource("4_coin")]
+position = Vector2(130, 285)
+
+[node name="Coin7" parent="Coins" instance=ExtResource("4_coin")]
+position = Vector2(830, 285)
+
+[node name="Coin8" parent="Coins" instance=ExtResource("4_coin")]
+position = Vector2(640, 235)
+
+[node name="Coin9" parent="Coins" instance=ExtResource("4_coin")]
+position = Vector2(480, 415)
+
+[node name="Coin10" parent="Coins" instance=ExtResource("4_coin")]
+position = Vector2(480, 170)
+
+[node name="ExitGate" parent="." instance=ExtResource("5_exit")]
+position = Vector2(480, 150)
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="MarginContainer" type="MarginContainer" parent="HUD"]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 54.0
+grow_horizontal = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 16
+
+[node name="TopBar" type="HBoxContainer" parent="HUD/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="LevelTitle" type="Label" parent="HUD/MarginContainer/TopBar"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.35, 0.35, 1)
+theme_override_font_sizes/font_size = 14
+text = "WORLD 4 · STAGE 20"
+
+[node name="TimerLabel" type="Label" parent="HUD/MarginContainer/TopBar"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "SURVIVE: 60s"
+
+[node name="Spacer" type="Control" parent="HUD/MarginContainer/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CoinCounter" type="Label" parent="HUD/MarginContainer/TopBar"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 14
+text = "COINS: 0 / 10"
+
+[node name="PauseBtn" type="Button" parent="HUD/MarginContainer/TopBar"]
+custom_minimum_size = Vector2(36, 32)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/hover = SubResource("StyleBoxFlat_pause_hov")
+theme_override_styles/normal = SubResource("StyleBoxFlat_pause_norm")
+text = "II"
+
+[node name="BossStatusLabel" type="Label" parent="HUD"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -260.0
+offset_top = 56.0
+offset_right = 260.0
+offset_bottom = 80.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 13
+text = "SURVIVE THE COIN DRAGON! (60s)"
+horizontal_alignment = 1
+
+[node name="TouchControls" type="Control" parent="HUD"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="LeftBtn" type="TextureButton" parent="HUD/TouchControls"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -128.0
+offset_right = 128.0
+offset_bottom = -24.0
+grow_vertical = 0
+texture_normal = ExtResource("11_bleft")
+texture_pressed = ExtResource("14_bleft_p")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("17_tbtn")
+action_name = "move_left"
+touch_margin = 8.0
+
+[node name="RightBtn" type="TextureButton" parent="HUD/TouchControls"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 144.0
+offset_top = -128.0
+offset_right = 248.0
+offset_bottom = -24.0
+grow_vertical = 0
+texture_normal = ExtResource("12_bright")
+texture_pressed = ExtResource("15_bright_p")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("17_tbtn")
+action_name = "move_right"
+touch_margin = 8.0
+
+[node name="JumpBtn" type="TextureButton" parent="HUD/TouchControls"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -148.0
+offset_top = -148.0
+offset_right = -24.0
+offset_bottom = -24.0
+grow_horizontal = 0
+grow_vertical = 0
+texture_normal = ExtResource("13_bjump")
+texture_pressed = ExtResource("16_bjump_p")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("17_tbtn")
+action_name = "jump"
+touch_margin = 16.0
+
+[node name="PauseOverlay" parent="HUD" instance=ExtResource("6_paus")]
+visible = false
+
+[node name="DeathOverlay" parent="HUD" instance=ExtResource("7_deat")]
+visible = false
+
+[node name="LevelCompleteOverlay" parent="HUD" instance=ExtResource("8_comp")]
+visible = false

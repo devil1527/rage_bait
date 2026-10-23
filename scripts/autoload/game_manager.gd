@@ -54,7 +54,7 @@ var levels: Dictionary = {
 	17: {"id": 17, "name": "The Infernal Deception", "world_id": 4, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_17.tscn", "coin_count": 10},
 	18: {"id": 18, "name": "The Rising Abyss", "world_id": 4, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_18.tscn", "coin_count": 10},
 	19: {"id": 19, "name": "The Soul Gauntlet", "world_id": 4, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_19.tscn", "coin_count": 10},
-	20: {"id": 20, "name": "The Final Betrayal", "world_id": 4, "implemented": false, "scene": "", "coin_count": 10}
+	20: {"id": 20, "name": "The Final Betrayal", "world_id": 4, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_20.tscn", "coin_count": 10}
 }
 
 var shown_stage_intros: Dictionary = {}
