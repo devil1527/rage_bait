@@ -6791,42 +6791,42 @@ func test_level_17_completion_and_progression_advancement() -> void:
 	lvl.free()
 
 func test_level_18_rising_abyss_hazard_mechanics_and_timeline() -> void:
-	print("\n--- TEST: Level 18 Rising Abyss Hazard Mechanics & Deterministic Timeline ---")
+	print("\n--- TEST: Level 18 Rising Abyss Hazard Mechanics & Extreme Timeline ---")
 	var abyss_scene: PackedScene = load("res://scenes/coin_hell/rising_abyss.tscn")
 	assert_true(abyss_scene != null, "RisingAbyss scene loads successfully")
 	var abyss = abyss_scene.instantiate()
 	abyss.initial_y = 520.0
-	abyss.max_height_y = -650.0
+	abyss.max_height_y = -720.0
 	add_child(abyss)
 
-	# Phase 1: Warning at 520.0 (t < 4s)
+	# Phase 1: Warning at 520.0 (t < 2s)
 	assert_eq(abyss._calculate_surface_height(0.0), 520.0, "Abyss starts at initial height Y=520")
-	assert_eq(abyss._calculate_surface_height(3.5), 520.0, "Abyss remains at 520 during warning phase")
+	assert_eq(abyss._calculate_surface_height(1.5), 520.0, "Abyss remains at 520 during warning phase")
 
-	# Phase 2: Awakening Rise to 320.0 (4s <= t < 16s)
-	var y_10s: float = abyss._calculate_surface_height(10.0)
-	assert_true(y_10s < 520.0 and y_10s > 320.0, "Abyss rises between 520 and 320 during Phase 2")
-	assert_eq(abyss._calculate_surface_height(16.0), 320.0, "Abyss reaches 320 at t=16s")
+	# Phase 2: Rapid Awakening Rise to 300.0 (2s <= t < 9s)
+	var y_5s: float = abyss._calculate_surface_height(5.5)
+	assert_true(y_5s < 520.0 and y_5s > 300.0, "Abyss rises rapidly between 520 and 300 during Phase 2")
+	assert_eq(abyss._calculate_surface_height(9.0), 300.0, "Abyss reaches 300 at t=9s")
 
-	# Phase 3: Sinking Surge to 40.0 (16s <= t < 32s)
-	var y_24s: float = abyss._calculate_surface_height(24.0)
-	assert_true(y_24s < 320.0 and y_24s > 40.0, "Abyss rises between 320 and 40 during Phase 3")
-	assert_eq(abyss._calculate_surface_height(32.0), 40.0, "Abyss reaches 40 at t=32s")
+	# Phase 3: Sinking Surge to 20.0 (9s <= t < 18s)
+	var y_13s: float = abyss._calculate_surface_height(13.5)
+	assert_true(y_13s < 300.0 and y_13s > 20.0, "Abyss rises between 300 and 20 during Phase 3")
+	assert_eq(abyss._calculate_surface_height(18.0), 20.0, "Abyss reaches 20 at t=18s")
 
-	# Phase 4: Infernal Climb to -340.0 (32s <= t < 52s)
-	var y_42s: float = abyss._calculate_surface_height(42.0)
-	assert_true(y_42s < 40.0 and y_42s > -340.0, "Abyss rises between 40 and -340 during Phase 4")
-	assert_eq(abyss._calculate_surface_height(52.0), -340.0, "Abyss reaches -340 at t=52s")
+	# Phase 4: Infernal Climb to -360.0 (18s <= t < 29s)
+	var y_23s: float = abyss._calculate_surface_height(23.5)
+	assert_true(y_23s < 20.0 and y_23s > -360.0, "Abyss rises between 20 and -360 during Phase 4")
+	assert_eq(abyss._calculate_surface_height(29.0), -360.0, "Abyss reaches -360 at t=29s")
 
-	# Phase 5: Final Abyss Surge to -650.0 (52s <= t < 75s)
-	var y_63s: float = abyss._calculate_surface_height(63.5)
-	assert_true(y_63s < -340.0 and y_63s > -650.0, "Abyss surges between -340 and -650 during Phase 5")
-	assert_eq(abyss._calculate_surface_height(75.0), -650.0, "Abyss reaches max ceiling -650 at t=75s")
-	assert_eq(abyss._calculate_surface_height(100.0), -650.0, "Abyss capped strictly at max_height_y (-650)")
+	# Phase 5: Cataclysmic Final Surge to -720.0 (29s <= t < 42s)
+	var y_35s: float = abyss._calculate_surface_height(35.5)
+	assert_true(y_35s < -360.0 and y_35s > -720.0, "Abyss surges between -360 and -720 during Phase 5")
+	assert_eq(abyss._calculate_surface_height(42.0), -720.0, "Abyss reaches max ceiling -720 at t=42s")
+	assert_eq(abyss._calculate_surface_height(60.0), -720.0, "Abyss capped strictly at max_height_y (-720)")
 
-	# Safety Verification: Exit platform is at Y=-780.0 (top -792.0) and Exit Gate is at Y=-840.0.
-	# Max abyss ceiling (-650.0) is at least 142px below the exit platform!
-	assert_true(abyss.max_height_y > -780.0, "Abyss ceiling (-650) is well below exit platform (-780), exit is never blocked")
+	# Safety Verification: Exit platform is at Y=-790.0 (top -802.0) and Exit Gate is at Y=-850.0.
+	# Max abyss ceiling (-720.0) is at least 70px below the exit platform!
+	assert_true(abyss.max_height_y > -790.0, "Abyss ceiling (-720) is well below exit platform (-790), exit is never blocked")
 
 	# Lethal contact test with player
 	var player_scene: PackedScene = load("res://scenes/coin_hell/player.tscn")
@@ -6847,7 +6847,7 @@ func test_level_18_rising_abyss_hazard_mechanics_and_timeline() -> void:
 	abyss.free()
 
 func test_level_18_rising_abyss_layout_and_coins() -> void:
-	print("\n--- TEST: Level 18 Layout & Exactly 10 Coins Audit ---")
+	print("\n--- TEST: Level 18 Extreme Layout & Exactly 10 Coins Audit ---")
 	var lvl18_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_18.tscn")
 	assert_true(lvl18_scene != null, "Level 18 scene coin_hell_level_18.tscn loads")
 	var lvl = lvl18_scene.instantiate()
@@ -6861,26 +6861,26 @@ func test_level_18_rising_abyss_layout_and_coins() -> void:
 	# Player start
 	var player = lvl.get_node_or_null("Player")
 	assert_true(player != null, "Player exists in Level 18")
-	assert_eq(player.position, Vector2(100, 390), "Player spawns at safe start (100, 390)")
+	assert_eq(player.position, Vector2(80, 390), "Player spawns at safe start (80, 390)")
 	assert_true(player.is_in_group("player"), "Player is in 'player' group")
 
 	var spawn = lvl.get_node_or_null("SpawnPoint")
 	assert_true(spawn != null, "SpawnPoint exists in Level 18")
-	assert_eq(spawn.position, Vector2(100, 390), "SpawnPoint is at (100, 390)")
+	assert_eq(spawn.position, Vector2(80, 390), "SpawnPoint is at (80, 390)")
 
 	# Camera bounds for vertical climbing
 	var camera: Camera2D = player.get_node_or_null("Camera2D")
 	assert_true(camera != null, "Camera2D exists on player")
 	assert_eq(camera.limit_left, 0, "Camera limit_left is 0")
 	assert_eq(camera.limit_right, 1300, "Camera limit_right is 1300")
-	assert_eq(camera.limit_top, -950, "Camera limit_top is -950 (accommodates summit ascent)")
+	assert_eq(camera.limit_top, -980, "Camera limit_top is -980 (accommodates summit ascent)")
 	assert_eq(camera.limit_bottom, 540, "Camera limit_bottom is 540")
 
 	# Rising Abyss Hazard Node
 	var abyss = lvl.get_node_or_null("RisingAbyss")
 	assert_true(abyss != null, "RisingAbyss node exists in Level 18")
 	assert_eq(abyss.initial_y, 520.0, "RisingAbyss initial_y is 520.0")
-	assert_eq(abyss.max_height_y, -650.0, "RisingAbyss max_height_y is -650.0")
+	assert_eq(abyss.max_height_y, -720.0, "RisingAbyss max_height_y is -720.0")
 
 	# Platforms Container & Structure
 	var platforms = lvl.get_node_or_null("Platforms")
@@ -6936,6 +6936,7 @@ func test_level_18_rising_abyss_layout_and_coins() -> void:
 	assert_true(hazards.get_node_or_null("HellRune_D1") != null, "Section D: HellRune_D1 exists")
 	assert_true(hazards.get_node_or_null("HellRune_Trap") != null, "Section D: HellRune_Trap exists")
 	assert_true(hazards.get_node_or_null("EnergyGate_D1_Vertical") != null, "Section D: EnergyGate_D1_Vertical exists")
+	assert_true(hazards.get_node_or_null("EnergyGate_D2_Vertical") != null, "Section D: EnergyGate_D2_Vertical exists")
 
 	# Exact 10 Coins Audit
 	var coins = lvl.get_node_or_null("Coins")
@@ -6950,23 +6951,23 @@ func test_level_18_rising_abyss_layout_and_coins() -> void:
 		assert_eq(coin_node.collision_mask, 1, "Coin%d collision mask is 1 (player)" % i)
 
 	# Verify coin positions throughout ascent
-	assert_eq(coins.get_node("Coin1").position, Vector2(295, 310), "Coin 1 is between Platform1 and Platform2")
-	assert_eq(coins.get_node("Coin2").position, Vector2(560, 245), "Coin 2 is between Platform3 and Platform4")
-	assert_eq(coins.get_node("Coin3").position, Vector2(695, 80), "Coin 3 is over DisappearingPlatform1 gap")
-	assert_eq(coins.get_node("Coin4").position, Vector2(440, -15), "Coin 4 is between DisappearingPlatform2 and Platform8")
-	assert_eq(coins.get_node("Coin5").position, Vector2(260, -85), "Coin 5 is over DisappearingPlatform3")
-	assert_eq(coins.get_node("Coin6").position, Vector2(470, -225), "Coin 6 is inside EnergyGate_C1 aperture")
-	assert_eq(coins.get_node("Coin7").position, Vector2(1015, -395), "Coin 7 is between Platform14 and Platform15")
-	assert_eq(coins.get_node("Coin8").position, Vector2(940, -515), "Coin 8 is over DisappearingPlatform5")
-	assert_eq(coins.get_node("Coin9").position, Vector2(520, -665), "Coin 9 is high above Platform17")
-	assert_eq(coins.get_node("Coin10").position, Vector2(370, -725), "Coin 10 is over DisappearingPlatform7 at the summit")
+	assert_eq(coins.get_node("Coin1").position, Vector2(280, 310), "Coin 1 is between Platform1 and Platform2")
+	assert_eq(coins.get_node("Coin2").position, Vector2(545, 235), "Coin 2 is between Platform3 and Platform4")
+	assert_eq(coins.get_node("Coin3").position, Vector2(692, 75), "Coin 3 is over DisappearingPlatform1 gap")
+	assert_eq(coins.get_node("Coin4").position, Vector2(437, -25), "Coin 4 is between DisappearingPlatform2 and Platform8")
+	assert_eq(coins.get_node("Coin5").position, Vector2(245, -80), "Coin 5 is over DisappearingPlatform3")
+	assert_eq(coins.get_node("Coin6").position, Vector2(448, -225), "Coin 6 is inside EnergyGate_C1 aperture")
+	assert_eq(coins.get_node("Coin7").position, Vector2(992, -390), "Coin 7 is between Platform14 and Platform15")
+	assert_eq(coins.get_node("Coin8").position, Vector2(935, -510), "Coin 8 is over DisappearingPlatform5")
+	assert_eq(coins.get_node("Coin9").position, Vector2(530, -665), "Coin 9 is high above Platform17")
+	assert_eq(coins.get_node("Coin10").position, Vector2(380, -720), "Coin 10 is over DisappearingPlatform7 at the summit")
 
 	# Exit Gate
 	var exit_gate = lvl.get_node_or_null("ExitGate")
 	assert_true(exit_gate != null, "ExitGate exists in Level 18")
 	assert_true(not exit_gate._is_open, "Exit gate starts locked")
 	assert_eq(GameManager.get_level_info(18).get("coin_count"), 10, "Level 18 requires exactly 10 coins")
-	assert_eq(exit_gate.position, Vector2(110, -840), "Exit gate is on ExitPlatform at (110, -840)")
+	assert_eq(exit_gate.position, Vector2(90, -850), "Exit gate is on ExitPlatform at (90, -850)")
 
 	remove_child(lvl)
 	lvl.free()
@@ -6991,32 +6992,32 @@ func test_level_18_jump_physics_and_kinematic_reachability() -> void:
 	var platforms = lvl.get_node("Platforms")
 
 	var sequential_jumps: Array[Dictionary] = [
-		{"from": "Ground1", "to": "Platform1", "from_w": 120.0, "to_w": 80.0, "dir": "RIGHT"},
-		{"from": "Platform1", "to": "Platform2", "from_w": 80.0, "to_w": 70.0, "dir": "RIGHT"},
-		{"from": "Platform2", "to": "Platform3", "from_w": 70.0, "to_w": 70.0, "dir": "RIGHT"},
-		{"from": "Platform3", "to": "Platform4", "from_w": 70.0, "to_w": 90.0, "dir": "RIGHT"},
-		{"from": "Platform4", "to": "Platform5", "from_w": 90.0, "to_w": 70.0, "dir": "RIGHT"},
-		{"from": "Platform5", "to": "Platform6", "from_w": 70.0, "to_w": 100.0, "dir": "RIGHT"},
-		{"from": "Platform6", "to": "DisappearingPlatform1", "from_w": 100.0, "to_w": 70.0, "dir": "LEFT"},
-		{"from": "DisappearingPlatform1", "to": "Platform7", "from_w": 70.0, "to_w": 60.0, "dir": "LEFT"},
-		{"from": "Platform7", "to": "DisappearingPlatform2", "from_w": 60.0, "to_w": 65.0, "dir": "LEFT"},
-		{"from": "DisappearingPlatform2", "to": "Platform8", "from_w": 65.0, "to_w": 60.0, "dir": "LEFT"},
-		{"from": "Platform8", "to": "DisappearingPlatform3", "from_w": 60.0, "to_w": 65.0, "dir": "LEFT"},
-		{"from": "DisappearingPlatform3", "to": "Platform9", "from_w": 65.0, "to_w": 90.0, "dir": "LEFT"},
-		{"from": "Platform9", "to": "Platform10", "from_w": 90.0, "to_w": 70.0, "dir": "RIGHT"},
-		{"from": "Platform10", "to": "Platform11", "from_w": 70.0, "to_w": 70.0, "dir": "RIGHT"},
-		{"from": "Platform11", "to": "Platform12", "from_w": 70.0, "to_w": 70.0, "dir": "RIGHT"},
-		{"from": "Platform12", "to": "DisappearingPlatform4", "from_w": 70.0, "to_w": 65.0, "dir": "RIGHT"},
-		{"from": "DisappearingPlatform4", "to": "Platform13", "from_w": 65.0, "to_w": 75.0, "dir": "RIGHT"},
-		{"from": "Platform13", "to": "Platform14", "from_w": 75.0, "to_w": 70.0, "dir": "RIGHT"},
-		{"from": "Platform14", "to": "Platform15", "from_w": 70.0, "to_w": 85.0, "dir": "RIGHT"},
-		{"from": "Platform15", "to": "DisappearingPlatform5", "from_w": 85.0, "to_w": 65.0, "dir": "LEFT"},
-		{"from": "DisappearingPlatform5", "to": "Platform16", "from_w": 65.0, "to_w": 60.0, "dir": "LEFT"},
-		{"from": "Platform16", "to": "DisappearingPlatform6", "from_w": 60.0, "to_w": 60.0, "dir": "LEFT"},
-		{"from": "DisappearingPlatform6", "to": "Platform17", "from_w": 60.0, "to_w": 65.0, "dir": "LEFT"},
-		{"from": "Platform17", "to": "DisappearingPlatform7", "from_w": 65.0, "to_w": 60.0, "dir": "LEFT"},
-		{"from": "DisappearingPlatform7", "to": "Platform19_Summit", "from_w": 60.0, "to_w": 70.0, "dir": "LEFT"},
-		{"from": "Platform19_Summit", "to": "ExitPlatform", "from_w": 70.0, "to_w": 120.0, "dir": "LEFT"}
+		{"from": "Ground1", "to": "Platform1", "from_w": 80.0, "to_w": 50.0, "dir": "RIGHT"},
+		{"from": "Platform1", "to": "Platform2", "from_w": 50.0, "to_w": 50.0, "dir": "RIGHT"},
+		{"from": "Platform2", "to": "Platform3", "from_w": 50.0, "to_w": 50.0, "dir": "RIGHT"},
+		{"from": "Platform3", "to": "Platform4", "from_w": 50.0, "to_w": 50.0, "dir": "RIGHT"},
+		{"from": "Platform4", "to": "Platform5", "from_w": 50.0, "to_w": 50.0, "dir": "RIGHT"},
+		{"from": "Platform5", "to": "Platform6", "from_w": 50.0, "to_w": 60.0, "dir": "RIGHT"},
+		{"from": "Platform6", "to": "DisappearingPlatform1", "from_w": 60.0, "to_w": 50.0, "dir": "LEFT"},
+		{"from": "DisappearingPlatform1", "to": "Platform7", "from_w": 50.0, "to_w": 48.0, "dir": "LEFT"},
+		{"from": "Platform7", "to": "DisappearingPlatform2", "from_w": 48.0, "to_w": 50.0, "dir": "LEFT"},
+		{"from": "DisappearingPlatform2", "to": "Platform8", "from_w": 50.0, "to_w": 48.0, "dir": "LEFT"},
+		{"from": "Platform8", "to": "DisappearingPlatform3", "from_w": 48.0, "to_w": 50.0, "dir": "LEFT"},
+		{"from": "DisappearingPlatform3", "to": "Platform9", "from_w": 50.0, "to_w": 60.0, "dir": "LEFT"},
+		{"from": "Platform9", "to": "Platform10", "from_w": 60.0, "to_w": 50.0, "dir": "RIGHT"},
+		{"from": "Platform10", "to": "Platform11", "from_w": 50.0, "to_w": 50.0, "dir": "RIGHT"},
+		{"from": "Platform11", "to": "Platform12", "from_w": 50.0, "to_w": 50.0, "dir": "RIGHT"},
+		{"from": "Platform12", "to": "DisappearingPlatform4", "from_w": 50.0, "to_w": 50.0, "dir": "RIGHT"},
+		{"from": "DisappearingPlatform4", "to": "Platform13", "from_w": 50.0, "to_w": 50.0, "dir": "RIGHT"},
+		{"from": "Platform13", "to": "Platform14", "from_w": 50.0, "to_w": 55.0, "dir": "RIGHT"},
+		{"from": "Platform14", "to": "Platform15", "from_w": 55.0, "to_w": 60.0, "dir": "RIGHT"},
+		{"from": "Platform15", "to": "DisappearingPlatform5", "from_w": 60.0, "to_w": 50.0, "dir": "LEFT"},
+		{"from": "DisappearingPlatform5", "to": "Platform16", "from_w": 50.0, "to_w": 50.0, "dir": "LEFT"},
+		{"from": "Platform16", "to": "DisappearingPlatform6", "from_w": 50.0, "to_w": 50.0, "dir": "LEFT"},
+		{"from": "DisappearingPlatform6", "to": "Platform17", "from_w": 50.0, "to_w": 50.0, "dir": "LEFT"},
+		{"from": "Platform17", "to": "DisappearingPlatform7", "from_w": 50.0, "to_w": 50.0, "dir": "LEFT"},
+		{"from": "DisappearingPlatform7", "to": "Platform19_Summit", "from_w": 50.0, "to_w": 50.0, "dir": "LEFT"},
+		{"from": "Platform19_Summit", "to": "ExitPlatform", "from_w": 50.0, "to_w": 80.0, "dir": "LEFT"}
 	]
 
 	for j in sequential_jumps:
@@ -7054,13 +7055,16 @@ func test_level_18_jump_physics_and_kinematic_reachability() -> void:
 	var p18_trap = platforms.get_node("Platform18_Trap")
 	var dplat7 = platforms.get_node("DisappearingPlatform7")
 	var trap_rune = lvl.get_node("Hazards/HellRune_Trap")
+	var eg_d2 = lvl.get_node("Hazards/EnergyGate_D2_Vertical")
 
 	assert_true(trap_rune != null, "HellRune_Trap exists on deceptive route")
 	assert_eq(trap_rune.position, p18_trap.position + Vector2(0, -20), "HellRune_Trap is stationed on Platform18_Trap")
 	assert_true(dplat7.position.y < p18_trap.position.y, "True path DisappearingPlatform7 is elevated above trap platform")
+	assert_true(eg_d2 != null, "EnergyGate_D2_Vertical provides interleaved summit obstacle")
 
 	remove_child(lvl)
 	lvl.free()
+
 
 func test_level_18_lifecycle_death_retry_revive_resets() -> void:
 	print("\n--- TEST: Level 18 Lifecycle, Death, Retry & Revive Resets ---")

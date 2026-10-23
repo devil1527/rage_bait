@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=3 uid="uid://coinhell_lvl18_risingabyss"]
+[gd_scene load_steps=29 format=3 uid="uid://coinhell_lvl18_risingabyss"]
 
 [ext_resource type="Script" path="res://scripts/coin_hell/level_18.gd" id="1_lev18"]
 [ext_resource type="PackedScene" path="res://scenes/coin_hell/player.tscn" id="2_play"]
@@ -9,8 +9,6 @@
 [ext_resource type="PackedScene" path="res://scenes/shared/level_complete_overlay.tscn" id="7_comp"]
 [ext_resource type="PackedScene" path="res://scenes/shared/final_hell_environment.tscn" id="8_fenv"]
 [ext_resource type="Texture2D" path="res://assets/sprites/obsidian_platform.png" id="9_obs"]
-[ext_resource type="Texture2D" path="res://assets/sprites/spikes.png" id="10_spk"]
-[ext_resource type="Script" path="res://scripts/coin_hell/spikes.gd" id="11_spsc"]
 [ext_resource type="PackedScene" path="res://scenes/coin_hell/hell_rune.tscn" id="12_hrun"]
 [ext_resource type="PackedScene" path="res://scenes/coin_hell/infernal_energy_gate.tscn" id="13_igate"]
 [ext_resource type="PackedScene" path="res://scenes/coin_hell/disappearing_hell_platform.tscn" id="14_dplat"]
@@ -24,34 +22,22 @@
 [ext_resource type="Script" path="res://scripts/coin_hell/touch_button.gd" id="22_tbtn"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ground1"]
-size = Vector2(120, 20)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat80"]
 size = Vector2(80, 20)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat70"]
-size = Vector2(70, 20)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat90"]
-size = Vector2(90, 20)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat100"]
-size = Vector2(100, 20)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat50"]
+size = Vector2(50, 20)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_plat60"]
 size = Vector2(60, 20)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat65"]
-size = Vector2(65, 20)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat48"]
+size = Vector2(48, 20)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat75"]
-size = Vector2(75, 20)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat85"]
-size = Vector2(85, 20)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat55"]
+size = Vector2(55, 20)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_exitplat"]
-size = Vector2(120, 24)
+size = Vector2(80, 24)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_pit"]
 size = Vector2(2500, 80)
@@ -65,14 +51,14 @@ stage_height = 600.0
 ember_count = 50
 
 [node name="SpawnPoint" type="Marker2D" parent="."]
-position = Vector2(100, 390)
+position = Vector2(80, 390)
 
 [node name="Player" parent="." instance=ExtResource("2_play")]
-position = Vector2(100, 390)
+position = Vector2(80, 390)
 
 [node name="Camera2D" type="Camera2D" parent="Player"]
 limit_left = 0
-limit_top = -950
+limit_top = -980
 limit_right = 1300
 limit_bottom = 540
 position_smoothing_enabled = true
@@ -81,14 +67,14 @@ position_smoothing_speed = 7.0
 [node name="RisingAbyss" parent="." instance=ExtResource("15_abyss")]
 position = Vector2(0, 520)
 initial_y = 520.0
-max_height_y = -650.0
+max_height_y = -720.0
 level_width = 1300.0
-abyss_depth = 2200.0
+abyss_depth = 2400.0
 
 [node name="Platforms" type="Node2D" parent="."]
 
 [node name="Ground1" type="StaticBody2D" parent="Platforms"]
-position = Vector2(100, 430)
+position = Vector2(80, 430)
 collision_layer = 2
 collision_mask = 0
 
@@ -96,28 +82,6 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_ground1")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Ground1"]
-self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -60.0
-offset_top = -10.0
-offset_right = 60.0
-offset_bottom = 10.0
-texture = ExtResource("9_obs")
-patch_margin_left = 4
-patch_margin_top = 4
-patch_margin_right = 4
-patch_margin_bottom = 4
-axis_stretch_horizontal = 1
-axis_stretch_vertical = 1
-
-[node name="Platform1" type="StaticBody2D" parent="Platforms"]
-position = Vector2(230, 390)
-collision_layer = 2
-collision_mask = 0
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform1"]
-shape = SubResource("RectangleShape2D_plat80")
-
-[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform1"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
 offset_left = -40.0
 offset_top = -10.0
@@ -131,19 +95,41 @@ patch_margin_bottom = 4
 axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
+[node name="Platform1" type="StaticBody2D" parent="Platforms"]
+position = Vector2(215, 390)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform1"]
+shape = SubResource("RectangleShape2D_plat50")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform1"]
+self_modulate = Color(0.85, 0.75, 0.8, 1)
+offset_left = -25.0
+offset_top = -10.0
+offset_right = 25.0
+offset_bottom = 10.0
+texture = ExtResource("9_obs")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
 [node name="Platform2" type="StaticBody2D" parent="Platforms"]
-position = Vector2(360, 350)
+position = Vector2(345, 345)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform2"]
-shape = SubResource("RectangleShape2D_plat70")
+shape = SubResource("RectangleShape2D_plat50")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform2"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -35.0
+offset_left = -25.0
 offset_top = -10.0
-offset_right = 35.0
+offset_right = 25.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -154,18 +140,18 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Platform3" type="StaticBody2D" parent="Platforms"]
-position = Vector2(490, 320)
+position = Vector2(480, 310)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform3"]
-shape = SubResource("RectangleShape2D_plat70")
+shape = SubResource("RectangleShape2D_plat50")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform3"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -35.0
+offset_left = -25.0
 offset_top = -10.0
-offset_right = 35.0
+offset_right = 25.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -176,18 +162,18 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Platform4" type="StaticBody2D" parent="Platforms"]
-position = Vector2(630, 280)
+position = Vector2(615, 265)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform4"]
-shape = SubResource("RectangleShape2D_plat90")
+shape = SubResource("RectangleShape2D_plat50")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform4"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -45.0
+offset_left = -25.0
 offset_top = -10.0
-offset_right = 45.0
+offset_right = 25.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -198,18 +184,18 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Platform5" type="StaticBody2D" parent="Platforms"]
-position = Vector2(770, 240)
+position = Vector2(745, 230)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform5"]
-shape = SubResource("RectangleShape2D_plat70")
+shape = SubResource("RectangleShape2D_plat50")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform5"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -35.0
+offset_left = -25.0
 offset_top = -10.0
-offset_right = 35.0
+offset_right = 25.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -220,18 +206,18 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Platform6" type="StaticBody2D" parent="Platforms"]
-position = Vector2(900, 210)
+position = Vector2(870, 195)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform6"]
-shape = SubResource("RectangleShape2D_plat100")
+shape = SubResource("RectangleShape2D_plat60")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform6"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -50.0
+offset_left = -30.0
 offset_top = -10.0
-offset_right = 50.0
+offset_right = 30.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -242,22 +228,22 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="DisappearingPlatform1" parent="Platforms" instance=ExtResource("14_dplat")]
-position = Vector2(760, 160)
-shake_duration = 0.9
+position = Vector2(755, 150)
+shake_duration = 0.55
 
 [node name="Platform7" type="StaticBody2D" parent="Platforms"]
-position = Vector2(630, 120)
+position = Vector2(630, 110)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform7"]
-shape = SubResource("RectangleShape2D_plat60")
+shape = SubResource("RectangleShape2D_plat48")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform7"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -30.0
+offset_left = -24.0
 offset_top = -10.0
-offset_right = 30.0
+offset_right = 24.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -268,22 +254,22 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="DisappearingPlatform2" parent="Platforms" instance=ExtResource("14_dplat")]
-position = Vector2(500, 70)
-shake_duration = 0.85
+position = Vector2(500, 65)
+shake_duration = 0.55
 
 [node name="Platform8" type="StaticBody2D" parent="Platforms"]
-position = Vector2(380, 20)
+position = Vector2(375, 20)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform8"]
-shape = SubResource("RectangleShape2D_plat60")
+shape = SubResource("RectangleShape2D_plat48")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform8"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -30.0
+offset_left = -24.0
 offset_top = -10.0
-offset_right = 30.0
+offset_right = 24.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -294,22 +280,22 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="DisappearingPlatform3" parent="Platforms" instance=ExtResource("14_dplat")]
-position = Vector2(260, -30)
-shake_duration = 0.8
+position = Vector2(245, -25)
+shake_duration = 0.5
 
 [node name="Platform9" type="StaticBody2D" parent="Platforms"]
-position = Vector2(140, -70)
+position = Vector2(120, -65)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform9"]
-shape = SubResource("RectangleShape2D_plat90")
+shape = SubResource("RectangleShape2D_plat60")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform9"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -45.0
+offset_left = -30.0
 offset_top = -10.0
-offset_right = 45.0
+offset_right = 30.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -320,18 +306,18 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Platform10" type="StaticBody2D" parent="Platforms"]
-position = Vector2(270, -120)
+position = Vector2(250, -110)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform10"]
-shape = SubResource("RectangleShape2D_plat70")
+shape = SubResource("RectangleShape2D_plat50")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform10"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -35.0
+offset_left = -25.0
 offset_top = -10.0
-offset_right = 35.0
+offset_right = 25.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -342,18 +328,18 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Platform11" type="StaticBody2D" parent="Platforms"]
-position = Vector2(400, -170)
+position = Vector2(380, -160)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform11"]
-shape = SubResource("RectangleShape2D_plat70")
+shape = SubResource("RectangleShape2D_plat50")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform11"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -35.0
+offset_left = -25.0
 offset_top = -10.0
-offset_right = 35.0
+offset_right = 25.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -364,18 +350,18 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Platform12" type="StaticBody2D" parent="Platforms"]
-position = Vector2(540, -220)
+position = Vector2(515, -210)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform12"]
-shape = SubResource("RectangleShape2D_plat70")
+shape = SubResource("RectangleShape2D_plat50")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform12"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -35.0
+offset_left = -25.0
 offset_top = -10.0
-offset_right = 35.0
+offset_right = 25.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -386,22 +372,22 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="DisappearingPlatform4" parent="Platforms" instance=ExtResource("14_dplat")]
-position = Vector2(680, -260)
-shake_duration = 0.85
+position = Vector2(655, -255)
+shake_duration = 0.55
 
 [node name="Platform13" type="StaticBody2D" parent="Platforms"]
-position = Vector2(810, -310)
+position = Vector2(790, -305)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform13"]
-shape = SubResource("RectangleShape2D_plat75")
+shape = SubResource("RectangleShape2D_plat50")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform13"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -37.5
+offset_left = -25.0
 offset_top = -10.0
-offset_right = 37.5
+offset_right = 25.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -412,18 +398,18 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Platform14" type="StaticBody2D" parent="Platforms"]
-position = Vector2(940, -360)
+position = Vector2(925, -355)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform14"]
-shape = SubResource("RectangleShape2D_plat70")
+shape = SubResource("RectangleShape2D_plat55")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform14"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -35.0
+offset_left = -27.5
 offset_top = -10.0
-offset_right = 35.0
+offset_right = 27.5
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -434,18 +420,18 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Platform15" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1080, -410)
+position = Vector2(1060, -405)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform15"]
-shape = SubResource("RectangleShape2D_plat85")
+shape = SubResource("RectangleShape2D_plat60")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform15"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -42.5
+offset_left = -30.0
 offset_top = -10.0
-offset_right = 42.5
+offset_right = 30.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -456,22 +442,22 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="DisappearingPlatform5" parent="Platforms" instance=ExtResource("14_dplat")]
-position = Vector2(940, -460)
-shake_duration = 0.8
+position = Vector2(935, -455)
+shake_duration = 0.55
 
 [node name="Platform16" type="StaticBody2D" parent="Platforms"]
-position = Vector2(800, -510)
+position = Vector2(800, -505)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform16"]
-shape = SubResource("RectangleShape2D_plat60")
+shape = SubResource("RectangleShape2D_plat50")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform16"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -30.0
+offset_left = -25.0
 offset_top = -10.0
-offset_right = 30.0
+offset_right = 25.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -482,22 +468,22 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="DisappearingPlatform6" parent="Platforms" instance=ExtResource("14_dplat")]
-position = Vector2(660, -560)
-shake_duration = 0.75
+position = Vector2(665, -555)
+shake_duration = 0.5
 
 [node name="Platform17" type="StaticBody2D" parent="Platforms"]
-position = Vector2(520, -610)
+position = Vector2(530, -605)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform17"]
-shape = SubResource("RectangleShape2D_plat65")
+shape = SubResource("RectangleShape2D_plat50")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform17"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -32.5
+offset_left = -25.0
 offset_top = -10.0
-offset_right = 32.5
+offset_right = 25.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -508,18 +494,18 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="Platform18_Trap" type="StaticBody2D" parent="Platforms"]
-position = Vector2(370, -610)
+position = Vector2(380, -605)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform18_Trap"]
-shape = SubResource("RectangleShape2D_plat60")
+shape = SubResource("RectangleShape2D_plat50")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform18_Trap"]
 self_modulate = Color(0.65, 0.55, 0.6, 1)
-offset_left = -30.0
+offset_left = -25.0
 offset_top = -10.0
-offset_right = 30.0
+offset_right = 25.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -530,8 +516,8 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="DisappearingPlatform7" parent="Platforms" instance=ExtResource("14_dplat")]
-position = Vector2(370, -670)
-shake_duration = 0.65
+position = Vector2(380, -665)
+shake_duration = 0.5
 
 [node name="Platform19_Summit" type="StaticBody2D" parent="Platforms"]
 position = Vector2(240, -720)
@@ -539,13 +525,13 @@ collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform19_Summit"]
-shape = SubResource("RectangleShape2D_plat70")
+shape = SubResource("RectangleShape2D_plat50")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/Platform19_Summit"]
 self_modulate = Color(0.85, 0.75, 0.8, 1)
-offset_left = -35.0
+offset_left = -25.0
 offset_top = -10.0
-offset_right = 35.0
+offset_right = 25.0
 offset_bottom = 10.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -556,7 +542,7 @@ axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="ExitPlatform" type="StaticBody2D" parent="Platforms"]
-position = Vector2(110, -780)
+position = Vector2(90, -790)
 collision_layer = 2
 collision_mask = 0
 
@@ -565,9 +551,9 @@ shape = SubResource("RectangleShape2D_exitplat")
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Platforms/ExitPlatform"]
 self_modulate = Color(1, 0.85, 0.9, 1)
-offset_left = -60.0
+offset_left = -40.0
 offset_top = -12.0
-offset_right = 60.0
+offset_right = 40.0
 offset_bottom = 12.0
 texture = ExtResource("9_obs")
 patch_margin_left = 4
@@ -580,105 +566,113 @@ axis_stretch_vertical = 1
 [node name="Hazards" type="Node2D" parent="."]
 
 [node name="HellRune_A1" parent="Hazards" instance=ExtResource("12_hrun")]
-position = Vector2(360, 330)
-warning_duration = 0.6
-active_duration = 0.8
-cooldown_duration = 1.8
+position = Vector2(345, 325)
+warning_duration = 0.38
+active_duration = 0.65
+cooldown_duration = 1.1
 
 [node name="HellRune_A2" parent="Hazards" instance=ExtResource("12_hrun")]
-position = Vector2(655, 260)
-warning_duration = 0.5
-active_duration = 0.8
-cooldown_duration = 1.7
+position = Vector2(615, 245)
+warning_duration = 0.35
+active_duration = 0.65
+cooldown_duration = 1.1
 
 [node name="HellRune_B1" parent="Hazards" instance=ExtResource("12_hrun")]
-position = Vector2(630, 100)
-warning_duration = 0.45
-active_duration = 0.75
-cooldown_duration = 1.6
+position = Vector2(630, 90)
+warning_duration = 0.35
+active_duration = 0.65
+cooldown_duration = 1.0
 
 [node name="HellRune_B2" parent="Hazards" instance=ExtResource("12_hrun")]
-position = Vector2(380, 0)
-warning_duration = 0.45
-active_duration = 0.8
-cooldown_duration = 1.5
+position = Vector2(375, 0)
+warning_duration = 0.32
+active_duration = 0.65
+cooldown_duration = 1.0
 
 [node name="HellRune_C1" parent="Hazards" instance=ExtResource("12_hrun")]
-position = Vector2(810, -330)
-warning_duration = 0.42
-active_duration = 0.75
-cooldown_duration = 1.5
+position = Vector2(790, -325)
+warning_duration = 0.35
+active_duration = 0.65
+cooldown_duration = 1.0
 
 [node name="HellRune_D1" parent="Hazards" instance=ExtResource("12_hrun")]
-position = Vector2(800, -530)
-warning_duration = 0.4
-active_duration = 0.7
-cooldown_duration = 1.4
+position = Vector2(800, -525)
+warning_duration = 0.3
+active_duration = 0.65
+cooldown_duration = 0.95
 
 [node name="HellRune_Trap" parent="Hazards" instance=ExtResource("12_hrun")]
-position = Vector2(370, -630)
-warning_duration = 0.35
+position = Vector2(380, -625)
+warning_duration = 0.25
 active_duration = 0.85
-cooldown_duration = 1.2
+cooldown_duration = 0.8
 
 [node name="EnergyGate_C1_Vertical" parent="Hazards" instance=ExtResource("13_igate")]
-position = Vector2(470, -220)
+position = Vector2(448, -220)
 is_horizontal = false
 beam_length = 100.0
-warning_time = 0.8
-active_time = 1.0
-inactive_time = 1.8
+warning_time = 0.55
+active_time = 0.85
+inactive_time = 1.15
 
 [node name="EnergyGate_C2_Horizontal" parent="Hazards" instance=ExtResource("13_igate")]
-position = Vector2(940, -425)
+position = Vector2(925, -420)
 is_horizontal = true
-beam_length = 120.0
-warning_time = 0.8
-active_time = 1.0
-inactive_time = 1.7
+beam_length = 110.0
+warning_time = 0.55
+active_time = 0.85
+inactive_time = 1.15
 
 [node name="EnergyGate_D1_Vertical" parent="Hazards" instance=ExtResource("13_igate")]
-position = Vector2(440, -660)
+position = Vector2(450, -660)
 is_horizontal = false
 beam_length = 100.0
-warning_time = 0.7
-active_time = 0.9
-inactive_time = 1.6
+warning_time = 0.5
+active_time = 0.8
+inactive_time = 1.1
+
+[node name="EnergyGate_D2_Vertical" parent="Hazards" instance=ExtResource("13_igate")]
+position = Vector2(300, -740)
+is_horizontal = false
+beam_length = 100.0
+warning_time = 0.5
+active_time = 0.8
+inactive_time = 1.1
 
 [node name="Coins" type="Node2D" parent="."]
 
 [node name="Coin1" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(295, 310)
+position = Vector2(280, 310)
 
 [node name="Coin2" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(560, 245)
+position = Vector2(545, 235)
 
 [node name="Coin3" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(695, 80)
+position = Vector2(692, 75)
 
 [node name="Coin4" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(440, -15)
+position = Vector2(437, -25)
 
 [node name="Coin5" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(260, -85)
+position = Vector2(245, -80)
 
 [node name="Coin6" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(470, -225)
+position = Vector2(448, -225)
 
 [node name="Coin7" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(1015, -395)
+position = Vector2(992, -390)
 
 [node name="Coin8" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(940, -515)
+position = Vector2(935, -510)
 
 [node name="Coin9" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(520, -665)
+position = Vector2(530, -665)
 
 [node name="Coin10" parent="Coins" instance=ExtResource("3_coin")]
-position = Vector2(370, -725)
+position = Vector2(380, -720)
 
 [node name="ExitGate" parent="." instance=ExtResource("4_exit")]
-position = Vector2(110, -840)
+position = Vector2(90, -850)
 
 [node name="PitHazardArea" type="Area2D" parent="."]
 position = Vector2(650, 560)

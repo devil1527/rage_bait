@@ -2,19 +2,24 @@ class_name RisingAbyss
 extends Node2D
 
 ## Rising Abyss Hazard Controller for Level 18: The Rising Abyss (World 4: Final Hell)
-## Scripted, deterministic upward abyssal void/flame escape hazard.
-## Escalating phases: Warning -> Awakening Rise -> Sinking Surge -> Infernal Climb -> Final Abyss Surge.
+## Extreme difficulty rework: Relentless, fast-rising abyssal surge.
+## Escalating phases:
+## 1. 0s - 2s: Brief Warning at Y=520
+## 2. 2s - 9s (7s): Rapid Awakening Rise (520 -> 300)
+## 3. 9s - 18s (9s): Sinking Surge (300 -> 20)
+## 4. 18s - 29s (11s): Infernal Climb Surge (20 -> -360)
+## 5. 29s - 42s (13s): Cataclysmic Final Surge (-360 -> -720)
+## Strictly capped at max_height_y (-720.0), safely below ExitPlatform (Y=-790, top -802).
 ## Synchronized visual crest and lethal collision boundary.
-## Max height strictly capped at max_height_y (-650.0) ensuring the Exit Gate at Y=-840 is never blocked.
 ## Resets cleanly on level retry and player revive.
 
 signal abyss_warning_started
 signal abyss_surge_started
 
 @export var initial_y: float = 520.0
-@export var max_height_y: float = -650.0
+@export var max_height_y: float = -720.0
 @export var level_width: float = 1400.0
-@export var abyss_depth: float = 2200.0
+@export var abyss_depth: float = 2400.0
 
 var current_surface_y: float = 520.0
 var _elapsed_time: float = 0.0
@@ -53,7 +58,7 @@ func _setup_collision() -> void:
 
 func _physics_process(delta: float) -> void:
 	_elapsed_time += delta
-	_wave_phase += delta * 4.5
+	_wave_phase += delta * 5.0
 
 	# Calculate deterministic surface height based on elapsed run time
 	current_surface_y = _calculate_surface_height(_elapsed_time)
@@ -75,42 +80,42 @@ func _physics_process(delta: float) -> void:
 	queue_redraw()
 
 func _calculate_surface_height(t: float) -> float:
-	# Scripted deterministic ascent across 5 sequential time windows:
-	# 1. 0s - 4s: Warning Phase at 520.0
-	if t < 4.0:
-		if not _warning_emitted and t >= 1.0:
+	# Scripted deterministic ascent across 5 high-pressure time windows:
+	# 1. 0s - 2s: Warning Phase at 520.0
+	if t < 2.0:
+		if not _warning_emitted and t >= 0.5:
 			_warning_emitted = true
 			abyss_warning_started.emit()
 			if AudioManager.has_method("play_sfx"):
 				AudioManager.play_sfx("warning")
 		return initial_y
 
-	# 2. 4s - 16s (12s): Awakening Rise from 520.0 to 320.0 (rate = 16.67 px/s)
-	elif t < 16.0:
-		var progress := (t - 4.0) / 12.0
-		return lerpf(520.0, 320.0, progress)
+	# 2. 2s - 9s (7s): Rapid Awakening Rise from 520.0 to 300.0 (rate = 31.43 px/s)
+	elif t < 9.0:
+		var progress := (t - 2.0) / 7.0
+		return lerpf(520.0, 300.0, progress)
 
-	# 3. 16s - 32s (16s): Sinking Surge from 320.0 to 40.0 (rate = 17.50 px/s)
-	elif t < 32.0:
-		var progress := (t - 16.0) / 16.0
-		return lerpf(320.0, 40.0, progress)
+	# 3. 9s - 18s (9s): Sinking Surge from 300.0 to 20.0 (rate = 31.11 px/s)
+	elif t < 18.0:
+		var progress := (t - 9.0) / 9.0
+		return lerpf(300.0, 20.0, progress)
 
-	# 4. 32s - 52s (20s): The Infernal Climb from 40.0 to -340.0 (rate = 19.00 px/s)
-	elif t < 52.0:
-		var progress := (t - 32.0) / 20.0
-		return lerpf(40.0, -340.0, progress)
+	# 4. 18s - 29s (11s): The Infernal Climb from 20.0 to -360.0 (rate = 34.55 px/s)
+	elif t < 29.0:
+		var progress := (t - 18.0) / 11.0
+		return lerpf(20.0, -360.0, progress)
 
-	# 5. 52s - 75s (23s): Final Abyss Surge from -340.0 to -650.0 (rate = 13.48 px/s)
-	elif t < 75.0:
+	# 5. 29s - 42s (13s): Cataclysmic Final Surge from -360.0 to -720.0 (rate = 27.69 px/s)
+	elif t < 42.0:
 		if not _surge_emitted:
 			_surge_emitted = true
 			abyss_surge_started.emit()
 			if AudioManager.has_method("play_sfx"):
 				AudioManager.play_sfx("warning")
-		var progress := (t - 52.0) / 23.0
-		return lerpf(-340.0, max_height_y, progress)
+		var progress := (t - 29.0) / 13.0
+		return lerpf(-360.0, max_height_y, progress)
 
-	# Capped strictly at max_height_y (-650.0)
+	# Capped strictly at max_height_y (-720.0)
 	else:
 		return max_height_y
 
@@ -132,7 +137,7 @@ func _draw() -> void:
 	var seg_count := int((right_x - left_x) / seg_w) + 1
 
 	# 1. Sinister Heat / Void Shimmer Line (24px above crest)
-	var shimmer_pulse := 0.4 + 0.3 * sin(_wave_phase * 2.2)
+	var shimmer_pulse := 0.45 + 0.35 * sin(_wave_phase * 2.4)
 	var shimmer_color := Color(1.0, 0.25, 0.35, shimmer_pulse)
 	draw_line(Vector2(left_x, -18.0), Vector2(right_x, -18.0), shimmer_color, 2.5)
 
@@ -159,13 +164,13 @@ func _draw() -> void:
 
 	# 5. Rising Abyssal Void Orbs / Cursed Sparks
 	for b in range(7):
-		var bx := left_x + fmod(b * 210.0 + _elapsed_time * 35.0, right_x - left_x)
+		var bx := left_x + fmod(b * 210.0 + _elapsed_time * 40.0, right_x - left_x)
 		var by := sin(_wave_phase + (b * 1.6)) * 4.5 - 3.0
 		var orb_r := 3.5 + sin(_wave_phase * 3.2 + b) * 1.5
 		draw_circle(Vector2(bx, by), maxf(1.8, orb_r), Color(1.0, 0.8, 0.3, 0.9))
 
 func get_abyss_progress_percentage() -> float:
-	# Returns 0.0% at start (520) to 100.0% at max ceiling (-650)
+	# Returns 0.0% at start (520) to 100.0% at max ceiling (-720)
 	var total_travel := initial_y - max_height_y
 	var current_travel := initial_y - current_surface_y
 	return clampf((current_travel / total_travel) * 100.0, 0.0, 100.0)
