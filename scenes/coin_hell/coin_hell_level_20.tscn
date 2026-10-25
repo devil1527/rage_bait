@@ -17,7 +17,7 @@
 [ext_resource type="Texture2D" path="res://assets/sprites/btn_right_pressed.png" id="15_bright_p"]
 [ext_resource type="Texture2D" path="res://assets/sprites/btn_jump_pressed.png" id="16_bjump_p"]
 [ext_resource type="Script" path="res://scripts/coin_hell/touch_button.gd" id="17_tbtn"]
-[ext_resource type="PackedScene" path="res://scenes/coin_hell/platform_fire_burner.tscn" id="18_burn"]
+[ext_resource type="PackedScene" path="res://scenes/coin_hell/hell_rune.tscn" id="18_hrun"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_v"]
 size = Vector2(30, 540)
@@ -377,23 +377,53 @@ axis_stretch_vertical = 1
 
 [node name="Burners" type="Node2D" parent="."]
 
-[node name="Burner_BridgeLeft" parent="Burners" instance=ExtResource("18_burn")]
+[node name="HellRune_BridgeLeft" parent="Burners" instance=ExtResource("18_hrun")]
 position = Vector2(415, 430)
+warning_duration = 0.35
+active_duration = 0.75
+cooldown_duration = 1.5
+trigger_size = Vector2(50, 24)
+trigger_offset = Vector2(0, -6)
 
-[node name="Burner_BridgeRight" parent="Burners" instance=ExtResource("18_burn")]
+[node name="HellRune_BridgeRight" parent="Burners" instance=ExtResource("18_hrun")]
 position = Vector2(545, 430)
+warning_duration = 0.35
+active_duration = 0.75
+cooldown_duration = 1.5
+trigger_size = Vector2(50, 24)
+trigger_offset = Vector2(0, -6)
 
-[node name="Burner_LeftStep" parent="Burners" instance=ExtResource("18_burn")]
+[node name="HellRune_LeftStep" parent="Burners" instance=ExtResource("18_hrun")]
 position = Vector2(190, 376)
+warning_duration = 0.35
+active_duration = 0.75
+cooldown_duration = 1.5
+trigger_size = Vector2(50, 24)
+trigger_offset = Vector2(0, -6)
 
-[node name="Burner_RightStep" parent="Burners" instance=ExtResource("18_burn")]
+[node name="HellRune_RightStep" parent="Burners" instance=ExtResource("18_hrun")]
 position = Vector2(770, 376)
+warning_duration = 0.35
+active_duration = 0.75
+cooldown_duration = 1.5
+trigger_size = Vector2(50, 24)
+trigger_offset = Vector2(0, -6)
 
-[node name="Burner_MidLeft" parent="Burners" instance=ExtResource("18_burn")]
+[node name="HellRune_MidLeft" parent="Burners" instance=ExtResource("18_hrun")]
 position = Vector2(320, 251)
+warning_duration = 0.35
+active_duration = 0.75
+cooldown_duration = 1.5
+trigger_size = Vector2(50, 24)
+trigger_offset = Vector2(0, -6)
 
-[node name="Burner_MidRight" parent="Burners" instance=ExtResource("18_burn")]
+[node name="HellRune_MidRight" parent="Burners" instance=ExtResource("18_hrun")]
 position = Vector2(640, 251)
+warning_duration = 0.35
+active_duration = 0.75
+cooldown_duration = 1.5
+trigger_size = Vector2(50, 24)
+trigger_offset = Vector2(0, -6)
 
 [node name="Coins" type="Node2D" parent="."]
 
@@ -425,7 +455,7 @@ position = Vector2(640, 235)
 position = Vector2(480, 415)
 
 [node name="Coin10" parent="Coins" instance=ExtResource("4_coin")]
-position = Vector2(480, 170)
+position = Vector2(430, 170)
 
 [node name="ExitGate" parent="." instance=ExtResource("5_exit")]
 position = Vector2(480, 150)

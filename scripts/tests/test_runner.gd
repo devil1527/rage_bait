@@ -30,7 +30,6 @@ const DisappearingHellPlatformClass = preload("res://scripts/coin_hell/disappear
 const SecretHellPlatformClass = preload("res://scripts/coin_hell/secret_hell_platform.gd")
 const FinalHellEnvironmentClass = preload("res://scripts/shared/final_hell_environment.gd")
 const CoinDragonClass = preload("res://scripts/coin_hell/coin_dragon.gd")
-const PlatformFireBurnerClass = preload("res://scripts/coin_hell/platform_fire_burner.gd")
 
 var passed_count: int = 0
 var failed_count: int = 0
@@ -7690,18 +7689,40 @@ func test_level_20_coin_dragon_mechanics_and_collision() -> void:
 	lvl._on_player_died()
 	assert_true(not dragon.is_active, "Dragon deactivates upon player death")
 
-	# Reset restores dragon position, textures, and hazard collision
+	# Dragon Rage State Machine & 3x Speed Multiplier Audit
+	assert_true(not dragon.is_enraged, "Dragon starts in normal un-enraged state")
+	dragon.enter_rage_mode()
+	assert_true(dragon.is_enraged, "Dragon is marked enraged after enter_rage_mode()")
+	assert_eq(dragon.move_speed, 160.0 * 3.0, "Dragon movement speed reaches exactly 3x baseline (480.0 px/s)")
+	assert_eq(dragon.telegraph_duration, 0.65 / 3.0, "Dragon telegraph cadence is 3x faster (0.65s / 3.0)")
+	assert_eq(dragon.landing_recovery_duration, 0.70 / 3.0, "Dragon landing recovery cadence is 3x faster (0.70s / 3.0)")
+	assert_eq(dragon.sprite.modulate, Color(2.4, 0.35, 0.25, 1.0), "Dragon sprite modulates to fiery red during rage")
+
+	# Non-compounding: repeated calls do not multiply speed again
+	dragon.enter_rage_mode()
+	assert_eq(dragon.move_speed, 480.0, "Dragon rage speed is strictly non-compounding")
+
+	# Scripted Defeat Sequence Audit
+	dragon.defeat()
+	assert_true(dragon.is_defeated, "Dragon is marked defeated after defeat()")
+	assert_eq(dragon.current_state, dragon.State.DEFEATED, "Dragon transitions to DEFEATED state")
+	assert_true(dragon.hazard_shape.disabled, "Dragon hazard shape disabled during defeat cutscene")
+	assert_true(dragon.body_shape.disabled, "Dragon body shape disabled during defeat cutscene so it plunges freely into lava")
+
+	# Reset restores dragon position, textures, speed, and hazard collision
 	dragon.reset_to(Vector2(820, 418))
 	assert_eq(dragon.global_position, Vector2(820, 418), "Dragon resets to initial coordinates")
 	assert_true(dragon.is_active, "Dragon is active after reset")
 	assert_true(not dragon.is_defeated, "Dragon is not defeated after reset")
+	assert_true(not dragon.is_enraged, "Dragon rage state resets to normal on reset")
+	assert_eq(dragon.move_speed, 160.0, "Dragon move speed restored to 160.0 on reset")
 
 	remove_child(lvl)
 	lvl.free()
 
 
 func test_level_20_platform_fire_burners() -> void:
-	print("\n--- TEST: Level 20 Motion-Triggered Platform Fire Burners ---")
+	print("\n--- TEST: Level 20 Reused HellRune Fire Burners (from Levels 16-19) ---")
 
 	var lvl20_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_20.tscn")
 	var lvl = lvl20_scene.instantiate()
@@ -7712,21 +7733,21 @@ func test_level_20_platform_fire_burners() -> void:
 	var burners = lvl.get_node_or_null("Burners")
 
 	assert_true(burners != null, "Burners container exists in Level 20")
-	assert_eq(burners.get_child_count(), 6, "Exactly 6 motion-triggered fire burners placed across key arena platform bars")
+	assert_eq(burners.get_child_count(), 6, "Exactly 6 HellRune fire burners placed across key arena platform bars")
 
 	var expected_burners: Array[String] = [
-		"Burner_BridgeLeft",
-		"Burner_BridgeRight",
-		"Burner_LeftStep",
-		"Burner_RightStep",
-		"Burner_MidLeft",
-		"Burner_MidRight"
+		"HellRune_BridgeLeft",
+		"HellRune_BridgeRight",
+		"HellRune_LeftStep",
+		"HellRune_RightStep",
+		"HellRune_MidLeft",
+		"HellRune_MidRight"
 	]
 
 	for b_name in expected_burners:
 		var b = burners.get_node_or_null(b_name)
 		assert_true(b != null, "%s exists in Burners container" % b_name)
-		assert_true(b.get_script() == PlatformFireBurnerClass, "%s is an instance of PlatformFireBurner" % b_name)
+		assert_true(b.get_script() == HellRuneClass, "%s is an instance of established HellRuneClass" % b_name)
 
 		# Fair route safety: verify no burner is near player spawn (100, 430)
 		var dist_to_spawn: float = b.global_position.distance_to(spawn_point.global_position)
@@ -7736,48 +7757,39 @@ func test_level_20_platform_fire_burners() -> void:
 		var dist_to_altar: float = b.global_position.distance_to(Vector2(480.0, 185.0))
 		assert_true(dist_to_altar > 60.0, "%s does not obstruct CentralAltar exit gate (dist: %.1fpx > 60px)" % [b_name, dist_to_altar])
 
-	# State machine & collision audit on a representative burner
-	var burner = burners.get_node("Burner_LeftStep")
-	assert_eq(burner.current_state, PlatformFireBurnerClass.State.IDLE, "Burner starts in IDLE state")
-	assert_eq(burner.warning_duration, 0.65, "Warning duration is 0.65s (ample time for player to react / step off)")
-	assert_eq(burner.burst_duration, 0.85, "Fire burst duration is 0.85s")
-	assert_eq(burner.cooldown_duration, 1.8, "Cooldown duration is 1.8s")
-
-	# Area collisions: trigger area layer 0 mask 1 (player only), hazard area layer 4 mask 1
-	assert_eq(burner.trigger_area.collision_layer, 0, "TriggerArea collision_layer is 0")
-	assert_eq(burner.trigger_area.collision_mask, 1, "TriggerArea detects player layer 1")
-	assert_eq(burner.hazard_area.collision_layer, 4, "HazardArea collision_layer is 4 (hazard)")
-	assert_eq(burner.hazard_area.collision_mask, 1, "HazardArea targets player layer 1")
-	assert_true(burner.hazard_shape.disabled, "Hazard shape is initially disabled in IDLE state (safe to walk)")
+	# State machine & collision audit on a representative HellRune
+	var rune = burners.get_node("HellRune_LeftStep")
+	assert_eq(rune.current_state, HellRuneClass.State.DORMANT, "HellRune starts in DORMANT state")
+	assert_true(rune.hazard_shape.disabled, "Hazard shape is initially disabled in DORMANT state (safe to walk)")
 
 	# Trigger Warning phase
-	burner._trigger_warning()
-	assert_eq(burner.current_state, PlatformFireBurnerClass.State.WARNING, "Transitions to WARNING upon trigger")
-	assert_true(burner.spark_particles.emitting, "Spark particles activate during warning")
-	assert_true(burner.hazard_shape.disabled, "Hazard shape remains disabled during warning phase")
+	rune.trigger()
+	assert_eq(rune.current_state, HellRuneClass.State.WARNING, "Transitions to WARNING upon trigger")
+	assert_true(rune.warning_particles.emitting, "Warning particles activate during warning")
+	assert_true(rune.hazard_shape.disabled, "Hazard shape remains disabled during warning phase")
 
-	# Erupt Flame phase
-	burner._erupt_flame()
-	assert_eq(burner.current_state, PlatformFireBurnerClass.State.BURST, "Transitions to BURST state")
-	assert_true(burner.flame_sprite.visible, "Flame sprite becomes visible during burst")
-	assert_true(not burner.hazard_shape.disabled, "Hazard shape is active during burst")
+	# Step physics to advance into ACTIVE state
+	rune._physics_process(rune.warning_duration + 0.05)
+	assert_eq(rune.current_state, HellRuneClass.State.ACTIVE, "Transitions to ACTIVE state after warning duration")
+	assert_true(rune.flame_burst.visible, "Flame burst becomes visible during active eruption")
+	assert_true(not rune.hazard_shape.disabled, "Hazard shape is enabled during active eruption")
 
 	# Active flame lethality test
-	assert_true(player._is_alive, "Player is alive before touching burst flame")
-	burner._kill_player(player)
-	assert_true(not player._is_alive, "Player is killed upon contact with active burner burst")
+	assert_true(player._is_alive, "Player is alive before touching active hellfire")
+	rune._on_hazard_area_body_entered(player)
+	assert_true(not player._is_alive, "Player is killed upon contact with active hellfire")
 
-	# Retract Flame into Cooldown
-	burner._retract_flame()
-	assert_eq(burner.current_state, PlatformFireBurnerClass.State.COOLDOWN, "Transitions to COOLDOWN state")
-	assert_true(not burner.flame_sprite.visible, "Flame sprite hidden during cooldown")
-	assert_true(burner.hazard_shape.disabled, "Hazard shape disabled during cooldown (platform traversable)")
+	# Step physics to advance into COOLDOWN state
+	rune._physics_process(rune.active_duration + 0.05)
+	assert_eq(rune.current_state, HellRuneClass.State.COOLDOWN, "Transitions to COOLDOWN state")
+	assert_true(not rune.flame_burst.visible, "Flame burst hidden during cooldown")
+	assert_true(rune.hazard_shape.disabled, "Hazard shape disabled during cooldown (platform traversable)")
 
 	# Full Reset test
-	burner.reset()
-	assert_eq(burner.current_state, PlatformFireBurnerClass.State.IDLE, "Burner resets cleanly to IDLE")
-	assert_true(burner.hazard_shape.disabled, "Hazard shape disabled after reset")
-	assert_true(not burner.flame_sprite.visible, "Flame sprite invisible after reset")
+	rune.reset()
+	assert_eq(rune.current_state, HellRuneClass.State.DORMANT, "HellRune resets cleanly to DORMANT")
+	assert_true(rune.hazard_shape.disabled, "Hazard shape disabled after reset")
+	assert_true(not rune.flame_burst.visible, "Flame burst invisible after reset")
 
 	remove_child(lvl)
 	lvl.free()
@@ -7832,10 +7844,38 @@ func test_level_20_survival_timer_and_coin_cycle() -> void:
 		var c = lvl.coins_container.get_node("Coin%d" % i)
 		assert_true(is_instance_valid(c), "Coin %d remains alive and collectible in arena" % i)
 
-	# Collect coins and verify HUD updates
-	GameManager.collect_coin()
-	assert_eq(GameManager.current_coins, 1, "GameManager current_coins is 1")
-	assert_eq(lvl.coin_counter_label.text, "COINS: 1 / 10", "HUD displays COINS: 1 / 10")
+	# Verify Coin 10 positioning: safe offset from ExitGate
+	var coin10_pos: Vector2 = lvl.COIN_TARGET_POSITIONS[9]
+	assert_eq(coin10_pos, Vector2(430.0, 170.0), "Coin 10 target position is (430, 170) on Central Altar")
+	var exit_pos: Vector2 = lvl.exit_gate.position
+	var dist_coin10_to_gate: float = coin10_pos.distance_to(exit_pos)
+	assert_true(dist_coin10_to_gate > 45.0, "Coin 10 is offset by %.1fpx > 45px from ExitGate to prevent accidental pickup" % dist_coin10_to_gate)
+
+	# Collect coins and verify HUD updates & Dragon Rage Trigger at 9/10 coins
+	var dragon = lvl.get_node("CoinDragon")
+	assert_true(not dragon.is_enraged, "Dragon is not enraged with 0 coins")
+	GameManager.reset_coins()
+	for i in range(1, 11):
+		lvl._coin_states[i] = lvl.CoinState.AVAILABLE
+
+	# Collect coins 1 through 8
+	for c_idx in range(1, 9):
+		lvl._on_coin_body_entered(lvl.player, c_idx)
+	assert_eq(GameManager.current_coins, 8, "Current coins is 8")
+	assert_true(not dragon.is_enraged, "Dragon is not enraged at 8/10 coins")
+
+	# Collect coin 9 -> CRITICAL: Dragon Rage triggers immediately at 9/10 coins!
+	lvl._on_coin_body_entered(lvl.player, 9)
+	assert_eq(GameManager.current_coins, 9, "Current coins is 9")
+	assert_true(dragon.is_enraged, "Dragon enters rage immediately upon collecting coin 9 (counter at 9/10)")
+	assert_eq(dragon.move_speed, 480.0, "Dragon moves at 3x baseline speed (480 px/s)")
+	assert_eq(lvl.boss_status_label.text, "THE DRAGON IS ENRAGED! COLLECT THE FINAL COIN (10/10)!", "HUD displays rage status warning")
+
+	# Collect coin 10 -> Dragon remains enraged
+	lvl._on_coin_body_entered(lvl.player, 10)
+	assert_eq(GameManager.current_coins, 10, "Current coins is 10/10")
+	assert_true(dragon.is_enraged, "Dragon remains enraged after collecting coin 10")
+	assert_eq(dragon.move_speed, 480.0, "Dragon maintains 3x speed after collecting coin 10")
 
 	remove_child(lvl)
 	lvl.free()
@@ -7934,6 +7974,21 @@ func test_level_20_gate_unlock_and_dragon_defeat() -> void:
 	SaveManager.save_data()
 	SaveManager.load_save()
 	assert_true(SaveManager.is_level_completed(20), "Level 20 completion persists across save reload")
+
+	# Verify Level Complete Overlay UI for Level 20 (CONGRATULATIONS & no Level 21)
+	var comp_overlay = lvl.get_node("HUD/LevelCompleteOverlay")
+	comp_overlay.open(10, 10, 3)
+	var title_lbl: Label = comp_overlay.get_node("Panel/VBox/Title")
+	var rating_lbl: Label = comp_overlay.get_node("Panel/VBox/RatingStatusLabel")
+	var next_btn: Button = comp_overlay.get_node("Panel/VBox/NextLevelBtn")
+	assert_eq(title_lbl.text, "CONGRATULATIONS!", "Title displays CONGRATULATIONS! on Level 20")
+	assert_eq(rating_lbl.text, "THE FINAL BETRAYAL — COMPLETED", "Subtitle displays THE FINAL BETRAYAL — COMPLETED")
+	assert_eq(next_btn.text, "▶ NEXT", "Next button displays ▶ NEXT")
+
+	# Clicking next returns to level select (no level 21 unlocked or modal error)
+	comp_overlay._on_next_level_pressed()
+	assert_true(not SaveManager.is_level_unlocked(21), "Level 21 does not exist and is never unlocked")
+	assert_true(SaveManager.highest_unlocked_level <= 20, "Highest unlocked level is capped at 20")
 
 	remove_child(lvl)
 	lvl.free()

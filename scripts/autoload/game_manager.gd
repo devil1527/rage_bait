@@ -118,12 +118,16 @@ func go_to_main_menu() -> void:
 	is_gameplay_active = false
 	start_new_run()
 	get_tree().paused = false
+	if get_tree().current_scene and get_tree().current_scene.name == "TestRunner":
+		return
 	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
 
 func go_to_level_select() -> void:
 	is_gameplay_active = false
 	start_new_run()
 	get_tree().paused = false
+	if get_tree().current_scene and get_tree().current_scene.name == "TestRunner":
+		return
 	get_tree().change_scene_to_file("res://scenes/ui/coin_hell_level_select.tscn")
 
 func start_level(level_id: int) -> bool:
