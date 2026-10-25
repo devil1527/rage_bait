@@ -49,127 +49,129 @@ shadow_color = Color(0, 0.9, 1, 0.5)
 shadow_size = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_chel_normal"]
-bg_color = Color(0.12, 0.08, 0.22, 0.96)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(1, 0.84, 0.15, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-shadow_color = Color(1, 0.78, 0.12, 0.4)
-shadow_size = 12
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_chel_hover"]
-bg_color = Color(0.18, 0.12, 0.32, 0.98)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(1, 0.96, 0.4, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-shadow_color = Color(1, 0.85, 0.25, 0.65)
-shadow_size = 18
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_chel_pressed"]
-bg_color = Color(0.08, 0.05, 0.14, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.9, 0.7, 0.08, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bbet_normal"]
-bg_color = Color(0.08, 0.06, 0.14, 0.92)
+bg_color = Color(0.10, 0.07, 0.18, 0.96)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.75, 0.28, 0.42, 0.9)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-shadow_color = Color(0.85, 0.2, 0.35, 0.3)
+border_color = Color(1, 0.82, 0.18, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(1, 0.75, 0.15, 0.35)
+shadow_size = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_chel_hover"]
+bg_color = Color(0.15, 0.10, 0.26, 0.98)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.95, 0.40, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(1, 0.85, 0.25, 0.55)
+shadow_size = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_chel_pressed"]
+bg_color = Color(0.07, 0.05, 0.12, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9, 0.72, 0.12, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(1, 0.7, 0.1, 0.2)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bbet_normal"]
+bg_color = Color(0.08, 0.05, 0.11, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85, 0.22, 0.38, 0.85)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0.85, 0.20, 0.35, 0.25)
 shadow_size = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bbet_hover"]
-bg_color = Color(0.15, 0.09, 0.2, 0.96)
+bg_color = Color(0.13, 0.08, 0.18, 0.96)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(1, 0.45, 0.58, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-shadow_color = Color(1, 0.3, 0.45, 0.55)
+border_color = Color(1, 0.40, 0.55, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(1, 0.30, 0.45, 0.50)
 shadow_size = 14
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nnig_normal"]
-bg_color = Color(0.06, 0.08, 0.15, 0.92)
+bg_color = Color(0.05, 0.07, 0.14, 0.92)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.18, 0.55, 0.72, 0.9)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-shadow_color = Color(0, 0.65, 0.85, 0.3)
+border_color = Color(0.15, 0.65, 0.85, 0.85)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0.10, 0.60, 0.85, 0.25)
 shadow_size = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nnig_hover"]
-bg_color = Color(0.09, 0.15, 0.26, 0.96)
+bg_color = Color(0.08, 0.12, 0.22, 0.96)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.2, 0.92, 1, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-shadow_color = Color(0, 0.85, 1, 0.55)
+border_color = Color(0.30, 0.88, 1, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0.20, 0.85, 1, 0.50)
 shadow_size = 14
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_clie_normal"]
-bg_color = Color(0.08, 0.06, 0.15, 0.92)
+bg_color = Color(0.07, 0.05, 0.13, 0.92)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.55, 0.32, 0.75, 0.9)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-shadow_color = Color(0.65, 0.3, 0.9, 0.3)
+border_color = Color(0.65, 0.30, 0.85, 0.85)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0.65, 0.25, 0.85, 0.25)
 shadow_size = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_clie_hover"]
-bg_color = Color(0.15, 0.1, 0.26, 0.96)
+bg_color = Color(0.12, 0.08, 0.20, 0.96)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.88, 0.55, 1, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-shadow_color = Color(0.8, 0.45, 1, 0.55)
+border_color = Color(0.85, 0.48, 1, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0.80, 0.45, 1, 0.50)
 shadow_size = 14
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sfx_btn"]
@@ -202,7 +204,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.047, 0.035, 0.082, 1)
+color = Color(0.038, 0.028, 0.065, 1)
 
 [node name="AmbientTopBar" type="ColorRect" parent="Background"]
 layout_mode = 1
@@ -211,6 +213,17 @@ anchor_right = 1.0
 offset_bottom = 3.0
 grow_horizontal = 2
 color = Color(0, 0.9, 1, 0.6)
+
+[node name="AmbientBottomBar" type="ColorRect" parent="Background"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -2.0
+grow_horizontal = 2
+grow_vertical = 0
+color = Color(1, 0.82, 0.15, 0.35)
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -264,7 +277,7 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_sfx_btn")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_modal_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_modal")
 theme_override_styles/focus = SubResource("StyleBoxFlat_btn_modal_hover")
-theme_override_colors/font_color = Color(0.0, 1.0, 0.7, 1)
+theme_override_colors/font_color = Color(0, 1, 0.7, 1)
 theme_override_font_sizes/font_size = 12
 text = "SFX: ON"
 
@@ -277,7 +290,7 @@ text = "  v0.12.0"
 
 [node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-modulate = Color(0.0, 0.9, 1.0, 0.4)
+modulate = Color(0, 0.9, 1, 0.4)
 
 [node name="CardsGrid" type="GridContainer" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
@@ -300,12 +313,17 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 8.0
+offset_right = -12.0
+offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 4
 alignment = 1
 
 [node name="Texture" type="TextureRect" parent="MarginContainer/VBoxContainer/CardsGrid/CardCoinHell/VBox"]
-custom_minimum_size = Vector2(0, 80)
+custom_minimum_size = Vector2(0, 84)
 layout_mode = 2
 texture = ExtResource("2_chel")
 expand_mode = 1
@@ -317,24 +335,24 @@ theme_override_colors/font_color = Color(1, 0.88, 0.25, 1)
 theme_override_colors/font_shadow_color = Color(0.85, 0.2, 0.35, 0.7)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
-theme_override_font_sizes/font_size = 19
+theme_override_font_sizes/font_size = 18
 text = "COIN HELL"
 horizontal_alignment = 1
 
 [node name="Desc" type="Label" parent="MarginContainer/VBoxContainer/CardsGrid/CardCoinHell/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.92, 0.94, 1, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.78, 0.82, 0.92, 0.9)
+theme_override_font_sizes/font_size = 11
 text = "Collect every coin. Trust nothing."
 horizontal_alignment = 1
 
 [node name="Status" type="Label" parent="MarginContainer/VBoxContainer/CardsGrid/CardCoinHell/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0, 1, 0.7, 1)
+theme_override_colors/font_color = Color(0, 1, 0.72, 1)
 theme_override_colors/font_shadow_color = Color(0, 0.6, 0.4, 0.5)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 12
 text = "▶ PLAY NOW"
 horizontal_alignment = 1
 
@@ -352,13 +370,17 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 8.0
+offset_right = -12.0
+offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 4
 alignment = 1
 
 [node name="Texture" type="TextureRect" parent="MarginContainer/VBoxContainer/CardsGrid/CardBulletBetrayal/VBox"]
-modulate = Color(0.9, 0.85, 0.9, 0.9)
-custom_minimum_size = Vector2(0, 80)
+custom_minimum_size = Vector2(0, 84)
 layout_mode = 2
 texture = ExtResource("3_bbet")
 expand_mode = 1
@@ -366,22 +388,25 @@ stretch_mode = 5
 
 [node name="Title" type="Label" parent="MarginContainer/VBoxContainer/CardsGrid/CardBulletBetrayal/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.58, 0.68, 1)
+theme_override_colors/font_color = Color(0.98, 0.45, 0.58, 1)
+theme_override_colors/font_shadow_color = Color(0.5, 0.05, 0.15, 0.6)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
 theme_override_font_sizes/font_size = 18
 text = "BULLET BETRAYAL"
 horizontal_alignment = 1
 
 [node name="Desc" type="Label" parent="MarginContainer/VBoxContainer/CardsGrid/CardBulletBetrayal/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.72, 0.75, 0.85, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.72, 0.75, 0.85, 0.85)
+theme_override_font_sizes/font_size = 11
 text = "Your ammo has trust issues."
 horizontal_alignment = 1
 
 [node name="Status" type="Label" parent="MarginContainer/VBoxContainer/CardsGrid/CardBulletBetrayal/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.88, 0.45, 0.52, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.85, 0.45, 0.55, 0.85)
+theme_override_font_sizes/font_size = 11
 text = "🔒 COMING SOON"
 horizontal_alignment = 1
 
@@ -399,13 +424,17 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 8.0
+offset_right = -12.0
+offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 4
 alignment = 1
 
 [node name="Texture" type="TextureRect" parent="MarginContainer/VBoxContainer/CardsGrid/CardNinjaNightmare/VBox"]
-modulate = Color(0.85, 0.9, 0.95, 0.9)
-custom_minimum_size = Vector2(0, 80)
+custom_minimum_size = Vector2(0, 84)
 layout_mode = 2
 texture = ExtResource("4_nnig")
 expand_mode = 1
@@ -413,22 +442,25 @@ stretch_mode = 5
 
 [node name="Title" type="Label" parent="MarginContainer/VBoxContainer/CardsGrid/CardNinjaNightmare/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.35, 0.88, 1, 1)
+theme_override_colors/font_color = Color(0.28, 0.88, 1, 1)
+theme_override_colors/font_shadow_color = Color(0.05, 0.3, 0.5, 0.6)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
 theme_override_font_sizes/font_size = 18
 text = "NINJA NIGHTMARE"
 horizontal_alignment = 1
 
 [node name="Desc" type="Label" parent="MarginContainer/VBoxContainer/CardsGrid/CardNinjaNightmare/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.72, 0.75, 0.85, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.72, 0.75, 0.85, 0.85)
+theme_override_font_sizes/font_size = 11
 text = "Every jump is a questionable decision."
 horizontal_alignment = 1
 
 [node name="Status" type="Label" parent="MarginContainer/VBoxContainer/CardsGrid/CardNinjaNightmare/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.3, 0.78, 0.95, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.35, 0.75, 0.95, 0.85)
+theme_override_font_sizes/font_size = 11
 text = "🔒 COMING SOON"
 horizontal_alignment = 1
 
@@ -446,13 +478,17 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 8.0
+offset_right = -12.0
+offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 4
 alignment = 1
 
 [node name="Texture" type="TextureRect" parent="MarginContainer/VBoxContainer/CardsGrid/CardCastleOfLies/VBox"]
-modulate = Color(0.9, 0.85, 0.95, 0.9)
-custom_minimum_size = Vector2(0, 80)
+custom_minimum_size = Vector2(0, 84)
 layout_mode = 2
 texture = ExtResource("5_clie")
 expand_mode = 1
@@ -460,22 +496,25 @@ stretch_mode = 5
 
 [node name="Title" type="Label" parent="MarginContainer/VBoxContainer/CardsGrid/CardCastleOfLies/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.85, 0.65, 1, 1)
+theme_override_colors/font_color = Color(0.88, 0.60, 1, 1)
+theme_override_colors/font_shadow_color = Color(0.4, 0.1, 0.55, 0.6)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
 theme_override_font_sizes/font_size = 18
 text = "CASTLE OF LIES"
 horizontal_alignment = 1
 
 [node name="Desc" type="Label" parent="MarginContainer/VBoxContainer/CardsGrid/CardCastleOfLies/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.72, 0.75, 0.85, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.72, 0.75, 0.85, 0.85)
+theme_override_font_sizes/font_size = 11
 text = "That door is probably a mistake."
 horizontal_alignment = 1
 
 [node name="Status" type="Label" parent="MarginContainer/VBoxContainer/CardsGrid/CardCastleOfLies/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.5, 0.98, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.78, 0.50, 0.95, 0.85)
+theme_override_font_sizes/font_size = 11
 text = "🔒 COMING SOON"
 horizontal_alignment = 1
 
