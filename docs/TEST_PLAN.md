@@ -10,60 +10,42 @@ An automated test suite is implemented in [`scripts/tests/test_runner.gd`](file:
 ```bash
 godot --headless "res://scenes/tests/test_runner.tscn"
 ```
-### Automated Coverage Matrix (576 Assertions)
+### Automated Coverage Matrix (2,777 Assertions)
 
 | Category | Test Case | Expected Result | Status |
-| :--- | :--- | :--- | :--- |
+| :--- | :--- | :--- | :---: |
 | **Save / Persistence** | Fresh save defaults | Highest unlocked = 1, completed = 0 | **PASS** |
-| **Save / Persistence** | Sequential unlock | Completing Level 1 unlocks 2, completing 2 unlocks 3, completing 3 unlocks 4, completing 4 unlocks 5, completing 5 unlocks 6 | **PASS** |
+| **Save / Persistence** | Sequential unlock | Completing Level N unlocks Level N+1 across all stages 1–16 | **PASS** |
 | **Save / Persistence** | Disk persistence | Progress survives save file reload | **PASS** |
 | **Save / Persistence** | Corrupt save resilience | Graceful fallback to safe defaults without crash | **PASS** |
+| **Save / Persistence** | Secret discovery flags | `level_15_secret_revealed` & `level_16_secret_revealed` persist | **PASS** |
 | **Game Data** | 20 planned levels | All 20 levels cataloged with official names | **PASS** |
-| **Game Data** | Playable state | Levels 1, 2, 3, 4, and 5 playable; Levels 6-20 unimplemented | **PASS** |
+| **Game Data** | Playable state | Levels 1–16 playable; Levels 17–20 unimplemented/planned | **PASS** |
 | **Game Data** | Coin counter clamp | Counter never exceeds configured total (10 per level) | **PASS** |
 | **Main Menu** | Card availability | All 4 arcade cards present | **PASS** |
 | **Main Menu** | Coming soon modals | Modal shows exact spec message when locked card clicked | **PASS** |
 | **Level Select** | 20 level tiles | Responsive grid contains all 20 tiles | **PASS** |
+| **Level Select** | World cards bar | Dedicated cards for Worlds 1–4 and All Worlds tab | **PASS** |
 | **Level Select** | Locked tile modal | Tapping locked tile shows spec message | **PASS** |
-| **Level Select** | Unimplemented modal | Tapping unlocked Level 6 shows "still being built" message | **PASS** |
-| **Level 1 Gameplay** | Entity instantiation | Player, 10 coins, hazards, exit gate present | **PASS** |
-| **Level 1 Gameplay** | Exit gate locked state | Gate begins locked with "COINS REQUIRED" | **PASS** |
-| **Level 1 Gameplay** | Gate feedback | Approaching gate early shows remaining coins toast | **PASS** |
-| **Level 1 Gameplay** | Coin collection | Collecting 10th coin unlocks gate ("EXIT OPEN!") | **PASS** |
-| **Level 1 Gameplay** | Exit completion | Touching open gate triggers completion exactly once | **PASS** |
-| **Level 1 Gameplay** | Retry reset | Resets player position, resets coins (0/10), locks gate | **PASS** |
-| **Level 1 Gameplay** | Hazard & Death | Hazard triggers death overlay without soft lock | **PASS** |
-| **Level 2 Fixes** | Player Visibility & Touch Controls | Camera headroom (offset.y -45, limit_bottom 600), semi-transparent touch buttons, comfortable thumb offsets | **PASS** |
-| **Level 2 Fixes** | Falling Platforms & Traps | Uniform crumbling textures, lethal wall spikes, fake exit at pit edge, clean resets, no explanatory text | **PASS** |
-| **Level 3 Section A** | Safe Start & Controls | Safe spawn at X=100, Y=380, ample headroom, responsive touch controls | **PASS** |
-| **Level 3 Overhaul** | 10 Distinct Coin Traps | Coins 1-10 each have custom trap encounters: beneath, approach, landing, airborne, double traps, and anti-retreat | **PASS** |
-| **Level 3 Overhaul** | Airborne Spike Hazards | AirSpikes4, AirSpikes7, AirSpikes10 suspended overhead challenging jump arcs without floor reliance | **PASS** |
-| **Level 3 Overhaul** | Concealed Inferno Gate | Zero visual telegraphing (emitters hidden, no markings, flames hidden); sudden 100px floor-to-ceiling eruption | **PASS** |
-| **Level 3 Overhaul** | Fire Cycle & Traversal | Active fire lethal; safe 1.3s retracted opening allows crossing; clean reset on death/retry | **PASS** |
-| **Level 3 Section F** | Finale & Level Completion | SpikeTrap_Finale guards exit; collecting 10 coins unlocks exit gate; completing unlocks Level 4 | **PASS** |
-| **Level 4 Mechanics** | Ceiling Crusher State Machine | 6 states: IDLE -> TRIGGERED -> DESCENDING -> ACTIVE -> RETRACTING -> RESET; clean reset | **PASS** |
-| **Level 4 Mechanics** | Crusher Lethality & Collision | Lethal collision matches moving body; harmless when retracted; kills upon active/slam impact | **PASS** |
-| **Level 4 Encounters**| 10 Distinct Coin Encounters | Individually designed encounters: approach, danger zone, chasm landing, offset trigger, pillar jump, rushing trap, alternating pair, high bypass, anti-retreat, dual climax | **PASS** |
-| **Level 4 Progression**| 10 Coins, Exit & Unlock | Exactly 10 coins; collecting 10 unlocks exit ("EXIT OPEN!"); entering completes Level 4 and unlocks Level 5 | **PASS** |
-| **Level 5 Controls**  | Standardized Mobile Controls | LeftBtn & RightBtn (104x104, offsets 20..124 and 144..248), JumpBtn (124x124, offsets -140..-16); identical to Levels 1-4 | **PASS** |
-| **Level 5 Fire Removal**| Complete Fire Barrier Removal | Zero InfernoGate instances in Level 5; fire barrier removed from Coin 6 and Coin 10; route clear, visible and skill-based | **PASS** |
-| **Level 5 Combinations**| Verified Multi-Trap Synergies | (1) Collapsing platform guarded by floor spikes; (2) Pop-up spikes with required forward escape; (3) Proximity crusher over collapsing platform; (4) Moving wall under air spikes triggering concealed wall spike trap; (5) Cascading crumbling bridge under overhead spikes; (6) Crusher with overhead AirSpikes6; (7) Alternating offset crushers over cascading ledges into safe back pocket; (8) Pop-up spikes under moving wall; (9) Crusher + air spikes dual collapsing leap; (10) Central crusher over chasm between collapsing ledges | **PASS** |
-| **Level 5 Finale**    | The Final Betrayal Deception | Collecting 10 coins unlocks Fake Exit Gate ('EXIT OPEN!'); approaching triggers drop deception, revealing true Exit Gate on elevated ledge across collapsing stepping stone | **PASS** |
-| **Level 5 Reset**     | Multi-Trap Clean Reset | Retrying resets player, coins (0/10), all 4 crushers to IDLE, both moving walls, all pop-up spikes, wall spike trap, all collapsing platforms, and fake/real exit gates | **PASS** |
-| **Level 5 Progression**| World 1 Finale Completion | Exactly 10 coins; completing Level 5 marks World 1 finale complete, unlocks Level 6; Next Level button seamlessly transitions into Level 6 | **PASS** |
-| **Welcome Screen**    | Retro Startup & Loading | "RETRO RAGE ARCADE" branding, "COIN HELL" title, "WELCOME TO COIN HELL", pulsing coin, progress bar advancing 0..100%, smooth fade transition into main menu; failsafe timeout <2.5s | **PASS** |
-| **Dev Access**        | Developer Bypass in Debug | Active in debug builds (`OS.is_debug_build()`), subtle header pill `[DEV: UNLOCKED]`; direct launch of implemented Levels 1–6 without completing Levels 1–5 | **PASS** |
-| **Dev Access**        | Progression Protection | Developer launch does not overwrite `highest_unlocked_level`, completed levels, or saved settings in `user://retro_rage_save.json` | **PASS** |
-| **Dev Access**        | Release Build Security | Toggle button non-existent in release builds; locked levels strictly enforce completion of previous level | **PASS** |
-| **Level 6 Mechanics** | World 2 Castle Atmosphere | Cursed Castle dark stone theme, purple/blue ambient wisp particles, dark slate flagstones, high contrast for player, coins, and hazards | **PASS** |
-| **Level 6 Controls**  | Standardized Mobile Controls | Left/Right (104x104, offsets 20..124, 144..248), Jump (124x124, offsets -140..-16); touch margin 8/16; identical to Levels 1–5 | **PASS** |
-| **Level 6 Encounters**| 10 Castle Coin Encounters | (1) Collapsing flagstone 1; (2) Gap jump arched over floor spikes; (3) Portcullis moving wall timing; (4) Elevated parapet precision landing under air spikes; (5) Crusher over collapsing flagstone; (6) Fake safe platform with pop-up gargoyle spikes; (7) Dual synchronized alternating crushers; (8) Collapsing flagstone before moving wall portcullis; (9) Deceptive elevated sanctuary ledge with fast proximity crusher; (10) Climax cascading collapsing bridge over pit spikes | **PASS** |
-| **Level 6 Progression**| 10 Coins, Exit & Unlock | Exactly 10 coins; ExitGate opens upon collecting 10th coin; entering completes Level 6, unlocks Level 7 in SaveManager; Next Level shows safe Level 7 in-progress modal | **PASS** |
-| **Level 6 Reset**     | Castle Traps Clean Reset | Level retry resets coins (0/10), player position, ExitGate to locked, Plat1, Plat6 pop-up spikes, MovingWall3, MovingWall8, Crusher5, Crusher9 | **PASS** |
-| **Android Workflow**  | Keystore Persistence | CI restores keystore via repository secret or `actions/cache@v4` with key `android-debug-keystore-v1`, eliminating `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | **PASS** |
-| **Android Workflow**  | Version Code Increment | `version/code` bumped to 3, `version/name` to "0.3.0", `package/retain_data_on_uninstall` enabled for Android `hasFragileUserData` safety | **PASS** |
+| **Level Select** | Unimplemented modal | Tapping unlocked Level 17 shows "still being built" message | **PASS** |
+| **World 1 (Levels 1–5)** | Neon Ruins Gauntlets | Moving walls, crumbling bridges, ceiling crushers, fake exits, 10 coins | **PASS** |
+| **World 2 (Levels 6–8)** | Haunted Hall Atmosphere| Spectral phantoms, dissolving platforms, cursed wind, shelter zones | **PASS** |
+| **Level 9 Mechanics** | Chains of the Damned | Oscillating pendulum chains, sanctuary platforms, exit gate | **PASS** |
+| **Level 10 Boss Arena** | 60-Second Survival | 10-round dynamic schedule, P1–P5 anti-camping, 3 variant rotations | **PASS** |
+| **World 3 (Levels 11–14)**| Rage Factory Machinery| Conveyor platforms, pneumatic crushers, ceiling collision fix, Coin 7 | **PASS** |
+| **Level 15 Architecture** | Rage Furnace Finale | 5 phases, vertical elevator shaft, summit geometry, 10 coins audit | **PASS** |
+| **Level 15 Secret Reveal**| Hidden Platform State | 225px direct gap impossible; secret platform reveals and persists | **PASS** |
+| **World 4 Integration**   | Final Hell Setup | World 4 card styling, Stage 16 mapping, Stages 17–20 planned | **PASS** |
+| **Level 16 Architecture**  | 5 Sections Layout | Ashen Approach, Burning Passage, Infernal Gate, False Finish, Exit | **PASS** |
+| **Level 16 Coins Audit**   | Exactly 10 Coins | 10 distinct coins distributed across all sections; 10/10 unlocks gate | **PASS** |
+| **Level 16 Hell Runes**    | Tightened Eruption | 0.38s warning, 0.75s active flame burst, hazard layer 4 synchronization | **PASS** |
+| **Level 16 Energy Gates**  | Laser Corridors | 1.4s–1.5s crossing windows, 0.45s–0.50s warning pulse, synchronized beams| **PASS** |
+| **Level 16 Secret Platform**| Dual Discovery Routes | Route A (Living landing catch) + Route B (Chasm plunge); persistent save| **PASS** |
+| **Level 16 Kinematics**    | Signature Ragebait Gap | 230px direct gap impossible; Jump 1 (155px) & Jump 2 (170px) achievable | **PASS** |
+| **Level 16 Coin 10 Trap**  | Strategic Repositioning| Coin 10 at (2510, 180) tempts direct leap; reachable only on Jump 2 | **PASS** |
+| **Release Security Gates** | Branch Hygiene | Dev bypass active on dev branch; stripped completely on release branch | **PASS** |
 
-### Automated Suite Result: **669 Passed, 0 Failed**
+### Automated Suite Result: **2,777 Passed, 0 Failed**
 
 ---
 

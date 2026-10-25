@@ -10,7 +10,7 @@ extends StaticBody2D
 signal platform_triggered
 signal platform_collapsed
 
-@export var shake_duration: float = 0.75
+@export var shake_duration: float = 0.50
 @export var fall_speed: float = 750.0
 @export var platform_size: Vector2 = Vector2(65.0, 20.0)
 

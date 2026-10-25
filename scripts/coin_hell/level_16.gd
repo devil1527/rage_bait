@@ -81,10 +81,7 @@ func _ready() -> void:
 
 func _check_secret_platform_state() -> void:
 	if secret_platform:
-		if SaveManager and SaveManager.has_method("is_level_16_secret_revealed") and SaveManager.is_level_16_secret_revealed():
-			secret_platform.set_revealed_instant(true)
-		else:
-			secret_platform.set_revealed_instant(false)
+		secret_platform.reset()
 
 func _process(delta: float) -> void:
 	_facility_elapsed += delta
@@ -103,11 +100,11 @@ func _process(delta: float) -> void:
 	# Track takeoff arrival and final jump attempt into the exit chasm
 	if player:
 		var p_pos := player.global_position
-		# Player reaches TakeoffPlatform (x: 2240 to 2320, y <= 270)
-		if not _reached_takeoff and player.is_on_floor() and p_pos.x >= 2240.0 and p_pos.x <= 2320.0 and p_pos.y <= 270.0:
+		# Player reaches TakeoffPlatform (x: 2170 to 2260, y <= 270)
+		if not _reached_takeoff and p_pos.x >= 2170.0 and p_pos.x <= 2260.0 and p_pos.y <= 270.0:
 			_reached_takeoff = true
-		# Player launches rightward into the final gap from takeoff (x > 2320, y <= 280)
-		if _reached_takeoff and not _attempted_final_jump and p_pos.x > 2320.0 and p_pos.y <= 280.0:
+		# Player launches rightward into the final gap from takeoff (x > 2250)
+		if _reached_takeoff and not _attempted_final_jump and p_pos.x > 2250.0:
 			_attempted_final_jump = true
 
 func _setup_touch_controls() -> void:
@@ -152,16 +149,15 @@ func _on_coin_collected(current: int, total: int) -> void:
 
 func _on_player_died() -> void:
 	_clear_touch_controls()
-	# Check if death occurred during a genuine final gap leap
-	if _attempted_final_jump:
+	# Check if death occurred during a genuine final gap leap or in the final chasm abyss
+	if (player and player.global_position.x > 2250.0 and player.global_position.y >= 270.0) or (_attempted_final_jump and player and player.global_position.y >= 270.0):
 		_trigger_final_jump_reveal()
 
 	death_overlay.open()
 
 func _on_final_gap_area_entered(body: Node2D) -> void:
-	if (body == player or (body and body.is_in_group("player"))):
-		if _reached_takeoff or _attempted_final_jump:
-			_trigger_final_jump_reveal()
+	if body == player or (body and body.is_in_group("player")):
+		_trigger_final_jump_reveal()
 
 func _trigger_final_jump_reveal() -> void:
 	if secret_platform and not secret_platform.is_revealed:
@@ -185,7 +181,6 @@ func _on_player_revived(_pos: Vector2) -> void:
 	pause_overlay.visible = false
 	level_complete_overlay.visible = false
 	GameManager.is_gameplay_active = true
-	_check_secret_platform_state()
 
 func _on_retry() -> void:
 	_reset_level()

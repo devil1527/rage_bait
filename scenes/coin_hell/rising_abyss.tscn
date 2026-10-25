@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3 uid="uid://risingabyss001lvl18"]
+
+[ext_resource type="Script" path="res://scripts/coin_hell/rising_abyss.gd" id="1_abyss"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ahaz"]
+size = Vector2(1800, 2200)
+
+[node name="RisingAbyss" type="Node2D"]
+script = ExtResource("1_abyss")
+
+[node name="HazardArea" type="Area2D" parent="."]
+collision_layer = 4
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HazardArea"]
+position = Vector2(700, 1100)
+shape = SubResource("RectangleShape2D_ahaz")

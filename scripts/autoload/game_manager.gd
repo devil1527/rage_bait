@@ -51,10 +51,10 @@ var levels: Dictionary = {
 	14: {"id": 14, "name": "Overpressure", "world_id": 3, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_14.tscn", "coin_count": 10},
 	15: {"id": 15, "name": "Rage Furnace", "world_id": 3, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_15.tscn", "coin_count": 10},
 	16: {"id": 16, "name": "The Platform That Lied", "world_id": 4, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_16.tscn", "coin_count": 10},
-	17: {"id": 17, "name": "The Infernal Deception", "world_id": 4, "implemented": false, "scene": "", "coin_count": 10},
-	18: {"id": 18, "name": "The Rising Abyss", "world_id": 4, "implemented": false, "scene": "", "coin_count": 10},
-	19: {"id": 19, "name": "The Soul Gauntlet", "world_id": 4, "implemented": false, "scene": "", "coin_count": 10},
-	20: {"id": 20, "name": "The Final Betrayal", "world_id": 4, "implemented": false, "scene": "", "coin_count": 10}
+	17: {"id": 17, "name": "The Infernal Deception", "world_id": 4, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_17.tscn", "coin_count": 10},
+	18: {"id": 18, "name": "The Rising Abyss", "world_id": 4, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_18.tscn", "coin_count": 10},
+	19: {"id": 19, "name": "The Soul Gauntlet", "world_id": 4, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_19.tscn", "coin_count": 10},
+	20: {"id": 20, "name": "The Final Betrayal", "world_id": 4, "implemented": true, "scene": "res://scenes/coin_hell/coin_hell_level_20.tscn", "coin_count": 10}
 }
 
 var shown_stage_intros: Dictionary = {}
@@ -118,12 +118,16 @@ func go_to_main_menu() -> void:
 	is_gameplay_active = false
 	start_new_run()
 	get_tree().paused = false
+	if get_tree().current_scene and get_tree().current_scene.name == "TestRunner":
+		return
 	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
 
 func go_to_level_select() -> void:
 	is_gameplay_active = false
 	start_new_run()
 	get_tree().paused = false
+	if get_tree().current_scene and get_tree().current_scene.name == "TestRunner":
+		return
 	get_tree().change_scene_to_file("res://scenes/ui/coin_hell_level_select.tscn")
 
 func start_level(level_id: int) -> bool:

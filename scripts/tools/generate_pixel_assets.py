@@ -907,6 +907,186 @@ def create_world_4_assets():
     d_pi.point((8, 34), fill=(255, 80, 90, 255))
     pil.save("assets/sprites/ruined_pillar.png")
 
+def create_coin_dragon_assets():
+    import math
+    W, H = 112, 80
+
+    for frame_type in ["idle", "walk", "jump", "roar"]:
+        img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        d = ImageDraw.Draw(img)
+
+        C_OUTLINE = (20, 10, 16, 255)
+        C_GOLD_SHADOW = (130, 80, 10, 255)
+        C_GOLD_DARK = (175, 115, 18, 255)
+        C_GOLD_MID = (230, 175, 30, 255)
+        C_GOLD_BRIGHT = (255, 220, 60, 255)
+        C_GOLD_LIGHT = (255, 250, 180, 255)
+
+        C_SCALE_DARK = (32, 14, 22, 255)
+        C_SCALE_MID = (65, 22, 34, 255)
+        C_SCALE_LIGHT = (115, 30, 45, 255)
+        C_SCALE_HIGHLIGHT = (165, 45, 60, 255)
+
+        C_CRIMSON_GLOW = (250, 40, 55, 255)
+        C_ORANGE_FIRE = (255, 130, 25, 255)
+        C_WHITE_HOT = (255, 245, 210, 255)
+
+        C_HORN_BASE = (26, 18, 24, 255)
+        C_HORN_MID = (55, 30, 40, 255)
+        C_HORN_TIP = (255, 70, 80, 255)
+
+        head_y = 0
+        mouth_open = False
+        leg_l_off = (0, 0)
+        leg_r_off = (0, 0)
+        wings_up = False
+        tail_wave = 0
+
+        if frame_type == "walk":
+            head_y = 2
+            leg_l_off = (5, -3)
+            leg_r_off = (-5, 1)
+            tail_wave = -3
+        elif frame_type == "jump":
+            head_y = -4
+            wings_up = True
+            leg_l_off = (-3, -6)
+            leg_r_off = (3, -6)
+            tail_wave = 5
+        elif frame_type == "roar":
+            head_y = -5
+            mouth_open = True
+            wings_up = True
+            tail_wave = -5
+
+        wing_bx, wing_by = 50, 26
+        if wings_up:
+            wing_poly = [(wing_bx, wing_by), (36, 6), (52, 10), (62, 2), (72, 12), (64, 24)]
+        else:
+            wing_poly = [(wing_bx, wing_by), (34, 16), (46, 18), (56, 10), (66, 18), (62, 26)]
+        d.polygon(wing_poly, fill=C_SCALE_LIGHT, outline=C_OUTLINE)
+        d.line([(wing_bx, wing_by), (36 if wings_up else 34, 6 if wings_up else 16)], fill=C_SCALE_DARK, width=2)
+        d.line([(wing_bx + 8, wing_by - 2), (62 if wings_up else 56, 2 if wings_up else 10)], fill=C_SCALE_DARK, width=2)
+        d.line([(wing_bx + 12, wing_by), (72 if wings_up else 66, 12 if wings_up else 18)], fill=C_SCALE_DARK, width=1)
+        d.point((36 if wings_up else 34, 6 if wings_up else 16), fill=C_CRIMSON_GLOW)
+        d.point((62 if wings_up else 56, 2 if wings_up else 10), fill=C_CRIMSON_GLOW)
+
+        tail_pts = [
+            (34, 44),
+            (24, 46 + tail_wave),
+            (16, 42 + tail_wave),
+            (8, 34 + tail_wave),
+            (4, 22 + tail_wave),
+            (8, 20 + tail_wave),
+            (14, 30 + tail_wave),
+            (22, 38 + tail_wave),
+            (30, 40),
+            (34, 44)
+        ]
+        d.polygon(tail_pts, fill=C_SCALE_MID, outline=C_OUTLINE)
+        spines = [(22, 38 + tail_wave), (14, 30 + tail_wave), (8, 20 + tail_wave)]
+        for sx, sy in spines:
+            d.polygon([(sx, sy), (sx - 4, sy - 5), (sx + 2, sy - 2)], fill=C_HORN_MID, outline=C_OUTLINE)
+            d.point((sx - 4, sy - 5), fill=C_HORN_TIP)
+        tip_y = 22 + tail_wave
+        d.polygon([(4, tip_y), (0, tip_y - 8), (6, tip_y - 6), (7, tip_y)], fill=C_GOLD_MID, outline=C_OUTLINE)
+        d.polygon([(4, tip_y), (8, tip_y + 4), (10, tip_y - 2)], fill=C_GOLD_BRIGHT, outline=C_OUTLINE)
+        d.line([(0, tip_y - 8), (6, tip_y - 6)], fill=C_GOLD_LIGHT)
+
+        rl_x = 36 + leg_l_off[0]
+        rl_y = 52 + leg_l_off[1]
+        d.polygon([(rl_x, rl_y), (rl_x - 6, rl_y + 12), (rl_x + 4, rl_y + 16), (rl_x + 6, rl_y + 4)], fill=C_SCALE_DARK, outline=C_OUTLINE)
+        d.polygon([(rl_x - 6, rl_y + 16), (rl_x - 10, rl_y + 20), (rl_x - 2, rl_y + 18)], fill=C_HORN_BASE, outline=C_OUTLINE)
+        d.polygon([(rl_x - 2, rl_y + 16), (rl_x + 2, rl_y + 20), (rl_x + 5, rl_y + 18)], fill=C_HORN_BASE, outline=C_OUTLINE)
+
+        cx, cy, cr = 54, 44, 26
+        d.ellipse([cx - cr, cy - cr, cx + cr, cy + cr], fill=C_GOLD_SHADOW, outline=C_OUTLINE)
+        d.ellipse([cx - cr + 2, cy - cr + 2, cx + cr - 2, cy + cr - 2], fill=C_GOLD_DARK)
+
+        for deg in range(0, 360, 18):
+            rad = math.radians(deg)
+            p1 = (cx + int((cr - 3) * math.cos(rad)), cy + int((cr - 3) * math.sin(rad)))
+            p2 = (cx + int(cr * math.cos(rad)), cy + int(cr * math.sin(rad)))
+            d.line([p1, p2], fill=C_GOLD_BRIGHT, width=1)
+
+        d.ellipse([cx - (cr - 5), cy - (cr - 5), cx + (cr - 5), cy + (cr - 5)], fill=C_GOLD_MID, outline=C_GOLD_DARK)
+        d.arc([cx - (cr - 7), cy - (cr - 7), cx + (cr - 7), cy + (cr - 7)], start=130, end=250, fill=C_GOLD_LIGHT, width=2)
+        d.arc([cx - (cr - 9), cy - (cr - 9), cx + (cr - 9), cy + (cr - 9)], start=140, end=230, fill=C_WHITE_HOT, width=1)
+
+        d.rectangle([cx - 11, cy - 8, cx - 4, cy - 3], fill=C_SCALE_DARK)
+        d.rectangle([cx + 4, cy - 8, cx + 11, cy - 3], fill=C_SCALE_DARK)
+        d.line([(cx - 10, cy - 6), (cx - 5, cy - 5)], fill=C_CRIMSON_GLOW, width=2)
+        d.point((cx - 8, cy - 5), fill=C_WHITE_HOT)
+        d.line([(cx + 5, cy - 5), (cx + 10, cy - 6)], fill=C_CRIMSON_GLOW, width=2)
+        d.point((cx + 7, cy - 5), fill=C_WHITE_HOT)
+
+        d.polygon([(cx - 9, cy + 4), (cx + 9, cy + 4), (cx + 5, cy + 13), (cx - 5, cy + 13)], fill=C_SCALE_DARK)
+        d.polygon([(cx - 7, cy + 4), (cx - 5, cy + 9), (cx - 3, cy + 4)], fill=C_GOLD_LIGHT)
+        d.polygon([(cx + 3, cy + 4), (cx + 5, cy + 9), (cx + 7, cy + 4)], fill=C_GOLD_LIGHT)
+        d.polygon([(cx - 3, cy + 13), (cx - 1, cy + 8), (cx + 1, cy + 13)], fill=C_GOLD_LIGHT)
+
+        d.point((cx - 14, cy), fill=C_CRIMSON_GLOW)
+        d.point((cx + 14, cy), fill=C_CRIMSON_GLOW)
+        d.point((cx, cy - 14), fill=C_CRIMSON_GLOW)
+        d.point((cx, cy + 14), fill=C_CRIMSON_GLOW)
+
+        fr_x = 68 + leg_r_off[0]
+        fr_y = 52 + leg_r_off[1]
+        d.polygon([(fr_x, fr_y), (fr_x + 2, fr_y + 12), (fr_x + 12, fr_y + 16), (fr_x + 10, fr_y + 2)], fill=C_SCALE_MID, outline=C_OUTLINE)
+        d.line([(fr_x + 3, fr_y + 3), (fr_x + 8, fr_y + 12)], fill=C_SCALE_LIGHT, width=1)
+        d.polygon([(fr_x + 4, fr_y + 16), (fr_x + 2, fr_y + 20), (fr_x + 7, fr_y + 19)], fill=C_HORN_BASE, outline=C_OUTLINE)
+        d.polygon([(fr_x + 9, fr_y + 16), (fr_x + 13, fr_y + 20), (fr_x + 15, fr_y + 18)], fill=C_HORN_BASE, outline=C_OUTLINE)
+
+        nx, ny = 72, 38
+        head_x = 84
+        head_y_pos = 30 + head_y
+
+        neck_pts = [
+            (nx - 4, ny - 6),
+            (head_x + 2, head_y_pos + 2),
+            (head_x + 4, head_y_pos + 18),
+            (nx + 2, ny + 14),
+            (nx - 6, ny + 8)
+        ]
+        d.polygon(neck_pts, fill=C_SCALE_MID, outline=C_OUTLINE)
+        d.line([(nx - 2, ny), (head_x + 2, head_y_pos + 8)], fill=C_SCALE_LIGHT, width=1)
+        d.polygon([(nx - 2, ny + 6), (head_x + 1, head_y_pos + 15), (head_x + 3, head_y_pos + 18), (nx - 1, ny + 12)], fill=C_GOLD_DARK, outline=C_OUTLINE)
+
+        d.polygon([(head_x + 6, head_y_pos - 4), (head_x - 2, head_y_pos - 14), (head_x - 6, head_y_pos - 16), (head_x, head_y_pos - 8)], fill=C_HORN_BASE, outline=C_OUTLINE)
+        d.polygon([(head_x - 4, head_y_pos - 15), (head_x - 6, head_y_pos - 16), (head_x - 2, head_y_pos - 13)], fill=C_HORN_TIP)
+        d.polygon([(head_x + 8, head_y_pos - 2), (head_x - 4, head_y_pos - 18), (head_x - 12, head_y_pos - 22), (head_x - 4, head_y_pos - 12), (head_x + 10, head_y_pos + 2)], fill=C_HORN_MID, outline=C_OUTLINE)
+        d.polygon([(head_x - 8, head_y_pos - 21), (head_x - 12, head_y_pos - 22), (head_x - 6, head_y_pos - 17)], fill=C_HORN_TIP)
+
+        d.polygon([(head_x + 2, head_y_pos - 2), (head_x + 14, head_y_pos - 3), (head_x + 20, head_y_pos + 4), (head_x + 12, head_y_pos + 10), (head_x + 2, head_y_pos + 8)], fill=C_SCALE_MID, outline=C_OUTLINE)
+        d.line([(head_x + 4, head_y_pos), (head_x + 14, head_y_pos - 1)], fill=C_SCALE_HIGHLIGHT, width=1)
+
+        if not mouth_open:
+            d.polygon([(head_x + 14, head_y_pos), (head_x + 27, head_y_pos + 3), (head_x + 27, head_y_pos + 8), (head_x + 14, head_y_pos + 8)], fill=C_SCALE_MID, outline=C_OUTLINE)
+            d.line([(head_x + 15, head_y_pos + 1), (head_x + 26, head_y_pos + 3)], fill=C_GOLD_MID, width=1)
+            d.point((head_x + 24, head_y_pos + 4), fill=C_SCALE_DARK)
+            d.polygon([(head_x + 14, head_y_pos + 8), (head_x + 26, head_y_pos + 8), (head_x + 24, head_y_pos + 13), (head_x + 12, head_y_pos + 12)], fill=C_SCALE_MID, outline=C_OUTLINE)
+            d.line([(head_x + 16, head_y_pos + 12), (head_x + 24, head_y_pos + 12)], fill=C_GOLD_DARK, width=1)
+            d.polygon([(head_x + 17, head_y_pos + 7), (head_x + 19, head_y_pos + 10), (head_x + 21, head_y_pos + 7)], fill=C_GOLD_LIGHT)
+            d.polygon([(head_x + 22, head_y_pos + 7), (head_x + 24, head_y_pos + 10), (head_x + 26, head_y_pos + 7)], fill=C_GOLD_LIGHT)
+        else:
+            d.polygon([(head_x + 14, head_y_pos - 4), (head_x + 27, head_y_pos - 5), (head_x + 26, head_y_pos + 2), (head_x + 14, head_y_pos + 3)], fill=C_SCALE_MID, outline=C_OUTLINE)
+            d.line([(head_x + 15, head_y_pos - 3), (head_x + 26, head_y_pos - 4)], fill=C_GOLD_MID, width=1)
+            d.polygon([(head_x + 18, head_y_pos + 2), (head_x + 20, head_y_pos + 6), (head_x + 22, head_y_pos + 2)], fill=C_GOLD_LIGHT)
+            d.polygon([(head_x + 23, head_y_pos + 2), (head_x + 25, head_y_pos + 6), (head_x + 27, head_y_pos + 2)], fill=C_GOLD_LIGHT)
+            d.polygon([(head_x + 12, head_y_pos + 8), (head_x + 25, head_y_pos + 16), (head_x + 23, head_y_pos + 22), (head_x + 10, head_y_pos + 15)], fill=C_SCALE_MID, outline=C_OUTLINE)
+            d.line([(head_x + 14, head_y_pos + 16), (head_x + 23, head_y_pos + 20)], fill=C_GOLD_DARK, width=1)
+            d.polygon([(head_x + 17, head_y_pos + 13), (head_x + 19, head_y_pos + 9), (head_x + 21, head_y_pos + 13)], fill=C_GOLD_LIGHT)
+            d.ellipse([head_x + 13, head_y_pos + 2, head_x + 23, head_y_pos + 11], fill=C_CRIMSON_GLOW)
+            d.ellipse([head_x + 15, head_y_pos + 4, head_x + 21, head_y_pos + 9], fill=C_ORANGE_FIRE)
+            d.ellipse([head_x + 17, head_y_pos + 5, head_x + 19, head_y_pos + 8], fill=C_WHITE_HOT)
+
+        d.polygon([(head_x + 11, head_y_pos), (head_x + 17, head_y_pos + 1), (head_x + 15, head_y_pos + 5), (head_x + 10, head_y_pos + 4)], fill=C_CRIMSON_GLOW, outline=C_OUTLINE)
+        d.rectangle([head_x + 12, head_y_pos + 1, head_x + 15, head_y_pos + 4], fill=C_ORANGE_FIRE)
+        d.point((head_x + 13, head_y_pos + 2), fill=C_WHITE_HOT)
+        d.line([(head_x + 13, head_y_pos + 1), (head_x + 13, head_y_pos + 4)], fill=(0, 0, 0, 255))
+
+        img.save(f"assets/sprites/coin_dragon_{frame_type}.png")
+
 if __name__ == "__main__":
     create_player()
     create_coin()
@@ -923,4 +1103,5 @@ if __name__ == "__main__":
     create_wind_streak_asset()
     create_swinging_chain_assets()
     create_world_4_assets()
+    create_coin_dragon_assets()
     print("All pixel assets generated successfully!")
