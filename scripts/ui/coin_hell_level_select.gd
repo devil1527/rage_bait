@@ -51,6 +51,19 @@ var _style_planned_hover: StyleBoxFlat
 var current_selected_world: int = 0
 var world_card_buttons: Dictionary = {}
 
+# Stage-selection touch drag scrolling state
+const DRAG_THRESHOLD: float = 8.0
+const DRAG_DECEL_FRICTION: float = 8.5
+var _is_touch_active: bool = false
+var _drag_touch_id: int = -1
+var _drag_start_pos: Vector2 = Vector2.ZERO
+var _drag_last_pos: Vector2 = Vector2.ZERO
+var _drag_start_scroll_v: int = 0
+var _is_dragging: bool = false
+var _drag_velocity: float = 0.0
+var _last_drag_time: float = 0.0
+var _drag_suppress_click_until: float = 0.0
+
 func _init() -> void:
 	_init_styles()
 
@@ -181,6 +194,7 @@ func _style_nav_card(btn: Button, wid: int, title: String, sub: String, theme_co
 
 func _select_world_tab(wid: int) -> void:
 	AudioManager.play_sfx("click")
+	_drag_velocity = 0.0
 	current_selected_world = wid
 	_update_world_filter()
 	_update_back_button_text()
@@ -475,6 +489,10 @@ func _refresh_tile_states() -> void:
 				stars_label.text = ""
 
 func _on_level_tile_pressed(level_id: int) -> void:
+	var now: float = float(Time.get_ticks_msec()) / 1000.0
+	if _is_dragging or now < _drag_suppress_click_until:
+		return
+
 	var is_unlocked: bool = SaveManager.is_level_unlocked(level_id)
 	var is_implemented: bool = GameManager.can_play_level(level_id)
 
@@ -510,3 +528,105 @@ func _on_back_pressed() -> void:
 func _on_modal_close() -> void:
 	AudioManager.play_sfx("click")
 	message_modal.visible = false
+
+func _input(event: InputEvent) -> void:
+	if message_modal and message_modal.visible:
+		return
+	if not scroll_container or not scroll_container.is_visible_in_tree():
+		return
+
+	var s_rect: Rect2 = scroll_container.get_global_rect()
+	var in_bounds: bool = true
+	if s_rect.size.x > 0 and s_rect.size.y > 0:
+		in_bounds = s_rect.has_point(event.position)
+
+	if event is InputEventScreenTouch:
+		if event.pressed:
+			if in_bounds:
+				_is_touch_active = true
+				_drag_touch_id = event.index
+				_drag_start_pos = event.position
+				_drag_last_pos = event.position
+				_drag_start_scroll_v = scroll_container.scroll_vertical
+				_is_dragging = false
+				_drag_velocity = 0.0
+				_last_drag_time = float(Time.get_ticks_msec()) / 1000.0
+		else:
+			if _is_touch_active and event.index == _drag_touch_id:
+				_finish_touch_drag()
+
+	elif event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				if in_bounds:
+					_is_touch_active = true
+					_drag_touch_id = 0
+					_drag_start_pos = event.position
+					_drag_last_pos = event.position
+					_drag_start_scroll_v = scroll_container.scroll_vertical
+					_is_dragging = false
+					_drag_velocity = 0.0
+					_last_drag_time = float(Time.get_ticks_msec()) / 1000.0
+			else:
+				if _is_touch_active and _drag_touch_id == 0:
+					_finish_touch_drag()
+
+	elif event is InputEventScreenDrag:
+		if _is_touch_active and event.index == _drag_touch_id:
+			_process_drag_motion(event.position)
+
+	elif event is InputEventMouseMotion:
+		if _is_touch_active and _drag_touch_id == 0 and (event.button_mask & MOUSE_BUTTON_MASK_LEFT):
+			_process_drag_motion(event.position)
+
+func _process_drag_motion(current_pos: Vector2) -> void:
+	var total_delta: Vector2 = current_pos - _drag_start_pos
+	if not _is_dragging:
+		if abs(total_delta.y) >= DRAG_THRESHOLD:
+			_is_dragging = true
+
+	if _is_dragging:
+		var max_scroll: int = _get_max_scroll()
+		var target_scroll: int = clampi(_drag_start_scroll_v - int(total_delta.y), 0, max_scroll)
+		scroll_container.scroll_vertical = target_scroll
+
+		var now: float = float(Time.get_ticks_msec()) / 1000.0
+		var dt: float = now - _last_drag_time
+		if dt > 0.001:
+			var step_y: float = current_pos.y - _drag_last_pos.y
+			var inst_vel: float = -step_y / dt
+			_drag_velocity = lerp(_drag_velocity, inst_vel, 0.4)
+		_drag_last_pos = current_pos
+		_last_drag_time = now
+
+func _finish_touch_drag() -> void:
+	_is_touch_active = false
+	_drag_touch_id = -1
+	if _is_dragging:
+		_drag_suppress_click_until = float(Time.get_ticks_msec()) / 1000.0 + 0.18
+	_is_dragging = false
+
+func _get_max_scroll() -> int:
+	if not scroll_container:
+		return 0
+	var v_bar: VScrollBar = scroll_container.get_v_scroll_bar()
+	if not v_bar:
+		return 0
+	var limit: float = v_bar.max_value - v_bar.page
+	if limit <= 0 and v_bar.max_value > 0:
+		limit = v_bar.max_value
+	return maxi(0, int(limit))
+
+func _process(delta: float) -> void:
+	if not _is_touch_active and abs(_drag_velocity) > 15.0:
+		var max_scroll: int = _get_max_scroll()
+		var next_scroll: float = float(scroll_container.scroll_vertical) + _drag_velocity * delta
+		var clamped_scroll: int = clampi(int(round(next_scroll)), 0, max_scroll)
+		scroll_container.scroll_vertical = clamped_scroll
+
+		if clamped_scroll <= 0 or clamped_scroll >= max_scroll:
+			_drag_velocity = 0.0
+		else:
+			_drag_velocity = lerp(_drag_velocity, 0.0, DRAG_DECEL_FRICTION * delta)
+	elif not _is_touch_active:
+		_drag_velocity = 0.0

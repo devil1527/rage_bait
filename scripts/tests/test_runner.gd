@@ -4622,8 +4622,8 @@ func test_android_package_identity_and_version_code() -> void:
 	preset_file.close()
 
 	assert_true(content.contains('package/unique_name="com.antigravity.retroragearcade"'), "Package Identity: Canonical package ID is com.antigravity.retroragearcade")
-	assert_true(content.contains('version/code=13'), "Version Monotonicity: version/code is 13 (monotonically increased)")
-	assert_true(content.contains('version/name="0.13.0"'), "Version Name: version/name is 0.13.0")
+	assert_true(content.contains('version/code=14'), "Version Monotonicity: version/code is 14 (monotonically increased)")
+	assert_true(content.contains('version/name="0.14.0"'), "Version Name: version/name is 0.14.0")
 	assert_true(content.contains('package/retain_data_on_uninstall=true'), "Package Config: retain_data_on_uninstall is enabled")
 
 func test_ui_redesign_and_world_navigation() -> void:
@@ -4642,7 +4642,7 @@ func test_ui_redesign_and_world_navigation() -> void:
 	assert_eq(sub_lbl.text, "Four games. One very bad idea.", "UI Redesign: Subtitle preserved")
 
 	var ver_lbl: Label = menu.get_node("MarginContainer/VBoxContainer/HeaderBar/VersionLabel")
-	assert_true(ver_lbl.text.contains("0.13.0"), "UI Redesign: Version label reflects v0.13.0")
+	assert_true(ver_lbl.text.contains("0.14.0"), "UI Redesign: Version label reflects v0.14.0")
 
 	var card_chel = menu.get_node("MarginContainer/VBoxContainer/CardsGrid/CardCoinHell")
 	var card_bbet = menu.get_node("MarginContainer/VBoxContainer/CardsGrid/CardBulletBetrayal")
@@ -4759,6 +4759,118 @@ func test_ui_redesign_and_world_navigation() -> void:
 	assert_eq(GameManager.current_level_id, 20, "Clicking available Stage 20 launches Level 20")
 
 	lsel.queue_free()
+
+	# 2b. Stage Selection Touch Drag Scrolling & Swipes
+	var scroll_scene: PackedScene = load("res://scenes/ui/coin_hell_level_select.tscn")
+	var s_lsel = scroll_scene.instantiate()
+	add_child(s_lsel)
+	s_lsel._update_ui()
+
+	var sc = s_lsel.scroll_container
+	assert_true(sc != null, "Stage Scrolling: ScrollContainer exists")
+	assert_eq(sc.vertical_scroll_mode, ScrollContainer.SCROLL_MODE_AUTO, "Stage Scrolling: vertical_scroll_mode is SCROLL_MODE_AUTO")
+	assert_eq(sc.horizontal_scroll_mode, ScrollContainer.SCROLL_MODE_DISABLED, "Stage Scrolling: horizontal_scroll_mode is disabled")
+
+	var v_bar = sc.get_v_scroll_bar()
+	v_bar.max_value = 1000.0
+	v_bar.page = 400.0
+	var max_scroll = s_lsel._get_max_scroll()
+	assert_true(max_scroll > 0, "Stage Scrolling: Max vertical scroll is non-negative")
+	assert_eq(sc.scroll_vertical, 0, "Stage Scrolling: Initial scroll position is at 0 (Stage 1 visible)")
+
+	# Simulate tap gesture (< threshold, e.g. 3px movement)
+	var sc_rect = sc.get_global_rect()
+	var center_pt = sc_rect.position + sc_rect.size * 0.5
+
+	var touch_down = InputEventScreenTouch.new()
+	touch_down.index = 0
+	touch_down.pressed = true
+	touch_down.position = center_pt
+	s_lsel._input(touch_down)
+	assert_true(s_lsel._is_touch_active, "Stage Scrolling: Touch down activates tracking")
+	assert_true(not s_lsel._is_dragging, "Stage Scrolling: Touch down does not prematurely activate drag")
+
+	# Small jitter below 8px threshold
+	var drag_small = InputEventScreenDrag.new()
+	drag_small.index = 0
+	drag_small.position = center_pt + Vector2(0, 3)
+	s_lsel._input(drag_small)
+	assert_true(not s_lsel._is_dragging, "Stage Scrolling: Motion below threshold does not start drag")
+
+	var touch_up = InputEventScreenTouch.new()
+	touch_up.index = 0
+	touch_up.pressed = false
+	touch_up.position = drag_small.position
+	s_lsel._input(touch_up)
+	assert_true(not s_lsel._is_touch_active, "Stage Scrolling: Touch up deactivates tracking")
+	assert_true(not s_lsel._is_dragging, "Stage Scrolling: Pure tap leaves _is_dragging false")
+
+	# Simulate short swipe (move up 35px, above 8px threshold)
+	touch_down.position = center_pt
+	s_lsel._input(touch_down)
+	var drag_short = InputEventScreenDrag.new()
+	drag_short.index = 0
+	drag_short.position = center_pt - Vector2(0, 35)
+	s_lsel._input(drag_short)
+	assert_true(s_lsel._is_dragging, "Stage Scrolling: Swipe exceeding threshold activates _is_dragging")
+	assert_eq(sc.scroll_vertical, clampi(35, 0, max_scroll), "Stage Scrolling: Short swipe updates scroll_vertical")
+
+	s_lsel._input(touch_up)
+	assert_true(not s_lsel._is_touch_active, "Stage Scrolling: Finger release ends active touch")
+	var now_ts = float(Time.get_ticks_msec()) / 1000.0
+	assert_true(now_ts < s_lsel._drag_suppress_click_until, "Stage Scrolling: Releasing after drag enables click suppression")
+
+	# Attempting to click level button during suppression window is suppressed
+	GameManager.current_level_id = 1
+	s_lsel._on_level_tile_pressed(2)
+	assert_eq(GameManager.current_level_id, 1, "Stage Scrolling: Accidental click suppressed during drag gesture")
+
+	# Simulate long swipe (180px)
+	sc.scroll_vertical = 0
+	touch_down.position = center_pt
+	s_lsel._input(touch_down)
+	var drag_long = InputEventScreenDrag.new()
+	drag_long.index = 0
+	drag_long.position = center_pt - Vector2(0, 180)
+	s_lsel._input(drag_long)
+	assert_true(s_lsel._is_dragging, "Stage Scrolling: Long swipe maintains _is_dragging")
+	assert_eq(sc.scroll_vertical, clampi(180, 0, max_scroll), "Stage Scrolling: Long swipe scrolls list significantly")
+	s_lsel._input(touch_up)
+
+	# Accessibility of end stages
+	sc.scroll_vertical = max_scroll
+	assert_eq(sc.scroll_vertical, max_scroll, "Stage Scrolling: World 4 and final stages accessible at bottom bounds")
+	sc.scroll_vertical = 0
+	assert_eq(sc.scroll_vertical, 0, "Stage Scrolling: World 1 and first stages accessible at top bounds")
+
+	# Verify release safeguard: No developer tap gesture or bypass exists
+	assert_true(not s_lsel.has_method("_on_secret_tap_input"), "Release Safeguard: Developer tap gesture method does not exist in release")
+	assert_true(not ("is_debug_mode" in s_lsel), "Release Safeguard: is_debug_mode variable does not exist in release")
+	assert_true(not ("dev_bypass_active" in s_lsel), "Release Safeguard: dev_bypass_active variable does not exist in release")
+
+	s_lsel.queue_free()
+
+	# 2c. Main Menu Artwork Verification
+	var menu2_scene: PackedScene = load("res://scenes/ui/main_menu.tscn")
+	var menu2 = menu2_scene.instantiate()
+	add_child(menu2)
+
+	var chel_tex = menu2.get_node("MarginContainer/VBoxContainer/CardsGrid/CardCoinHell/VBox/Texture")
+	var bbet_tex = menu2.get_node("MarginContainer/VBoxContainer/CardsGrid/CardBulletBetrayal/VBox/Texture")
+	var nnig_tex = menu2.get_node("MarginContainer/VBoxContainer/CardsGrid/CardNinjaNightmare/VBox/Texture")
+	var clie_tex = menu2.get_node("MarginContainer/VBoxContainer/CardsGrid/CardCastleOfLies/VBox/Texture")
+
+	assert_true(chel_tex.texture != null, "Main Menu Artwork: Coin Hell texture loaded")
+	assert_true(bbet_tex.texture != null, "Main Menu Artwork: Bullet Betrayal texture loaded")
+	assert_true(nnig_tex.texture != null, "Main Menu Artwork: Ninja Nightmare texture loaded")
+	assert_true(clie_tex.texture != null, "Main Menu Artwork: Castle of Lies texture loaded")
+
+	assert_true(chel_tex.texture.get_width() > 0, "Main Menu Artwork: Coin Hell texture has valid width")
+	assert_true(bbet_tex.texture.get_width() > 0, "Main Menu Artwork: Bullet Betrayal texture has valid width")
+	assert_true(nnig_tex.texture.get_width() > 0, "Main Menu Artwork: Ninja Nightmare texture has valid width")
+	assert_true(clie_tex.texture.get_width() > 0, "Main Menu Artwork: Castle of Lies texture has valid width")
+
+	menu2.queue_free()
 
 	# 3. Traps & Hazards Revive Reset Verification
 	var bridge = CrumblingBridgeSection.new()
