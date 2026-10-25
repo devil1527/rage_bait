@@ -2,18 +2,16 @@ extends Node2D
 
 ## Level 20: "The Final Betrayal" — World 4: Final Hell Boss Stage
 ## The ultimate climactic trial of RETRO RAGE ARCADE:
-## - Survival Boss encounter against THE COIN DRAGON in an infernal multi-tier platform arena.
-## - Survive 60 seconds against the hunting dragon.
+## - Boss encounter against THE COIN DRAGON in an infernal multi-tier platform arena.
 ## - Collect all 10 coins released at 5.5-second intervals during the fight.
 ## - Dragon contact triggers immediate player death.
-## - At 9/10 coins collected, Dragon Rage triggers (3x baseline speed and attack cadence).
-## - Coin 10 remains collectible on Central Altar under enraged dragon pressure.
-## - After 60s AND collecting 10/10 coins, the Infernal Exit Gate unlocks at the central altar.
+## - At 8/10 coins collected, Dragon Rage triggers (3x baseline speed and attack cadence).
+## - Coins 9 and 10 remain collectible on the platforms under enraged dragon pressure.
+## - Collecting all 10 coins immediately unlocks the Infernal Exit Gate at the central altar.
 ## - Entering the gate triggers the victory sequence: the dragon falls upside down into the lava,
 ##   followed by the congratulations overlay and return to level select.
 
 const TOTAL_COINS: int = 10
-const SURVIVAL_DURATION: float = 60.0
 const COIN_RELEASE_INTERVAL: float = 5.5
 
 enum CoinState {
@@ -48,7 +46,6 @@ const COIN_TARGET_POSITIONS: Array[Vector2] = [
 # HUD
 @onready var coin_counter_label: Label = $HUD/MarginContainer/TopBar/CoinCounter
 @onready var level_title_label: Label = $HUD/MarginContainer/TopBar/LevelTitle
-@onready var timer_label: Label = $HUD/MarginContainer/TopBar/TimerLabel
 @onready var boss_status_label: Label = $HUD/BossStatusLabel
 @onready var pause_button: Button = $HUD/MarginContainer/TopBar/PauseBtn
 
@@ -63,9 +60,8 @@ const COIN_TARGET_POSITIONS: Array[Vector2] = [
 @onready var death_overlay: Control = $HUD/DeathOverlay
 @onready var level_complete_overlay: Control = $HUD/LevelCompleteOverlay
 
-var _survival_elapsed: float = 0.0
+var _encounter_elapsed: float = 0.0
 var _is_encounter_active: bool = false
-var _is_survived: bool = false
 var _is_completed: bool = false
 var _is_rage_triggered: bool = false
 
@@ -141,15 +137,13 @@ func _register_safe_anchors() -> void:
 
 func _start_encounter() -> void:
 	_is_encounter_active = true
-	_is_survived = false
 	_is_completed = false
 	_is_rage_triggered = false
-	_survival_elapsed = 0.0
+	_encounter_elapsed = 0.0
 	_executed_cycles.clear()
-	_update_timer_hud(SURVIVAL_DURATION)
 
 	if boss_status_label:
-		boss_status_label.text = "SURVIVE THE COIN DRAGON! (60s)"
+		boss_status_label.text = "COLLECT ALL 10 COINS AND ESCAPE THE COIN DRAGON!"
 		boss_status_label.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4, 1.0))
 
 	if dragon:
@@ -159,32 +153,14 @@ func _process(delta: float) -> void:
 	if not _is_encounter_active or _is_completed:
 		return
 
-	_survival_elapsed += delta
-	var time_remaining: float = maxf(0.0, SURVIVAL_DURATION - _survival_elapsed)
-	_update_timer_hud(time_remaining)
+	_encounter_elapsed += delta
 
 	# 5.5-Second Coin Release Cycle (10 coins at T = 5.5, 11.0, 16.5, 22.0, 27.5, 33.0, 38.5, 44.0, 49.5, 55.0)
 	for i in range(1, TOTAL_COINS + 1):
 		var target_time: float = float(i) * COIN_RELEASE_INTERVAL
-		if _survival_elapsed >= target_time and not _executed_cycles.has(i):
+		if _encounter_elapsed >= target_time and not _executed_cycles.has(i):
 			_executed_cycles[i] = true
 			_trigger_coin_release_cycle(i)
-
-	# Check 60-second survival completion
-	if _survival_elapsed >= SURVIVAL_DURATION and not _is_survived:
-		_is_survived = true
-		_check_gate_unlock_conditions()
-
-func _update_timer_hud(remaining: float) -> void:
-	if timer_label:
-		var secs: int = int(ceilf(remaining))
-		timer_label.text = "SURVIVE: %02ds" % secs
-		if secs <= 10:
-			timer_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3, 1.0))
-		elif secs <= 30:
-			timer_label.add_theme_color_override("font_color", Color(1.0, 0.7, 0.2, 1.0))
-		else:
-			timer_label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1.0))
 
 ## Triggers the scheduled 5.5-second coin release via the Coin Dragon
 func _trigger_coin_release_cycle(coin_idx: int) -> void:
@@ -293,36 +269,28 @@ func _on_coin_body_entered(body: Node2D, coin_idx: int) -> void:
 	# Increment actual collection counter in GameManager
 	GameManager.collect_coin()
 
-	# CRITICAL: Trigger Dragon Rage immediately at 9/10 coins collected!
-	if GameManager.current_coins == 9 and not _is_rage_triggered:
+	# CRITICAL: Trigger Dragon Rage immediately at 8/10 coins collected!
+	if GameManager.current_coins == 8 and not _is_rage_triggered:
 		_is_rage_triggered = true
 		if dragon and dragon.has_method("enter_rage_mode"):
 			dragon.enter_rage_mode()
 		if boss_status_label:
-			boss_status_label.text = "THE DRAGON IS ENRAGED! COLLECT THE FINAL COIN (10/10)!"
+			boss_status_label.text = "THE DRAGON IS ENRAGED! COLLECT REMAINING COINS (8/10)!"
+			boss_status_label.add_theme_color_override("font_color", Color(1.0, 0.2, 0.2, 1.0))
+	elif GameManager.current_coins == 9 and _is_rage_triggered:
+		if boss_status_label:
+			boss_status_label.text = "THE DRAGON IS ENRAGED! COLLECT THE FINAL COIN (9/10)!"
 			boss_status_label.add_theme_color_override("font_color", Color(1.0, 0.2, 0.2, 1.0))
 
 	_check_gate_unlock_conditions()
 
 func _check_gate_unlock_conditions() -> void:
-	var is_all_coins: bool = GameManager.current_coins >= TOTAL_COINS
-
-	if _is_survived and is_all_coins:
+	if GameManager.current_coins >= TOTAL_COINS:
 		if exit_gate and not exit_gate._is_open:
 			exit_gate.unlock_gate()
 			if boss_status_label:
 				boss_status_label.text = "EXIT OPEN! ESCAPE TO SLAY THE ENRAGED DRAGON!"
 				boss_status_label.add_theme_color_override("font_color", Color(0.2, 1.0, 0.6, 1.0))
-	elif _is_survived and not is_all_coins:
-		var remaining: int = TOTAL_COINS - GameManager.current_coins
-		if boss_status_label:
-			boss_status_label.text = "TIME EXPIRED! COLLECT %d REMAINING COIN%s!" % [remaining, "" if remaining == 1 else "S"]
-			boss_status_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2, 1.0))
-	elif not _is_survived and is_all_coins:
-		var remaining_sec: int = int(ceilf(maxf(0.0, SURVIVAL_DURATION - _survival_elapsed)))
-		if boss_status_label:
-			boss_status_label.text = "ALL COINS COLLECTED! SURVIVE %d MORE SECOND%s!" % [remaining_sec, "" if remaining_sec == 1 else "S"]
-			boss_status_label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.2, 1.0))
 
 func _on_coin_collected(current: int, total: int) -> void:
 	coin_counter_label.text = "COINS: %d / %d" % [current, total]
@@ -400,9 +368,8 @@ func _on_retry() -> void:
 
 func _reset_level() -> void:
 	_clear_touch_controls()
-	_survival_elapsed = 0.0
+	_encounter_elapsed = 0.0
 	_is_encounter_active = false
-	_is_survived = false
 	_is_completed = false
 	_is_rage_triggered = false
 	_executed_cycles.clear()

@@ -7625,8 +7625,12 @@ func test_level_20_final_betrayal_layout_and_registration() -> void:
 	# HUD elements
 	var top_bar = lvl.get_node_or_null("HUD/MarginContainer/TopBar")
 	assert_true(top_bar != null, "TopBar HUD exists")
-	assert_true(top_bar.get_node_or_null("TimerLabel") != null, "TimerLabel HUD exists")
+	assert_true(top_bar.get_node_or_null("TimerLabel") == null, "TimerLabel HUD is removed from Level 20")
 	assert_true(top_bar.get_node_or_null("CoinCounter") != null, "CoinCounter HUD exists")
+	var pause_btn: Button = top_bar.get_node_or_null("PauseBtn")
+	assert_true(pause_btn != null, "PauseBtn exists in Level 20 TopBar")
+	assert_eq(pause_btn.text, "⏸ PAUSE", "PauseBtn displays '⏸ PAUSE' label matching reference levels")
+	assert_eq(pause_btn.custom_minimum_size, Vector2(80, 32), "PauseBtn custom_minimum_size is Vector2(80, 32)")
 	assert_true(lvl.get_node_or_null("HUD/BossStatusLabel") != null, "BossStatusLabel HUD exists")
 
 	remove_child(lvl)
@@ -7796,17 +7800,16 @@ func test_level_20_platform_fire_burners() -> void:
 
 
 func test_level_20_survival_timer_and_coin_cycle() -> void:
-	print("\n--- TEST: Level 20 60s Survival Timer & 5.5s Coin Release Cycle ---")
+	print("\n--- TEST: Level 20 Coin Release Cycle & Dragon Rage Trigger at 8/10 Coins ---")
 
 	var lvl20_scene: PackedScene = load("res://scenes/coin_hell/coin_hell_level_20.tscn")
 	var lvl = lvl20_scene.instantiate()
 	add_child(lvl)
 
-	# Initial state: 60-second countdown with 5.5s interval
-	assert_eq(lvl.SURVIVAL_DURATION, 60.0, "Survival duration is exactly 60.0 seconds")
+	# Initial state: 10 coins with 5.5s interval, no survival timer dependency
 	assert_eq(lvl.TOTAL_COINS, 10, "Required coins is exactly 10")
 	assert_eq(lvl.COIN_RELEASE_INTERVAL, 5.5, "Coin release interval is calibrated to 5.5s")
-	assert_eq(lvl._survival_elapsed, 0.0, "Survival timer starts at 0.0 elapsed")
+	assert_eq(lvl._encounter_elapsed, 0.0, "Encounter timer starts at 0.0 elapsed")
 
 	# Target landing positions verification
 	assert_eq(lvl.COIN_TARGET_POSITIONS.size(), 10, "Exactly 10 coin target landing coordinates configured")
@@ -7815,12 +7818,10 @@ func test_level_20_survival_timer_and_coin_cycle() -> void:
 		assert_true(pos.x >= 60.0 and pos.x <= 900.0, "Coin %d target X (%.1f) is within arena bounds" % [idx + 1, pos.x])
 		assert_true(pos.y >= 150.0 and pos.y <= 450.0, "Coin %d target Y (%.1f) is on a solid elevated platform above pit" % [idx + 1, pos.y])
 
-	# 5.5-Second cycle timestamps check (Coin 1: 5.5s, ..., Coin 10: 55.0s, leaving 5.0s survival)
+	# 5.5-Second cycle timestamps check (Coin 1: 5.5s, ..., Coin 10: 55.0s)
 	for i in range(1, 11):
 		var expected_time: float = float(i) * 5.5
-		var t_rem: float = lvl.SURVIVAL_DURATION - expected_time
 		assert_true(expected_time <= 55.0, "Coin %d timestamp %.1fs <= 55.0s" % [i, expected_time])
-	assert_eq(lvl.SURVIVAL_DURATION - (10.0 * 5.5), 5.0, "Leaves exactly 5.0s of survival after final scheduled coin release")
 
 	# Cycle 1 execution test: Coin 1 is NOT_SPAWNED and not visible initially
 	assert_eq(lvl._coin_states[1], lvl.CoinState.NOT_SPAWNED, "Coin 1 is initially NOT_SPAWNED")
@@ -7851,31 +7852,40 @@ func test_level_20_survival_timer_and_coin_cycle() -> void:
 	var dist_coin10_to_gate: float = coin10_pos.distance_to(exit_pos)
 	assert_true(dist_coin10_to_gate > 45.0, "Coin 10 is offset by %.1fpx > 45px from ExitGate to prevent accidental pickup" % dist_coin10_to_gate)
 
-	# Collect coins and verify HUD updates & Dragon Rage Trigger at 9/10 coins
+	# Collect coins and verify HUD updates & Dragon Rage Trigger at 8/10 coins
 	var dragon = lvl.get_node("CoinDragon")
 	assert_true(not dragon.is_enraged, "Dragon is not enraged with 0 coins")
 	GameManager.reset_coins()
 	for i in range(1, 11):
 		lvl._coin_states[i] = lvl.CoinState.AVAILABLE
 
-	# Collect coins 1 through 8
-	for c_idx in range(1, 9):
+	# Collect coins 1 through 7 -> Dragon remains normal
+	for c_idx in range(1, 8):
 		lvl._on_coin_body_entered(lvl.player, c_idx)
-	assert_eq(GameManager.current_coins, 8, "Current coins is 8")
-	assert_true(not dragon.is_enraged, "Dragon is not enraged at 8/10 coins")
+	assert_eq(GameManager.current_coins, 7, "Current coins is 7")
+	assert_true(not dragon.is_enraged, "Dragon is not enraged at 7/10 coins")
 
-	# Collect coin 9 -> CRITICAL: Dragon Rage triggers immediately at 9/10 coins!
+	# Collect coin 8 -> CRITICAL: Dragon Rage triggers immediately at 8/10 coins!
+	lvl._on_coin_body_entered(lvl.player, 8)
+	assert_eq(GameManager.current_coins, 8, "Current coins is 8")
+	assert_true(dragon.is_enraged, "Dragon enters rage immediately upon collecting coin 8 (counter at 8/10)")
+	assert_eq(dragon.move_speed, 480.0, "Dragon moves at 3x baseline speed (480 px/s)")
+	assert_eq(lvl.boss_status_label.text, "THE DRAGON IS ENRAGED! COLLECT REMAINING COINS (8/10)!", "HUD displays rage status warning")
+
+	# Collect coin 9 -> Dragon remains enraged
 	lvl._on_coin_body_entered(lvl.player, 9)
 	assert_eq(GameManager.current_coins, 9, "Current coins is 9")
-	assert_true(dragon.is_enraged, "Dragon enters rage immediately upon collecting coin 9 (counter at 9/10)")
-	assert_eq(dragon.move_speed, 480.0, "Dragon moves at 3x baseline speed (480 px/s)")
-	assert_eq(lvl.boss_status_label.text, "THE DRAGON IS ENRAGED! COLLECT THE FINAL COIN (10/10)!", "HUD displays rage status warning")
+	assert_true(dragon.is_enraged, "Dragon remains enraged after collecting coin 9")
+	assert_eq(dragon.move_speed, 480.0, "Dragon maintains 3x speed after collecting coin 9")
+	assert_eq(lvl.boss_status_label.text, "THE DRAGON IS ENRAGED! COLLECT THE FINAL COIN (9/10)!", "HUD displays final coin status")
 
-	# Collect coin 10 -> Dragon remains enraged
+	# Collect coin 10 -> Gate unlocks immediately without timer requirement
+	assert_true(not lvl.exit_gate._is_open, "Exit gate is locked before collecting coin 10")
 	lvl._on_coin_body_entered(lvl.player, 10)
 	assert_eq(GameManager.current_coins, 10, "Current coins is 10/10")
 	assert_true(dragon.is_enraged, "Dragon remains enraged after collecting coin 10")
 	assert_eq(dragon.move_speed, 480.0, "Dragon maintains 3x speed after collecting coin 10")
+	assert_true(lvl.exit_gate._is_open, "Exit gate unlocks immediately upon collecting all 10 coins")
 
 	remove_child(lvl)
 	lvl.free()
@@ -7924,7 +7934,7 @@ func test_level_20_jump_physics_and_arena_reachability() -> void:
 
 
 func test_level_20_gate_unlock_and_dragon_defeat() -> void:
-	print("\n--- TEST: Level 20 Dual Condition Gate Unlock & Boss Defeat Sequence ---")
+	print("\n--- TEST: Level 20 10-Coin Gate Unlock & Boss Defeat Sequence ---")
 
 	SaveManager._apply_defaults()
 	SaveManager.save_data()
@@ -7941,26 +7951,20 @@ func test_level_20_gate_unlock_and_dragon_defeat() -> void:
 	var dragon = lvl.get_node("CoinDragon")
 	var player = lvl.get_node("Player")
 
-	# Condition 1 check: 60s elapsed but < 10 coins -> Gate remains locked!
-	lvl._survival_elapsed = 60.0
-	lvl._is_survived = true
-	GameManager.current_coins = 5 # only 5 coins
+	# Condition 1: Less than 10 coins collected -> Gate remains locked!
+	GameManager.current_coins = 5
 	lvl._check_gate_unlock_conditions()
-	assert_true(not exit_gate._is_open, "Exit gate remains locked if survived 60s but coins < 10")
+	assert_true(not exit_gate._is_open, "Exit gate remains locked when coins < 10")
 
-	# Condition 2 check: 10 coins collected but time < 60s -> Gate remains locked!
-	lvl._survival_elapsed = 45.0
-	lvl._is_survived = false
+	# Condition 2: 9 coins collected -> Gate remains locked!
+	GameManager.current_coins = 9
+	lvl._check_gate_unlock_conditions()
+	assert_true(not exit_gate._is_open, "Exit gate remains locked at 9/10 coins")
+
+	# Condition 3: All 10 coins collected -> Gate unlocks immediately without any timer requirement!
 	GameManager.current_coins = 10
 	lvl._check_gate_unlock_conditions()
-	assert_true(not exit_gate._is_open, "Exit gate remains locked if 10 coins collected before 60s survival")
-
-	# Condition 3 check: Both conditions met (survived 60s AND collected 10/10 coins) -> Gate unlocks!
-	lvl._survival_elapsed = 60.0
-	lvl._is_survived = true
-	GameManager.current_coins = 10
-	lvl._check_gate_unlock_conditions()
-	assert_true(exit_gate._is_open, "Exit gate unlocks when BOTH 60s survived AND 10/10 coins collected")
+	assert_true(exit_gate._is_open, "Exit gate unlocks immediately upon collecting all 10 coins (no timer required)")
 
 	# Entering exit gate defeats the Coin Dragon
 	assert_true(not dragon.is_defeated, "Dragon starts not defeated")
@@ -8007,9 +8011,19 @@ func test_level_20_lifecycle_death_retry_revive_resets() -> void:
 	var exit_gate = lvl.get_node("ExitGate")
 	var spawn = lvl.get_node("SpawnPoint")
 	var death_overlay = lvl.get_node("HUD/DeathOverlay")
+	var pause_overlay = lvl.get_node("HUD/PauseOverlay")
+	var pause_btn = lvl.get_node("HUD/MarginContainer/TopBar/PauseBtn")
+
+	# Pause button & overlay verification
+	assert_eq(pause_btn.text, "⏸ PAUSE", "Pause button displays '⏸ PAUSE'")
+	assert_true(not pause_overlay.visible, "Pause overlay starts hidden")
+	lvl._on_pause_pressed()
+	assert_true(pause_overlay.visible, "Tapping Pause button opens pause overlay")
+	pause_overlay._on_resume_pressed()
+	assert_true(not pause_overlay.visible, "Resuming closes pause overlay")
 
 	# Advance encounter partially
-	lvl._survival_elapsed = 25.0
+	lvl._encounter_elapsed = 25.0
 	GameManager.current_coins = 4
 	lvl._trigger_coin_release_cycle(1)
 	lvl._trigger_coin_release_cycle(2)
@@ -8025,7 +8039,7 @@ func test_level_20_lifecycle_death_retry_revive_resets() -> void:
 	assert_true(player._is_alive, "Player is alive after retry")
 	assert_eq(player.global_position, spawn.global_position, "Player reset to spawn point")
 	assert_eq(GameManager.current_coins, 0, "Coins reset to 0 upon retry")
-	assert_eq(lvl._survival_elapsed, 0.0, "Timer reset to 0.0 upon retry")
+	assert_eq(lvl._encounter_elapsed, 0.0, "Timer reset to 0.0 upon retry")
 	assert_true(not death_overlay.visible, "Death overlay closed after retry")
 	assert_true(not exit_gate._is_open, "Exit gate locked after retry")
 	assert_eq(dragon.global_position, Vector2(820, 418), "Dragon reset to starting position")
