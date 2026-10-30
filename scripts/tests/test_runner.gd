@@ -4622,8 +4622,8 @@ func test_android_package_identity_and_version_code() -> void:
 	preset_file.close()
 
 	assert_true(content.contains('package/unique_name="com.antigravity.retroragearcade"'), "Package Identity: Canonical package ID is com.antigravity.retroragearcade")
-	assert_true(content.contains('version/code=14'), "Version Monotonicity: version/code is 14 (monotonically increased)")
-	assert_true(content.contains('version/name="0.14.0"'), "Version Name: version/name is 0.14.0")
+	assert_true(content.contains('version/code=15'), "Version Monotonicity: version/code is 15 (monotonically increased)")
+	assert_true(content.contains('version/name="0.15.0"'), "Version Name: version/name is 0.15.0")
 	assert_true(content.contains('package/retain_data_on_uninstall=true'), "Package Config: retain_data_on_uninstall is enabled")
 
 func test_ui_redesign_and_world_navigation() -> void:
@@ -4642,7 +4642,7 @@ func test_ui_redesign_and_world_navigation() -> void:
 	assert_eq(sub_lbl.text, "Four games. One very bad idea.", "UI Redesign: Subtitle preserved")
 
 	var ver_lbl: Label = menu.get_node("MarginContainer/VBoxContainer/HeaderBar/VersionLabel")
-	assert_true(ver_lbl.text.contains("0.14.0"), "UI Redesign: Version label reflects v0.14.0")
+	assert_true(ver_lbl.text.contains("0.15.0"), "UI Redesign: Version label reflects v0.15.0")
 
 	var card_chel = menu.get_node("MarginContainer/VBoxContainer/CardsGrid/CardCoinHell")
 	var card_bbet = menu.get_node("MarginContainer/VBoxContainer/CardsGrid/CardBulletBetrayal")
