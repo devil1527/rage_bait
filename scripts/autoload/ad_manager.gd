@@ -122,6 +122,11 @@ func _process(delta: float) -> void:
 			_on_load_timeout()
 
 func _load_configuration() -> void:
+	var cfg_app_id_test: String = DEFAULT_TEST_APP_ID
+	var cfg_ad_unit_test: String = DEFAULT_TEST_REWARDED_AD_UNIT_ID
+	var cfg_app_id_prod: String = ""
+	var cfg_ad_unit_prod: String = ""
+
 	if FileAccess.file_exists(CONFIG_PATH):
 		var file := FileAccess.open(CONFIG_PATH, FileAccess.READ)
 		if file:
@@ -130,19 +135,29 @@ func _load_configuration() -> void:
 			var err := json.parse(json_str)
 			if err == OK and json.data is Dictionary:
 				var data: Dictionary = json.data
-				is_test_mode = bool(data.get("test_mode", true))
-				if is_test_mode:
-					app_id = str(data.get("app_id_test", DEFAULT_TEST_APP_ID))
-					rewarded_ad_unit_id = str(data.get("rewarded_ad_unit_id_test", DEFAULT_TEST_REWARDED_AD_UNIT_ID))
-				else:
-					app_id = str(data.get("app_id_production", ""))
-					rewarded_ad_unit_id = str(data.get("rewarded_ad_unit_id_production", ""))
-				print("[AdManager] Configuration loaded. TestMode: %s, RewardedUnit: %s" % [is_test_mode, rewarded_ad_unit_id])
-				return
-	# Fallback to test defaults
-	is_test_mode = true
-	app_id = DEFAULT_TEST_APP_ID
-	rewarded_ad_unit_id = DEFAULT_TEST_REWARDED_AD_UNIT_ID
+				cfg_app_id_test = str(data.get("app_id_test", DEFAULT_TEST_APP_ID))
+				cfg_ad_unit_test = str(data.get("rewarded_ad_unit_id_test", DEFAULT_TEST_REWARDED_AD_UNIT_ID))
+				cfg_app_id_prod = str(data.get("app_id_production", ""))
+				cfg_ad_unit_prod = str(data.get("rewarded_ad_unit_id_production", ""))
+
+	# Strict Debug vs Release separation:
+	# Debug builds (OS.is_debug_build() == true) MUST ALWAYS use Google's official test ad unit
+	# and test App ID to prevent accidental policy violations or invalid traffic.
+	# Release builds (OS.is_debug_build() == false) MUST use production AdMob IDs.
+	if OS.is_debug_build():
+		is_test_mode = true
+		app_id = cfg_app_id_test
+		rewarded_ad_unit_id = cfg_ad_unit_test
+		print("[AdManager] Debug build detected (OS.is_debug_build() == true). Test mode enforced with test ad unit: %s" % rewarded_ad_unit_id)
+	else:
+		is_test_mode = false
+		app_id = cfg_app_id_prod if not cfg_app_id_prod.is_empty() else DEFAULT_TEST_APP_ID
+		rewarded_ad_unit_id = cfg_ad_unit_prod if not cfg_ad_unit_prod.is_empty() else DEFAULT_TEST_REWARDED_AD_UNIT_ID
+		print("[AdManager] Release build detected (OS.is_debug_build() == false). Production mode enforced with production ad unit: %s" % rewarded_ad_unit_id)
+
+	print("[AdManager] Configuration loaded. DebugBuild: %s, TestMode: %s, AppId: %s, RewardedUnit: %s" % [
+		OS.is_debug_build(), is_test_mode, app_id, rewarded_ad_unit_id
+	])
 
 func _detect_plugin() -> void:
 	if Engine.has_singleton("AdmobPlugin"):
