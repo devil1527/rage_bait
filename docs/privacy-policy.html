@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Privacy Policy for Retro Rage Arcade (com.antigravity.retroragearcade) by Idea AI - A 100% offline retro arcade platformer on Android.">
+  <meta name="description" content="Privacy Policy for Retro Rage Arcade (com.antigravity.retroragearcade) by Idea AI - Disclosures on local data storage, Google AdMob rewarded advertising, and user privacy.">
   <title>Privacy Policy - Retro Rage Arcade</title>
   <style>
     :root {
@@ -20,7 +20,12 @@
       --success-bg: rgba(52, 211, 153, 0.1);
       --warning-color: #fbbf24;
       --warning-bg: rgba(251, 191, 36, 0.1);
+      --info-color: #38bdf8;
+      --info-bg: rgba(56, 189, 248, 0.08);
       --badge-bg: #1e293b;
+      --table-border: #2d3748;
+      --table-header-bg: #1a2035;
+      --table-alt-row: rgba(255, 255, 255, 0.02);
       --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
     }
 
@@ -39,7 +44,12 @@
         --success-bg: rgba(5, 150, 105, 0.1);
         --warning-color: #d97706;
         --warning-bg: rgba(217, 119, 6, 0.1);
+        --info-color: #0284c7;
+        --info-bg: rgba(2, 132, 199, 0.08);
         --badge-bg: #f1f5f9;
+        --table-border: #e2e8f0;
+        --table-header-bg: #f8fafc;
+        --table-alt-row: rgba(0, 0, 0, 0.02);
       }
     }
 
@@ -61,7 +71,7 @@
     }
 
     .container {
-      max-width: 860px;
+      max-width: 880px;
       width: 100%;
     }
 
@@ -138,11 +148,13 @@
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      border-bottom: none;
+      padding-bottom: 0;
     }
 
     .grid-summary {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 1rem;
     }
 
@@ -162,13 +174,17 @@
     }
 
     .summary-item .val {
-      font-size: 1.05rem;
+      font-size: 1.02rem;
       font-weight: 600;
       color: var(--heading-color);
     }
 
     .val.pass {
       color: var(--success-color);
+    }
+
+    .val.ad {
+      color: var(--accent-color);
     }
 
     /* Table of contents */
@@ -189,8 +205,10 @@
     .toc ul {
       list-style-type: none;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 0.5rem 1.5rem;
+      padding-left: 0;
+      margin-bottom: 0;
     }
 
     .toc a {
@@ -215,7 +233,7 @@
     }
 
     h2 {
-      font-size: 1.4rem;
+      font-size: 1.35rem;
       color: var(--heading-color);
       margin-bottom: 1rem;
       padding-bottom: 0.5rem;
@@ -223,9 +241,9 @@
     }
 
     h3 {
-      font-size: 1.15rem;
+      font-size: 1.12rem;
       color: var(--heading-color);
-      margin: 1.25rem 0 0.5rem 0;
+      margin: 1.35rem 0 0.5rem 0;
     }
 
     p {
@@ -259,14 +277,78 @@
     .alert {
       border-radius: 8px;
       padding: 1rem 1.25rem;
-      margin: 1rem 0;
+      margin: 1.25rem 0;
       font-size: 0.95rem;
+      line-height: 1.6;
     }
 
     .alert-success {
       background: var(--success-bg);
       border: 1px solid var(--success-color);
+      color: var(--text-main);
+    }
+
+    .alert-success strong {
       color: var(--success-color);
+    }
+
+    .alert-info {
+      background: var(--info-bg);
+      border: 1px solid var(--info-color);
+      color: var(--text-main);
+    }
+
+    .alert-info strong {
+      color: var(--info-color);
+    }
+
+    .alert-warning {
+      background: var(--warning-bg);
+      border: 1px solid var(--warning-color);
+      color: var(--text-main);
+    }
+
+    .alert-warning strong {
+      color: var(--warning-color);
+    }
+
+    /* Structured comparison table */
+    .data-table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      margin: 1rem 0 1.25rem 0;
+      border-radius: 8px;
+      border: 1px solid var(--table-border);
+    }
+
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+      text-align: left;
+    }
+
+    table.data-table th,
+    table.data-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--table-border);
+    }
+
+    table.data-table th {
+      background-color: var(--table-header-bg);
+      color: var(--heading-color);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+    }
+
+    table.data-table tr:nth-child(even) td {
+      background-color: var(--table-alt-row);
+    }
+
+    table.data-table tr:last-child td {
+      border-bottom: none;
     }
 
     footer {
@@ -291,15 +373,15 @@
     <header>
       <div class="app-badge">Google Play Data Safety &amp; Privacy Policy</div>
       <h1>Privacy Policy for Retro Rage Arcade</h1>
-      <p style="color: var(--text-muted); margin-bottom: 0;">Privacy disclosure for <strong>Retro Rage Arcade</strong> on Android.</p>
+      <p style="color: var(--text-muted); margin-bottom: 0;">Comprehensive privacy disclosure for <strong>Retro Rage Arcade</strong> on Android.</p>
       
       <div class="app-meta">
         <div class="meta-item"><strong>Application:</strong> Retro Rage Arcade</div>
         <div class="meta-item"><strong>Package ID:</strong> <code>com.antigravity.retroragearcade</code></div>
-        <div class="meta-item"><strong>Version:</strong> 0.11.0 (versionCode 11)</div>
+        <div class="meta-item"><strong>Current Release:</strong> 0.14.0 (versionCode 14)</div>
         <div class="meta-item"><strong>Developer:</strong> Idea AI</div>
         <div class="meta-item"><strong>Location:</strong> Pune, Maharashtra, India</div>
-        <div class="meta-item"><strong>Last Updated:</strong> October 15, 2026</div>
+        <div class="meta-item"><strong>Last Updated:</strong> October 30, 2026</div>
       </div>
     </header>
 
@@ -308,24 +390,24 @@
       <h2>⚡ Policy Highlights at a Glance</h2>
       <div class="grid-summary">
         <div class="summary-item">
-          <div class="label">Personal Data Collected</div>
+          <div class="label">Personal Data (Developer)</div>
+          <div class="val pass">Zero Collected or Stored</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">Advertising (v0.14.0)</div>
+          <div class="val ad">Google AdMob (Rewarded Revives)</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">Developer Analytics / Telemetry</div>
           <div class="val pass">Zero / None</div>
-        </div>
-        <div class="summary-item">
-          <div class="label">Advertisements (Ads)</div>
-          <div class="val pass">Zero / No Ad SDKs</div>
-        </div>
-        <div class="summary-item">
-          <div class="label">Analytics / Tracking</div>
-          <div class="val pass">None / No Telemetry</div>
         </div>
         <div class="summary-item">
           <div class="label">In-App Purchases (IAP)</div>
           <div class="val pass">None / 100% Free</div>
         </div>
         <div class="summary-item">
-          <div class="label">Internet Permission</div>
-          <div class="val pass">Not Requested (Offline)</div>
+          <div class="label">Network Permissions</div>
+          <div class="val ad">INTERNET (for AdMob ads)</div>
         </div>
         <div class="summary-item">
           <div class="label">Sensitive Permissions</div>
@@ -339,15 +421,18 @@
       <h3>Table of Contents</h3>
       <ul>
         <li><a href="#introduction">1. Introduction &amp; App Identity</a></li>
-        <li><a href="#data-collection">2. Information We Do Not Collect</a></li>
+        <li><a href="#first-party-data">2. Information Handled Directly by Us</a></li>
         <li><a href="#local-storage">3. Locally Stored Game Progress</a></li>
         <li><a href="#permissions">4. Device Permissions &amp; Hardware Access</a></li>
-        <li><a href="#third-parties">5. Third-Party Services &amp; Platform Data</a></li>
-        <li><a href="#retention-deletion">6. Data Retention &amp; User Deletion Rights</a></li>
-        <li><a href="#children">7. Children's Privacy</a></li>
-        <li><a href="#security">8. Security &amp; Data Protection</a></li>
-        <li><a href="#updates">9. Policy Updates</a></li>
-        <li><a href="#contact">10. Developer Contact &amp; Questions</a></li>
+        <li><a href="#advertising">5. Google AdMob Rewarded Advertising</a></li>
+        <li><a href="#ad-data">6. Data Processed by Advertising Services</a></li>
+        <li><a href="#privacy-choices">7. User Privacy Choices &amp; Ad Controls</a></li>
+        <li><a href="#third-parties">8. Third-Party Services &amp; Platform Data</a></li>
+        <li><a href="#retention-deletion">9. Data Retention &amp; Deletion Rights</a></li>
+        <li><a href="#children">10. Children's Privacy &amp; Target Audience</a></li>
+        <li><a href="#security">11. Security &amp; Data Protection</a></li>
+        <li><a href="#updates">12. Changes to This Privacy Policy</a></li>
+        <li><a href="#contact">13. Developer Contact &amp; Questions</a></li>
       </ul>
     </nav>
 
@@ -356,30 +441,32 @@
       <h2>1. Introduction &amp; App Identity</h2>
       <p>
         This Privacy Policy explains how <strong>Retro Rage Arcade</strong> ("the Game", "the Application", "we", "us", or "our"), 
-        with Android package name <code>com.antigravity.retroragearcade</code>, handles data when installed on Android devices.
+        with Android package name <code>com.antigravity.retroragearcade</code>, handles data when installed and operated on Android devices.
       </p>
       <p>
         The game is developed by <strong>Idea AI</strong> using the open-source Godot Engine (version 4.7.2). 
-        Retro Rage Arcade is designed and built as a standalone, offline 2D arcade platformer.
+        Retro Rage Arcade is a retro arcade platformer featuring its flagship mode, <strong>Coin Hell</strong>, comprising 20 challenging stages across 4 distinct worlds, concluding with a final dragon boss encounter.
       </p>
       <div class="alert alert-success">
-        ✓ <strong>Core Privacy Standard:</strong> The Application does not collect, record, track, transmit, monetize, sell, or distribute personal data from its players.
+        ✓ <strong>Core Privacy Standard:</strong> The developer (Idea AI) does not collect, record, track, transmit, monetize, sell, or rent personal data or personal accounts from players. We operate no remote player databases or tracking servers.
       </div>
+      <p>
+        Starting in release <strong>v0.14.0 (versionCode 14)</strong>, the Application integrates third-party advertising services provided by <strong>Google AdMob</strong> to offer players an optional rewarded advertisement feature to revive after in-game death. Sections 5, 6, and 7 below describe this feature, its gameplay rules, and the advertising data processed by Google.
+      </p>
     </section>
 
     <!-- Section 2: Data Collection -->
-    <section id="data-collection">
-      <h2>2. Information We Do Not Collect</h2>
+    <section id="first-party-data">
+      <h2>2. Information Handled Directly by Us</h2>
       <p>
-        Inspection of the application code, build configurations, and compiled release artifacts confirms that Retro Rage Arcade contains <strong>no personal data collection mechanisms</strong>:
+        Inspection of the application code, build configurations, and compiled release artifacts confirms that Idea AI does not collect or store personal information directly:
       </p>
       <ul>
-        <li><strong>No Personal Information:</strong> We do not ask for, collect, or store names, email addresses, physical addresses, phone numbers, age, gender, or personal identifiers.</li>
-        <li><strong>No Account or Login Credentials:</strong> The game does not offer or require user accounts, passwords, social media logins (e.g., Google Sign-In, Facebook Login), or cloud player profiles.</li>
-        <li><strong>No Unique Device Identifiers:</strong> The game does not collect or access Android IDs, Advertising IDs (GAID), MAC addresses, IMEI numbers, or hardware serial numbers.</li>
-        <li><strong>No Location Data:</strong> The game does not access precise (GPS) or approximate (network-based) location.</li>
-        <li><strong>No Financial or Payment Data:</strong> There are no in-app purchases (IAP), subscriptions, paid unlocks, or payment processors. The game is completely free to play.</li>
-        <li><strong>No Telemetry or Behavioral Tracking:</strong> We do not track player session times, in-game death events, gameplay analytics, or behavioral telemetry.</li>
+        <li><strong>No Personal Identifiers:</strong> We do not ask for, collect, store, or receive real names, email addresses, phone numbers, home addresses, age, gender, or government IDs.</li>
+        <li><strong>No User Accounts or Logins:</strong> The game has no account creation, passwords, social media logins (e.g., Google Sign-In, Facebook Login), or cloud player profiles.</li>
+        <li><strong>No Financial or Payment Data:</strong> There are no in-app purchases (IAP), subscriptions, paid unlocks, or virtual currency microtransactions. The game is 100% free to play.</li>
+        <li><strong>No First-Party Analytics or Telemetry:</strong> We do not track player gameplay sessions, player death events, level run durations, or behavioral telemetry on our own servers.</li>
+        <li><strong>No Direct Identifier Collection:</strong> We do not collect or store device hardware serial numbers, MAC addresses, or IMEI numbers. (Advertising identifiers such as the Android Advertising ID processed by Google Mobile Ads are handled directly by Google LLC as detailed in Section 6).</li>
       </ul>
     </section>
 
@@ -387,22 +474,24 @@
     <section id="local-storage">
       <h2>3. Locally Stored Game Progress</h2>
       <p>
-        To preserve gameplay achievements between sessions, the game stores a minimal JSON save file strictly on your local device:
+        To preserve gameplay achievements between sessions, the game writes a single JSON save file strictly to your local device storage:
       </p>
       <ul>
-        <li><strong>Storage File Path:</strong> The game writes to Godot's <code>user://retro_rage_save.json</code> path. On Android, this resolves to the application's private internal storage sandbox: <code>/data/data/com.antigravity.retroragearcade/files/retro_rage_save.json</code>.</li>
+        <li><strong>Storage File Path:</strong> The game writes to Godot's <code>user://retro_rage_save.json</code> path. On Android devices, this resolves to the application's private, sandboxed internal storage directory: <code>/data/data/com.antigravity.retroragearcade/files/retro_rage_save.json</code>.</li>
         <li><strong>Data Elements Stored:</strong>
           <ol>
-            <li><code>schema_version</code>: An integer (currently <code>1</code>) used to maintain save file format compatibility.</li>
+            <li><code>schema_version</code>: An integer (currently <code>2</code>) maintaining save file format compatibility across game updates.</li>
             <li><code>highest_unlocked_level</code>: An integer (range <code>1</code> to <code>20</code>) indicating level progression.</li>
-            <li><code>completed_levels</code>: An array of integers identifying the specific stages completed by the player.</li>
-            <li><code>sfx_enabled</code>: A boolean flag (<code>true</code> / <code>false</code>) for the player's sound effects audio setting.</li>
-            <li><code>music_enabled</code>: A boolean flag (<code>true</code> / <code>false</code>) for the player's music audio setting.</li>
+            <li><code>completed_levels</code>: An array of integers identifying specific stages cleared by the player.</li>
+            <li><code>stage_stars</code>: A dictionary mapping level numbers to star ratings earned (<code>0</code> to <code>3</code> stars).</li>
+            <li><code>sfx_enabled</code>: A boolean flag (<code>true</code> / <code>false</code>) saving the sound effects toggle.</li>
+            <li><code>music_enabled</code>: A boolean flag (<code>true</code> / <code>false</code>) saving the background music toggle.</li>
+            <li><code>level_15_secret_revealed</code> and <code>level_16_secret_revealed</code>: Boolean flags tracking secret stage discoveries.</li>
           </ol>
         </li>
       </ul>
       <p>
-        <strong>Local Isolation:</strong> This save file exists exclusively on the local device hardware. It is never transmitted across any network and is not synchronized to any external server.
+        <strong>Strict Local Isolation:</strong> This save file exists exclusively on your device hardware. It is never uploaded to any remote server and is never transmitted over any network.
       </p>
     </section>
 
@@ -410,102 +499,247 @@
     <section id="permissions">
       <h2>4. Device Permissions &amp; Hardware Access</h2>
       <p>
-        Inspection of the final release Android App Bundle (<code>.aab</code>) manifest confirms that the application declares <strong>zero permissions</strong>:
+        Inspection of the release Android App Bundle (<code>.aab</code>) manifest and export configuration (<code>export_presets.cfg</code>) confirms the declared Android permissions:
+      </p>
+      <div class="data-table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Permission</th>
+              <th>Status</th>
+              <th>Technical Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>android.permission.INTERNET</code></td>
+              <td><strong>Requested</strong></td>
+              <td>Required by the Google Mobile Ads (AdMob) SDK to fetch and render optional rewarded video advertisements over secure HTTPS connections.</td>
+            </tr>
+            <tr>
+              <td><code>android.permission.ACCESS_NETWORK_STATE</code></td>
+              <td><strong>Requested</strong></td>
+              <td>Required by the Google Mobile Ads SDK to detect network connectivity before initiating ad requests, preventing unnecessary network errors.</td>
+            </tr>
+            <tr>
+              <td><code>com.google.android.gms.permission.AD_ID</code></td>
+              <td><strong>Requested</strong></td>
+              <td>Required on Android 13+ (API level 33+) to enable the Google Mobile Ads SDK to access the Google Advertising ID for ad serving, frequency capping, and fraud prevention.</td>
+            </tr>
+            <tr>
+              <td><code>Location (GPS / Network)</code></td>
+              <td><strong>Not Requested</strong></td>
+              <td>The app does not access fine or coarse device location hardware.</td>
+            </tr>
+            <tr>
+              <td><code>Camera &amp; Microphone</code></td>
+              <td><strong>Not Requested</strong></td>
+              <td>The app does not access camera or microphone hardware.</td>
+            </tr>
+            <tr>
+              <td><code>Contacts, Phone &amp; SMS</code></td>
+              <td><strong>Not Requested</strong></td>
+              <td>The app has zero access to personal contact, phone state, or messaging data.</td>
+            </tr>
+            <tr>
+              <td><code>External Storage (Photos / Files)</code></td>
+              <td><strong>Not Requested</strong></td>
+              <td>The app does not read or write shared external storage. Save data uses private internal storage.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="alert alert-info">
+        ℹ <strong>Offline Playability:</strong> While network permissions are declared for the Google AdMob SDK, <strong>Retro Rage Arcade remains fully playable offline</strong> without an active internet connection. When offline, rewarded revive advertisements are gracefully disabled, and the standard "Restart Level" option remains immediately operational.
+      </div>
+    </section>
+
+    <!-- Section 5: Advertising -->
+    <section id="advertising">
+      <h2>5. Google AdMob Rewarded Advertising</h2>
+      <p>
+        Starting in version <strong>0.14.0</strong>, Retro Rage Arcade integrates <strong>Google AdMob</strong>, an advertising service provided by Google LLC. Advertisements in Retro Rage Arcade are implemented strictly as <strong>optional rewarded video ads</strong> for reviving a fallen character.
+      </p>
+      
+      <h3>5.1 Gameplay Implementation &amp; Revive Mechanics</h3>
+      <p>
+        The rewarded revive ad feature operates under the following precise gameplay rules:
       </p>
       <ul>
-        <li><code>android.permission.INTERNET</code>: <strong>Not requested.</strong> The app has no network access capability.</li>
-        <li><code>android.permission.ACCESS_NETWORK_STATE</code>: <strong>Not requested.</strong></li>
-        <li><code>android.permission.READ_EXTERNAL_STORAGE</code>: <strong>Not requested.</strong></li>
-        <li><code>android.permission.WRITE_EXTERNAL_STORAGE</code>: <strong>Not requested.</strong></li>
-        <li><code>Camera &amp; Microphone</code>: <strong>Not requested.</strong></li>
-        <li><code>Contacts, SMS &amp; Phone State</code>: <strong>Not requested.</strong></li>
-        <li><code>Location (Precise or Coarse)</code>: <strong>Not requested.</strong></li>
+        <li><strong>Optional Revive:</strong> When a player dies in a Coin Hell level, the game displays a Death Overlay. The player may optionally tap <code>🎬 WATCH AD — REVIVE</code> to view a short rewarded advertisement and revive at the last safe checkpoint foothold.</li>
+        <li><strong>Never Mandatory:</strong> Watching an advertisement is completely voluntary. The <code>↺ RESTART LEVEL</code> button is always enabled and accessible immediately with zero wait time and zero ad playback required.</li>
+        <li><strong>One Revive per Run:</strong> A player is permitted a maximum of <strong>one (1) rewarded revive per run</strong> (enforced by the game's <code>MAX_REVIVES_PER_RUN = 1</code> logic). If the player dies again after reviving, the revive button is permanently disabled for the remainder of that attempt.</li>
+        <li><strong>Star Rating Scoring Penalty:</strong> If a player uses a rewarded revive to complete a level, their maximum star rating for that run is capped at <strong>two (2) stars</strong>.</li>
+        <li><strong>Three Stars for Clean Runs:</strong> If a player completes a level without using a rewarded revive, they remain eligible for a full <strong>three (3) star</strong> completion.</li>
+        <li><strong>Spawn Protection:</strong> When revived, the character receives 1.0 second of bounded invulnerability (with visual sprite flickering) to ensure safe recovery before hazards resume.</li>
+      </ul>
+
+      <h3>5.2 Technical Integration Details</h3>
+      <p>
+        The advertising integration uses the official Godot Android AdMob plugin architecture:
+      </p>
+      <ul>
+        <li><strong>Ad SDK Provider:</strong> Google Mobile Ads Android SDK (<code>com.google.android.gms:play-services-ads:24.9.0</code>) mediated via the native Godot AdMob Android Plugin (version 7.0).</li>
+        <li><strong>Ad Format:</strong> Rewarded Video format only. The game does not contain banner advertisements, app open advertisements, native ads, or disruptive unskippable interstitial ads between levels.</li>
+        <li><strong>Ad Verification:</strong> Rewards are granted only after the Google AdMob SDK fires an authoritative reward callback confirming complete viewing of the rewarded advertisement. Duplicate and stale callbacks are rejected by the game's transaction management system.</li>
       </ul>
     </section>
 
-    <!-- Section 5: Third-Party Services -->
-    <section id="third-parties">
-      <h2>5. Third-Party Services &amp; Platform Data</h2>
-      
-      <h3>5.1 Third-Party SDKs inside the Game</h3>
+    <!-- Section 6: Data Processed by Advertising Services -->
+    <section id="ad-data">
+      <h2>6. Data Processed by Advertising Services</h2>
       <p>
-        Inspection of the compiled release artifact (<code>retro-rage-arcade-release.aab</code>) and its bytecode (<code>classes.dex</code>) confirms that Retro Rage Arcade includes <strong>zero third-party SDKs, plugins, or advertising frameworks</strong>:
+        When rewarded advertisements are requested or displayed, <strong>Google LLC</strong> and its advertising services may automatically collect and process certain device and technical information. 
+        <strong>Idea AI does not collect, receive, or store this information on developer servers.</strong>
+      </p>
+      <p>
+        Information processed by the Google Mobile Ads SDK may include:
       </p>
       <ul>
-        <li><strong>No Advertising Networks:</strong> The game contains no advertising SDKs (e.g., Google AdMob, Unity Ads, AppLovin, ironSource).</li>
-        <li><strong>No Analytics SDKs:</strong> The game contains no analytics libraries (e.g., Google Analytics for Firebase, GameAnalytics, Flurry, AppsFlyer, Adjust).</li>
-        <li><strong>No Crash Reporting SDKs:</strong> The game bundles no third-party crash reporters (e.g., Firebase Crashlytics, Sentry, Bugsnag).</li>
-        <li><strong>No Billing Libraries:</strong> The game contains no billing libraries (e.g., Google Play In-App Billing).</li>
+        <li><strong>Advertising Identifiers:</strong> The Google Advertising ID (<code>AD_ID</code> / GAID) on Android devices, used for ad serving, frequency capping, ad measurement, and anti-fraud verification.</li>
+        <li><strong>IP Address:</strong> Used by Google to determine coarse geographical location (such as country or city) to serve relevant, localized advertisements and detect fraudulent traffic.</li>
+        <li><strong>Device &amp; Hardware Specifications:</strong> Device model, manufacturer, operating system version, screen resolution, system language/locale, and mobile network operator.</li>
+        <li><strong>Ad Interaction &amp; Diagnostic Data:</strong> Ad request timestamps, ad load latency, impressions, video viewing completion events, click-through events, and SDK error diagnostic codes (e.g., no fill, network timeout).</li>
       </ul>
 
-      <h3>5.2 Google Play Store &amp; Android OS Platform Services</h3>
+      <h3>Purposes of Advertising Data Processing</h3>
+      <p>Google processes the above data for the following legitimate purposes:</p>
+      <ol>
+        <li><strong>Ad Delivery &amp; Rendering:</strong> Loading and displaying video creative assets smoothly on your device.</li>
+        <li><strong>Reward Verification:</strong> Confirming that the player watched the rewarded video ad to validate in-game revive entitlement.</li>
+        <li><strong>Fraud Prevention &amp; Security:</strong> Detecting and combating automated click bots, fraudulent ad traffic, and spoofed requests to protect advertisers and the application.</li>
+        <li><strong>Ad Personalization &amp; Context:</strong> Delivering contextual or personalized advertisements depending on user region, device settings, and Google account preferences.</li>
+        <li><strong>Aggregated Reporting:</strong> Providing the developer with aggregated, anonymized performance metrics (such as total impressions and fill rates) without exposing personal player identities.</li>
+      </ol>
+    </section>
+
+    <!-- Section 7: User Privacy Choices & Consent -->
+    <section id="privacy-choices">
+      <h2>7. User Privacy Choices &amp; Advertising Controls</h2>
+      
+      <h3>7.1 In-Game Consent Architecture</h3>
       <p>
-        Because the game is distributed via the Google Play Store, Google LLC provides app distribution infrastructure. When you download, update, or uninstall the Game, Google may collect system-level metrics (such as device model, OS version, install counts, and anonymized Android Vitals crash/ANR diagnostics) in accordance with the 
+        Inspection of the application's source code confirms that <strong>no in-game Consent Management Platform (CMP) or Google User Messaging Platform (UMP) consent dialog is currently integrated in the game client</strong>. The game does not present an interactive consent dialogue or an in-game settings screen for toggling personalized advertising.
+      </p>
+      <div class="alert alert-warning">
+        ⚠️ <strong>Notice Regarding In-Game Consent:</strong> Because the application does not feature an in-game CMP consent form, users cannot manage or toggle advertising consent directly within the game menus. Users who wish to limit advertising tracking, reset their identifiers, or opt out of personalized ads should utilize the device-level and account-level controls described below.
+      </div>
+
+      <h3>7.2 Operating System Advertising Controls (Android)</h3>
+      <p>
+        Android provides built-in device-level controls that give you direct authority over advertising identifiers and personalized ads:
+      </p>
+      <ul>
+        <li><strong>Reset Advertising ID:</strong> On Android devices, open <code>Settings &gt; Google &gt; Ads</code> (or <code>Settings &gt; Privacy &gt; Ads</code>) and tap <strong>Reset advertising ID</strong>. This replaces your current advertising ID with a new random identifier.</li>
+        <li><strong>Delete Advertising ID:</strong> On Android 12 and newer, open <code>Settings &gt; Google &gt; Ads</code> and tap <strong>Delete advertising ID</strong>. When deleted, ad providers cannot access your advertising ID and can only serve non-personalized contextual ads.</li>
+        <li><strong>Privacy Sandbox Controls:</strong> On Android 13 and newer, navigate to <code>Settings &gt; Privacy &gt; Ads &gt; Privacy Sandbox</code> to manage topics-based advertising controls and ad measurement settings.</li>
+      </ul>
+
+      <h3>7.3 Google Account Ad Personalization Controls</h3>
+      <p>
+        You can review and manage how Google personalizes advertisements across apps and websites by visiting Google's centralized ad management portal:
+      </p>
+      <ul>
+        <li><strong>Google My Ad Center:</strong> <a href="https://myadcenter.google.com/" target="_blank" rel="noopener noreferrer">https://myadcenter.google.com/</a> — Allows you to customize ad topics or disable personalized ads entirely across your Google account.</li>
+      </ul>
+
+      <h3>7.4 Playing Completely Offline</h3>
+      <p>
+        If you prefer not to interact with advertising networks or share technical device identifiers with Google AdMob, you can disconnect your device from WiFi/cellular data while playing. Retro Rage Arcade functions completely offline: Coin Hell levels, safe checkpoints, collision physics, local saves, and the standard restart mechanics operate without interruption.
+      </p>
+    </section>
+
+    <!-- Section 8: Third-Party Services -->
+    <section id="third-parties">
+      <h2>8. Third-Party Services &amp; Platform Data</h2>
+      <p>
+        Retro Rage Arcade utilizes the following third-party platform and service providers:
+      </p>
+
+      <h3>8.1 Google AdMob (Google LLC)</h3>
+      <p>
+        Provides the rewarded advertisement SDK for optional player revives. For complete details regarding Google's data processing, privacy controls, and security practices, please review:
+      </p>
+      <ul>
+        <li><strong>Google Privacy Policy:</strong> <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">https://policies.google.com/privacy</a></li>
+        <li><strong>Google Advertising Technologies:</strong> <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener noreferrer">https://policies.google.com/technologies/ads</a></li>
+        <li><strong>How Google Uses Information from Partner Sites and Apps:</strong> <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener noreferrer">https://policies.google.com/technologies/partner-sites</a></li>
+      </ul>
+
+      <h3>8.2 Google Play Store &amp; Android OS Platform Services</h3>
+      <p>
+        Because the game is distributed via the Google Play Store, Google LLC provides app distribution, licensing, and installation infrastructure. When you download, update, or uninstall the Game, Google may collect system-level metrics (such as device model, OS version, install counts, and anonymized Android Vitals crash/ANR diagnostics) in accordance with the 
         <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a>.
       </p>
       <p>
-        The developer only receives aggregated, non-identifying statistical metrics in the Google Play Console (such as total active install numbers and crash rate percentages). The developer has no access to individual player identities or personal accounts through these platform metrics.
+        The developer only receives aggregated, non-identifying statistical metrics in the Google Play Console (such as active install counts and overall crash percentages). The developer has no access to individual player identities or personal accounts through these platform metrics.
       </p>
     </section>
 
-    <!-- Section 6: Retention & Deletion -->
+    <!-- Section 9: Retention & Deletion -->
     <section id="retention-deletion">
-      <h2>6. Data Retention &amp; User Deletion Rights</h2>
+      <h2>9. Data Retention &amp; User Deletion Rights</h2>
       <p>
-        Because we store no user data on external servers, we retain no remote personal data to delete.
+        Because Idea AI does not collect or store user data on external servers, we retain no remote personal data to delete.
       </p>
       <p>
         <strong>How to Delete Your Local Game Progress:</strong>
       </p>
       <ol>
-        <li><strong>Clear App Data:</strong> In Android settings, go to <code>Settings &gt; Apps &gt; Retro Rage Arcade &gt; Storage &gt; Clear Storage / Clear Data</code>. This permanently removes the local save file (<code>retro_rage_save.json</code>) from internal storage and resets progress to level 1.</li>
-        <li><strong>Uninstall the Game:</strong> Uninstalling Retro Rage Arcade removes the application package and deletes its internal storage files.</li>
+        <li><strong>Clear App Data:</strong> In Android settings, navigate to <code>Settings &gt; Apps &gt; Retro Rage Arcade &gt; Storage &gt; Clear Storage / Clear Data</code>. This permanently removes the local save file (<code>retro_rage_save.json</code>) from internal storage and resets progress to level 1.</li>
+        <li><strong>Uninstall the Game:</strong> Uninstalling Retro Rage Arcade removes the application package and completely deletes its private internal storage sandbox and save files.</li>
       </ol>
+      <p>
+        Data retained by third-party advertising services (Google AdMob) is managed according to Google's data retention policies, which retain aggregated measurement and anti-fraud diagnostic logs for defined operational periods as detailed in Google's privacy disclosures.
+      </p>
     </section>
 
-    <!-- Section 7: Children's Privacy -->
+    <!-- Section 10: Children's Privacy -->
     <section id="children">
-      <h2>7. Children's Privacy</h2>
+      <h2>10. Children's Privacy &amp; Target Audience</h2>
       <p>
-        Retro Rage Arcade is designed as a general-audience retro arcade platformer:
+        Retro Rage Arcade is designed and intended for a <strong>general audience aged 13 and older</strong> (or 16 and older in the European Economic Area / UK), catering to arcade platformer enthusiasts seeking high-difficulty reflex challenges:
       </p>
       <ul>
-        <li>The game does not knowingly collect, solicit, or maintain personal information from children under the age of 13 (or under 16 in the European Economic Area / UK), nor from any user regardless of age.</li>
-        <li>The game contains no advertisements, no tracking technologies, no interactive chat, and no account creation.</li>
+        <li><strong>Not Directed to Children Under 13:</strong> The game is not marketed to, designed for, or directed at children under the age of 13. It is not submitted under Google Play's "Designed for Families" program.</li>
+        <li><strong>No Personal Information Collected from Children:</strong> We do not knowingly collect, solicit, or maintain personal information from children under the age of 13.</li>
+        <li><strong>Advertising &amp; Identifiers:</strong> The game integrates the Google Mobile Ads SDK with the Advertising ID permission (<code>com.google.android.gms.permission.AD_ID</code>). The game does not knowingly serve targeted advertisements to children. Because the application does not dynamically configure COPPA child-directed flags in the client, children under the age of 13 should not play this game or interact with its optional rewarded advertisement feature.</li>
+        <li><strong>No Social or Interactive Features:</strong> The game contains no online multiplayer, no interactive social chat features, no user-generated content, no account creation, and no public profile features.</li>
       </ul>
       <p>
-        If you have questions regarding our privacy practices, please contact us at the email address listed below.
+        If a parent or legal guardian discovers that their child under 13 has accessed the game or provided device data to third-party advertising services without parental consent, please contact us immediately at the privacy email address below so that appropriate inquiries or remedial steps can be taken.
       </p>
     </section>
 
-    <!-- Section 8: Security -->
+    <!-- Section 11: Security -->
     <section id="security">
-      <h2>8. Security &amp; Data Protection</h2>
+      <h2>11. Security &amp; Data Protection</h2>
       <p>
         We prioritize application security and device integrity:
       </p>
       <ul>
-        <li><strong>Sandboxed Storage:</strong> Local save data is stored strictly within Android's protected application sandbox, accessible only by this application.</li>
-        <li><strong>No Network Transmission:</strong> The application does not request the <code>android.permission.INTERNET</code> permission, initiates no network calls, and transmits no gameplay or save data over the network.</li>
+        <li><strong>Sandboxed Storage:</strong> Local save data is stored strictly within Android's protected application sandbox, accessible only by Retro Rage Arcade.</li>
+        <li><strong>Encrypted Ad Communications:</strong> All network requests made by the Google Mobile Ads SDK for ad delivery and reward verification use industry-standard HTTPS / TLS cryptographic encryption protocols.</li>
         <li><strong>Cryptographic Release Signing:</strong> Official release builds are digitally signed with an RSA 2048-bit developer upload key using SHA-256 digests.</li>
+        <li><strong>No Sideloaded Code:</strong> All game logic and compiled assets are self-contained within the official Google Play Android App Bundle (AAB). The game does not download unverified executable code at runtime.</li>
       </ul>
     </section>
 
-    <!-- Section 9: Updates -->
+    <!-- Section 12: Updates -->
     <section id="updates">
-      <h2>9. Changes to This Privacy Policy</h2>
+      <h2>12. Changes to This Privacy Policy</h2>
       <p>
-        We may occasionally update this Privacy Policy to reflect future game updates or platform requirements. 
-        Any updates will be posted on this page with a revised "Last Updated" date. 
-        Continued use of the game following any posted changes indicates acknowledgment of the updated policy.
+        We may update this Privacy Policy from time to time to reflect game updates, new features, or evolving platform and legal requirements. 
+        Any revisions will be posted on this page with an updated "Last Updated" date at the top of the policy. 
+        Continued use of Retro Rage Arcade following the publication of changes indicates acknowledgment of the updated policy.
       </p>
     </section>
 
-    <!-- Section 10: Contact -->
+    <!-- Section 13: Contact -->
     <section id="contact">
-      <h2>10. Developer Contact &amp; Questions</h2>
+      <h2>13. Developer Contact &amp; Questions</h2>
       <p>
-        If you have any questions, concerns, or requests regarding this Privacy Policy or the privacy practices of Retro Rage Arcade, please contact:
+        If you have any questions, concerns, or requests regarding this Privacy Policy or the privacy practices of Retro Rage Arcade, please contact us:
       </p>
       
       <ul>
@@ -518,7 +752,7 @@
 
     <footer>
       <p>&copy; 2026 Idea AI. All rights reserved.</p>
-      <p>Retro Rage Arcade &bull; Package ID: <code>com.antigravity.retroragearcade</code></p>
+      <p>Retro Rage Arcade &bull; Package ID: <code>com.antigravity.retroragearcade</code> &bull; Version 0.14.0 (v14)</p>
     </footer>
   </div>
 </body>
