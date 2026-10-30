@@ -105,8 +105,13 @@ class AndroidExportPlugin extends EditorExportPlugin:
 		var __contents: String
 
 		if _export_config:
-			__contents = APP_ID_META_TAG % (_export_config.real_application_id if _export_config.is_real \
-				else _export_config.debug_application_id )
+			var target_app_id: String
+			if debug:
+				target_app_id = _export_config.debug_application_id
+			else:
+				target_app_id = _export_config.real_application_id if _export_config.is_real \
+					else _export_config.debug_application_id
+			__contents = APP_ID_META_TAG % target_app_id
 		else:
 			GmpLogger.log_warn("Export config not found for %s!" % _plugin_name)
 			__contents = ""
@@ -146,10 +151,11 @@ class IosExportPlugin extends EditorExportPlugin:
 			if not _export_config.export_config_file_exists() or _export_config.load_export_config_from_file() != OK:
 				_export_config.load_export_config_from_node()
 
+			var target_app_id: String = _export_config.debug_application_id if is_debug \
+				else (_export_config.real_application_id if _export_config.is_real else _export_config.debug_application_id)
 			add_apple_embedded_platform_plist_content("<key>GADApplicationIdentifier</key>")
 			add_apple_embedded_platform_plist_content(
-				"\t<string>%s</string>" % (_export_config.real_application_id
-					if _export_config.is_real else _export_config.debug_application_id ),
+				"\t<string>%s</string>" % target_app_id,
 			)
 
 			if _export_config.att_enabled and _export_config.att_text and not _export_config.att_text.is_empty():
