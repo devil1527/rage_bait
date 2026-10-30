@@ -204,9 +204,9 @@ jobs:
 
           if pkg != "com.antigravity.retroragearcade":
               errors.append(f"Unexpected package: {pkg}")
-          if ver_code != "14":
+          if ver_code != "15":
               errors.append(f"Unexpected versionCode: {ver_code}")
-          if ver_name != "0.14.0":
+          if ver_name != "0.15.0":
               errors.append(f"Unexpected versionName: {ver_name}")
 
           uses_sdk = root.find('uses-sdk')
