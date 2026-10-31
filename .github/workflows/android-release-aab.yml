@@ -204,9 +204,9 @@ jobs:
 
           if pkg != "com.antigravity.retroragearcade":
               errors.append(f"Unexpected package: {pkg}")
-          if ver_code != "15":
+          if ver_code != "16":
               errors.append(f"Unexpected versionCode: {ver_code}")
-          if ver_name != "0.15.0":
+          if ver_name != "0.15.1":
               errors.append(f"Unexpected versionName: {ver_name}")
 
           uses_sdk = root.find('uses-sdk')
@@ -221,6 +221,15 @@ jobs:
                   errors.append(f"Unexpected minSdkVersion: {min_sdk}")
           else:
               errors.append("uses-sdk element not found in AAB manifest!")
+
+          uses_permissions = [elem.attrib.get('{http://schemas.android.com/apk/res/android}name', '') for elem in root.findall('uses-permission')]
+          print(f"AAB uses-permission count: {len(uses_permissions)}")
+          for p in uses_permissions:
+              print(f"  - permission: {p}")
+          if "com.google.android.gms.permission.AD_ID" not in uses_permissions:
+              errors.append("Missing required permission in manifest: com.google.android.gms.permission.AD_ID")
+          else:
+              print("VERIFIED: com.google.android.gms.permission.AD_ID is present in merged manifest.")
 
           if errors:
               print("\nMANIFEST VERIFICATION FAILED:")
