@@ -1,0 +1,49 @@
+[gd_scene load_steps=5 format=3 uid="uid://bbplayer001a"]
+
+[ext_resource type="Script" path="res://scripts/bullet_betrayal/bb_player.gd" id="1_scr"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_soldier_idle.png" id="2_tex"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pbody"]
+size = Vector2(20, 32)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_phurt"]
+size = Vector2(22, 34)
+
+[node name="BulletBetrayalPlayer" type="CharacterBody2D" groups=["player"]]
+collision_layer = 1
+collision_mask = 2
+script = ExtResource("1_scr")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_tex")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 1)
+shape = SubResource("RectangleShape2D_pbody")
+
+[node name="Hurtbox" type="Area2D" parent="." groups=["player_hurtbox"]]
+collision_layer = 1
+collision_mask = 272
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, 1)
+shape = SubResource("RectangleShape2D_phurt")
+
+[node name="MuzzlePos" type="Marker2D" parent="."]
+position = Vector2(20, -2)
+
+[node name="MuzzleFlash" type="ColorRect" parent="."]
+visible = false
+offset_left = 22.0
+offset_top = -6.0
+offset_right = 30.0
+offset_bottom = 2.0
+color = Color(1, 0.9, 0.4, 0.95)
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position_smoothing_enabled = true
+position_smoothing_speed = 7.0
+limit_left = 0
+limit_top = 0
+limit_right = 2650
+limit_bottom = 540

@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bbtestrunner001"]
+
+[ext_resource type="Script" path="res://scripts/tests/bullet_betrayal_test_runner.gd" id="1_test"]
+
+[node name="BulletBetrayalTestRunner" type="Node"]
+script = ExtResource("1_test")

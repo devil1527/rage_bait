@@ -12,7 +12,7 @@ extends Control
 
 func _ready() -> void:
 	coin_hell_card.pressed.connect(_on_coin_hell_pressed)
-	bullet_betrayal_card.pressed.connect(func(): _show_coming_soon("Bullet Betrayal"))
+	bullet_betrayal_card.pressed.connect(_on_bullet_betrayal_pressed)
 	ninja_nightmare_card.pressed.connect(func(): _show_coming_soon("Ninja Nightmare"))
 	castle_of_lies_card.pressed.connect(func(): _show_coming_soon("Castle of Lies"))
 	
@@ -37,6 +37,10 @@ func _on_sfx_toggle_pressed() -> void:
 func _on_coin_hell_pressed() -> void:
 	AudioManager.play_sfx("click")
 	GameManager.go_to_level_select()
+
+func _on_bullet_betrayal_pressed() -> void:
+	AudioManager.play_sfx("click")
+	get_tree().change_scene_to_file("res://scenes/bullet_betrayal/bullet_betrayal_menu.tscn")
 
 func _show_coming_soon(game_name: String) -> void:
 	AudioManager.play_sfx("warning")

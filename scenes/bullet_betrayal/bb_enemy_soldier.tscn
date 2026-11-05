@@ -1,0 +1,46 @@
+[gd_scene load_steps=5 format=3 uid="uid://bbenemysoldier01"]
+
+[ext_resource type="Script" path="res://scripts/bullet_betrayal/bb_enemy_soldier.gd" id="1_scr"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_enemy_idle.png" id="2_tex"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_esol"]
+size = Vector2(20, 32)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ehurt"]
+size = Vector2(24, 34)
+
+[node name="BulletBetrayalEnemySoldier" type="CharacterBody2D"]
+collision_layer = 16
+collision_mask = 3
+script = ExtResource("1_scr")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_tex")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 1)
+shape = SubResource("RectangleShape2D_esol")
+
+[node name="Hurtbox" type="Area2D" parent="." groups=["enemy_hurtbox"]]
+collision_layer = 16
+collision_mask = 129
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, 1)
+shape = SubResource("RectangleShape2D_ehurt")
+
+[node name="MuzzlePos" type="Marker2D" parent="."]
+position = Vector2(-18, 0)
+
+[node name="AlertIcon" type="Label" parent="."]
+visible = false
+offset_left = -6.0
+offset_top = -28.0
+offset_right = 6.0
+offset_bottom = -14.0
+theme_override_colors/font_color = Color(1, 0.2, 0.2, 1)
+theme_override_font_sizes/font_size = 10
+text = "!"
+horizontal_alignment = 1
+
+[connection signal="body_entered" from="Hurtbox" to="." method="_on_hurtbox_body_entered"]

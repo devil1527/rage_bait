@@ -1,0 +1,423 @@
+[gd_scene load_steps=13 format=3 uid="uid://bbhud001"]
+
+[ext_resource type="Script" path="res://scripts/bullet_betrayal/bb_hud.gd" id="1_hud"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_left.png" id="2_bleft"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_left_pressed.png" id="3_bleft_p"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_right.png" id="4_bright"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_right_pressed.png" id="5_bright_p"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_jump.png" id="6_bjump"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_jump_pressed.png" id="7_bjump_p"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_shoot.png" id="8_bshoot"]
+[ext_resource type="Texture2D" path="res://assets/sprites/btn_shoot_pressed.png" id="9_bshoot_p"]
+[ext_resource type="Script" path="res://scripts/coin_hell/touch_button.gd" id="10_tbtn"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.8, 0.4, 0.9)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn"]
+bg_color = Color(0.12, 0.15, 0.20, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.25, 0.85, 0.45, 0.9)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="BulletBetrayalHUD" type="CanvasLayer"]
+process_mode = 3
+script = ExtResource("1_hud")
+
+[node name="TopBar" type="MarginContainer" parent="."]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 54.0
+grow_horizontal = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 16
+
+[node name="HBox" type="HBoxContainer" parent="TopBar"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="HealthBox" type="HBoxContainer" parent="TopBar/HBox"]
+layout_mode = 2
+
+[node name="HealthLabel" type="Label" parent="TopBar/HBox/HealthBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 1, 0.5, 1)
+theme_override_font_sizes/font_size = 18
+text = "HP: ♥ ♥ ♥"
+
+[node name="AmmoBox" type="HBoxContainer" parent="TopBar/HBox"]
+layout_mode = 2
+
+[node name="AmmoLabel" type="Label" parent="TopBar/HBox/AmmoBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.2, 1)
+theme_override_font_sizes/font_size = 18
+text = "AMMO: 10"
+
+[node name="StageBox" type="HBoxContainer" parent="TopBar/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="StageLabel" type="Label" parent="TopBar/HBox/StageBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 0.95, 0.9)
+theme_override_font_sizes/font_size = 16
+text = "WORLD 1-1: THE GREEN HILLS"
+
+[node name="PauseBtn" type="Button" parent="TopBar"]
+custom_minimum_size = Vector2(96, 36)
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 4
+focus_mode = 0
+theme_override_colors/font_color = Color(0.85, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+text = "⏸ PAUSE"
+
+[node name="TouchControls" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="LeftBtn" type="TextureButton" parent="TouchControls"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -124.0
+offset_right = 118.0
+offset_bottom = -26.0
+grow_vertical = 0
+texture_normal = ExtResource("2_bleft")
+texture_pressed = ExtResource("3_bleft_p")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("10_tbtn")
+action_name = "move_left"
+touch_margin = 12.0
+drag_margin = 36.0
+
+[node name="RightBtn" type="TextureButton" parent="TouchControls"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 138.0
+offset_top = -124.0
+offset_right = 232.0
+offset_bottom = -26.0
+grow_vertical = 0
+texture_normal = ExtResource("4_bright")
+texture_pressed = ExtResource("5_bright_p")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("10_tbtn")
+action_name = "move_right"
+touch_margin = 12.0
+drag_margin = 36.0
+
+[node name="ShootBtn" type="TextureButton" parent="TouchControls"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -236.0
+offset_top = -124.0
+offset_right = -142.0
+offset_bottom = -26.0
+grow_horizontal = 0
+grow_vertical = 0
+texture_normal = ExtResource("8_bshoot")
+texture_pressed = ExtResource("9_bshoot_p")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("10_tbtn")
+action_name = "shoot"
+touch_margin = 14.0
+drag_margin = 40.0
+
+[node name="JumpBtn" type="TextureButton" parent="TouchControls"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -124.0
+offset_top = -124.0
+offset_right = -26.0
+offset_bottom = -26.0
+grow_horizontal = 0
+grow_vertical = 0
+texture_normal = ExtResource("6_bjump")
+texture_pressed = ExtResource("7_bjump_p")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("10_tbtn")
+action_name = "jump"
+touch_margin = 14.0
+drag_margin = 40.0
+
+[node name="Overlays" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="PauseOverlay" type="Control" parent="Overlays"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dimmer" type="ColorRect" parent="Overlays/PauseOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.7)
+
+[node name="Panel" type="Panel" parent="Overlays/PauseOverlay"]
+custom_minimum_size = Vector2(300, 240)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -120.0
+offset_right = 150.0
+offset_bottom = 120.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="VBox" type="VBoxContainer" parent="Overlays/PauseOverlay/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 18.0
+offset_right = -20.0
+offset_bottom = -18.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Title" type="Label" parent="Overlays/PauseOverlay/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.9, 0.5, 1)
+theme_override_font_sizes/font_size = 20
+text = "PAUSED"
+horizontal_alignment = 1
+
+[node name="ResumeBtn" type="Button" parent="Overlays/PauseOverlay/Panel/VBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+text = "▶ RESUME"
+
+[node name="RestartBtn" type="Button" parent="Overlays/PauseOverlay/Panel/VBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+text = "🔄 RESTART LEVEL"
+
+[node name="MenuBtn" type="Button" parent="Overlays/PauseOverlay/Panel/VBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+text = "🏠 BULLET BETRAYAL MENU"
+
+[node name="DeathOverlay" type="Control" parent="Overlays"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dimmer" type="ColorRect" parent="Overlays/DeathOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.2, 0.02, 0.02, 0.75)
+
+[node name="Panel" type="Panel" parent="Overlays/DeathOverlay"]
+custom_minimum_size = Vector2(320, 230)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = -115.0
+offset_right = 160.0
+offset_bottom = 115.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="VBox" type="VBoxContainer" parent="Overlays/DeathOverlay/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 18.0
+offset_right = -20.0
+offset_bottom = -18.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Title" type="Label" parent="Overlays/DeathOverlay/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.25, 0.35, 1)
+theme_override_font_sizes/font_size = 20
+text = "MISSION FAILED"
+horizontal_alignment = 1
+
+[node name="Desc" type="Label" parent="Overlays/DeathOverlay/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.8, 0.85, 0.8)
+theme_override_font_sizes/font_size = 12
+text = "Soldier down in hostile territory."
+horizontal_alignment = 1
+
+[node name="RetryBtn" type="Button" parent="Overlays/DeathOverlay/Panel/VBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+text = "🔄 RETRY MISSION"
+
+[node name="MenuBtn" type="Button" parent="Overlays/DeathOverlay/Panel/VBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+text = "🏠 BULLET BETRAYAL MENU"
+
+[node name="VictoryOverlay" type="Control" parent="Overlays"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dimmer" type="ColorRect" parent="Overlays/VictoryOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.15, 0.08, 0.8)
+
+[node name="Panel" type="Panel" parent="Overlays/VictoryOverlay"]
+custom_minimum_size = Vector2(340, 250)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -170.0
+offset_top = -125.0
+offset_right = 170.0
+offset_bottom = 125.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="VBox" type="VBoxContainer" parent="Overlays/VictoryOverlay/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 18.0
+offset_right = -20.0
+offset_bottom = -18.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="Title" type="Label" parent="Overlays/VictoryOverlay/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 1, 0.5, 1)
+theme_override_font_sizes/font_size = 20
+text = "STAGE 1 COMPLETE!"
+horizontal_alignment = 1
+
+[node name="StatsLabel" type="Label" parent="Overlays/VictoryOverlay/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 0.95)
+theme_override_font_sizes/font_size = 13
+text = "THE GREEN HILLS INFILTRATED\nEXTRACTION SUCCESSFUL"
+horizontal_alignment = 1
+
+[node name="ReplayBtn" type="Button" parent="Overlays/VictoryOverlay/Panel/VBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+text = "🔄 REPLAY STAGE 1"
+
+[node name="MenuBtn" type="Button" parent="Overlays/VictoryOverlay/Panel/VBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+text = "🏠 BULLET BETRAYAL MENU"

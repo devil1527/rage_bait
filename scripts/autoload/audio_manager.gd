@@ -26,6 +26,13 @@ func _generate_retro_sounds() -> void:
 	_sounds["unlock"] = _synth_arpeggio([440.0, 554.37, 659.25, 880.0], 0.08)
 	_sounds["complete"] = _synth_arpeggio([523.25, 659.25, 783.99, 1046.5], 0.12)
 	_sounds["warning"] = _synth_tone(0.12, 220.0, 180.0, 0.4, "saw")
+	_sounds["shoot"] = _synth_gunshot()
+	_sounds["enemy_hit"] = _synth_tone(0.05, 520.0, 240.0, 0.35, "triangle")
+	_sounds["enemy_kill"] = _synth_enemy_defeat()
+	_sounds["ammo_pickup"] = _synth_arpeggio([440.0, 659.25, 880.0], 0.05)
+	_sounds["player_hit"] = _synth_tone(0.16, 180.0, 90.0, 0.45, "saw")
+	_sounds["victory"] = _synth_arpeggio([523.25, 659.25, 783.99, 1046.5, 1318.5], 0.10)
+	_sounds["dry_fire"] = _synth_tone(0.04, 820.0, 750.0, 0.25, "triangle")
 
 func play_sfx(sound_name: String) -> void:
 	if not SaveManager.sfx_enabled:
@@ -155,6 +162,63 @@ func _synth_arpeggio(notes: Array[float], note_duration: float) -> AudioStreamWA
 			var env: float = (1.0 - (t * 0.7)) * 0.35
 			var sample_8bit: int = int(clampf((val * env * 120.0) + 128.0, 0.0, 255.0))
 			data[global_i] = sample_8bit
+
+	var stream := AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_8_BITS
+	stream.mix_rate = sample_rate
+	stream.stereo = false
+	stream.data = data
+	return stream
+
+
+func _synth_gunshot() -> AudioStreamWAV:
+	var sample_rate: int = 22050
+	var total_samples: int = int(0.14 * float(sample_rate))
+	var data := PackedByteArray()
+	data.resize(total_samples)
+
+	var phase: float = 0.0
+	for i: int in range(total_samples):
+		var t: float = float(i) / float(total_samples)
+		var freq: float = lerpf(680.0, 75.0, t * t)
+		phase += (freq * TAU) / float(sample_rate)
+		if phase > TAU:
+			phase -= TAU
+
+		var noise: float = randf_range(-0.6, 0.6) * maxf(0.0, 1.0 - (t * 2.5))
+		var tone: float = (1.0 if phase < PI else -1.0) * 0.5
+		var val: float = tone + noise
+		var env: float = (1.0 - t) * (1.0 - t) * 0.55
+		var sample_8bit: int = int(clampf((val * env * 120.0) + 128.0, 0.0, 255.0))
+		data[i] = sample_8bit
+
+	var stream := AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_8_BITS
+	stream.mix_rate = sample_rate
+	stream.stereo = false
+	stream.data = data
+	return stream
+
+func _synth_enemy_defeat() -> AudioStreamWAV:
+	var sample_rate: int = 22050
+	var total_samples: int = int(0.24 * float(sample_rate))
+	var data := PackedByteArray()
+	data.resize(total_samples)
+
+	var phase: float = 0.0
+	for i: int in range(total_samples):
+		var t: float = float(i) / float(total_samples)
+		var freq: float = lerpf(280.0, 50.0, t)
+		phase += (freq * TAU) / float(sample_rate)
+		if phase > TAU:
+			phase -= TAU
+
+		var noise: float = randf_range(-0.5, 0.5)
+		var tone: float = 1.0 if phase < PI else -1.0
+		var val: float = (tone * 0.4) + (noise * 0.6)
+		var env: float = (1.0 - t) * 0.45
+		var sample_8bit: int = int(clampf((val * env * 120.0) + 128.0, 0.0, 255.0))
+		data[i] = sample_8bit
 
 	var stream := AudioStreamWAV.new()
 	stream.format = AudioStreamWAV.FORMAT_8_BITS

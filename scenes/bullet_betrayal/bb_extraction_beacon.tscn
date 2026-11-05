@@ -1,0 +1,26 @@
+[gd_scene load_steps=4 format=3 uid="uid://bbbeacon001"]
+
+[ext_resource type="Script" path="res://scripts/bullet_betrayal/bb_extraction_beacon.gd" id="1_scr"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_extraction_beacon.png" id="2_tex"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_beac"]
+size = Vector2(48, 64)
+
+[node name="BulletBetrayalExtractionBeacon" type="Area2D"]
+collision_layer = 16
+collision_mask = 1
+script = ExtResource("1_scr")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_tex")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 0)
+shape = SubResource("RectangleShape2D_beac")
+
+[node name="BeaconGlow" type="ColorRect" parent="."]
+offset_left = -3.0
+offset_top = -32.0
+offset_right = 4.0
+offset_bottom = -25.0
+color = Color(0, 1, 0.45, 1)
