@@ -1,0 +1,25 @@
+[gd_scene load_steps=5 format=3 uid="uid://bbfirehazard01"]
+
+[ext_resource type="Script" path="res://scripts/bullet_betrayal/bb_fire_hazard.gd" id="1_scr"]
+[ext_resource type="Texture2D" path="res://assets/sprites/inferno_emitter.png" id="2_emit"]
+[ext_resource type="Texture2D" path="res://assets/sprites/inferno_flame.png" id="3_flame"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_fire"]
+size = Vector2(28, 36)
+
+[node name="BulletBetrayalFireHazard" type="Area2D" groups=["hazards"]]
+collision_layer = 4
+collision_mask = 1
+script = ExtResource("1_scr")
+
+[node name="EmitterSprite" type="Sprite2D" parent="."]
+texture = ExtResource("2_emit")
+
+[node name="FlameSprite" type="Sprite2D" parent="."]
+position = Vector2(0, -22)
+scale = Vector2(0.8, 0.38)
+texture = ExtResource("3_flame")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -18)
+shape = SubResource("RectangleShape2D_fire")

@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3 uid="uid://bblevel1greenhills"]
+[gd_scene load_steps=25 format=3 uid="uid://bblevel1greenhills"]
 
 [ext_resource type="Script" path="res://scripts/bullet_betrayal/bb_level_1.gd" id="1_lev1"]
 [ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_player.tscn" id="2_play"]
@@ -13,6 +13,8 @@
 [ext_resource type="Texture2D" path="res://assets/sprites/bb_platform_wood.png" id="11_pwood"]
 [ext_resource type="Texture2D" path="res://assets/sprites/bb_sandbag.png" id="12_sbag"]
 [ext_resource type="Texture2D" path="res://assets/sprites/bb_crate.png" id="13_crate"]
+[ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_fire_hazard.tscn" id="14_fire"]
+[ext_resource type="Script" path="res://scripts/bullet_betrayal/bb_ambush_trigger.gd" id="15_atrig"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ground1"]
 size = Vector2(440, 100)
@@ -40,6 +42,9 @@ size = Vector2(120, 20)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
 size = Vector2(40, 600)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_trig"]
+size = Vector2(40, 240)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_banner"]
 bg_color = Color(0.05, 0.08, 0.06, 0.88)
@@ -354,41 +359,88 @@ texture = ExtResource("12_sbag")
 
 [node name="Enemies" type="Node2D" parent="."]
 
-[node name="Enemy1_Ground1" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(580, 390)
-patrol_distance = 60.0
-
-[node name="Enemy2_Outpost1" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(850, 390)
+[node name="Enemy1_GroundPatrol" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(560, 390)
 patrol_distance = 50.0
 
-[node name="Enemy3_HighPlatform" parent="Enemies" instance=ExtResource("4_esol")]
+[node name="Enemy2_OutpostGuard" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(850, 390)
+patrol_distance = 45.0
+
+[node name="Enemy3_AmbushValley" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1040, 390)
+patrol_distance = 40.0
+is_ambush = true
+
+[node name="Enemy4_HighPlatform" parent="Enemies" instance=ExtResource("4_esol")]
 position = Vector2(1230, 240)
 patrol_distance = 40.0
 
-[node name="Enemy4_Approach" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(1520, 390)
-patrol_distance = 60.0
+[node name="Enemy5_AmbushLedge" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1460, 240)
+patrol_distance = 30.0
+is_ambush = true
 
-[node name="Enemy5_LedgeSentry" parent="Enemies" instance=ExtResource("4_esol")]
+[node name="Enemy6_Approach" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1580, 390)
+patrol_distance = 45.0
+
+[node name="Enemy7_LedgeSentry" parent="Enemies" instance=ExtResource("4_esol")]
 position = Vector2(1680, 290)
 patrol_distance = 35.0
 
-[node name="Enemy6_Outpost2" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(1860, 390)
-patrol_distance = 50.0
+[node name="Enemy8_AmbushRuins" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1960, 390)
+patrol_distance = 40.0
+is_ambush = true
 
-[node name="Enemy7_Perimeter" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(2080, 390)
-patrol_distance = 60.0
-
-[node name="Enemy8_Watchtower" parent="Enemies" instance=ExtResource("4_esol")]
+[node name="Enemy9_Watchtower" parent="Enemies" instance=ExtResource("4_esol")]
 position = Vector2(2220, 230)
 patrol_distance = 35.0
 
-[node name="Enemy9_GateGuard" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(2360, 390)
+[node name="Enemy10_GateGuard" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(2380, 390)
 patrol_distance = 40.0
+
+[node name="Hazards" type="Node2D" parent="."]
+
+[node name="FireHazard1_Trench" parent="Hazards" instance=ExtResource("14_fire")]
+position = Vector2(710, 410)
+
+[node name="FireHazard2_Ruins" parent="Hazards" instance=ExtResource("14_fire")]
+position = Vector2(1730, 410)
+
+[node name="Ambushes" type="Node2D" parent="."]
+
+[node name="AmbushTrigger1" type="Area2D" parent="Ambushes"]
+position = Vector2(780, 360)
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("15_atrig")
+target_enemies = [NodePath("../../Enemies/Enemy3_AmbushValley")]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ambushes/AmbushTrigger1"]
+shape = SubResource("RectangleShape2D_trig")
+
+[node name="AmbushTrigger2" type="Area2D" parent="Ambushes"]
+position = Vector2(1300, 360)
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("15_atrig")
+target_enemies = [NodePath("../../Enemies/Enemy5_AmbushLedge")]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ambushes/AmbushTrigger2"]
+shape = SubResource("RectangleShape2D_trig")
+
+[node name="AmbushTrigger3" type="Area2D" parent="Ambushes"]
+position = Vector2(1820, 360)
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("15_atrig")
+target_enemies = [NodePath("../../Enemies/Enemy8_AmbushRuins")]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ambushes/AmbushTrigger3"]
+shape = SubResource("RectangleShape2D_trig")
 
 [node name="Pickups" type="Node2D" parent="."]
 

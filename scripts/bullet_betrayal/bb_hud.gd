@@ -2,15 +2,18 @@ class_name BulletBetrayalHUD
 extends CanvasLayer
 
 ## Mobile-first gameplay HUD for Bullet Betrayal.
-## Manages health display, ammunition counters, dry-fire alerts,
-## on-screen multitouch controls, and arcade-standard pause/popup overlays.
+## Manages 1-life health indicator, ammunition counters, target/enemy trackers,
+## dry-fire alerts, on-screen multitouch controls, rewarded ad revives,
+## and Coin Hell-standard pause/popup overlays.
 
 signal restart_requested
 signal menu_requested
 signal arcade_requested
+signal revive_requested
 
 @onready var health_label: Label = $TopBar/Margin/HBox/HealthBox/HealthLabel
 @onready var ammo_label: Label = $TopBar/Margin/HBox/AmmoBox/AmmoLabel
+@onready var targets_label: Label = get_node_or_null("TopBar/Margin/HBox/TargetsBox/TargetsLabel")
 @onready var stage_label: Label = $TopBar/Margin/HBox/StageBox/StageLabel
 @onready var pause_btn: Button = $TopBar/Margin/HBox/PauseBtn
 
@@ -39,7 +42,9 @@ signal arcade_requested
 @onready var modal_cancel_btn: Button = $Overlays/PauseOverlay/ConfirmModal/Panel/VBox/HBox/CancelBtn
 @onready var modal_confirm_btn: Button = $Overlays/PauseOverlay/ConfirmModal/Panel/VBox/HBox/ConfirmBtn
 
-# Death Overlay buttons
+# Death Overlay elements
+@onready var death_revive_btn: Button = get_node_or_null("Overlays/DeathOverlay/Panel/VBox/ReviveBtn")
+@onready var death_ad_status: Label = get_node_or_null("Overlays/DeathOverlay/Panel/VBox/AdStatusLabel")
 @onready var death_retry_btn: Button = $Overlays/DeathOverlay/Panel/VBox/RetryBtn
 @onready var death_mission_btn: Button = $Overlays/DeathOverlay/Panel/VBox/MissionSelectBtn
 @onready var death_arcade_btn: Button = $Overlays/DeathOverlay/Panel/VBox/ArcadeMenuBtn
@@ -72,6 +77,8 @@ func _ready() -> void:
 	modal_confirm_btn.pressed.connect(_execute_confirm)
 
 	# Death menu buttons
+	if death_revive_btn:
+		death_revive_btn.pressed.connect(_on_revive_ad_pressed)
 	death_retry_btn.pressed.connect(_on_restart_pressed)
 	death_mission_btn.pressed.connect(_on_mission_pressed)
 	death_arcade_btn.pressed.connect(_on_arcade_pressed)
@@ -80,6 +87,13 @@ func _ready() -> void:
 	victory_replay_btn.pressed.connect(_on_restart_pressed)
 	victory_mission_btn.pressed.connect(_on_mission_pressed)
 	victory_arcade_btn.pressed.connect(_on_arcade_pressed)
+
+	# AdManager signals
+	if AdManager:
+		AdManager.initialization_completed.connect(func(_ok): if death_overlay.visible: _update_death_ad_status())
+		AdManager.rewarded_ad_loaded.connect(func(): if death_overlay.visible: _update_death_ad_status())
+		AdManager.rewarded_ad_failed_to_load.connect(func(_t, _c, _m): if death_overlay.visible: _update_death_ad_status())
+		AdManager.network_state_changed.connect(func(_n): if death_overlay.visible: _update_death_ad_status())
 
 	# Initial overlay states
 	pause_overlay.visible = false
@@ -121,29 +135,40 @@ func connect_player(player: BulletBetrayalPlayer) -> void:
 
 	update_health(player.current_health, player.max_health)
 	update_ammo(player.current_ammo, player.max_ammo)
+	update_targets(0, 10)
 
-func update_health(current: int, max_amount: int) -> void:
+## One-hit death system: displays single life status
+func update_health(current: int, _max_amount: int) -> void:
 	if not health_label:
 		return
-	var text_val := ""
-	for i in range(max_amount):
-		text_val += "♥ " if i < current else "♡ "
-	health_label.text = "HP: " + text_val.strip_edges()
-	if current <= 1:
-		health_label.add_theme_color_override("font_color", Color(1.0, 0.25, 0.25, 1.0))
-	else:
+	if current > 0:
+		health_label.text = "♥ LIFE: 1 / 1"
 		health_label.add_theme_color_override("font_color", Color(0.2, 1.0, 0.5, 1.0))
+	else:
+		health_label.text = "♥ LIFE: 0 / 1"
+		health_label.add_theme_color_override("font_color", Color(1.0, 0.25, 0.25, 1.0))
 
 func update_ammo(current: int, _max_amount: int) -> void:
 	if not ammo_label:
 		return
 	ammo_label.text = "AMMO: %d" % current
 	if current == 0:
+		ammo_label.text = "AMMO: 0 (EMPTY)"
 		ammo_label.add_theme_color_override("font_color", Color(1.0, 0.2, 0.2, 1.0))
-	elif current <= 4:
+	elif current <= 3:
 		ammo_label.add_theme_color_override("font_color", Color(1.0, 0.7, 0.2, 1.0))
 	else:
 		ammo_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.2, 1.0))
+
+func update_targets(current: int, required: int = 10) -> void:
+	if not targets_label:
+		return
+	targets_label.text = "🎯 TARGETS: %d / %d" % [current, required]
+	if current >= required:
+		targets_label.text = "🎯 TARGETS: %d / %d (CLEAR)" % [current, required]
+		targets_label.add_theme_color_override("font_color", Color(0.2, 1.0, 0.5, 1.0))
+	else:
+		targets_label.add_theme_color_override("font_color", Color(0.0, 0.92, 1.0, 1.0))
 
 func _on_dry_fire() -> void:
 	if not ammo_label:
@@ -266,7 +291,106 @@ func _on_player_died() -> void:
 	var death_timer := get_tree().create_timer(0.4)
 	death_timer.timeout.connect(func():
 		death_overlay.visible = true
+		_update_death_ad_status()
+		# Proactively load rewarded ad if eligible
+		if GameManager and GameManager.can_revive_this_run():
+			if AdManager and not AdManager.is_rewarded_ad_ready() and not AdManager.is_loading() and AdManager.is_plugin_initialized():
+				AdManager.load_rewarded_ad()
 	)
+
+func _update_death_ad_status() -> void:
+	if not death_overlay or not death_overlay.visible:
+		return
+	if not death_revive_btn or not death_ad_status:
+		return
+
+	# Authoritative run allowance check
+	if GameManager and not GameManager.can_revive_this_run():
+		death_revive_btn.disabled = true
+		death_ad_status.text = "Revive already used this run"
+		death_ad_status.modulate = Color(0.8, 0.8, 0.8, 0.7)
+		return
+
+	if not AdManager:
+		death_revive_btn.disabled = true
+		death_ad_status.text = "Ad service unavailable"
+		death_ad_status.modulate = Color(0.8, 0.8, 0.8, 0.7)
+		return
+
+	if AdManager.is_rewarded_ad_ready():
+		death_revive_btn.disabled = false
+		death_ad_status.text = "Watch a short ad to revive here!"
+		death_ad_status.modulate = Color(0.5, 1.0, 0.6, 0.9)
+	elif AdManager.is_initializing():
+		death_revive_btn.disabled = true
+		death_ad_status.text = "Initializing ad service..."
+		death_ad_status.modulate = Color(1.0, 0.85, 0.3, 0.9)
+	elif AdManager.is_loading():
+		death_revive_btn.disabled = true
+		death_ad_status.text = "Loading ad..."
+		death_ad_status.modulate = Color(1.0, 0.85, 0.3, 0.9)
+	else:
+		death_revive_btn.disabled = true
+		death_ad_status.text = AdManager.get_status_text()
+		death_ad_status.modulate = Color(0.8, 0.8, 0.8, 0.7)
+
+func _on_revive_ad_pressed() -> void:
+	if not GameManager or not GameManager.can_revive_this_run():
+		_update_death_ad_status()
+		return
+
+	AudioManager.play_sfx("click")
+	if death_revive_btn:
+		death_revive_btn.disabled = true
+	death_retry_btn.disabled = true
+	if death_ad_status:
+		death_ad_status.text = "Preparing ad..."
+		death_ad_status.modulate = Color(1.0, 0.9, 0.4, 1.0)
+	get_tree().paused = true
+
+	var target_run_id: int = GameManager.current_run_id if GameManager else -1
+	var started := AdManager.show_rewarded_ad_for_revive(
+		func(): _on_revive_reward_granted(target_run_id),
+		_on_revive_ad_failed
+	)
+	if not started:
+		get_tree().paused = false
+		death_retry_btn.disabled = false
+		_update_death_ad_status()
+
+func _on_revive_reward_granted(expected_run_id: int = -1) -> void:
+	if expected_run_id != -1 and GameManager and GameManager.current_run_id != expected_run_id:
+		get_tree().paused = false
+		death_overlay.visible = false
+		return
+
+	if GameManager and not GameManager.can_revive_this_run():
+		get_tree().paused = false
+		_update_death_ad_status()
+		return
+
+	# Revive player authoritatively with 1 life and 10 bullets
+	if GameManager:
+		GameManager.revives_used_this_run += 1
+
+	if _player_ref:
+		_player_ref.revive()
+
+	death_overlay.visible = false
+	if death_revive_btn:
+		death_revive_btn.disabled = false
+	death_retry_btn.disabled = false
+	reset_touch_controls()
+	get_tree().paused = false
+	revive_requested.emit()
+
+func _on_revive_ad_failed(reason: String) -> void:
+	get_tree().paused = false
+	death_retry_btn.disabled = false
+	if death_ad_status:
+		death_ad_status.text = reason
+		death_ad_status.modulate = Color(1.0, 0.4, 0.4, 1.0)
+	_update_death_ad_status()
 
 func show_victory(ammo_remaining: int) -> void:
 	reset_touch_controls()

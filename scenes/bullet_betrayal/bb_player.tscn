@@ -1,13 +1,14 @@
-[gd_scene load_steps=5 format=3 uid="uid://bbplayer001a"]
+[gd_scene load_steps=6 format=3 uid="uid://bbplayer001a"]
 
 [ext_resource type="Script" path="res://scripts/bullet_betrayal/bb_player.gd" id="1_scr"]
-[ext_resource type="Texture2D" path="res://assets/sprites/bb_soldier_idle.png" id="2_tex"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player.png" id="2_tex"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_gun.png" id="3_gun"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_pbody"]
-size = Vector2(20, 32)
+size = Vector2(16, 28)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_phurt"]
-size = Vector2(22, 34)
+size = Vector2(18, 30)
 
 [node name="BulletBetrayalPlayer" type="CharacterBody2D" groups=["player"]]
 collision_layer = 1
@@ -17,27 +18,31 @@ script = ExtResource("1_scr")
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("2_tex")
 
+[node name="WeaponSprite" type="Sprite2D" parent="."]
+position = Vector2(10, 1)
+texture = ExtResource("3_gun")
+
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, 1)
+position = Vector2(0, 2)
 shape = SubResource("RectangleShape2D_pbody")
 
 [node name="Hurtbox" type="Area2D" parent="." groups=["player_hurtbox"]]
 collision_layer = 1
-collision_mask = 272
+collision_mask = 276
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
-position = Vector2(0, 1)
+position = Vector2(0, 2)
 shape = SubResource("RectangleShape2D_phurt")
 
 [node name="MuzzlePos" type="Marker2D" parent="."]
-position = Vector2(20, -2)
+position = Vector2(18, 1)
 
 [node name="MuzzleFlash" type="ColorRect" parent="."]
 visible = false
-offset_left = 22.0
-offset_top = -6.0
-offset_right = 30.0
-offset_bottom = 2.0
+offset_left = 18.0
+offset_top = -3.0
+offset_right = 26.0
+offset_bottom = 5.0
 color = Color(1, 0.9, 0.4, 0.95)
 
 [node name="Camera2D" type="Camera2D" parent="."]

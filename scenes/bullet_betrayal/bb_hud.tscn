@@ -133,7 +133,7 @@ mouse_filter = 2
 theme_override_constants/separation = 16
 
 [node name="HealthBox" type="HBoxContainer" parent="TopBar/Margin/HBox"]
-custom_minimum_size = Vector2(160, 0)
+custom_minimum_size = Vector2(120, 0)
 layout_mode = 2
 mouse_filter = 2
 
@@ -141,11 +141,11 @@ mouse_filter = 2
 layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.2, 1, 0.5, 1)
-theme_override_font_sizes/font_size = 16
-text = "HP: ♥ ♥ ♥"
+theme_override_font_sizes/font_size = 15
+text = "♥ LIFE: 1 / 1"
 
 [node name="AmmoBox" type="HBoxContainer" parent="TopBar/Margin/HBox"]
-custom_minimum_size = Vector2(140, 0)
+custom_minimum_size = Vector2(110, 0)
 layout_mode = 2
 mouse_filter = 2
 
@@ -153,8 +153,20 @@ mouse_filter = 2
 layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.2, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 15
 text = "AMMO: 10"
+
+[node name="TargetsBox" type="HBoxContainer" parent="TopBar/Margin/HBox"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="TargetsLabel" type="Label" parent="TopBar/Margin/HBox/TargetsBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0, 0.92, 1, 1)
+theme_override_font_sizes/font_size = 15
+text = "🎯 TARGETS: 0 / 10"
 
 [node name="StageBox" type="HBoxContainer" parent="TopBar/Margin/HBox"]
 layout_mode = 2
@@ -485,7 +497,7 @@ grow_vertical = 2
 color = Color(0, 0, 0, 0.75)
 
 [node name="Panel" type="PanelContainer" parent="Overlays/DeathOverlay"]
-custom_minimum_size = Vector2(360, 280)
+custom_minimum_size = Vector2(360, 360)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -493,16 +505,16 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -180.0
-offset_top = -140.0
+offset_top = -180.0
 offset_right = 180.0
-offset_bottom = 140.0
+offset_bottom = 180.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_death_panel")
 
 [node name="VBox" type="VBoxContainer" parent="Overlays/DeathOverlay/Panel"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 alignment = 1
 
 [node name="Title" type="Label" parent="Overlays/DeathOverlay/Panel/VBox"]
@@ -518,6 +530,29 @@ theme_override_colors/font_color = Color(0.8, 0.7, 0.7, 0.8)
 theme_override_font_sizes/font_size = 12
 text = "OPERATION FAILED"
 horizontal_alignment = 1
+
+[node name="ReviveBtn" type="Button" parent="Overlays/DeathOverlay/Panel/VBox"]
+custom_minimum_size = Vector2(220, 42)
+layout_mode = 2
+size_flags_horizontal = 4
+focus_mode = 0
+theme_override_colors/font_color = Color(1, 0.88, 0.2, 1)
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_menu_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_menu_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_menu_btn")
+theme_override_styles/focus = SubResource("StyleBoxFlat_menu_btn_hover")
+text = "🎬 WATCH AD — REVIVE"
+
+[node name="AdStatusLabel" type="Label" parent="Overlays/DeathOverlay/Panel/VBox"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.7, 0.9, 0.8, 0.8)
+theme_override_font_sizes/font_size = 11
+text = "Watch a short ad to revive here!"
+horizontal_alignment = 1
+autowrap_mode = 2
 
 [node name="RetryBtn" type="Button" parent="Overlays/DeathOverlay/Panel/VBox"]
 custom_minimum_size = Vector2(220, 42)

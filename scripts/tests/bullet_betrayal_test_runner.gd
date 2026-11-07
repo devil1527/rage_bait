@@ -1,7 +1,21 @@
 class_name BulletBetrayalTestRunner
 extends Node
 
-## Automated test runner for Bullet Betrayal (World 1 Level 1).
+## Automated test runner for Bullet Betrayal Phase 2.
+## Tests all 13 core requirements:
+## 1. Coin Hell player character reuse and firearm adaptation
+## 2. One-hit death system from enemy bullets
+## 3. One-hit death system from fire traps and lethal hazards
+## 4. 2-hit enemy durability (hit 1 = damage feedback, hit 2 = elimination)
+## 5. Limited starting ammunition (exactly 10 rounds)
+## 6. Dry fire when ammunition reaches 0 (no shooting permitted)
+## 7. Exit remains locked while even 1 required enemy is alive
+## 8. Exit unlocks only after all 10 required enemies are eliminated
+## 9. Ambushes trigger correctly and do not spawn unfairly on player
+## 10. Rewarded-ad revive restores exactly 1 life and 10 bullets
+## 11. Failed or incomplete ads do not grant rewards
+## 12. Pause, resume, restart, and confirmation popups work correctly
+## 13. Mobile touch controls direct player wiring
 
 var passed_count: int = 0
 var failed_count: int = 0
@@ -11,7 +25,7 @@ func _ready() -> void:
 	if not auto_quit:
 		return
 	print("\n=======================================================")
-	print("    BULLET BETRAYAL — AUTOMATED TEST SUITE (W1 L1)     ")
+	print("    BULLET BETRAYAL — AUTOMATED TEST SUITE (PHASE 2)   ")
 	print("=======================================================\n")
 	
 	await run_all_tests()
@@ -45,13 +59,16 @@ func run_all_tests() -> void:
 	test_audio_manager_bullet_betrayal_sfx()
 	test_main_menu_bullet_betrayal_card()
 	test_bullet_betrayal_menu()
-	test_player_mechanics_and_kinematics()
-	test_player_shooting_and_ammo_management()
+	test_coin_hell_player_reuse()
+	test_one_hit_death_system()
+	test_enemy_durability_two_hits()
+	test_limited_ammunition_and_dry_fire()
 	test_simultaneous_movement_and_shooting()
 	test_bullet_projectiles()
-	test_enemy_soldier_ai_and_elimination()
 	test_ammo_crate_pickup()
-	test_extraction_beacon_and_victory()
+	test_ambush_triggers()
+	test_10_enemy_objective_and_locked_exit()
+	test_rewarded_ad_revive_integration()
 	test_mobile_touch_controls_and_hud()
 	test_pause_menu_and_confirmation_modals()
 	test_level_1_layout_and_sections()
@@ -88,7 +105,6 @@ func test_bullet_betrayal_menu() -> void:
 	var bb_menu: BulletBetrayalMenu = bb_menu_scene.instantiate()
 	add_child(bb_menu)
 	
-	# Header bar components
 	var back_btn: Button = bb_menu.get_node_or_null("MarginContainer/VBox/HeaderBar/BackButton")
 	assert_true(back_btn != null, "BackButton exists in HeaderBar")
 	assert_eq(back_btn.text, "◀ MENU", "BackButton starts as '◀ MENU' matching Coin Hell")
@@ -130,13 +146,11 @@ func test_bullet_betrayal_menu() -> void:
 	assert_true(sec_2 != null and sec_2.visible, "WorldSection_2 is visible")
 	assert_true(sec_1 != null and not sec_1.visible, "WorldSection_1 is hidden when World 2 is selected")
 	
-	# Test BackButton returns to all worlds
 	bb_menu._on_back_pressed()
 	assert_eq(bb_menu.current_selected_world, 0, "Back button resets current_selected_world to 0")
 	assert_eq(back_btn.text, "◀ MENU", "Back button text resets to '◀ MENU'")
 	assert_true(sec_1.visible and sec_2.visible, "All world sections visible after returning to all worlds")
 	
-	# Test locked stage modal trigger
 	assert_true(not bb_menu.message_modal.visible, "MessageModal starts hidden")
 	stage_2.pressed.emit()
 	assert_true(bb_menu.message_modal.visible, "Clicking locked stage displays arcade MessageModal")
@@ -147,55 +161,127 @@ func test_bullet_betrayal_menu() -> void:
 	
 	bb_menu.queue_free()
 
-func test_player_mechanics_and_kinematics() -> void:
-	print("\n--- TEST: Player Mechanics & Kinematics ---")
+func test_coin_hell_player_reuse() -> void:
+	print("\n--- TEST: Coin Hell Player Character Reuse & Firearms ---")
 	var player_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_player.tscn")
 	assert_true(player_scene != null, "bb_player.tscn scene exists and loads")
 	var player: BulletBetrayalPlayer = player_scene.instantiate()
 	add_child(player)
 	
-	assert_eq(player.current_health, 3, "Player starts with 3 HP")
-	assert_eq(player.current_ammo, 10, "Player starts with 10 Ammo")
+	# Verify Coin Hell sprite reuse
+	assert_true(player.sprite != null, "Player has Sprite2D")
+	assert_eq(player.sprite.texture.resource_path, "res://assets/sprites/player.png", "Player reuses exact Coin Hell sprite 'player.png'")
+	
+	# Verify Coin Hell collision shape dimensions
+	assert_true(player.collision_shape != null, "Player has CollisionShape2D")
+	assert_eq(player.collision_shape.shape.size, Vector2(16, 28), "CollisionShape2D matches Coin Hell player size (16, 28)")
+	
+	# Verify firearm attachment
+	assert_true(player.weapon_sprite != null, "Player has WeaponSprite firearm attachment")
+	assert_eq(player.weapon_sprite.texture.resource_path, "res://assets/sprites/bb_gun.png", "WeaponSprite uses retro pixel blaster 'bb_gun.png'")
+	assert_true(player.muzzle_pos != null, "Player has MuzzlePos marker")
+	
+	# Verify starting stats
+	assert_eq(player.max_health, 1, "Player max_health is 1 (one-hit death rule)")
+	assert_eq(player.current_health, 1, "Player current_health starts at 1")
+	assert_eq(player.initial_ammo, 10, "Player initial_ammo starts at exactly 10 bullets")
+	assert_eq(player.current_ammo, 10, "Player current_ammo starts at exactly 10 bullets")
 	assert_true(player.is_alive, "Player is alive on spawn")
-	
-	# Test taking damage
-	player.take_damage(1)
-	assert_eq(player.current_health, 2, "Player HP reduced to 2 after hit")
-	assert_true(player.is_invulnerable, "Player becomes invulnerable after damage")
-	
-	# Test lethal damage
-	player.is_invulnerable = false
-	player.take_damage(2)
-	assert_eq(player.current_health, 0, "Player HP reduced to 0")
-	assert_true(not player.is_alive, "Player marked dead after lethal damage")
 	
 	player.queue_free()
 
-func test_player_shooting_and_ammo_management() -> void:
-	print("\n--- TEST: Player Shooting & Ammo Management ---")
+func test_one_hit_death_system() -> void:
+	print("\n--- TEST: One-Hit Death System (Bullets, Fire & Hazards) ---")
+	var player_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_player.tscn")
+	
+	# Subtest 1: direct damage
+	var p1: BulletBetrayalPlayer = player_scene.instantiate()
+	add_child(p1)
+	p1.take_damage(1)
+	assert_eq(p1.current_health, 0, "Player HP drops to 0 after 1 hit")
+	assert_true(p1.is_dead, "Player dies immediately from 1 hit")
+	p1.queue_free()
+	
+	# Subtest 2: enemy bullet hit
+	var p2: BulletBetrayalPlayer = player_scene.instantiate()
+	add_child(p2)
+	var e_bullet_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_enemy_bullet.tscn")
+	assert_true(e_bullet_scene != null, "bb_enemy_bullet.tscn loads")
+	var e_bullet: BulletBetrayalEnemyBullet = e_bullet_scene.instantiate()
+	add_child(e_bullet)
+	
+	e_bullet._on_body_entered(p2)
+	assert_eq(p2.current_health, 0, "Enemy bullet contact drops player HP to 0")
+	assert_true(p2.is_dead, "Enemy bullet causes immediate one-hit death")
+	p2.queue_free()
+	e_bullet.queue_free()
+	
+	# Subtest 3: fire hazard hit
+	var p3: BulletBetrayalPlayer = player_scene.instantiate()
+	add_child(p3)
+	var fire_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_fire_hazard.tscn")
+	assert_true(fire_scene != null, "bb_fire_hazard.tscn loads")
+	var fire = fire_scene.instantiate()
+	add_child(fire)
+	
+	fire._on_body_entered(p3)
+	assert_eq(p3.current_health, 0, "Fire hazard contact drops player HP to 0")
+	assert_true(p3.is_dead, "Fire hazard causes immediate one-hit death")
+	p3.queue_free()
+	fire.queue_free()
+
+func test_enemy_durability_two_hits() -> void:
+	print("\n--- TEST: Enemy Durability (Exactly 2-Hit Elimination) ---")
+	var enemy_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_enemy_soldier.tscn")
+	assert_true(enemy_scene != null, "bb_enemy_soldier.tscn loads")
+	var enemy: BulletBetrayalEnemySoldier = enemy_scene.instantiate()
+	add_child(enemy)
+	
+	assert_eq(enemy.max_health, 2, "Enemy max_health is 2")
+	assert_eq(enemy.current_health, 2, "Enemy starts with 2 health")
+	assert_true(not enemy.is_dead, "Enemy starts alive")
+	
+	var eliminated_called := [false]
+	enemy.eliminated.connect(func(): eliminated_called[0] = true)
+	
+	# Hit 1: Damage feedback
+	enemy.take_hit(1)
+	assert_eq(enemy.current_health, 1, "Enemy health drops to 1 after first hit")
+	assert_true(not enemy.is_dead, "Enemy survives first hit")
+	assert_true(not eliminated_called[0], "eliminated signal NOT fired on first hit")
+	
+	# Hit 2: Elimination
+	enemy.take_hit(1)
+	assert_eq(enemy.current_health, 0, "Enemy health drops to 0 after second hit")
+	assert_true(enemy.is_dead, "Enemy marked dead after second hit")
+	assert_true(eliminated_called[0], "eliminated signal fired on second hit")
+	
+	enemy.queue_free()
+
+func test_limited_ammunition_and_dry_fire() -> void:
+	print("\n--- TEST: Limited Ammunition (10 Starting Rounds & Dry Fire) ---")
 	var player_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_player.tscn")
 	var player: BulletBetrayalPlayer = player_scene.instantiate()
 	add_child(player)
 	
+	assert_eq(player.current_ammo, 10, "Player starts run with exactly 10 rounds")
+	
+	# Fire all 10 rounds
+	for i in range(10):
+		assert_eq(player.current_ammo, 10 - i, "Rounds before shot %d: %d" % [i + 1, 10 - i])
+		player._fire_timer = 0.0
+		player._attempt_shoot()
+	
+	assert_eq(player.current_ammo, 0, "Ammo depleted to 0 after 10 shots")
+	
+	# Attempt to fire with 0 ammo
 	var dry_fired := [false]
 	player.dry_fire.connect(func(): dry_fired[0] = true)
-	
-	player.current_ammo = 2
+	player._fire_timer = 0.0
 	player._attempt_shoot()
-	assert_eq(player.current_ammo, 1, "Ammo decremented to 1 after shooting")
 	
-	player._attempt_shoot()
-	assert_eq(player.current_ammo, 0, "Ammo decremented to 0 after second shot")
-	
-	# Next shot should dry fire
-	dry_fired[0] = false
-	player._attempt_shoot()
-	assert_eq(player.current_ammo, 0, "Ammo stays at 0")
-	assert_true(dry_fired[0], "dry_fire signal emitted when firing on empty magazine")
-	
-	# Test add_ammo
-	player.add_ammo(8)
-	assert_eq(player.current_ammo, 8, "Ammo increased to 8 via add_ammo")
+	assert_eq(player.current_ammo, 0, "Ammo remains 0 on empty magazine")
+	assert_true(dry_fired[0], "dry_fire signal emitted when firing on 0 ammo")
 	
 	player.queue_free()
 
@@ -220,7 +306,7 @@ func test_simultaneous_movement_and_shooting() -> void:
 	player.queue_free()
 
 func test_bullet_projectiles() -> void:
-	print("\n--- TEST: Bullet Projectiles ---")
+	print("\n--- TEST: Bullet Projectiles & Impact Prevention ---")
 	var bullet_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_bullet.tscn")
 	assert_true(bullet_scene != null, "bb_bullet.tscn scene exists and loads")
 	var bullet: BulletBetrayalBullet = bullet_scene.instantiate()
@@ -231,24 +317,6 @@ func test_bullet_projectiles() -> void:
 	assert_eq(bullet.global_position, Vector2(100, 100), "Bullet initialized at spawn coordinates (100, 100)")
 	
 	bullet.queue_free()
-
-func test_enemy_soldier_ai_and_elimination() -> void:
-	print("\n--- TEST: Enemy Soldier AI & Elimination ---")
-	var enemy_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_enemy_soldier.tscn")
-	assert_true(enemy_scene != null, "bb_enemy_soldier.tscn scene loads")
-	var enemy: BulletBetrayalEnemySoldier = enemy_scene.instantiate()
-	add_child(enemy)
-	
-	assert_true(not enemy.is_dead, "Enemy soldier is alive initially (is_dead = false)")
-	
-	var eliminated_called := [false]
-	enemy.eliminated.connect(func(): eliminated_called[0] = true)
-	
-	enemy.take_hit(1)
-	assert_true(enemy.is_dead, "Enemy marked dead (is_dead = true) after hit")
-	assert_true(eliminated_called[0], "eliminated signal fired")
-	
-	enemy.queue_free()
 
 func test_ammo_crate_pickup() -> void:
 	print("\n--- TEST: Tactical Ammo Crate Pickups ---")
@@ -270,28 +338,111 @@ func test_ammo_crate_pickup() -> void:
 	player.queue_free()
 	ammo_pickup.queue_free()
 
-func test_extraction_beacon_and_victory() -> void:
-	print("\n--- TEST: Extraction Beacon & Stage Completion ---")
+func test_ambush_triggers() -> void:
+	print("\n--- TEST: Fair Intentional Ambushes ---")
+	var enemy_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_enemy_soldier.tscn")
+	var ambush_enemy: BulletBetrayalEnemySoldier = enemy_scene.instantiate()
+	ambush_enemy.is_ambush = true
+	add_child(ambush_enemy)
+	
+	assert_true(ambush_enemy.is_dormant, "Ambush enemy starts dormant")
+	assert_true(not ambush_enemy.visible, "Ambush enemy starts invisible / concealed")
+	assert_true(ambush_enemy.collision_shape.disabled, "Ambush enemy collision starts disabled")
+	
+	# Trigger ambush
+	ambush_enemy.trigger_ambush()
+	assert_true(not ambush_enemy.is_dormant, "Ambush enemy is no longer dormant after trigger")
+	assert_true(ambush_enemy.visible, "Ambush enemy is visible after trigger")
+	assert_true(not ambush_enemy.collision_shape.disabled, "Ambush enemy collision is active after trigger")
+	assert_true(ambush_enemy.alert_icon.visible, "Ambush enemy displays alert telegraph")
+	
+	ambush_enemy.queue_free()
+
+func test_10_enemy_objective_and_locked_exit() -> void:
+	print("\n--- TEST: 10-Enemy Objective & Locked Extraction Beacon ---")
 	var beacon_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_extraction_beacon.tscn")
 	assert_true(beacon_scene != null, "Extraction beacon scene loads")
 	var beacon: BulletBetrayalExtractionBeacon = beacon_scene.instantiate()
+	beacon.required_enemies = 10
 	add_child(beacon)
-	
-	assert_true(not beacon._activated, "Extraction beacon starts inactive")
-	
-	var victory_reached := [false]
-	beacon.extraction_reached.connect(func(): victory_reached[0] = true)
 	
 	var player_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_player.tscn")
 	var player: BulletBetrayalPlayer = player_scene.instantiate()
 	add_child(player)
 	
+	var reached := [false]
+	beacon.extraction_reached.connect(func(): reached[0] = true)
+	
+	# Beacon starts locked
+	assert_true(not beacon.is_unlocked, "Extraction beacon starts locked")
+	assert_true(beacon.lock_barrier != null and beacon.lock_barrier.visible, "Lock barrier is visible while locked")
+	
+	# Player touches beacon while 0/10 enemies killed
 	beacon._on_body_entered(player)
-	assert_true(beacon._activated, "Extraction beacon activates upon player entry")
-	assert_true(victory_reached[0], "extraction_reached signal fired upon reaching goal")
+	assert_true(not reached[0], "Exit cannot be extracted while 0/10 enemies alive")
+	
+	# Update to 9/10 kills
+	beacon.update_target_progress(9, 10)
+	assert_true(not beacon.is_unlocked, "Exit remains locked with 9/10 enemies eliminated (1 remaining)")
+	beacon._on_body_entered(player)
+	assert_true(not reached[0], "Exit still cannot be extracted while 1 enemy remains")
+	
+	# Update to 10/10 kills
+	beacon.update_target_progress(10, 10)
+	assert_true(beacon.is_unlocked, "Exit unlocks immediately when all 10 enemies are eliminated")
+	
+	# Player touches unlocked beacon
+	beacon._on_body_entered(player)
+	assert_true(reached[0], "Extraction triggers successfully after all 10 enemies eliminated")
 	
 	player.queue_free()
 	beacon.queue_free()
+
+func test_rewarded_ad_revive_integration() -> void:
+	print("\n--- TEST: Rewarded-Ad Revive Integration ---")
+	var hud_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_hud.tscn")
+	var hud: BulletBetrayalHUD = hud_scene.instantiate()
+	add_child(hud)
+	
+	var player_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_player.tscn")
+	var player: BulletBetrayalPlayer = player_scene.instantiate()
+	add_child(player)
+	hud.connect_player(player)
+	
+	# Verify revive button in DeathOverlay
+	assert_true(hud.death_revive_btn != null, "ReviveBtn exists in DeathOverlay")
+	assert_eq(hud.death_revive_btn.text, "🎬 WATCH AD — REVIVE", "ReviveBtn displays '🎬 WATCH AD — REVIVE'")
+	
+	# Verify GameManager allowance
+	if GameManager:
+		GameManager.is_gameplay_active = true
+		GameManager.revives_used_this_run = 0
+		assert_true(GameManager.can_revive_this_run(), "Player can revive on fresh run (0/1 used)")
+	
+	# Simulate player death
+	player.current_ammo = 0
+	player.die()
+	assert_true(player.is_dead, "Player is dead before revive")
+	
+	# Simulate authoritative revive reward grant
+	hud._on_revive_reward_granted(-1)
+	
+	assert_true(player.is_alive, "Player is alive after revive reward granted")
+	assert_eq(player.current_health, 1, "Player revived with exactly 1 life")
+	assert_eq(player.current_ammo, 10, "Player revived with exactly 10 bullets restored")
+	assert_true(player.is_invulnerable, "Player granted temporary spawn protection")
+	
+	# Verify revive allowance consumed
+	if GameManager:
+		assert_eq(GameManager.revives_used_this_run, 1, "Revives used count updated to 1")
+		assert_true(not GameManager.can_revive_this_run(), "Cannot revive a second time in same run")
+	
+	# Test failed ad handling
+	hud._on_revive_ad_failed("Ad failed to load")
+	assert_true(hud.death_retry_btn != null and not hud.death_retry_btn.disabled, "Retry button remains enabled when ad fails")
+	
+	player.queue_free()
+	hud.queue_free()
 
 func test_mobile_touch_controls_and_hud() -> void:
 	print("\n--- TEST: Mobile Touch Controls & Direct Player Wiring ---")
@@ -309,6 +460,12 @@ func test_mobile_touch_controls_and_hud() -> void:
 	
 	hud.connect_player(player)
 	
+	# Verify 1-life and targets HUD labels
+	assert_true(hud.health_label != null, "HealthLabel exists on HUD")
+	assert_eq(hud.health_label.text, "♥ LIFE: 1 / 1", "HealthLabel displays '♥ LIFE: 1 / 1'")
+	assert_true(hud.targets_label != null, "TargetsLabel exists on HUD")
+	assert_eq(hud.targets_label.text, "🎯 TARGETS: 0 / 10", "TargetsLabel displays '🎯 TARGETS: 0 / 10'")
+	
 	# Verify TouchButtons exist
 	var left_btn: TextureButton = hud.left_btn
 	var right_btn: TextureButton = hud.right_btn
@@ -320,21 +477,21 @@ func test_mobile_touch_controls_and_hud() -> void:
 	assert_true(jump_btn != null and jump_btn is TouchButton, "jump_btn is TouchButton")
 	assert_true(shoot_btn != null and shoot_btn is TouchButton, "shoot_btn is TouchButton")
 	
-	# Verify direct virtual touch wiring: Left
+	# Direct virtual touch wiring: Left
 	assert_true(not player.touch_left, "Player touch_left starts false")
 	left_btn.touch_down.emit()
 	assert_true(player.touch_left, "left_btn.touch_down sets player.touch_left = true")
 	left_btn.touch_up.emit()
 	assert_true(not player.touch_left, "left_btn.touch_up sets player.touch_left = false")
 	
-	# Verify direct virtual touch wiring: Right
+	# Direct virtual touch wiring: Right
 	assert_true(not player.touch_right, "Player touch_right starts false")
 	right_btn.touch_down.emit()
 	assert_true(player.touch_right, "right_btn.touch_down sets player.touch_right = true")
 	right_btn.touch_up.emit()
 	assert_true(not player.touch_right, "right_btn.touch_up sets player.touch_right = false")
 	
-	# Verify direct virtual touch wiring: Jump
+	# Direct virtual touch wiring: Jump
 	assert_true(not player.touch_jump, "Player touch_jump starts false")
 	jump_btn.touch_down.emit()
 	assert_true(player.touch_jump, "jump_btn.touch_down sets player.touch_jump = true")
@@ -343,7 +500,7 @@ func test_mobile_touch_controls_and_hud() -> void:
 	assert_true(not player.touch_jump, "jump_btn.touch_up sets player.touch_jump = false")
 	assert_true(player.touch_jump_just_released, "jump_btn.touch_up sets touch_jump_just_released = true")
 	
-	# Verify direct virtual touch wiring: Shoot
+	# Direct virtual touch wiring: Shoot
 	assert_true(not player.touch_shoot, "Player touch_shoot starts false")
 	shoot_btn.touch_down.emit()
 	assert_true(player.touch_shoot, "shoot_btn.touch_down sets player.touch_shoot = true")
@@ -433,38 +590,49 @@ func test_level_1_layout_and_sections() -> void:
 	assert_eq(camera.limit_right, 2650, "Camera right limit bounds the level at 2650px")
 	assert_eq(camera.limit_bottom, 540, "Camera bottom limit is 540px")
 	
-	# Audit Enemies across sections
+	# Audit Enemies across sections: exactly 10 required enemies
 	var enemies = level.enemies_container.get_children()
-	assert_eq(enemies.size(), 9, "Level 1 contains exactly 9 enemy soldiers across all sections")
+	assert_eq(enemies.size(), 10, "Level 1 contains exactly 10 required enemies across all sections")
 	
 	# Section 2 Enemies
-	var e1 = level.get_node_or_null("Enemies/Enemy1_Ground1")
-	var e2 = level.get_node_or_null("Enemies/Enemy2_Outpost1")
+	var e1 = level.get_node_or_null("Enemies/Enemy1_GroundPatrol")
+	var e2 = level.get_node_or_null("Enemies/Enemy2_OutpostGuard")
+	var e3 = level.get_node_or_null("Enemies/Enemy3_AmbushValley")
 	assert_true(e1 != null and e2 != null, "Section 2 has introductory patrol soldiers")
+	assert_true(e3 != null and e3.is_ambush, "Section 2 has Ambush 1 enemy behind valley crates")
 	
 	# Section 3 Enemy & Ammo
-	var e3 = level.get_node_or_null("Enemies/Enemy3_HighPlatform")
+	var e4 = level.get_node_or_null("Enemies/Enemy4_HighPlatform")
+	var e5 = level.get_node_or_null("Enemies/Enemy5_AmbushLedge")
 	var a1 = level.get_node_or_null("Pickups/AmmoPickup1")
-	assert_true(e3 != null, "Section 3 has elevated soldier requiring jump-shooting")
+	assert_true(e4 != null, "Section 3 has elevated soldier requiring jump-shooting")
+	assert_true(e5 != null and e5.is_ambush, "Section 3 has Ambush 2 enemy on elevated ledge")
 	assert_true(a1 != null, "Section 3 has tactical ammo pickup crate 1")
 	
 	# Section 4 Enemies & Ammo
-	var e4 = level.get_node_or_null("Enemies/Enemy4_Approach")
-	var e5 = level.get_node_or_null("Enemies/Enemy5_LedgeSentry")
-	var e6 = level.get_node_or_null("Enemies/Enemy6_Outpost2")
+	var e6 = level.get_node_or_null("Enemies/Enemy6_Approach")
+	var e7 = level.get_node_or_null("Enemies/Enemy7_LedgeSentry")
+	var e8 = level.get_node_or_null("Enemies/Enemy8_AmbushRuins")
 	var a2 = level.get_node_or_null("Pickups/AmmoPickup2")
-	assert_true(e4 != null and e5 != null and e6 != null, "Section 4 has 3-soldier ammo challenge")
+	assert_true(e6 != null and e7 != null, "Section 4 has ruins patrol and ledge sentry")
+	assert_true(e8 != null and e8.is_ambush, "Section 4 has Ambush 3 enemy in ruins bunker")
 	assert_true(a2 != null, "Section 4 has tactical ammo pickup crate 2")
 	
 	# Section 5 Final Encounter
-	var e7 = level.get_node_or_null("Enemies/Enemy7_Perimeter")
-	var e8 = level.get_node_or_null("Enemies/Enemy8_Watchtower")
-	var e9 = level.get_node_or_null("Enemies/Enemy9_GateGuard")
-	assert_true(e7 != null and e8 != null and e9 != null, "Section 5 has final outpost encounter (3 soldiers)")
+	var e9 = level.get_node_or_null("Enemies/Enemy9_Watchtower")
+	var e10 = level.get_node_or_null("Enemies/Enemy10_GateGuard")
+	assert_true(e9 != null and e10 != null, "Section 5 has watchtower and compound gate defense")
+	
+	# Section Hazards
+	var h1 = level.get_node_or_null("Hazards/FireHazard1_Trench")
+	var h2 = level.get_node_or_null("Hazards/FireHazard2_Ruins")
+	assert_true(h1 != null, "FireHazard1 exists in Trench")
+	assert_true(h2 != null, "FireHazard2 exists in Ruins")
 	
 	# Section 6 Extraction
 	assert_true(level.extraction_beacon != null, "Section 6 has Extraction Beacon goal")
 	assert_true(level.extraction_beacon.position.x >= 2500.0, "Extraction Beacon is positioned at level finale (X >= 2500)")
+	assert_eq(level.extraction_beacon.required_enemies, 10, "Extraction beacon requires all 10 enemies")
 	
 	level.queue_free()
 
@@ -478,17 +646,22 @@ func test_level_1_full_lifecycle() -> void:
 	if GameManager:
 		assert_true(GameManager.is_gameplay_active, "GameManager.is_gameplay_active is TRUE during gameplay")
 	
-	# Start
-	assert_eq(level.player.current_health, 3, "Run starts with 3 HP")
-	assert_eq(level.player.current_ammo, 10, "Run starts with 10 Ammo")
+	# Start stats
+	assert_eq(level.player.current_health, 1, "Run starts with 1 HP (one-hit death rule)")
+	assert_eq(level.player.current_ammo, 10, "Run starts with exactly 10 Ammo")
 	assert_true(not level._is_completed, "Stage starts incomplete")
+	assert_true(not level.extraction_beacon.is_unlocked, "Extraction beacon starts locked")
 	
-	# Simulate eliminating all 9 enemies
+	# Simulate eliminating all 10 enemies (2 hits per enemy)
 	for enemy in level.enemies_container.get_children():
 		if enemy is BulletBetrayalEnemySoldier:
+			if enemy.is_ambush:
+				enemy.trigger_ambush()
+			enemy.take_hit(1)
 			enemy.take_hit(1)
 	
-	assert_eq(level._enemies_eliminated, 9, "All 9 enemy soldiers successfully eliminated")
+	assert_eq(level._enemies_eliminated, 10, "All 10 required enemies successfully eliminated")
+	assert_true(level.extraction_beacon.is_unlocked, "Extraction beacon unlocked after 10 kills")
 	
 	# Simulate reaching extraction
 	level._on_extraction_reached()

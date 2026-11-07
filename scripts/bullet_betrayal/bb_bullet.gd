@@ -9,6 +9,7 @@ extends Area2D
 
 var direction: Vector2 = Vector2.RIGHT
 var _lifetime: float = 0.0
+var _has_impacted: bool = false
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
@@ -37,13 +38,18 @@ func _physics_process(delta: float) -> void:
 		queue_free()
 
 func _on_body_entered(body: Node2D) -> void:
+	if _has_impacted:
+		return
 	# Impact with solid terrain or static geometry
 	if body is StaticBody2D or body is TileMap:
 		_impact_and_free()
 
 func _on_area_entered(area: Area2D) -> void:
+	if _has_impacted:
+		return
 	# Impact with enemy hurtbox
 	if area.is_in_group("enemy_hurtbox") or area.owner and area.owner.is_in_group("enemies"):
+		_has_impacted = true
 		var enemy = area.owner if area.owner and area.owner.is_in_group("enemies") else area
 		if enemy and enemy.has_method("take_hit"):
 			enemy.take_hit(damage)
@@ -52,6 +58,7 @@ func _on_area_entered(area: Area2D) -> void:
 		_impact_and_free()
 
 func _impact_and_free() -> void:
+	_has_impacted = true
 	set_physics_process(false)
 	if collision_shape:
 		collision_shape.set_deferred("disabled", true)

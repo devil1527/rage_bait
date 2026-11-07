@@ -1,9 +1,9 @@
 class_name BulletBetrayalPlayer
 extends CharacterBody2D
 
-## Player commando controller for Bullet Betrayal.
-## Supports responsive horizontal locomotion, jump buffering, coyote time,
-## variable jump height, simultaneous run-and-gun shooting, and ammo management.
+## Player controller for Bullet Betrayal reusing the Coin Hell character.
+## Adapted with firearm presentation, one-hit death mechanics, limited 10-round ammo,
+## mobile touch controls, and authoritative revive support.
 
 signal ammo_updated(current: int, max_amount: int)
 signal health_updated(current: int, max_amount: int)
@@ -17,13 +17,13 @@ const BULLET_SCENE: PackedScene = preload("res://scenes/bullet_betrayal/bb_bulle
 @export var friction: float = 1800.0
 @export var jump_velocity: float = -460.0
 @export var gravity: float = 1100.0
-@export var max_health: int = 3
+@export var max_health: int = 1
 @export var initial_ammo: int = 10
 @export var max_ammo: int = 30
 @export var fire_cooldown: float = 0.20
 
 # State variables
-var current_health: int = 3
+var current_health: int = 1
 var current_ammo: int = 10
 var facing_direction: int = 1 # 1 = Right, -1 = Left
 var is_alive: bool = true
@@ -45,37 +45,28 @@ var touch_shoot_just_pressed: bool = false
 var _fire_timer: float = 0.0
 var _coyote_timer: float = 0.0
 var _jump_buffer_timer: float = 0.0
-var _anim_timer: float = 0.0
-var _run_frame: int = 1
-var _is_shooting_anim: bool = false
-var _shoot_anim_timer: float = 0.0
+var _invulnerability_timer: float = 0.0
+var _run_anim_timer: float = 0.0
 
 @onready var sprite: Sprite2D = $Sprite2D
+@onready var weapon_sprite: Sprite2D = get_node_or_null("WeaponSprite")
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 @onready var muzzle_pos: Marker2D = $MuzzlePos
 @onready var hurtbox_col: CollisionShape2D = $Hurtbox/CollisionShape2D
 @onready var muzzle_flash: ColorRect = $MuzzleFlash
 
-var _tex_idle: Texture2D
-var _tex_run1: Texture2D
-var _tex_run2: Texture2D
-var _tex_jump: Texture2D
-
 func _ready() -> void:
 	add_to_group("player")
+	if GameManager:
+		GameManager.register_player(self)
+
 	current_health = max_health
 	current_ammo = initial_ammo
-	
-	_tex_idle = load("res://assets/sprites/bb_soldier_idle.png")
-	_tex_run1 = load("res://assets/sprites/bb_soldier_run_1.png")
-	_tex_run2 = load("res://assets/sprites/bb_soldier_run_2.png")
-	_tex_jump = load("res://assets/sprites/bb_soldier_jump.png")
 	
 	if muzzle_flash:
 		muzzle_flash.visible = false
 		
 	_update_facing()
-	# Deferred initial signal emission so HUD can connect
 	call_deferred("_emit_initial_stats")
 
 func _emit_initial_stats() -> void:
@@ -83,14 +74,27 @@ func _emit_initial_stats() -> void:
 	ammo_updated.emit(current_ammo, max_ammo)
 
 func _physics_process(delta: float) -> void:
+	# Invulnerability timer and flicker
+	if _invulnerability_timer > 0.0:
+		_invulnerability_timer = maxf(0.0, _invulnerability_timer - delta)
+		if _invulnerability_timer <= 0.0:
+			is_invulnerable = false
+			if sprite:
+				sprite.modulate.a = 1.0
+			if weapon_sprite:
+				weapon_sprite.modulate.a = 1.0
+		else:
+			var alpha: float = 0.35 if int(_invulnerability_timer * 18.0) % 2 == 0 else 0.95
+			if sprite:
+				sprite.modulate.a = alpha
+			if weapon_sprite:
+				weapon_sprite.modulate.a = alpha
+
 	if not is_alive:
 		return
 
 	# Timers
 	_fire_timer = maxf(0.0, _fire_timer - delta)
-	_shoot_anim_timer = maxf(0.0, _shoot_anim_timer - delta)
-	if _shoot_anim_timer <= 0.0:
-		_is_shooting_anim = false
 
 	# Gravity
 	if not is_on_floor():
@@ -169,8 +173,6 @@ func _attempt_shoot() -> void:
 		_spawn_bullet()
 		AudioManager.play_sfx("shoot")
 		_show_muzzle_flash()
-		_is_shooting_anim = true
-		_shoot_anim_timer = 0.12
 	else:
 		# Dry fire (out of ammunition)
 		AudioManager.play_sfx("dry_fire")
@@ -190,64 +192,47 @@ func _show_muzzle_flash() -> void:
 	muzzle_flash.visible = true
 	var tween := create_tween()
 	tween.tween_interval(0.04)
-	tween.tween_callback(func(): muzzle_flash.visible = false)
+	tween.tween_callback(func(): if muzzle_flash: muzzle_flash.visible = false)
 
 func _update_facing() -> void:
 	if sprite:
-		# Sprite faces right by default
 		sprite.flip_h = (facing_direction < 0)
+	if weapon_sprite:
+		weapon_sprite.position.x = 10.0 * facing_direction
+		weapon_sprite.flip_h = (facing_direction < 0)
 	if muzzle_pos:
-		muzzle_pos.position.x = 20.0 * facing_direction
+		muzzle_pos.position.x = 18.0 * facing_direction
+		muzzle_pos.position.y = 1.0
 	if muzzle_flash:
-		muzzle_flash.position.x = 22.0 * facing_direction if facing_direction > 0 else -28.0
+		muzzle_flash.position.x = 18.0 if facing_direction > 0 else -26.0
 
 func _update_animation(delta: float) -> void:
 	if not sprite:
 		return
 
 	if not is_on_floor():
-		sprite.texture = _tex_jump
+		sprite.scale = Vector2(0.95, 1.05)
 	elif absf(velocity.x) > 15.0:
-		_anim_timer += delta
-		if _anim_timer >= 0.14:
-			_anim_timer = 0.0
-			_run_frame = 2 if _run_frame == 1 else 1
-			sprite.texture = _tex_run2 if _run_frame == 2 else _tex_run1
+		_run_anim_timer += delta * 14.0
+		var bob: float = sin(_run_anim_timer) * 0.06
+		sprite.scale = Vector2(1.0 + bob, 1.0 - bob)
 	else:
-		sprite.texture = _tex_idle
+		_run_anim_timer = 0.0
+		sprite.scale = Vector2.ONE
 
 func add_ammo(amount: int) -> void:
 	current_ammo = clampi(current_ammo + amount, 0, max_ammo)
 	ammo_updated.emit(current_ammo, max_ammo)
 
+## One-hit death system: any damage from bullets, fire, or hazards immediately kills the player
 func take_damage(amount: int = 1) -> void:
 	if not is_alive or is_invulnerable:
 		return
 
-	current_health = clampi(current_health - amount, 0, max_health)
+	current_health = 0
 	health_updated.emit(current_health, max_health)
 	AudioManager.play_sfx("player_hit")
-
-	if current_health <= 0:
-		die()
-	else:
-		_start_invulnerability(1.2)
-		# Slight recoil knockback
-		velocity.x = -facing_direction * 140.0
-		velocity.y = -180.0
-
-func _start_invulnerability(duration: float) -> void:
-	is_invulnerable = true
-	var tween := create_tween().set_loops(int(duration / 0.12))
-	tween.tween_property(sprite, "modulate:a", 0.3, 0.06)
-	tween.tween_property(sprite, "modulate:a", 1.0, 0.06)
-	
-	var end_timer := get_tree().create_timer(duration)
-	end_timer.timeout.connect(func():
-		is_invulnerable = false
-		if sprite:
-			sprite.modulate.a = 1.0
-	)
+	die()
 
 func die() -> void:
 	if not is_alive:
@@ -266,9 +251,48 @@ func die() -> void:
 	# Death visual animation
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate", Color(1.0, 0.2, 0.2, 1.0), 0.08)
+	if weapon_sprite:
+		tween.parallel().tween_property(weapon_sprite, "modulate:a", 0.0, 0.1)
 	tween.tween_property(sprite, "scale", Vector2(1.2, 0.6), 0.1)
 	tween.parallel().tween_property(sprite, "position:y", sprite.position.y + 8.0, 0.1)
 	tween.parallel().tween_property(sprite, "modulate:a", 0.0, 0.25)
+
+## Authoritative revive method: restores 1 life and exactly 10 bullets
+func revive(safe_position: Vector2 = Vector2.ZERO) -> void:
+	if safe_position != Vector2.ZERO:
+		global_position = safe_position
+	is_alive = true
+	input_disabled = false
+	current_health = 1
+	current_ammo = 10 # RESTORES EXACTLY 10 BULLETS PER COMBAT RULES
+	velocity = Vector2.ZERO
+	facing_direction = 1
+	_update_facing()
+	
+	if sprite:
+		sprite.modulate = Color.WHITE
+		sprite.scale = Vector2.ONE
+		sprite.position = Vector2.ZERO
+		sprite.visible = true
+	if weapon_sprite:
+		weapon_sprite.modulate = Color.WHITE
+		weapon_sprite.visible = true
+	if collision_shape:
+		collision_shape.set_deferred("disabled", false)
+	if hurtbox_col:
+		hurtbox_col.set_deferred("disabled", false)
+
+	reset_touch_inputs()
+	apply_spawn_protection(1.5)
+	health_updated.emit(current_health, max_health)
+	ammo_updated.emit(current_ammo, max_ammo)
+
+func apply_spawn_protection(duration: float = 1.5) -> void:
+	is_invulnerable = true
+	_invulnerability_timer = duration
+	if sprite:
+		sprite.visible = true
+		sprite.modulate = Color.WHITE
 
 func respawn(pos: Vector2) -> void:
 	global_position = pos
@@ -280,12 +304,16 @@ func respawn(pos: Vector2) -> void:
 	facing_direction = 1
 	_update_facing()
 	if sprite:
-		sprite.texture = _tex_idle
 		sprite.modulate = Color.WHITE
 		sprite.scale = Vector2.ONE
 		sprite.position = Vector2.ZERO
+		sprite.visible = true
+	if weapon_sprite:
+		weapon_sprite.modulate = Color.WHITE
+		weapon_sprite.visible = true
 	if collision_shape:
 		collision_shape.set_deferred("disabled", false)
 	if hurtbox_col:
 		hurtbox_col.set_deferred("disabled", false)
+	reset_touch_inputs()
 	_emit_initial_stats()

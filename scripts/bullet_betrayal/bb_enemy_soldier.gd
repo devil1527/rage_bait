@@ -2,21 +2,26 @@ class_name BulletBetrayalEnemySoldier
 extends CharacterBody2D
 
 ## Reusable enemy soldier for Bullet Betrayal.
-## Supports patrol, player detection, telegraph, and ranged firing.
+## Features 2-hit durability (hit 1 = damage flash/recoil, hit 2 = elimination),
+## ambush triggers, player detection, alert telegraphs, and ranged firing.
 
 signal eliminated
 
 const ENEMY_BULLET_SCENE: PackedScene = preload("res://scenes/bullet_betrayal/bb_enemy_bullet.tscn")
 
+@export var max_health: int = 2
 @export var patrol_speed: float = 70.0
 @export var patrol_distance: float = 120.0
 @export var can_shoot: bool = true
 @export var shoot_interval: float = 2.4
 @export var detection_range: float = 320.0
 @export var gravity: float = 1100.0
+@export var is_ambush: bool = false
 
+var current_health: int = 2
 var facing_direction: int = -1 # -1 = Left, 1 = Right
 var is_dead: bool = false
+var is_dormant: bool = false
 var is_aiming: bool = false
 var _origin_x: float = 0.0
 var _initial_pos: Vector2 = Vector2.ZERO
@@ -38,6 +43,7 @@ func _ready() -> void:
 	add_to_group("enemies")
 	_initial_pos = global_position
 	_origin_x = global_position.x
+	current_health = max_health
 	_shoot_timer = randf_range(0.8, 1.8) # Stagger initial firing
 	alert_icon.visible = false
 	
@@ -45,10 +51,18 @@ func _ready() -> void:
 	_tex_run1 = load("res://assets/sprites/bb_enemy_run_1.png")
 	_tex_run2 = load("res://assets/sprites/bb_enemy_run_2.png")
 	
+	if is_ambush:
+		is_dormant = true
+		visible = false
+		if collision_shape:
+			collision_shape.disabled = true
+		if hurtbox_col:
+			hurtbox_col.disabled = true
+	
 	_update_facing()
 
 func _physics_process(delta: float) -> void:
-	if is_dead:
+	if is_dead or is_dormant:
 		return
 
 	# Apply gravity
@@ -117,7 +131,6 @@ func _face_player(player: Node2D) -> void:
 
 func _update_facing() -> void:
 	if sprite:
-		# Enemy sprite defaults to facing left
 		sprite.flip_h = (facing_direction > 0)
 	if muzzle_pos:
 		muzzle_pos.position.x = 18.0 * facing_direction
@@ -154,28 +167,72 @@ func _update_animation(delta: float) -> void:
 	else:
 		sprite.texture = _tex_idle
 
-func take_hit(_damage: int = 1) -> void:
-	if is_dead:
+## Ambushes: trigger dormant enemy to emerge
+func trigger_ambush() -> void:
+	if not is_dormant or is_dead:
 		return
-	is_dead = true
-	set_physics_process(false)
-	alert_icon.visible = false
-	
+	is_dormant = false
+	visible = true
 	if collision_shape:
-		collision_shape.disabled = true
+		collision_shape.disabled = false
 	if hurtbox_col:
-		hurtbox_col.disabled = true
-		
-	AudioManager.play_sfx("enemy_kill")
-	eliminated.emit()
+		hurtbox_col.disabled = false
+	
+	# Visual pop-up and alert telegraph
+	alert_icon.visible = true
+	AudioManager.play_sfx("warning")
+	velocity.y = -200.0 # Small jump out of cover
+	_shoot_timer = 0.7 # Reaction window before firing
 
-	# Defeat animation: red flash and drop/fade
 	var tween := create_tween()
-	tween.tween_property(sprite, "modulate", Color(1.0, 0.2, 0.2, 1.0), 0.04)
-	tween.tween_property(sprite, "scale", Vector2(1.2, 0.8), 0.08)
-	tween.parallel().tween_property(sprite, "position:y", sprite.position.y + 6.0, 0.12)
-	tween.parallel().tween_property(sprite, "modulate:a", 0.0, 0.15)
-	tween.tween_callback(queue_free)
+	tween.tween_property(self, "scale", Vector2(1.2, 1.2), 0.08)
+	tween.tween_property(self, "scale", Vector2.ONE, 0.08)
+	tween.tween_interval(0.4)
+	tween.tween_callback(func():
+		if is_instance_valid(alert_icon):
+			alert_icon.visible = false
+	)
+
+## Durability: 2-hit elimination rule
+func take_hit(damage: int = 1) -> void:
+	if is_dead or is_dormant:
+		return
+
+	current_health = clampi(current_health - damage, 0, max_health)
+
+	if current_health > 0:
+		# FIRST HIT: Clear damage feedback (flashing white/red modulate) & recoil
+		AudioManager.play_sfx("enemy_hit")
+		_show_hit_feedback()
+	else:
+		# SECOND HIT: Enemy eliminated!
+		is_dead = true
+		set_physics_process(false)
+		alert_icon.visible = false
+		
+		if collision_shape:
+			collision_shape.set_deferred("disabled", true)
+		if hurtbox_col:
+			hurtbox_col.set_deferred("disabled", true)
+			
+		AudioManager.play_sfx("enemy_kill")
+		eliminated.emit()
+
+		# Defeat animation: red flash, squish, and fade
+		var tween := create_tween()
+		tween.tween_property(sprite, "modulate", Color(1.0, 0.2, 0.2, 1.0), 0.04)
+		tween.tween_property(sprite, "scale", Vector2(1.2, 0.8), 0.08)
+		tween.parallel().tween_property(sprite, "position:y", sprite.position.y + 6.0, 0.12)
+		tween.parallel().tween_property(sprite, "modulate:a", 0.0, 0.15)
+		tween.tween_callback(queue_free)
+
+func _show_hit_feedback() -> void:
+	var tween := create_tween()
+	tween.tween_property(sprite, "modulate", Color(2.0, 0.3, 0.3, 1.0), 0.06)
+	tween.tween_property(sprite, "modulate", Color.WHITE, 0.08)
+	# Recoil knockback
+	velocity.x = -facing_direction * 100.0
+	velocity.y = -60.0
 
 func _get_active_player() -> Node2D:
 	var players = get_tree().get_nodes_in_group("player")
@@ -184,7 +241,7 @@ func _get_active_player() -> Node2D:
 	return null
 
 func _on_hurtbox_body_entered(body: Node2D) -> void:
-	if is_dead:
+	if is_dead or is_dormant:
 		return
 	if body is BulletBetrayalPlayer or body.is_in_group("player"):
 		if body.has_method("take_damage"):
@@ -193,19 +250,30 @@ func _on_hurtbox_body_entered(body: Node2D) -> void:
 func reset() -> void:
 	is_dead = false
 	is_aiming = false
+	current_health = max_health
 	set_physics_process(true)
 	global_position = _initial_pos
 	_origin_x = _initial_pos.x
 	facing_direction = -1
 	_shoot_timer = randf_range(0.8, 1.8)
 	alert_icon.visible = false
+	if is_ambush:
+		is_dormant = true
+		visible = false
+		if collision_shape:
+			collision_shape.disabled = true
+		if hurtbox_col:
+			hurtbox_col.disabled = true
+	else:
+		is_dormant = false
+		visible = true
+		if collision_shape:
+			collision_shape.set_deferred("disabled", false)
+		if hurtbox_col:
+			hurtbox_col.set_deferred("disabled", false)
 	if sprite:
 		sprite.texture = _tex_idle
 		sprite.modulate = Color.WHITE
 		sprite.scale = Vector2.ONE
 		sprite.position = Vector2.ZERO
-	if collision_shape:
-		collision_shape.set_deferred("disabled", false)
-	if hurtbox_col:
-		hurtbox_col.set_deferred("disabled", false)
 	_update_facing()
