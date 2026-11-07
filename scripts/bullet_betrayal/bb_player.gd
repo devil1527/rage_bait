@@ -32,6 +32,15 @@ var is_dead: bool:
 var is_invulnerable: bool = false
 var input_disabled: bool = false
 
+# Virtual touch input flags (direct mobile touch binding)
+var touch_left: bool = false
+var touch_right: bool = false
+var touch_jump: bool = false
+var touch_jump_just_pressed: bool = false
+var touch_jump_just_released: bool = false
+var touch_shoot: bool = false
+var touch_shoot_just_pressed: bool = false
+
 # Internal timers
 var _fire_timer: float = 0.0
 var _coyote_timer: float = 0.0
@@ -104,9 +113,9 @@ func _physics_process(delta: float) -> void:
 func _handle_input(delta: float) -> void:
 	# Horizontal locomotion
 	var move_input := 0.0
-	if Input.is_action_pressed("move_left"):
+	if Input.is_action_pressed("move_left") or touch_left:
 		move_input -= 1.0
-	if Input.is_action_pressed("move_right"):
+	if Input.is_action_pressed("move_right") or touch_right:
 		move_input += 1.0
 
 	if move_input != 0.0:
@@ -119,20 +128,32 @@ func _handle_input(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, 0.0, friction * delta)
 
 	# Jump input & buffering
-	if Input.is_action_just_pressed("jump"):
+	if Input.is_action_just_pressed("jump") or touch_jump_just_pressed:
 		_jump_buffer_timer = 0.12 # 120ms buffer
+	touch_jump_just_pressed = false
 
 	if _jump_buffer_timer > 0.0 and _coyote_timer > 0.0:
 		_execute_jump()
 
-	# Variable jump height
-	if Input.is_action_just_released("jump") and velocity.y < 0.0:
+	# Variable jump height cut on early release
+	if (Input.is_action_just_released("jump") or touch_jump_just_released) and velocity.y < 0.0:
 		velocity.y *= 0.52
+	touch_jump_just_released = false
 
 	# Shoot input (can fire while moving, running, jumping)
-	if Input.is_action_just_pressed("shoot") or (Input.is_action_pressed("shoot") and _fire_timer <= 0.0):
-		if _fire_timer <= 0.0:
-			_attempt_shoot()
+	var is_shooting := Input.is_action_just_pressed("shoot") or touch_shoot_just_pressed or Input.is_action_pressed("shoot") or touch_shoot
+	touch_shoot_just_pressed = false
+	if is_shooting and _fire_timer <= 0.0:
+		_attempt_shoot()
+
+func reset_touch_inputs() -> void:
+	touch_left = false
+	touch_right = false
+	touch_jump = false
+	touch_jump_just_pressed = false
+	touch_jump_just_released = false
+	touch_shoot = false
+	touch_shoot_just_pressed = false
 
 func _execute_jump() -> void:
 	velocity.y = jump_velocity

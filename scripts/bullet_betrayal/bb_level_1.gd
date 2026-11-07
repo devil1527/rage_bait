@@ -5,6 +5,7 @@ extends Node2D
 ## Orchestrates level lifecycle, player respawns, HUD binding, and completion.
 
 const MENU_SCENE: String = "res://scenes/bullet_betrayal/bullet_betrayal_menu.tscn"
+const ARCADE_SCENE: String = "res://scenes/ui/main_menu.tscn"
 
 @onready var player: BulletBetrayalPlayer = $Player
 @onready var hud: BulletBetrayalHUD = $HUD
@@ -18,11 +19,16 @@ var _enemies_eliminated: int = 0
 var _is_completed: bool = false
 
 func _ready() -> void:
+	# Critical: Enable gameplay active flag so TouchButton accepts mobile screen touch events
+	if GameManager:
+		GameManager.is_gameplay_active = true
+
 	# Bind HUD
 	if hud and player:
 		hud.connect_player(player)
 		hud.restart_requested.connect(restart_level)
 		hud.menu_requested.connect(return_to_menu)
+		hud.arcade_requested.connect(_on_arcade_requested)
 
 	# Bind Extraction
 	if extraction_beacon:
@@ -33,6 +39,10 @@ func _ready() -> void:
 
 	# Intro Banner animation
 	_animate_intro_banner()
+
+func _exit_tree() -> void:
+	if GameManager:
+		GameManager.is_gameplay_active = false
 
 func _setup_enemy_signals() -> void:
 	for enemy in enemies_container.get_children():
@@ -70,9 +80,23 @@ func _on_extraction_reached() -> void:
 		hud.show_victory(player.current_ammo if player else 0)
 
 func restart_level() -> void:
+	if hud:
+		hud.reset_touch_controls()
 	get_tree().paused = false
 	get_tree().reload_current_scene()
 
 func return_to_menu() -> void:
+	if GameManager:
+		GameManager.is_gameplay_active = false
+	if hud:
+		hud.reset_touch_controls()
 	get_tree().paused = false
 	get_tree().change_scene_to_file(MENU_SCENE)
+
+func _on_arcade_requested() -> void:
+	if GameManager:
+		GameManager.is_gameplay_active = false
+	if hud:
+		hud.reset_touch_controls()
+	get_tree().paused = false
+	get_tree().change_scene_to_file(ARCADE_SCENE)

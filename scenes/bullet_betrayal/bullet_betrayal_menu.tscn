@@ -1,61 +1,213 @@
-[gd_scene load_steps=7 format=3 uid="uid://bbmenu001"]
+[gd_scene load_steps=18 format=3 uid="uid://bbmenu001"]
 
 [ext_resource type="Script" path="res://scripts/bullet_betrayal/bullet_betrayal_menu.gd" id="1_scr"]
-[ext_resource type="Texture2D" path="res://assets/sprites/card_bullet_betrayal.png" id="2_card"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_header_btn"]
-bg_color = Color(0.1, 0.12, 0.16, 0.95)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal"]
+bg_color = Color(0.08, 0.06, 0.15, 0.98)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.2, 0.85, 0.45, 0.9)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-shadow_color = Color(0, 0, 0, 0.3)
-shadow_size = 4
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
-bg_color = Color(0.08, 0.1, 0.14, 0.96)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.85, 0.35, 0.45, 1)
+border_color = Color(0.2, 0.95, 0.55, 1)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
-shadow_color = Color(0.8, 0.2, 0.3, 0.25)
+shadow_color = Color(0.1, 0.8, 0.4, 0.25)
 shadow_size = 12
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_deploy_btn"]
-bg_color = Color(0.18, 0.08, 0.14, 0.98)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_modal"]
+bg_color = Color(0.12, 0.18, 0.16, 0.95)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(1, 0.4, 0.55, 1)
+border_color = Color(0.2, 0.95, 0.55, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
-shadow_color = Color(1, 0.2, 0.4, 0.4)
-shadow_size = 8
+shadow_color = Color(0.1, 0.8, 0.4, 0.3)
+shadow_size = 4
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal"]
-bg_color = Color(0.08, 0.08, 0.12, 0.98)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_modal_hover"]
+bg_color = Color(0.16, 0.26, 0.22, 0.98)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.2, 0.85, 0.45, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+border_color = Color(0.4, 1, 0.7, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0.2, 0.9, 0.5, 0.5)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_back_btn"]
+bg_color = Color(0.08, 0.07, 0.16, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0, 0.88, 1, 0.9)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0.85, 1, 0.25)
+shadow_size = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_back_btn_hover"]
+bg_color = Color(0.14, 0.12, 0.26, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3, 0.98, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0.95, 1, 0.5)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_progress_bg"]
+bg_color = Color(0.06, 0.05, 0.12, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.25, 0.38, 0.8)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_progress_fill"]
+bg_color = Color(0.2, 0.95, 0.55, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+shadow_color = Color(0.1, 0.85, 0.45, 0.45)
+shadow_size = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill_normal"]
+bg_color = Color(0.08, 0.07, 0.15, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.25, 0.28, 0.4, 0.8)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill_active"]
+bg_color = Color(0.06, 0.14, 0.12, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.95, 0.55, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.1, 0.85, 0.45, 0.35)
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wcard_w1"]
+bg_color = Color(0.05, 0.10, 0.08, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.92, 0.52, 0.9)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0.1, 0.8, 0.4, 0.3)
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wcard_w2"]
+bg_color = Color(0.14, 0.10, 0.06, 0.90)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85, 0.65, 0.2, 0.8)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wcard_w3"]
+bg_color = Color(0.09, 0.08, 0.14, 0.90)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.5, 0.45, 0.75, 0.8)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wcard_w4"]
+bg_color = Color(0.12, 0.06, 0.08, 0.90)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85, 0.3, 0.35, 0.8)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_stage_playable"]
+bg_color = Color(0.08, 0.16, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.95, 0.55, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.1, 0.85, 0.45, 0.35)
+shadow_size = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_stage_playable_hover"]
+bg_color = Color(0.12, 0.24, 0.18, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 1, 0.75, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.2, 0.95, 0.55, 0.55)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_stage_locked"]
+bg_color = Color(0.06, 0.06, 0.09, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.22, 0.24, 0.3, 0.6)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [node name="BulletBetrayalMenu" type="Control"]
 layout_mode = 3
@@ -73,7 +225,15 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.05, 0.06, 0.09, 1)
+color = Color(0.047, 0.035, 0.082, 1)
+
+[node name="AmbientTopBar" type="ColorRect" parent="Background"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 3.0
+grow_horizontal = 2
+color = Color(1, 0.82, 0.15, 0.6)
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -82,117 +242,463 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 16
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 12
 
 [node name="VBox" type="VBoxContainer" parent="MarginContainer"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 8
 
 [node name="HeaderBar" type="HBoxContainer" parent="MarginContainer/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 14
 
-[node name="BackBtn" type="Button" parent="MarginContainer/VBox/HeaderBar"]
-custom_minimum_size = Vector2(210, 40)
+[node name="BackButton" type="Button" parent="MarginContainer/VBox/HeaderBar"]
+custom_minimum_size = Vector2(110, 38)
 layout_mode = 2
-focus_mode = 0
-theme_override_colors/font_color = Color(0.85, 0.92, 1, 1)
-theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = SubResource("StyleBoxFlat_header_btn")
-text = "◀ RETRO RAGE ARCADE"
+theme_override_styles/normal = SubResource("StyleBoxFlat_back_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_back_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_back_btn")
+theme_override_styles/focus = SubResource("StyleBoxFlat_back_btn_hover")
+theme_override_colors/font_color = Color(0, 0.94, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "◀ MENU"
 
 [node name="TitleBox" type="VBoxContainer" parent="MarginContainer/VBox/HeaderBar"]
 layout_mode = 2
-size_flags_horizontal = 3
-alignment = 1
+theme_override_constants/separation = 0
 
-[node name="Title" type="Label" parent="MarginContainer/VBox/HeaderBar/TitleBox"]
+[node name="TitleLabel" type="Label" parent="MarginContainer/VBox/HeaderBar/TitleBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.45, 0.58, 1)
-theme_override_colors/font_shadow_color = Color(0.5, 0.05, 0.15, 0.7)
-theme_override_constants/shadow_offset_x = 1
-theme_override_constants/shadow_offset_y = 1
+theme_override_colors/font_color = Color(1, 0.86, 0.15, 1)
+theme_override_colors/font_shadow_color = Color(0.9, 0.12, 0.4, 1)
+theme_override_colors/font_outline_color = Color(0.18, 0.06, 0.25, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 24
 text = "BULLET BETRAYAL"
-horizontal_alignment = 1
 
-[node name="Subtitle" type="Label" parent="MarginContainer/VBox/HeaderBar/TitleBox"]
+[node name="SubtitleLabel" type="Label" parent="MarginContainer/VBox/HeaderBar/TitleBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.65, 0.72, 0.8, 0.85)
+theme_override_colors/font_color = Color(0, 0.941176, 1, 1)
 theme_override_font_sizes/font_size = 12
-text = "2D Tactical Military Run-and-Gun"
-horizontal_alignment = 1
+text = "World 1: The Green Hills"
 
-[node name="SfxBtn" type="Button" parent="MarginContainer/VBox/HeaderBar"]
-custom_minimum_size = Vector2(100, 40)
+[node name="Spacer" type="Control" parent="MarginContainer/VBox/HeaderBar"]
 layout_mode = 2
-focus_mode = 0
-theme_override_styles/normal = SubResource("StyleBoxFlat_header_btn")
-text = "SFX: ON"
+size_flags_horizontal = 3
 
-[node name="MissionCard" type="Panel" parent="MarginContainer/VBox"]
+[node name="ProgressBox" type="VBoxContainer" parent="MarginContainer/VBox/HeaderBar"]
+custom_minimum_size = Vector2(230, 0)
 layout_mode = 2
-size_flags_vertical = 3
-theme_override_styles/panel = SubResource("StyleBoxFlat_card")
-
-[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/MissionCard"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 32.0
-offset_top = 20.0
-offset_right = -32.0
-offset_bottom = -20.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 3
 alignment = 1
 
-[node name="CardArt" type="TextureRect" parent="MarginContainer/VBox/MissionCard/VBox"]
-custom_minimum_size = Vector2(0, 100)
+[node name="ProgressLabel" type="Label" parent="MarginContainer/VBox/HeaderBar/ProgressBox"]
 layout_mode = 2
-texture = ExtResource("2_card")
-expand_mode = 1
-stretch_mode = 5
+theme_override_colors/font_color = Color(0.85, 0.92, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "STAGES ACTIVE: 1 / 20"
+horizontal_alignment = 2
 
-[node name="WorldTitle" type="Label" parent="MarginContainer/VBox/MissionCard/VBox"]
+[node name="ProgressBar" type="ProgressBar" parent="MarginContainer/VBox/HeaderBar/ProgressBox"]
+custom_minimum_size = Vector2(0, 12)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.3, 1, 0.6, 1)
-theme_override_font_sizes/font_size = 18
-text = "WORLD 1 — THE GREEN HILLS"
-horizontal_alignment = 1
+theme_override_styles/background = SubResource("StyleBoxFlat_progress_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_progress_fill")
+value = 5.0
+show_percentage = false
 
-[node name="StageDesc" type="Label" parent="MarginContainer/VBox/MissionCard/VBox"]
+[node name="SfxBtn" type="Button" parent="MarginContainer/VBox/HeaderBar"]
+custom_minimum_size = Vector2(100, 38)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.85, 0.95, 0.9)
+theme_override_styles/normal = SubResource("StyleBoxFlat_back_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_back_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_back_btn")
+theme_override_styles/focus = SubResource("StyleBoxFlat_back_btn_hover")
+theme_override_colors/font_color = Color(0.2, 1, 0.6, 1)
 theme_override_font_sizes/font_size = 13
-text = "STAGE 1: BORDER INFILTRATION\nDrop into hostile jungle hill territory, conserve 10 starting rounds, eliminate guards, and reach extraction."
-horizontal_alignment = 1
+text = "SFX: ON"
 
-[node name="DeployBtn" type="Button" parent="MarginContainer/VBox/MissionCard/VBox"]
-custom_minimum_size = Vector2(280, 48)
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBox"]
 layout_mode = 2
-size_flags_horizontal = 4
-focus_mode = 0
-theme_override_colors/font_color = Color(1, 0.9, 0.95, 1)
-theme_override_font_sizes/font_size = 16
-theme_override_styles/normal = SubResource("StyleBoxFlat_deploy_btn")
-text = "▶ DEPLOY MISSION (STAGE 1)"
+modulate = Color(1, 0.82, 0.15, 0.35)
 
-[node name="MessageModal" type="Control" parent="."]
-visible = false
+[node name="WorldCardsBar" type="HBoxContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="PillW1" type="Button" parent="MarginContainer/VBox/WorldCardsBar"]
+custom_minimum_size = Vector2(140, 34)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_pill_active")
+theme_override_colors/font_color = Color(0.2, 0.95, 0.55, 1)
+theme_override_font_sizes/font_size = 12
+text = "W1: GREEN HILLS"
+
+[node name="PillW2" type="Button" parent="MarginContainer/VBox/WorldCardsBar"]
+custom_minimum_size = Vector2(140, 34)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_pill_normal")
+theme_override_colors/font_color = Color(0.7, 0.72, 0.8, 0.8)
+theme_override_font_sizes/font_size = 12
+text = "W2: OUTPOST 🔒"
+
+[node name="PillW3" type="Button" parent="MarginContainer/VBox/WorldCardsBar"]
+custom_minimum_size = Vector2(140, 34)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_pill_normal")
+theme_override_colors/font_color = Color(0.7, 0.72, 0.8, 0.8)
+theme_override_font_sizes/font_size = 12
+text = "W3: FORTRESS 🔒"
+
+[node name="PillW4" type="Button" parent="MarginContainer/VBox/WorldCardsBar"]
+custom_minimum_size = Vector2(140, 34)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_pill_normal")
+theme_override_colors/font_color = Color(0.7, 0.72, 0.8, 0.8)
+theme_override_font_sizes/font_size = 12
+text = "W4: STRONGHOLD 🔒"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 1
+
+[node name="WorldsContainer" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="World1Card" type="PanelContainer" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_wcard_w1")
+
+[node name="Margin" type="MarginContainer" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 14
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="HeaderHBox" type="HBoxContainer" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox"]
+layout_mode = 2
+
+[node name="WorldTitle" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/HeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.95, 0.55, 1)
+theme_override_font_sizes/font_size = 16
+text = "WORLD 1 — THE GREEN HILLS"
+
+[node name="WorldSub" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/HeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 0.75, 0.7)
+theme_override_font_sizes/font_size = 12
+text = " | Tactical Infiltration Operations"
+
+[node name="StagesGrid" type="GridContainer" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+columns = 5
+
+[node name="Stage1Btn" type="Button" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid"]
+custom_minimum_size = Vector2(170, 94)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_stage_playable")
+theme_override_styles/hover = SubResource("StyleBoxFlat_stage_playable_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_stage_playable")
+theme_override_styles/focus = SubResource("StyleBoxFlat_stage_playable_hover")
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid/Stage1Btn"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+alignment = 1
 
-[node name="Dimmer" type="ColorRect" parent="MessageModal"]
+[node name="Num" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid/Stage1Btn/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.2, 1)
+theme_override_font_sizes/font_size = 11
+text = "STAGE 1"
+horizontal_alignment = 1
+
+[node name="Title" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid/Stage1Btn/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "Border Infiltration"
+horizontal_alignment = 1
+
+[node name="Status" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid/Stage1Btn/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.95, 0.55, 1)
+theme_override_font_sizes/font_size = 11
+text = "▶ PLAYABLE"
+horizontal_alignment = 1
+
+[node name="Stage2Btn" type="Button" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid"]
+custom_minimum_size = Vector2(170, 94)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_stage_locked")
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid/Stage2Btn"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Num" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid/Stage2Btn/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.55, 0.65, 0.8)
+theme_override_font_sizes/font_size = 11
+text = "STAGE 2"
+horizontal_alignment = 1
+
+[node name="Title" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid/Stage2Btn/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.7, 0.75, 0.8)
+theme_override_font_sizes/font_size = 13
+text = "River Ambush"
+horizontal_alignment = 1
+
+[node name="Status" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid/Stage2Btn/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.35, 0.45, 0.8)
+theme_override_font_sizes/font_size = 11
+text = "🔒 LOCKED"
+horizontal_alignment = 1
+
+[node name="Stage3Btn" type="Button" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid"]
+custom_minimum_size = Vector2(170, 94)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_stage_locked")
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid/Stage3Btn"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Num" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid/Stage3Btn/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.55, 0.65, 0.8)
+theme_override_font_sizes/font_size = 11
+text = "STAGE 3"
+horizontal_alignment = 1
+
+[node name="Title" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid/Stage3Btn/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.7, 0.75, 0.8)
+theme_override_font_sizes/font_size = 13
+text = "Supply Depot"
+horizontal_alignment = 1
+
+[node name="Status" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid/Stage3Btn/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.35, 0.45, 0.8)
+theme_override_font_sizes/font_size = 11
+text = "🔒 LOCKED"
+horizontal_alignment = 1
+
+[node name="Stage4Btn" type="Button" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid"]
+custom_minimum_size = Vector2(170, 94)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_stage_locked")
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid/Stage4Btn"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Num" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid/Stage4Btn/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.55, 0.65, 0.8)
+theme_override_font_sizes/font_size = 11
+text = "STAGE 4"
+horizontal_alignment = 1
+
+[node name="Title" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid/Stage4Btn/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.7, 0.75, 0.8)
+theme_override_font_sizes/font_size = 13
+text = "Radar Station"
+horizontal_alignment = 1
+
+[node name="Status" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid/Stage4Btn/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.35, 0.45, 0.8)
+theme_override_font_sizes/font_size = 11
+text = "🔒 LOCKED"
+horizontal_alignment = 1
+
+[node name="Stage5Btn" type="Button" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid"]
+custom_minimum_size = Vector2(170, 94)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_stage_locked")
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid/Stage5Btn"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Num" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid/Stage5Btn/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.55, 0.65, 0.8)
+theme_override_font_sizes/font_size = 11
+text = "STAGE 5"
+horizontal_alignment = 1
+
+[node name="Title" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid/Stage5Btn/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.7, 0.75, 0.8)
+theme_override_font_sizes/font_size = 13
+text = "Commander's Camp"
+horizontal_alignment = 1
+
+[node name="Status" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World1Card/Margin/VBox/StagesGrid/Stage5Btn/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.35, 0.45, 0.8)
+theme_override_font_sizes/font_size = 11
+text = "🔒 LOCKED"
+horizontal_alignment = 1
+
+[node name="World2Card" type="PanelContainer" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_wcard_w2")
+
+[node name="Margin" type="MarginContainer" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World2Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 14
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World2Card/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HeaderHBox" type="HBoxContainer" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World2Card/Margin/VBox"]
+layout_mode = 2
+
+[node name="WorldTitle" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World2Card/Margin/VBox/HeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.75, 0.3, 1)
+theme_override_font_sizes/font_size = 16
+text = "WORLD 2 — DESERT OUTPOST 🔒"
+
+[node name="WorldSub" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World2Card/Margin/VBox/HeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.75, 0.6)
+theme_override_font_sizes/font_size = 12
+text = " | High-Heat Hostile Territory (Stages 6–10)"
+
+[node name="LockedMsg" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World2Card/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.65, 0.75, 0.75)
+theme_override_font_sizes/font_size = 13
+text = "Operation Sector Classified. Complete World 1 to unlock desert deployments."
+
+[node name="World3Card" type="PanelContainer" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_wcard_w3")
+
+[node name="Margin" type="MarginContainer" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World3Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 14
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World3Card/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HeaderHBox" type="HBoxContainer" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World3Card/Margin/VBox"]
+layout_mode = 2
+
+[node name="WorldTitle" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World3Card/Margin/VBox/HeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.65, 0.95, 1)
+theme_override_font_sizes/font_size = 16
+text = "WORLD 3 — MOUNTAIN FORTRESS 🔒"
+
+[node name="WorldSub" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World3Card/Margin/VBox/HeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.75, 0.6)
+theme_override_font_sizes/font_size = 12
+text = " | Elevated Defense Networks (Stages 11–15)"
+
+[node name="LockedMsg" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World3Card/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.65, 0.75, 0.75)
+theme_override_font_sizes/font_size = 13
+text = "Operation Sector Classified. Complete World 2 to gain high-altitude clearance."
+
+[node name="World4Card" type="PanelContainer" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_wcard_w4")
+
+[node name="Margin" type="MarginContainer" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World4Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 14
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World4Card/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HeaderHBox" type="HBoxContainer" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World4Card/Margin/VBox"]
+layout_mode = 2
+
+[node name="WorldTitle" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World4Card/Margin/VBox/HeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.45, 0.5, 1)
+theme_override_font_sizes/font_size = 16
+text = "WORLD 4 — URBAN STRONGHOLD 🔒"
+
+[node name="WorldSub" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World4Card/Margin/VBox/HeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.75, 0.6)
+theme_override_font_sizes/font_size = 12
+text = " | Core Enemy Headquarters (Stages 16–20)"
+
+[node name="LockedMsg" type="Label" parent="MarginContainer/VBox/ScrollContainer/WorldsContainer/World4Card/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.65, 0.75, 0.75)
+theme_override_font_sizes/font_size = 13
+text = "Operation Sector Classified. Infiltrate previous worlds to reach the stronghold."
+
+[node name="MessageModal" type="ColorRect" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -201,47 +707,52 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.75)
 
-[node name="Panel" type="Panel" parent="MessageModal"]
-custom_minimum_size = Vector2(360, 180)
+[node name="Panel" type="PanelContainer" parent="MessageModal"]
+custom_minimum_size = Vector2(460, 200)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -180.0
-offset_top = -90.0
-offset_right = 180.0
-offset_bottom = 90.0
+offset_left = -230.0
+offset_top = -100.0
+offset_right = 230.0
+offset_bottom = 100.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
 
 [node name="VBox" type="VBoxContainer" parent="MessageModal/Panel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = 20.0
-offset_right = -20.0
-offset_bottom = -20.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 16
+layout_mode = 2
+theme_override_constants/separation = 14
 alignment = 1
 
-[node name="MessageLabel" type="Label" parent="MessageModal/Panel/VBox"]
+[node name="TitleLabel" type="Label" parent="MessageModal/Panel/VBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 18
+text = "CLASSIFIED SECTOR"
+horizontal_alignment = 1
+
+[node name="MessageLabel" type="Label" parent="MessageModal/Panel/VBox"]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.92, 0.94, 1, 1)
 theme_override_font_sizes/font_size = 14
-text = "Notice"
+text = "Sector intel is currently unavailable."
 horizontal_alignment = 1
 autowrap_mode = 2
 
 [node name="OkButton" type="Button" parent="MessageModal/Panel/VBox"]
-custom_minimum_size = Vector2(100, 36)
+custom_minimum_size = Vector2(120, 38)
 layout_mode = 2
 size_flags_horizontal = 4
-focus_mode = 0
-theme_override_styles/normal = SubResource("StyleBoxFlat_header_btn")
-text = "OK"
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_modal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_modal_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_modal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_btn_modal_hover")
+theme_override_colors/font_color = Color(0.2, 0.95, 0.55, 1)
+theme_override_font_sizes/font_size = 13
+text = "GOT IT"
