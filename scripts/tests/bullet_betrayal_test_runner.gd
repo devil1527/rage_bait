@@ -82,7 +82,7 @@ func test_main_menu_bullet_betrayal_card() -> void:
 	menu.queue_free()
 
 func test_bullet_betrayal_menu() -> void:
-	print("\n--- TEST: Bullet Betrayal Arcade-Consistent Menu ---")
+	print("\n--- TEST: Bullet Betrayal Coin Hell-Matched Menu ---")
 	var bb_menu_scene: PackedScene = load("res://scenes/bullet_betrayal/bullet_betrayal_menu.tscn")
 	assert_true(bb_menu_scene != null, "Bullet Betrayal menu scene loads successfully")
 	var bb_menu: BulletBetrayalMenu = bb_menu_scene.instantiate()
@@ -91,7 +91,7 @@ func test_bullet_betrayal_menu() -> void:
 	# Header bar components
 	var back_btn: Button = bb_menu.get_node_or_null("MarginContainer/VBox/HeaderBar/BackButton")
 	assert_true(back_btn != null, "BackButton exists in HeaderBar")
-	assert_eq(back_btn.text, "◀ MENU", "BackButton text is '◀ MENU' matching Coin Hell")
+	assert_eq(back_btn.text, "◀ MENU", "BackButton starts as '◀ MENU' matching Coin Hell")
 	assert_eq(back_btn.custom_minimum_size, Vector2(110, 38), "BackButton size is 110x38 matching Coin Hell")
 	
 	var title_lbl: Label = bb_menu.get_node_or_null("MarginContainer/VBox/HeaderBar/TitleBox/TitleLabel")
@@ -100,43 +100,50 @@ func test_bullet_betrayal_menu() -> void:
 	
 	var progress_lbl: Label = bb_menu.get_node_or_null("MarginContainer/VBox/HeaderBar/ProgressBox/ProgressLabel")
 	assert_true(progress_lbl != null, "ProgressLabel exists")
-	assert_true(progress_lbl.text.contains("STAGES ACTIVE"), "ProgressLabel displays STAGES ACTIVE: 1 / 20")
+	assert_true(progress_lbl.text.contains("STAGES CLEARED"), "ProgressLabel displays STAGES CLEARED matching Coin Hell")
 	
-	var sfx_btn: Button = bb_menu.get_node_or_null("MarginContainer/VBox/HeaderBar/SfxBtn")
-	assert_true(sfx_btn != null, "SFX button exists")
-	assert_true(sfx_btn.text == "SFX: ON" or sfx_btn.text == "SFX: OFF", "SFX button text valid")
-	
-	# World Filter Bar
-	var world_bar = bb_menu.get_node_or_null("MarginContainer/VBox/WorldCardsBar")
+	# World Navigation Cards Bar
+	var world_bar = bb_menu.world_cards_bar
 	assert_true(world_bar != null, "WorldCardsBar exists")
-	assert_true(bb_menu.pill_w1 != null, "Pill W1 exists")
-	assert_true(bb_menu.pill_w2 != null, "Pill W2 exists")
-	assert_true(bb_menu.pill_w3 != null, "Pill W3 exists")
-	assert_true(bb_menu.pill_w4 != null, "Pill W4 exists")
+	assert_true(bb_menu.world_card_buttons.has(0), "TabAllWorlds exists")
+	assert_true(bb_menu.world_card_buttons.has(1), "WorldNavCard_1 exists")
+	assert_true(bb_menu.world_card_buttons.has(2), "WorldNavCard_2 exists")
+	assert_true(bb_menu.world_card_buttons.has(3), "WorldNavCard_3 exists")
+	assert_true(bb_menu.world_card_buttons.has(4), "WorldNavCard_4 exists")
 	
-	# Stages in World 1
-	var stage_1: Button = bb_menu.stage_1_btn
-	assert_true(stage_1 != null, "Stage 1 button exists in World 1 panel")
+	# Stage 1 Button
+	var stage_1: Button = bb_menu.get_level_button(1)
+	assert_true(stage_1 != null, "Stage 1 button exists")
 	assert_eq(stage_1.custom_minimum_size, Vector2(170, 94), "Stage 1 button is 170x94 standard arcade size")
 	
-	var stage_2: Button = bb_menu.stage_2_btn
+	# Stage 2 Button (locked)
+	var stage_2: Button = bb_menu.get_level_button(2)
 	assert_true(stage_2 != null, "Stage 2 button exists (locked)")
+	
+	# Test world tab filtering
+	bb_menu._select_world_tab(2)
+	assert_eq(bb_menu.current_selected_world, 2, "Selecting tab 2 sets current_selected_world = 2")
+	assert_eq(back_btn.text, "◀ WORLDS", "BackButton changes to '◀ WORLDS' when world is selected")
+	
+	var sec_1 = bb_menu.worlds_container.get_node_or_null("WorldSection_1")
+	var sec_2 = bb_menu.worlds_container.get_node_or_null("WorldSection_2")
+	assert_true(sec_2 != null and sec_2.visible, "WorldSection_2 is visible")
+	assert_true(sec_1 != null and not sec_1.visible, "WorldSection_1 is hidden when World 2 is selected")
+	
+	# Test BackButton returns to all worlds
+	bb_menu._on_back_pressed()
+	assert_eq(bb_menu.current_selected_world, 0, "Back button resets current_selected_world to 0")
+	assert_eq(back_btn.text, "◀ MENU", "Back button text resets to '◀ MENU'")
+	assert_true(sec_1.visible and sec_2.visible, "All world sections visible after returning to all worlds")
 	
 	# Test locked stage modal trigger
 	assert_true(not bb_menu.message_modal.visible, "MessageModal starts hidden")
 	stage_2.pressed.emit()
 	assert_true(bb_menu.message_modal.visible, "Clicking locked stage displays arcade MessageModal")
-	assert_eq(bb_menu.modal_title.text, "SECTOR LOCKED", "MessageModal title is SECTOR LOCKED")
+	assert_eq(bb_menu.modal_title.text, "STAGE 2 IS LOCKED", "MessageModal title matches Coin Hell format")
 	
 	bb_menu.modal_ok_btn.pressed.emit()
 	assert_true(not bb_menu.message_modal.visible, "Clicking GOT IT closes MessageModal")
-	
-	# Test locked world pill modal trigger
-	bb_menu.pill_w2.pressed.emit()
-	assert_true(bb_menu.message_modal.visible, "Clicking locked World pill displays MessageModal")
-	assert_eq(bb_menu.modal_title.text, "THEATER LOCKED", "World lock modal title is THEATER LOCKED")
-	bb_menu.modal_ok_btn.pressed.emit()
-	assert_true(not bb_menu.message_modal.visible, "Modal closed")
 	
 	bb_menu.queue_free()
 
@@ -382,8 +389,8 @@ func test_pause_menu_and_confirmation_modals() -> void:
 	
 	# Test mission select confirmation popup
 	hud.pause_mission_btn.pressed.emit()
-	assert_true(hud.confirm_modal.visible, "Confirm modal visible after pressing Mission Select")
-	assert_eq(hud.modal_title.text, "MISSION SELECT?", "Confirm modal title is MISSION SELECT?")
+	assert_true(hud.confirm_modal.visible, "Confirm modal visible after pressing Stage Select")
+	assert_eq(hud.modal_title.text, "RETURN TO MENU?", "Confirm modal title is RETURN TO MENU?")
 	hud.modal_cancel_btn.pressed.emit()
 	
 	# Test arcade menu confirmation popup

@@ -207,8 +207,8 @@ func _open_confirm(action: String) -> void:
 			modal_message.text = "Restart mission from the beginning? Current progress will be lost."
 			modal_confirm_btn.text = "↺ RESTART"
 		"mission_select":
-			modal_title.text = "MISSION SELECT?"
-			modal_message.text = "Return to Bullet Betrayal stage select? Current run will be abandoned."
+			modal_title.text = "RETURN TO MENU?"
+			modal_message.text = "Return to stage selection? Current mission progress will be lost."
 			modal_confirm_btn.text = "CONFIRM"
 		"arcade_menu":
 			modal_title.text = "RETURN TO ARCADE?"
