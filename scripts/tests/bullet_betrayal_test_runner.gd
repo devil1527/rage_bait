@@ -73,6 +73,10 @@ func run_all_tests() -> void:
 	test_pause_menu_and_confirmation_modals()
 	test_level_1_layout_and_sections()
 	test_level_1_full_lifecycle()
+	test_phase3_enemy_ledge_detection_and_pit_prevention()
+	test_phase3_ambush_archetypes_and_reaction_buffers()
+	test_phase3_ground_elevation_continuity_and_no_cliffs()
+	test_phase3_enemy_no_auto_despawn_simulation()
 
 func test_audio_manager_bullet_betrayal_sfx() -> void:
 	print("\n--- TEST: Bullet Betrayal Audio SFX ---")
@@ -675,3 +679,128 @@ func test_level_1_full_lifecycle() -> void:
 	# Verify GameManager gameplay active flag resets on exit
 	if GameManager:
 		assert_true(not GameManager.is_gameplay_active, "GameManager.is_gameplay_active is FALSE after leaving level")
+
+func test_phase3_enemy_ledge_detection_and_pit_prevention() -> void:
+	print("\n--- TEST: Phase 3 Enemy Ledge Detection & Pit Prevention ---")
+	var enemy_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_enemy_soldier.tscn")
+	var enemy: BulletBetrayalEnemySoldier = enemy_scene.instantiate()
+	add_child(enemy)
+	
+	# Verify LedgeCheck node exists
+	var ledge_check = enemy.get_node_or_null("LedgeCheck")
+	assert_true(ledge_check != null, "Enemy has LedgeCheck RayCast2D for cliff detection")
+	assert_eq(ledge_check.collision_mask, 2, "LedgeCheck scans terrain collision layer (mask 2)")
+	
+	# Verify facing update repositions ledge check ahead of feet
+	enemy.facing_direction = -1
+	enemy._update_facing()
+	assert_eq(ledge_check.position.x, -12.0, "LedgeCheck positioned at -12px when facing left")
+	enemy.facing_direction = 1
+	enemy._update_facing()
+	assert_eq(ledge_check.position.x, 12.0, "LedgeCheck positioned at +12px when facing right")
+	
+	# Verify knockback on first hit is grounded and gentle (does not throw off platforms)
+	enemy.current_health = 2
+	enemy.take_hit(1)
+	assert_eq(enemy.current_health, 1, "Enemy survives hit 1")
+	assert_true(absf(enemy.velocity.x) <= 45.0, "Knockback velocity is bounded (<= 45.0 px/s)")
+	assert_eq(enemy.velocity.y, 0.0, "Knockback has no upward pop (velocity.y == 0.0)")
+	
+	enemy.queue_free()
+
+func test_phase3_ambush_archetypes_and_reaction_buffers() -> void:
+	print("\n--- TEST: Phase 3 Ambush Archetypes & Fair Telegraphs ---")
+	# Check all 5 archetype enums
+	assert_eq(int(BulletBetrayalEnemySoldier.AmbushType.BUNKER), 1, "AmbushType.BUNKER is defined")
+	assert_eq(int(BulletBetrayalEnemySoldier.AmbushType.OFFSCREEN), 2, "AmbushType.OFFSCREEN is defined")
+	assert_eq(int(BulletBetrayalEnemySoldier.AmbushType.ELEVATED), 3, "AmbushType.ELEVATED is defined")
+	assert_eq(int(BulletBetrayalEnemySoldier.AmbushType.CONCEALED), 4, "AmbushType.CONCEALED is defined")
+	assert_eq(int(BulletBetrayalEnemySoldier.AmbushType.REINFORCEMENT), 5, "AmbushType.REINFORCEMENT is defined")
+	
+	var enemy_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_enemy_soldier.tscn")
+	var bunker_ambush: BulletBetrayalEnemySoldier = enemy_scene.instantiate()
+	bunker_ambush.is_ambush = true
+	bunker_ambush.ambush_type = BulletBetrayalEnemySoldier.AmbushType.BUNKER
+	add_child(bunker_ambush)
+	
+	assert_true(bunker_ambush.is_dormant, "Bunker ambush starts dormant")
+	assert_true(not bunker_ambush.visible, "Bunker ambush starts invisible")
+	
+	# Trigger ambush
+	bunker_ambush.trigger_ambush()
+	assert_true(not bunker_ambush.is_dormant, "Bunker ambush active after trigger")
+	assert_true(bunker_ambush.visible, "Bunker ambush visible after trigger")
+	assert_true(bunker_ambush.alert_icon.visible, "Bunker ambush shows '!' alert telegraph")
+	assert_true(bunker_ambush._shoot_timer >= 0.70, "Reaction window is at least 0.70s before first shot")
+	assert_eq(bunker_ambush.current_health, 2, "Ambush enemy has full 2 health upon reveal")
+	
+	bunker_ambush.queue_free()
+
+func test_phase3_ground_elevation_continuity_and_no_cliffs() -> void:
+	print("\n--- TEST: Phase 3 Ground Elevation Continuity ---")
+	var level_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_level_1.tscn")
+	var level: BulletBetrayalLevel1 = level_scene.instantiate()
+	add_child(level)
+	
+	var g1: StaticBody2D = level.get_node("Platforms/Ground1")
+	var g2: StaticBody2D = level.get_node("Platforms/Ground2")
+	var g3: StaticBody2D = level.get_node("Platforms/Ground3")
+	var g4: StaticBody2D = level.get_node("Platforms/Ground4")
+	var g5: StaticBody2D = level.get_node("Platforms/Ground5")
+	var g6: StaticBody2D = level.get_node("Platforms/Ground6")
+	
+	# All ground segments must have top surface at exactly y = 410.0 (position 460 - 50 height)
+	var g1_top = g1.position.y - 50.0
+	var g2_top = g2.position.y - 50.0
+	var g3_top = g3.position.y - 50.0
+	var g4_top = g4.position.y - 50.0
+	var g5_top = g5.position.y - 50.0
+	var g6_top = g6.position.y - 50.0
+	
+	assert_eq(g1_top, 410.0, "Ground1 top elevation is exactly 410.0")
+	assert_eq(g2_top, 410.0, "Ground2 top elevation is exactly 410.0")
+	assert_eq(g3_top, 410.0, "Ground3 top elevation is exactly 410.0")
+	assert_eq(g4_top, 410.0, "Ground4 top elevation is exactly 410.0")
+	assert_eq(g5_top, 410.0, "Ground5 top elevation is exactly 410.0")
+	assert_eq(g6_top, 410.0, "Ground6 top elevation is exactly 410.0")
+	
+	# Ground 1 and Ground 2 form a continuous 1000px runway with zero vertical step
+	assert_eq(g1_top, g2_top, "Ground1 to Ground2 transition is completely flush (0px vertical cliff)")
+	
+	level.queue_free()
+
+func test_phase3_enemy_no_auto_despawn_simulation() -> void:
+	print("\n--- TEST: Phase 3 Enemy No Auto-Despawn Simulation ---")
+	var level_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_level_1.tscn")
+	var level: BulletBetrayalLevel1 = level_scene.instantiate()
+	add_child(level)
+	
+	var enemies = level.enemies_container.get_children()
+	assert_eq(enemies.size(), 10, "10 enemies present at start")
+	
+	# Trigger all ambushes
+	var ambushes = level.get_node("Ambushes").get_children()
+	for a in ambushes:
+		for path in a.target_enemies:
+			var enemy = a.get_node_or_null(path)
+			if enemy and enemy.has_method("trigger_ambush"):
+				enemy.trigger_ambush()
+	
+	# Simulate 180 physics frames without player shooting
+	for frame in range(180):
+		for enemy in enemies:
+			if is_instance_valid(enemy) and not enemy.is_dead and not enemy.is_dormant:
+				enemy._physics_process(1.0 / 60.0)
+	
+	# Verify all 10 enemies are still alive and none have despawned or died automatically
+	var alive_count := 0
+	for enemy in enemies:
+		if is_instance_valid(enemy) and not enemy.is_dead:
+			alive_count += 1
+			assert_true(enemy.global_position.y <= 460.0, "%s remained on platform (y <= 460.0)" % enemy.name)
+	
+	assert_eq(alive_count, 10, "All 10 enemies remained alive after 180 physics frames")
+	assert_eq(level._enemies_eliminated, 0, "Zero automatic kills recorded (only actual bullets count)")
+	assert_true(not level.extraction_beacon.is_unlocked, "Extraction beacon strictly locked at 0/10")
+	
+	level.queue_free()

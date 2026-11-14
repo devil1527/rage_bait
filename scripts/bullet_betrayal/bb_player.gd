@@ -60,6 +60,10 @@ func _ready() -> void:
 	if GameManager:
 		GameManager.register_player(self)
 
+	# Enhanced platforming stability on mobile touch
+	floor_snap_length = 12.0
+	floor_stop_on_slope = true
+
 	current_health = max_health
 	current_ammo = initial_ammo
 	
@@ -101,7 +105,7 @@ func _physics_process(delta: float) -> void:
 		velocity.y += gravity * delta
 		_coyote_timer = maxf(0.0, _coyote_timer - delta)
 	else:
-		_coyote_timer = 0.10 # 100ms coyote time
+		_coyote_timer = 0.14 # 140ms coyote time
 		velocity.y = 0.0
 
 	_jump_buffer_timer = maxf(0.0, _jump_buffer_timer - delta)
