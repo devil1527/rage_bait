@@ -61,7 +61,7 @@ func run_all_tests() -> void:
 	test_bullet_betrayal_menu()
 	test_coin_hell_player_reuse()
 	test_one_hit_death_system()
-	test_enemy_durability_two_hits()
+	test_enemy_durability_one_bullet_kill()
 	test_limited_ammunition_and_dry_fire()
 	test_simultaneous_movement_and_shooting()
 	test_bullet_projectiles()
@@ -234,31 +234,25 @@ func test_one_hit_death_system() -> void:
 	p3.queue_free()
 	fire.queue_free()
 
-func test_enemy_durability_two_hits() -> void:
-	print("\n--- TEST: Enemy Durability (Exactly 2-Hit Elimination) ---")
+func test_enemy_durability_one_bullet_kill() -> void:
+	print("\n--- TEST: Enemy Durability (Exactly 1-Hit / 1-Bullet Elimination) ---")
 	var enemy_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_enemy_soldier.tscn")
 	assert_true(enemy_scene != null, "bb_enemy_soldier.tscn loads")
 	var enemy: BulletBetrayalEnemySoldier = enemy_scene.instantiate()
 	add_child(enemy)
 	
-	assert_eq(enemy.max_health, 2, "Enemy max_health is 2")
-	assert_eq(enemy.current_health, 2, "Enemy starts with 2 health")
+	assert_eq(enemy.max_health, 1, "Enemy max_health is 1 (one bullet kills rule)")
+	assert_eq(enemy.current_health, 1, "Enemy starts with 1 health")
 	assert_true(not enemy.is_dead, "Enemy starts alive")
 	
 	var eliminated_called := [false]
 	enemy.eliminated.connect(func(): eliminated_called[0] = true)
 	
-	# Hit 1: Damage feedback
+	# Exactly 1 bullet hits
 	enemy.take_hit(1)
-	assert_eq(enemy.current_health, 1, "Enemy health drops to 1 after first hit")
-	assert_true(not enemy.is_dead, "Enemy survives first hit")
-	assert_true(not eliminated_called[0], "eliminated signal NOT fired on first hit")
-	
-	# Hit 2: Elimination
-	enemy.take_hit(1)
-	assert_eq(enemy.current_health, 0, "Enemy health drops to 0 after second hit")
-	assert_true(enemy.is_dead, "Enemy marked dead after second hit")
-	assert_true(eliminated_called[0], "eliminated signal fired on second hit")
+	assert_eq(enemy.current_health, 0, "Enemy health drops to 0 after 1 bullet hit")
+	assert_true(enemy.is_dead, "Enemy marked dead after 1 bullet hit")
+	assert_true(eliminated_called[0], "eliminated signal fired immediately on 1 hit")
 	
 	enemy.queue_free()
 
@@ -584,7 +578,7 @@ func test_level_1_layout_and_sections() -> void:
 	# Spawn & Player
 	assert_true(level.spawn_point != null, "SpawnPoint exists in Level 1")
 	assert_true(level.player != null, "Player exists in Level 1")
-	assert_eq(level.player.global_position, Vector2(90, 360), "Player spawns at bunker coordinates (90, 360)")
+	assert_eq(level.player.global_position, Vector2(180, 360), "Player spawns at clear coordinates (180, 360) away from touch controls and bunker")
 	
 	# Camera boundaries
 	var camera: Camera2D = level.player.get_node_or_null("Camera2D")
@@ -598,6 +592,9 @@ func test_level_1_layout_and_sections() -> void:
 	var enemies = level.enemies_container.get_children()
 	assert_eq(enemies.size(), 10, "Level 1 contains exactly 10 required enemies across all sections")
 	
+	# Verify Pickups: zero extra ammo pickups (strict 10 bullets for 10 enemies)
+	assert_eq(level.pickups_container.get_child_count(), 0, "No extra ammo pickups on map (strict 10 bullets for 10 enemies economy)")
+	
 	# Section 2 Enemies
 	var e1 = level.get_node_or_null("Enemies/Enemy1_GroundPatrol")
 	var e2 = level.get_node_or_null("Enemies/Enemy2_OutpostGuard")
@@ -605,22 +602,18 @@ func test_level_1_layout_and_sections() -> void:
 	assert_true(e1 != null and e2 != null, "Section 2 has introductory patrol soldiers")
 	assert_true(e3 != null and e3.is_ambush, "Section 2 has Ambush 1 enemy behind valley crates")
 	
-	# Section 3 Enemy & Ammo
+	# Section 3 Enemies
 	var e4 = level.get_node_or_null("Enemies/Enemy4_HighPlatform")
 	var e5 = level.get_node_or_null("Enemies/Enemy5_AmbushLedge")
-	var a1 = level.get_node_or_null("Pickups/AmmoPickup1")
 	assert_true(e4 != null, "Section 3 has elevated soldier requiring jump-shooting")
 	assert_true(e5 != null and e5.is_ambush, "Section 3 has Ambush 2 enemy on elevated ledge")
-	assert_true(a1 != null, "Section 3 has tactical ammo pickup crate 1")
 	
-	# Section 4 Enemies & Ammo
+	# Section 4 Enemies
 	var e6 = level.get_node_or_null("Enemies/Enemy6_Approach")
 	var e7 = level.get_node_or_null("Enemies/Enemy7_LedgeSentry")
 	var e8 = level.get_node_or_null("Enemies/Enemy8_AmbushRuins")
-	var a2 = level.get_node_or_null("Pickups/AmmoPickup2")
 	assert_true(e6 != null and e7 != null, "Section 4 has ruins patrol and ledge sentry")
 	assert_true(e8 != null and e8.is_ambush, "Section 4 has Ambush 3 enemy in ruins bunker")
-	assert_true(a2 != null, "Section 4 has tactical ammo pickup crate 2")
 	
 	# Section 5 Final Encounter
 	var e9 = level.get_node_or_null("Enemies/Enemy9_Watchtower")
@@ -656,12 +649,11 @@ func test_level_1_full_lifecycle() -> void:
 	assert_true(not level._is_completed, "Stage starts incomplete")
 	assert_true(not level.extraction_beacon.is_unlocked, "Extraction beacon starts locked")
 	
-	# Simulate eliminating all 10 enemies (2 hits per enemy)
+	# Simulate eliminating all 10 enemies (1 hit per enemy - 1-bullet kill)
 	for enemy in level.enemies_container.get_children():
 		if enemy is BulletBetrayalEnemySoldier:
 			if enemy.is_ambush:
 				enemy.trigger_ambush()
-			enemy.take_hit(1)
 			enemy.take_hit(1)
 	
 	assert_eq(level._enemies_eliminated, 10, "All 10 required enemies successfully eliminated")
@@ -699,12 +691,12 @@ func test_phase3_enemy_ledge_detection_and_pit_prevention() -> void:
 	enemy._update_facing()
 	assert_eq(ledge_check.position.x, 12.0, "LedgeCheck positioned at +12px when facing right")
 	
-	# Verify knockback on first hit is grounded and gentle (does not throw off platforms)
-	enemy.current_health = 2
+	# Verify 1 bullet hit immediately eliminates the enemy cleanly without upward pop
+	assert_eq(enemy.current_health, 1, "Enemy starts with 1 health")
 	enemy.take_hit(1)
-	assert_eq(enemy.current_health, 1, "Enemy survives hit 1")
-	assert_true(absf(enemy.velocity.x) <= 45.0, "Knockback velocity is bounded (<= 45.0 px/s)")
-	assert_eq(enemy.velocity.y, 0.0, "Knockback has no upward pop (velocity.y == 0.0)")
+	assert_eq(enemy.current_health, 0, "Enemy health drops to 0 after 1 hit")
+	assert_true(enemy.is_dead, "Enemy marked dead")
+	assert_eq(enemy.velocity.y, 0.0, "Elimination has no upward pop (velocity.y == 0.0)")
 	
 	enemy.queue_free()
 
@@ -732,7 +724,9 @@ func test_phase3_ambush_archetypes_and_reaction_buffers() -> void:
 	assert_true(bunker_ambush.visible, "Bunker ambush visible after trigger")
 	assert_true(bunker_ambush.alert_icon.visible, "Bunker ambush shows '!' alert telegraph")
 	assert_true(bunker_ambush._shoot_timer >= 0.70, "Reaction window is at least 0.70s before first shot")
-	assert_eq(bunker_ambush.current_health, 2, "Ambush enemy has full 2 health upon reveal")
+	assert_eq(bunker_ambush.current_health, 1, "Ambush enemy has 1 health upon reveal (1-bullet kill rule)")
+	assert_true(bunker_ambush.has_ambushed, "Ambush enemy marked as has_ambushed")
+	assert_eq(bunker_ambush.patrol_distance, 0.0, "Ambush enemy does not loop patrol (holds ground to shoot)")
 	
 	bunker_ambush.queue_free()
 
