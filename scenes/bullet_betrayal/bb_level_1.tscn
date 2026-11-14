@@ -405,51 +405,51 @@ texture = ExtResource("12_sbag")
 [node name="Enemies" type="Node2D" parent="."]
 
 [node name="Enemy1_GroundPatrol" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(500, 390)
+position = Vector2(500, 393)
 patrol_distance = 40.0
 
 [node name="Enemy2_OutpostGuard" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(650, 390)
+position = Vector2(650, 393)
 patrol_distance = 0.0
 
 [node name="Enemy3_AmbushValley" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(880, 390)
+position = Vector2(880, 393)
 patrol_distance = 0.0
 is_ambush = true
 ambush_type = 1
 
 [node name="Enemy4_HighPlatform" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(1330, 240)
+position = Vector2(1330, 243)
 patrol_distance = 30.0
 
 [node name="Enemy5_AmbushLedge" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(1460, 390)
+position = Vector2(1460, 393)
 patrol_distance = 0.0
 is_ambush = true
-ambush_type = 2
+ambush_type = 1
 
 [node name="Enemy6_Approach" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(1640, 390)
+position = Vector2(1640, 393)
 patrol_distance = 40.0
 
 [node name="Enemy7_LedgeSentry" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(1880, 280)
+position = Vector2(1880, 283)
 patrol_distance = 30.0
 
 [node name="Enemy8_AmbushRuins" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(1990, 390)
+position = Vector2(1990, 393)
 patrol_distance = 0.0
 is_ambush = true
 ambush_type = 4
 
 [node name="Enemy9_Watchtower" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(2180, 390)
+position = Vector2(2180, 393)
 patrol_distance = 0.0
 is_ambush = true
 ambush_type = 5
 
 [node name="Enemy10_GateGuard" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(2380, 390)
+position = Vector2(2380, 393)
 patrol_distance = 40.0
 
 [node name="Hazards" type="Node2D" parent="."]

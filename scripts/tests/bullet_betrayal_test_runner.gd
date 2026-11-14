@@ -345,13 +345,16 @@ func test_ambush_triggers() -> void:
 	
 	assert_true(ambush_enemy.is_dormant, "Ambush enemy starts dormant")
 	assert_true(not ambush_enemy.visible, "Ambush enemy starts invisible / concealed")
-	assert_true(ambush_enemy.collision_shape.disabled, "Ambush enemy collision starts disabled")
+	assert_true(not ambush_enemy.collision_shape.disabled, "Ambush enemy terrain collision stays active for solid grounding")
+	assert_true(ambush_enemy.hurtbox_col.disabled, "Ambush enemy hurtbox starts disabled so concealed enemy cannot be shot")
 	
 	# Trigger ambush
 	ambush_enemy.trigger_ambush()
+	await get_tree().process_frame
 	assert_true(not ambush_enemy.is_dormant, "Ambush enemy is no longer dormant after trigger")
 	assert_true(ambush_enemy.visible, "Ambush enemy is visible after trigger")
-	assert_true(not ambush_enemy.collision_shape.disabled, "Ambush enemy collision is active after trigger")
+	assert_true(not ambush_enemy.collision_shape.disabled, "Ambush enemy collision remains active after trigger")
+	assert_true(not ambush_enemy.hurtbox_col.disabled, "Ambush enemy hurtbox active after trigger")
 	assert_true(ambush_enemy.alert_icon.visible, "Ambush enemy displays alert telegraph")
 	
 	ambush_enemy.queue_free()

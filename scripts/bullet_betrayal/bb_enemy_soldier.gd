@@ -68,15 +68,26 @@ func _ready() -> void:
 	if is_ambush:
 		is_dormant = true
 		visible = false
-		if collision_shape:
-			collision_shape.disabled = true
+		# Crucial: Keep collision_shape enabled so enemy rests firmly on terrain.
+		# Disable hurtbox so player bullets cannot hit dormant concealed enemies.
 		if hurtbox_col:
 			hurtbox_col.disabled = true
+	else:
+		is_dormant = false
+		visible = true
+		if hurtbox_col:
+			hurtbox_col.set_deferred("disabled", false)
 	
 	_update_facing()
 
 func _physics_process(delta: float) -> void:
-	if is_dead or is_dormant:
+	if is_dead:
+		return
+
+	if is_dormant:
+		# While dormant before ambush, stay grounded and stationary without moving or firing
+		velocity = Vector2.ZERO
+		move_and_slide()
 		return
 
 	# Apply gravity
@@ -85,15 +96,16 @@ func _physics_process(delta: float) -> void:
 	else:
 		velocity.y = 0.0
 
-	# Guard against falling out of bounds: safe floor clamp
-	if global_position.y > 500.0:
-		global_position = _initial_pos
-		velocity = Vector2.ZERO
+	# Pit fall check: if enemy falls into void (below y=520), eliminate permanently.
+	# Never teleport back to _initial_pos (which would cause a bizarre respawn loop).
+	if global_position.y > 520.0:
+		take_hit(current_health)
+		return
 
 	var player = _get_active_player()
 	
 	if is_ambush and has_ambushed:
-		# Surprise enemy: appeared once, locks onto player, holds ground and starts firing
+		# Surprise enemy: emerged once, holds ground, locks aim at player, and fires rhythmically
 		velocity.x = 0.0
 		if player and not player.is_dead:
 			_face_player(player)
@@ -184,7 +196,7 @@ func _spawn_bullet() -> void:
 	var spawn_pos = muzzle_pos.global_position if muzzle_pos else global_position
 	get_parent().add_child(bullet)
 	bullet.setup(Vector2(facing_direction, 0.0), spawn_pos)
-	AudioManager.play_sfx("warning")
+	AudioManager.play_sfx("shoot")
 
 func _update_animation(delta: float) -> void:
 	if not sprite:
@@ -205,10 +217,13 @@ func trigger_ambush() -> void:
 	has_ambushed = true
 	is_dormant = false
 	visible = true
-	if collision_shape:
-		collision_shape.disabled = false
+	velocity = Vector2.ZERO
+	patrol_distance = 0.0 # Ambush enemies do NOT patrol in a loop
+	
 	if hurtbox_col:
-		hurtbox_col.disabled = false
+		hurtbox_col.set_deferred("disabled", false)
+	if collision_shape:
+		collision_shape.set_deferred("disabled", false)
 	
 	# Face the player immediately
 	var player = _get_active_player()
@@ -222,7 +237,6 @@ func trigger_ambush() -> void:
 	
 	# Reaction window: 0.8s buffer before the enemy fires its first bullet
 	_shoot_timer = 0.8
-	patrol_distance = 0.0 # Ambush enemies do NOT patrol in a loop
 
 	var tween := create_tween()
 	tween.tween_property(self, "scale", Vector2(1.15, 1.15), 0.08)
@@ -235,7 +249,7 @@ func trigger_ambush() -> void:
 
 ## Durability: 1-hit elimination rule (1 bullet kills)
 func take_hit(damage: int = 1) -> void:
-	if is_dead or is_dormant:
+	if is_dead:
 		return
 
 	current_health = clampi(current_health - damage, 0, max_health)
@@ -258,22 +272,20 @@ func take_hit(damage: int = 1) -> void:
 		var tween := create_tween()
 		tween.tween_property(sprite, "modulate", Color(1.0, 0.2, 0.2, 1.0), 0.04)
 		tween.tween_property(sprite, "scale", Vector2(1.2, 0.8), 0.08)
-		tween.parallel().tween_property(sprite, "position:y", sprite.position.y + 6.0, 0.12)
+		tween.tween_property(sprite, "scale", Vector2(0.8, 1.2), 0.08)
 		tween.parallel().tween_property(sprite, "modulate:a", 0.0, 0.15)
 		tween.tween_callback(queue_free)
 
 func _get_active_player() -> Node2D:
 	var players = get_tree().get_nodes_in_group("player")
 	if players.size() > 0:
-		return players[0]
+		return players[0] as Node2D
 	return null
 
 func _on_hurtbox_body_entered(body: Node2D) -> void:
-	if is_dead or is_dormant:
-		return
-	if body is BulletBetrayalPlayer or body.is_in_group("player"):
-		if body.has_method("take_damage"):
-			body.take_damage(1)
+	if body is BulletBetrayalBullet and not is_dead:
+		take_hit(body.damage)
+		body.queue_free()
 
 func reset() -> void:
 	is_dead = false
@@ -289,20 +301,13 @@ func reset() -> void:
 	if is_ambush:
 		is_dormant = true
 		visible = false
-		if collision_shape:
-			collision_shape.disabled = true
 		if hurtbox_col:
-			hurtbox_col.disabled = true
+			hurtbox_col.set_deferred("disabled", true)
 	else:
 		is_dormant = false
 		visible = true
-		if collision_shape:
-			collision_shape.set_deferred("disabled", false)
 		if hurtbox_col:
 			hurtbox_col.set_deferred("disabled", false)
-	if sprite:
-		sprite.texture = _tex_idle
-		sprite.modulate = Color.WHITE
-		sprite.scale = Vector2.ONE
-		sprite.position = Vector2.ZERO
+	if collision_shape:
+		collision_shape.set_deferred("disabled", false)
 	_update_facing()
