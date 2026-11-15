@@ -247,7 +247,7 @@ func trigger_ambush() -> void:
 			alert_icon.visible = false
 	)
 
-## Durability: 1-hit elimination rule (1 bullet kills)
+## Durability and damage handling (1-hit kill when max_health=1, multi-hit when max_health>1)
 func take_hit(damage: int = 1) -> void:
 	if is_dead:
 		return
@@ -275,6 +275,13 @@ func take_hit(damage: int = 1) -> void:
 		tween.tween_property(sprite, "scale", Vector2(0.8, 1.2), 0.08)
 		tween.parallel().tween_property(sprite, "modulate:a", 0.0, 0.15)
 		tween.tween_callback(queue_free)
+	else:
+		# Partial damage feedback: enemy took a hit but survived
+		AudioManager.play_sfx("enemy_hit")
+		if sprite:
+			var hit_tween := create_tween()
+			hit_tween.tween_property(sprite, "modulate", Color(2.5, 0.3, 0.3, 1.0), 0.05)
+			hit_tween.tween_property(sprite, "modulate", Color.WHITE, 0.1)
 
 func _get_active_player() -> Node2D:
 	var players = get_tree().get_nodes_in_group("player")

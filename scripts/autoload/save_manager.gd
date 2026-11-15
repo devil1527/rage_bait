@@ -15,6 +15,11 @@ var music_enabled: bool = true
 var level_15_secret_revealed: bool = false
 var level_16_secret_revealed: bool = false
 
+# Bullet Betrayal progression tracking (isolated from Coin Hell)
+var bb_highest_unlocked_level: int = 1
+var bb_completed_levels: Array = []
+var bb_stage_stars: Dictionary = {}
+
 signal progress_updated
 
 func _ready() -> void:
@@ -28,7 +33,10 @@ func get_default_data() -> Dictionary:
 		"stage_stars": {},
 		"sfx_enabled": true,
 		"music_enabled": true,
-		"level_15_secret_revealed": false
+		"level_15_secret_revealed": false,
+		"bb_highest_unlocked_level": 1,
+		"bb_completed_levels": [],
+		"bb_stage_stars": {}
 	}
 
 func load_save() -> void:
@@ -70,6 +78,9 @@ func _apply_defaults() -> void:
 	music_enabled = true
 	level_15_secret_revealed = false
 	level_16_secret_revealed = false
+	bb_highest_unlocked_level = 1
+	bb_completed_levels = []
+	bb_stage_stars = {}
 	progress_updated.emit()
 
 func _apply_dict(data: Dictionary) -> void:
@@ -93,6 +104,25 @@ func _apply_dict(data: Dictionary) -> void:
 			if lvl_id >= 1 and lvl_id <= 20:
 				stage_stars[str(lvl_id)] = stars_val
 
+	bb_highest_unlocked_level = clampi(int(data.get("bb_highest_unlocked_level", 1)), 1, 20)
+	
+	var raw_bb_completed = data.get("bb_completed_levels", [])
+	bb_completed_levels = []
+	if typeof(raw_bb_completed) == TYPE_ARRAY:
+		for item in raw_bb_completed:
+			var lvl := int(item)
+			if lvl >= 1 and lvl <= 20 and not bb_completed_levels.has(lvl):
+				bb_completed_levels.append(lvl)
+
+	var raw_bb_stars = data.get("bb_stage_stars", {})
+	bb_stage_stars = {}
+	if typeof(raw_bb_stars) == TYPE_DICTIONARY:
+		for k in raw_bb_stars.keys():
+			var lvl_id := int(k)
+			var stars_val := clampi(int(raw_bb_stars[k]), 0, 3)
+			if lvl_id >= 1 and lvl_id <= 20:
+				bb_stage_stars[str(lvl_id)] = stars_val
+
 	sfx_enabled = bool(data.get("sfx_enabled", true))
 	music_enabled = bool(data.get("music_enabled", true))
 	level_15_secret_revealed = bool(data.get("level_15_secret_revealed", false))
@@ -107,7 +137,10 @@ func save_data() -> bool:
 		"stage_stars": stage_stars,
 		"sfx_enabled": sfx_enabled,
 		"music_enabled": music_enabled,
-		"level_15_secret_revealed": level_15_secret_revealed
+		"level_15_secret_revealed": level_15_secret_revealed,
+		"bb_highest_unlocked_level": bb_highest_unlocked_level,
+		"bb_completed_levels": bb_completed_levels,
+		"bb_stage_stars": bb_stage_stars
 	}
 
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
@@ -194,3 +227,51 @@ func set_level_16_secret_revealed(revealed: bool = true) -> void:
 
 
 
+
+
+func is_bb_level_unlocked(level_id: int) -> bool:
+	if level_id == 1:
+		return true
+	return level_id <= bb_highest_unlocked_level
+
+func is_bb_level_completed(level_id: int) -> bool:
+	return bb_completed_levels.has(level_id)
+
+func get_bb_level_stars(level_id: int) -> int:
+	var key := str(level_id)
+	if bb_stage_stars.has(key):
+		return int(bb_stage_stars[key])
+	if bb_stage_stars.has(level_id):
+		return int(bb_stage_stars[level_id])
+	return 0
+
+func record_bb_level_stars(level_id: int, earned_stars: int) -> int:
+	var current_best := get_bb_level_stars(level_id)
+	var new_best := maxi(current_best, clampi(earned_stars, 0, 3))
+	bb_stage_stars[str(level_id)] = new_best
+	save_data()
+	return new_best
+
+func complete_bb_level(level_id: int, earned_stars: int = 0) -> void:
+	var changed := false
+	if not bb_completed_levels.has(level_id):
+		bb_completed_levels.append(level_id)
+		changed = true
+
+	var next_level := level_id + 1
+	if next_level <= 20 and next_level > bb_highest_unlocked_level:
+		bb_highest_unlocked_level = next_level
+		changed = true
+
+	if earned_stars > 0:
+		var current_best := get_bb_level_stars(level_id)
+		var new_best := maxi(current_best, clampi(earned_stars, 0, 3))
+		if new_best != current_best or not bb_stage_stars.has(str(level_id)):
+			bb_stage_stars[str(level_id)] = new_best
+			changed = true
+
+	if changed:
+		save_data()
+
+func get_bb_completed_count() -> int:
+	return bb_completed_levels.size()

@@ -89,8 +89,18 @@ func _on_extraction_reached() -> void:
 	if player:
 		player.input_disabled = true
 		player.velocity = Vector2.ZERO
+
+	# Calculate stars: 3 stars for no revives used, 2 stars if revived
+	var earned_stars: int = 2 if (GameManager and GameManager.revives_used_this_run > 0) else 3
+	if SaveManager:
+		SaveManager.complete_bb_level(1, earned_stars)
+	if AudioManager:
+		AudioManager.play_sfx("complete")
+
 	if hud:
-		hud.show_victory(player.current_ammo if player else 0)
+		hud.current_stage_id = 1
+		hud.stage_clear_subtitle = "BORDER INFILTRATION SUCCESSFUL"
+		hud.show_victory(player.current_ammo if player else 0, earned_stars)
 
 func _on_player_revived() -> void:
 	if hud:

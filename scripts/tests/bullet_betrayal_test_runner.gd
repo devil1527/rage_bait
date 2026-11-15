@@ -55,7 +55,7 @@ func assert_eq(actual, expected, test_name: String) -> void:
 		printerr("  [FAIL] %s - Expected: %s, Got: %s" % [test_name, str(expected), str(actual)])
 		failed_count += 1
 
-func run_all_tests() -> void:
+func run_all_tests():
 	test_audio_manager_bullet_betrayal_sfx()
 	test_main_menu_bullet_betrayal_card()
 	test_bullet_betrayal_menu()
@@ -78,6 +78,9 @@ func run_all_tests() -> void:
 	test_phase3_ground_elevation_continuity_and_no_cliffs()
 	test_phase3_enemy_no_auto_despawn_simulation()
 	await test_phase3_fire_hazard_2_jump_clearance_and_platform_deconfliction()
+	test_bb_save_manager_and_stars()
+	test_bullet_betrayal_menu_stars_reflection()
+	await test_level_2_scene_and_combat_rules()
 
 func test_audio_manager_bullet_betrayal_sfx() -> void:
 	print("\n--- TEST: Bullet Betrayal Audio SFX ---")
@@ -240,6 +243,7 @@ func test_enemy_durability_one_bullet_kill() -> void:
 	var enemy_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_enemy_soldier.tscn")
 	assert_true(enemy_scene != null, "bb_enemy_soldier.tscn loads")
 	var enemy: BulletBetrayalEnemySoldier = enemy_scene.instantiate()
+	enemy.set_physics_process(false)
 	add_child(enemy)
 	
 	assert_eq(enemy.max_health, 1, "Enemy max_health is 1 (one bullet kills rule)")
@@ -337,7 +341,7 @@ func test_ammo_crate_pickup() -> void:
 	player.queue_free()
 	ammo_pickup.queue_free()
 
-func test_ambush_triggers() -> void:
+func test_ambush_triggers():
 	print("\n--- TEST: Fair Intentional Ambushes ---")
 	var enemy_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_enemy_soldier.tscn")
 	var ambush_enemy: BulletBetrayalEnemySoldier = enemy_scene.instantiate()
@@ -594,13 +598,14 @@ func test_pause_menu_and_confirmation_modals() -> void:
 	assert_eq(hud.victory_mission_btn.text, "☰ LEVEL SELECT", "Level Select button text matches Coin Hell ('☰ LEVEL SELECT')")
 	assert_true(hud.victory_arcade_btn == null, "Arcade Menu button omitted from Victory overlay (matches Coin Hell 3-button layout)")
 	
-	# Test Next Stage Button opens MessageModal for unreleased Stage 2
+	# Test Next Stage Button opens MessageModal for unreleased Stage 3 (when on Stage 2)
+	hud.current_stage_id = 2
 	assert_true(hud.victory_message_modal != null, "Victory overlay has MessageModal")
 	assert_true(not hud.victory_message_modal.visible, "MessageModal starts hidden")
 	hud.victory_next_stage_btn.pressed.emit()
-	assert_true(hud.victory_message_modal.visible, "MessageModal opens when clicking Next Stage")
-	assert_eq(hud.victory_modal_title.text, "STAGE 2 IN PROGRESS", "MessageModal title is 'STAGE 2 IN PROGRESS'")
-	assert_true(hud.victory_modal_label.text.contains("still being built"), "MessageModal explains Stage 2 is being built")
+	assert_true(hud.victory_message_modal.visible, "MessageModal opens when clicking Next Stage on last implemented stage")
+	assert_eq(hud.victory_modal_title.text, "STAGE 3 IN PROGRESS", "MessageModal title is 'STAGE 3 IN PROGRESS'")
+	assert_true(hud.victory_modal_label.text.contains("still being built"), "MessageModal explains Stage 3 is being built")
 	
 	# Dismiss MessageModal
 	hud.victory_modal_ok_btn.pressed.emit()
@@ -717,6 +722,7 @@ func test_phase3_enemy_ledge_detection_and_pit_prevention() -> void:
 	print("\n--- TEST: Phase 3 Enemy Ledge Detection & Pit Prevention ---")
 	var enemy_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_enemy_soldier.tscn")
 	var enemy: BulletBetrayalEnemySoldier = enemy_scene.instantiate()
+	enemy.set_physics_process(false)
 	add_child(enemy)
 	
 	# Verify LedgeCheck node exists
@@ -840,7 +846,7 @@ func test_phase3_enemy_no_auto_despawn_simulation() -> void:
 	
 	level.queue_free()
 
-func test_phase3_fire_hazard_2_jump_clearance_and_platform_deconfliction() -> void:
+func test_phase3_fire_hazard_2_jump_clearance_and_platform_deconfliction():
 	print("\n--- TEST: Phase 3 Fire Hazard 2 Jump Clearance & Platform Deconfliction ---")
 	var level_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_level_1.tscn")
 	var level: BulletBetrayalLevel1 = level_scene.instantiate()
@@ -915,4 +921,198 @@ func test_phase3_fire_hazard_2_jump_clearance_and_platform_deconfliction() -> vo
 	assert_true(landed_safely, "Player landed safely on ground after leap without taking damage")
 	assert_true(player.is_alive, "Player is alive after completing jump over FireHazard2")
 	
+	level.queue_free()
+
+func test_bb_save_manager_and_stars() -> void:
+	print("\n--- TEST: Bullet Betrayal SaveManager & Progression Isolation ---")
+	# Store original data to restore after test
+	var orig_bb_highest = SaveManager.bb_highest_unlocked_level
+	var orig_bb_completed = SaveManager.bb_completed_levels.duplicate()
+	var orig_bb_stars = SaveManager.bb_stage_stars.duplicate()
+	var orig_ch_highest = SaveManager.highest_unlocked_level
+	var orig_ch_completed = SaveManager.completed_levels.duplicate()
+
+	# Reset BB progress
+	SaveManager.bb_highest_unlocked_level = 1
+	SaveManager.bb_completed_levels = []
+	SaveManager.bb_stage_stars = {}
+
+	assert_true(SaveManager.is_bb_level_unlocked(1), "Stage 1 is unlocked by default")
+	assert_true(not SaveManager.is_bb_level_unlocked(2), "Stage 2 is locked by default")
+	assert_true(not SaveManager.is_bb_level_completed(1), "Stage 1 is not completed initially")
+	assert_eq(SaveManager.get_bb_level_stars(1), 0, "Stage 1 has 0 stars initially")
+	assert_eq(SaveManager.get_bb_completed_count(), 0, "BB completed count is 0")
+
+	# Complete Stage 1 with 3 stars (no revives used)
+	SaveManager.complete_bb_level(1, 3)
+	assert_true(SaveManager.is_bb_level_completed(1), "Stage 1 is marked completed")
+	assert_eq(SaveManager.get_bb_level_stars(1), 3, "Stage 1 recorded 3 stars")
+	assert_true(SaveManager.is_bb_level_unlocked(2), "Stage 2 is now unlocked")
+	assert_eq(SaveManager.get_bb_completed_count(), 1, "BB completed count is now 1")
+
+	# Complete Stage 2 with 2 stars (1 revive used)
+	SaveManager.complete_bb_level(2, 2)
+	assert_true(SaveManager.is_bb_level_completed(2), "Stage 2 is marked completed")
+	assert_eq(SaveManager.get_bb_level_stars(2), 2, "Stage 2 recorded 2 stars")
+	assert_true(SaveManager.is_bb_level_unlocked(3), "Stage 3 is unlocked after Stage 2 clear")
+	assert_eq(SaveManager.get_bb_completed_count(), 2, "BB completed count is now 2")
+
+	# Verify Coin Hell progression remained completely isolated
+	assert_eq(SaveManager.highest_unlocked_level, orig_ch_highest, "Coin Hell unlocked level untouched")
+	assert_eq(SaveManager.completed_levels.size(), orig_ch_completed.size(), "Coin Hell completed levels untouched")
+
+	# Test persistence across save & mock reload
+	SaveManager.save_data()
+	SaveManager.bb_highest_unlocked_level = 1
+	SaveManager.bb_completed_levels = []
+	SaveManager.bb_stage_stars = {}
+	SaveManager.load_save()
+
+	assert_true(SaveManager.is_bb_level_completed(1), "Stage 1 completion persisted after load_save()")
+	assert_eq(SaveManager.get_bb_level_stars(1), 3, "Stage 1 3-stars persisted after load_save()")
+	assert_true(SaveManager.is_bb_level_completed(2), "Stage 2 completion persisted after load_save()")
+	assert_eq(SaveManager.get_bb_level_stars(2), 2, "Stage 2 2-stars persisted after load_save()")
+
+	# Restore original state
+	SaveManager.bb_highest_unlocked_level = orig_bb_highest
+	SaveManager.bb_completed_levels = orig_bb_completed
+	SaveManager.bb_stage_stars = orig_bb_stars
+	SaveManager.save_data()
+
+func test_bullet_betrayal_menu_stars_reflection() -> void:
+	print("\n--- TEST: Bullet Betrayal Menu Stage Selection Stars & States ---")
+	var orig_bb_highest = SaveManager.bb_highest_unlocked_level
+	var orig_bb_completed = SaveManager.bb_completed_levels.duplicate()
+	var orig_bb_stars = SaveManager.bb_stage_stars.duplicate()
+
+	# Set mock state: Level 1 completed (3 stars), Level 2 available (0 stars), Level 3 locked
+	SaveManager.bb_highest_unlocked_level = 2
+	SaveManager.bb_completed_levels = [1]
+	SaveManager.bb_stage_stars = {"1": 3}
+
+	var menu_scene: PackedScene = load("res://scenes/bullet_betrayal/bullet_betrayal_menu.tscn")
+	assert_true(menu_scene != null, "bullet_betrayal_menu.tscn loads successfully")
+	var menu = menu_scene.instantiate()
+	add_child(menu)
+
+	var progress_lbl: Label = menu.get_node_or_null("MarginContainer/VBox/HeaderBar/ProgressBox/ProgressLabel")
+	assert_true(progress_lbl != null, "ProgressLabel exists in menu header")
+	assert_eq(progress_lbl.text, "STAGES CLEARED: 1 / 20", "Progress label shows 1 / 20 stages cleared")
+
+	# Check Stage 1 card tile: COMPLETED, 3 stars
+	var btn_lvl1: Button = menu.get_level_button(1)
+	assert_true(btn_lvl1 != null, "LevelBtn_1 exists in stage selection grid")
+	var vbox1 = btn_lvl1.get_child(0)
+	var state1_lbl: Label = vbox1.get_child(2)
+	var stars1_lbl: Label = vbox1.get_node_or_null("StarsLabel")
+	var status1_icon: TextureRect = vbox1.get_child(0).get_child(1)
+
+	assert_eq(state1_lbl.text, "COMPLETED", "Stage 1 tile state is 'COMPLETED'")
+	assert_true(status1_icon.visible, "Stage 1 completed icon is visible")
+	assert_true(stars1_lbl != null, "Stage 1 stars label exists")
+	assert_eq(stars1_lbl.text, "★ ★ ★", "Stage 1 shows 3 gold stars '★ ★ ★'")
+
+	# Check Stage 2 card tile: AVAILABLE, ☆ ☆ ☆
+	var btn_lvl2: Button = menu.get_level_button(2)
+	assert_true(btn_lvl2 != null, "LevelBtn_2 exists in stage selection grid")
+	var vbox2 = btn_lvl2.get_child(0)
+	var state2_lbl: Label = vbox2.get_child(2)
+	var stars2_lbl: Label = vbox2.get_node_or_null("StarsLabel")
+	var status2_icon: TextureRect = vbox2.get_child(0).get_child(1)
+
+	assert_eq(state2_lbl.text, "AVAILABLE", "Stage 2 tile state is 'AVAILABLE'")
+	assert_true(not status2_icon.visible, "Stage 2 icon is not visible (unlocked, not completed)")
+	assert_eq(stars2_lbl.text, "☆ ☆ ☆", "Stage 2 shows empty stars '☆ ☆ ☆'")
+
+	# Check Stage 3 card tile: PLANNED
+	var btn_lvl3: Button = menu.get_level_button(3)
+	assert_true(btn_lvl3 != null, "LevelBtn_3 exists")
+	var vbox3 = btn_lvl3.get_child(0)
+	var state3_lbl: Label = vbox3.get_child(2)
+	assert_eq(state3_lbl.text, "PLANNED", "Stage 3 tile state is 'PLANNED'")
+
+	menu.queue_free()
+
+	# Restore original state
+	SaveManager.bb_highest_unlocked_level = orig_bb_highest
+	SaveManager.bb_completed_levels = orig_bb_completed
+	SaveManager.bb_stage_stars = orig_bb_stars
+	SaveManager.save_data()
+
+func test_level_2_scene_and_combat_rules():
+	print("\n--- TEST: World 1 Level 2 Scene & Combat Rules ---")
+	var lvl2_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_level_2.tscn")
+	assert_true(lvl2_scene != null, "bb_level_2.tscn loads successfully")
+	var level = lvl2_scene.instantiate()
+	add_child(level)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+
+	var player = level.player
+	var hud = level.hud
+	var extraction = level.extraction_beacon
+	var enemies = level.enemies_container
+	var pickups = level.pickups_container
+
+	assert_true(player != null, "Level 2 has player")
+	assert_true(hud != null, "Level 2 has HUD")
+	assert_true(extraction != null, "Level 2 has extraction beacon")
+	assert_true(enemies != null, "Level 2 has enemies container")
+	assert_true(pickups != null, "Level 2 has pickups container")
+
+	# 1. 10 required enemies verification
+	var enemy_children = enemies.get_children()
+	assert_eq(enemy_children.size(), 10, "Level 2 has exactly 10 enemies")
+
+	# 2. 2-hit enemy durability verification
+	for i in range(enemy_children.size()):
+		var enemy = enemy_children[i]
+		if enemy is BulletBetrayalEnemySoldier:
+			assert_eq(enemy.max_health, 2, "Enemy %d has max_health == 2 (2-hit durability)" % (i + 1))
+			assert_eq(enemy.current_health, 2, "Enemy %d starts with current_health == 2" % (i + 1))
+
+	# Test 2-hit damage logic on first enemy
+	var test_enemy = enemy_children[0] as BulletBetrayalEnemySoldier
+	test_enemy.take_hit(1)
+	assert_eq(test_enemy.current_health, 1, "Enemy takes 1 hit and survives with 1 health remaining")
+	assert_true(not test_enemy.is_dead, "Enemy is not dead after first bullet hit")
+	test_enemy.take_hit(1)
+	assert_eq(test_enemy.current_health, 0, "Enemy health drops to 0 after second bullet hit")
+	assert_true(test_enemy.is_dead, "Enemy is eliminated after second bullet hit")
+
+	# 3. Starting ammunition verification: exactly 10 rounds
+	assert_eq(player.current_ammo, 10, "Player starts Level 2 with exactly 10 bullets")
+	assert_eq(player.current_health, 1, "Player starts Level 2 with 1 life")
+
+	# 4. Ammunition pickups verification: 2 tactical ammo crates (+8 rounds each)
+	var pickup_children = pickups.get_children()
+	assert_eq(pickup_children.size(), 2, "Level 2 has exactly 2 tactical ammo crates")
+	for p in pickup_children:
+		if p is BulletBetrayalAmmoPickup:
+			assert_eq(p.ammo_amount, 8, "Tactical ammo crate provides +8 rounds")
+
+	# Test ammo pickup adding ammo to player
+	var crate1 = pickup_children[0] as BulletBetrayalAmmoPickup
+	var pre_pickup_ammo = player.current_ammo
+	crate1._collect(player)
+	assert_eq(player.current_ammo, pre_pickup_ammo + 8, "Collecting ammo crate adds 8 bullets (now %d)" % player.current_ammo)
+
+	# 5. Extraction beacon locked verification
+	assert_true(not extraction.is_unlocked, "Extraction beacon is locked at 0/10 kills")
+	extraction.update_target_progress(9, 10)
+	assert_true(not extraction.is_unlocked, "Extraction beacon remains locked at 9/10 kills")
+	extraction.update_target_progress(10, 10)
+	assert_true(extraction.is_unlocked, "Extraction beacon unlocks strictly at 10/10 kills")
+
+	# 6. One-hit player death verification
+	player.take_damage(1)
+	assert_eq(player.current_health, 0, "Player health drops to 0 after 1 hit")
+	assert_true(not player.is_alive, "Player dies immediately from 1 hit")
+
+	# 7. Revive verification: restores 1 life and 10 bullets
+	player.revive()
+	assert_eq(player.current_health, 1, "Player revived with 1 life")
+	assert_eq(player.current_ammo, 10, "Player revived with 10 bullets")
+	assert_true(player.is_alive, "Player is alive after revive")
+
 	level.queue_free()

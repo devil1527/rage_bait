@@ -9,6 +9,7 @@ extends Control
 ## touch drag scrolling, and arcade MessageModal popups.
 
 const LEVEL_1_SCENE: String = "res://scenes/bullet_betrayal/bb_level_1.tscn"
+const LEVEL_2_SCENE: String = "res://scenes/bullet_betrayal/bb_level_2.tscn"
 const ARCADE_MAIN_MENU: String = "res://scenes/ui/main_menu.tscn"
 
 @onready var back_button: Button = $MarginContainer/VBox/HeaderBar/BackButton
@@ -142,6 +143,8 @@ func _ready() -> void:
 	back_button.pressed.connect(_on_back_pressed)
 	modal_ok_btn.pressed.connect(_on_modal_close)
 	message_modal.visible = false
+	if SaveManager:
+		SaveManager.progress_updated.connect(_update_ui)
 
 	_build_world_navigation_cards()
 	_build_level_tiles()
@@ -258,8 +261,9 @@ func _update_back_button_text() -> void:
 		back_button.text = "◀ MENU"
 
 func _update_ui() -> void:
-	progress_label.text = "STAGES CLEARED: 0 / 20"
-	progress_bar.value = 5.0 # Stage 1 active / 20
+	var cleared: int = SaveManager.get_bb_completed_count() if SaveManager else 0
+	progress_label.text = "STAGES CLEARED: %d / 20" % cleared
+	progress_bar.value = (float(cleared) / 20.0) * 100.0
 
 	_update_world_filter()
 	_update_back_button_text()
@@ -404,11 +408,91 @@ func _refresh_tile_states() -> void:
 		var state_label: Label = vbox.get_child(2)
 		var stars_label: Label = vbox.get_node_or_null("StarsLabel")
 
-		if lvl_id == 1:
-			# Stage 1: Playable
-			btn.add_theme_stylebox_override("normal", _style_w1_avail_normal)
-			btn.add_theme_stylebox_override("hover", _style_w1_avail_hover)
-			btn.add_theme_stylebox_override("focus", _style_w1_avail_hover)
+		var is_unlocked: bool = SaveManager.is_bb_level_unlocked(lvl_id) if SaveManager else (lvl_id == 1)
+		var is_completed: bool = SaveManager.is_bb_level_completed(lvl_id) if SaveManager else false
+		var star_rating: int = SaveManager.get_bb_level_stars(lvl_id) if SaveManager else 0
+		var is_implemented: bool = (lvl_id <= 2)
+		var world_id: int = int((lvl_id - 1) / 5) + 1
+
+		if not is_implemented:
+			# Unimplemented / Planned Stages (Stages 3–20)
+			btn.add_theme_stylebox_override("normal", _style_planned_normal)
+			btn.add_theme_stylebox_override("hover", _style_planned_hover)
+			btn.add_theme_stylebox_override("focus", _style_planned_hover)
+			num_label.add_theme_color_override("font_color", Color(0.40, 0.44, 0.52))
+			name_label.add_theme_color_override("font_color", Color(0.35, 0.38, 0.46))
+			state_label.text = "PLANNED"
+			state_label.add_theme_color_override("font_color", Color(0.55, 0.45, 0.45))
+			status_icon.texture = lock_icon
+			status_icon.visible = true
+			if stars_label:
+				stars_label.text = ""
+		elif is_completed:
+			# Completed stage: glowing world border, completed badge, and gold stars
+			var sb_norm: StyleBoxFlat = _style_w1_comp_normal
+			var sb_hov: StyleBoxFlat = _style_w1_comp_hover
+			var num_col: Color = Color(0.2, 0.95, 0.55)
+			match world_id:
+				1:
+					sb_norm = _style_w1_comp_normal
+					sb_hov = _style_w1_comp_hover
+					num_col = Color(0.2, 0.95, 0.55)
+				2:
+					sb_norm = _style_w2_comp_normal
+					sb_hov = _style_w2_comp_hover
+					num_col = Color(0.9, 0.75, 0.30)
+				3:
+					sb_norm = _style_w3_comp_normal
+					sb_hov = _style_w3_comp_hover
+					num_col = Color(0.70, 0.65, 0.95)
+				4:
+					sb_norm = _style_w4_comp_normal
+					sb_hov = _style_w4_comp_hover
+					num_col = Color(0.95, 0.45, 0.50)
+
+			btn.add_theme_stylebox_override("normal", sb_norm)
+			btn.add_theme_stylebox_override("hover", sb_hov)
+			btn.add_theme_stylebox_override("focus", sb_hov)
+			num_label.add_theme_color_override("font_color", num_col)
+			name_label.add_theme_color_override("font_color", Color(0.9, 0.95, 1.0))
+			state_label.text = "COMPLETED"
+			state_label.add_theme_color_override("font_color", Color(0.0, 1.0, 0.65))
+			status_icon.texture = completed_icon
+			status_icon.visible = true
+			if stars_label:
+				if star_rating == 3:
+					stars_label.text = "★ ★ ★"
+					stars_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.1))
+				elif star_rating == 2:
+					stars_label.text = "★ ★ ☆"
+					stars_label.add_theme_color_override("font_color", Color(1.0, 0.75, 0.2))
+				elif star_rating == 1:
+					stars_label.text = "★ ☆ ☆"
+					stars_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+				else:
+					stars_label.text = "☆ ☆ ☆"
+					stars_label.add_theme_color_override("font_color", Color(0.55, 0.58, 0.7, 0.5))
+		elif is_unlocked:
+			# Available stage: gold border, ready to play
+			var sb_norm: StyleBoxFlat = _style_w1_avail_normal
+			var sb_hov: StyleBoxFlat = _style_w1_avail_hover
+			match world_id:
+				1:
+					sb_norm = _style_w1_avail_normal
+					sb_hov = _style_w1_avail_hover
+				2:
+					sb_norm = _style_w2_avail_normal
+					sb_hov = _style_w2_avail_hover
+				3:
+					sb_norm = _style_w3_avail_normal
+					sb_hov = _style_w3_avail_hover
+				4:
+					sb_norm = _style_w4_avail_normal
+					sb_hov = _style_w4_avail_hover
+
+			btn.add_theme_stylebox_override("normal", sb_norm)
+			btn.add_theme_stylebox_override("hover", sb_hov)
+			btn.add_theme_stylebox_override("focus", sb_hov)
 			num_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
 			name_label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.8))
 			state_label.text = "AVAILABLE"
@@ -418,7 +502,7 @@ func _refresh_tile_states() -> void:
 				stars_label.text = "☆ ☆ ☆"
 				stars_label.add_theme_color_override("font_color", Color(0.55, 0.58, 0.7, 0.5))
 		else:
-			# Stages 2–20: Locked
+			# Locked stage
 			btn.add_theme_stylebox_override("normal", _style_lock_normal)
 			btn.add_theme_stylebox_override("hover", _style_lock_hover)
 			btn.add_theme_stylebox_override("focus", _style_lock_hover)
@@ -436,15 +520,28 @@ func _on_level_tile_pressed(level_id: int) -> void:
 	if _is_dragging or now < _drag_suppress_click_until:
 		return
 
-	if level_id == 1:
-		AudioManager.play_sfx("click")
-		get_tree().change_scene_to_file(LEVEL_1_SCENE)
-	else:
+	if level_id > 2:
+		AudioManager.play_sfx("warning")
+		modal_title.text = "STAGE %d IN PROGRESS" % level_id
+		var stage_name: String = STAGE_NAMES.get(level_id, "Stage %d" % level_id)
+		modal_label.text = "Stage %d (%s) is under construction. Complete available stages first!" % [level_id, stage_name]
+		message_modal.visible = true
+		return
+
+	var is_unlocked: bool = SaveManager.is_bb_level_unlocked(level_id) if SaveManager else (level_id == 1)
+	if not is_unlocked:
 		AudioManager.play_sfx("warning")
 		modal_title.text = "STAGE %d IS LOCKED" % level_id
 		var stage_name: String = STAGE_NAMES.get(level_id, "Stage %d" % level_id)
 		modal_label.text = "Locked! Complete earlier missions before attempting %s." % stage_name
 		message_modal.visible = true
+		return
+
+	AudioManager.play_sfx("click")
+	if level_id == 1:
+		get_tree().change_scene_to_file(LEVEL_1_SCENE)
+	elif level_id == 2:
+		get_tree().change_scene_to_file(LEVEL_2_SCENE)
 
 func _on_back_pressed() -> void:
 	AudioManager.play_sfx("click")

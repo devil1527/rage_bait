@@ -52,6 +52,9 @@ signal revive_requested
 @onready var death_arcade_btn: Button = get_node_or_null("Overlays/DeathOverlay/Panel/VBox/ArcadeMenuBtn")
 
 # Victory Overlay elements (Coin Hell 3-button layout + Next Stage modal)
+@export var current_stage_id: int = 1
+@export var stage_clear_subtitle: String = "BORDER INFILTRATION SUCCESSFUL"
+@onready var victory_title: Label = get_node_or_null("Overlays/VictoryOverlay/Panel/VBox/Title")
 @onready var victory_next_stage_btn: Button = get_node_or_null("Overlays/VictoryOverlay/Panel/VBox/NextStageBtn")
 @onready var victory_replay_btn: Button = $Overlays/VictoryOverlay/Panel/VBox/ReplayBtn
 @onready var victory_level_select_btn: Button = get_node_or_null("Overlays/VictoryOverlay/Panel/VBox/LevelSelectBtn")
@@ -425,22 +428,31 @@ func _on_revive_ad_failed(reason: String) -> void:
 		death_ad_status.modulate = Color(1.0, 0.4, 0.4, 1.0)
 	_update_death_ad_status()
 
-func show_victory(ammo_remaining: int) -> void:
+func show_victory(ammo_remaining: int, earned_stars: int = 3) -> void:
 	reset_touch_controls()
+	if victory_title:
+		victory_title.text = "STAGE %d CLEARED!" % current_stage_id
 	if victory_stats_label:
-		victory_stats_label.text = "BORDER INFILTRATION SUCCESSFUL\nAMMO REMAINING: %d ROUNDS" % ammo_remaining
+		var stars_str := "★ ★ ★  (PERFECT)" if earned_stars == 3 else ("★ ★ ☆  (REVIVED)" if earned_stars == 2 else "★ ☆ ☆")
+		victory_stats_label.text = "%s\nRATING: %s\nAMMO REMAINING: %d ROUNDS" % [stage_clear_subtitle, stars_str, ammo_remaining]
 	if victory_message_modal:
 		victory_message_modal.visible = false
 	victory_overlay.visible = true
 
 func _on_next_stage_pressed() -> void:
 	AudioManager.play_sfx("click")
-	if victory_message_modal:
-		if victory_modal_title:
-			victory_modal_title.text = "STAGE 2 IN PROGRESS"
-		if victory_modal_label:
-			victory_modal_label.text = "Stage 2 is unlocked, but it's still being built. Replay Stage 1 for now."
-		victory_message_modal.visible = true
+	if current_stage_id == 1:
+		if get_tree().current_scene and (get_tree().current_scene.name == "BulletBetrayalTestRunner" or get_tree().current_scene.name == "TestRunner"):
+			return
+		get_tree().paused = false
+		get_tree().change_scene_to_file("res://scenes/bullet_betrayal/bb_level_2.tscn")
+	else:
+		if victory_message_modal:
+			if victory_modal_title:
+				victory_modal_title.text = "STAGE %d IN PROGRESS" % (current_stage_id + 1)
+			if victory_modal_label:
+				victory_modal_label.text = "Stage %d is unlocked, but it's still being built. Replay Stage 1 or 2 for now." % (current_stage_id + 1)
+			victory_message_modal.visible = true
 
 func _on_victory_modal_ok_pressed() -> void:
 	AudioManager.play_sfx("click")
