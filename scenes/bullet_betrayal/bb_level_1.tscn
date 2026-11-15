@@ -45,7 +45,7 @@ size = Vector2(140, 20)
 size = Vector2(140, 20)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_plat3"]
-size = Vector2(150, 20)
+size = Vector2(140, 20)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_plat4"]
 size = Vector2(140, 20)
@@ -292,15 +292,16 @@ scale = Vector2(2.187, 1)
 texture = ExtResource("11_pwood")
 
 [node name="Platform3" type="StaticBody2D" parent="Platforms"]
-position = Vector2(1880, 310)
+position = Vector2(1940, 270)
 collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform3"]
 shape = SubResource("RectangleShape2D_plat3")
+one_way_collision = true
 
 [node name="Sprite2D" type="Sprite2D" parent="Platforms/Platform3"]
-scale = Vector2(2.343, 1)
+scale = Vector2(2.187, 1)
 texture = ExtResource("11_pwood")
 
 [node name="Platform4_Watchtower" type="StaticBody2D" parent="Platforms"]
@@ -383,11 +384,11 @@ position = Vector2(1710, 398)
 texture = ExtResource("12_sbag")
 
 [node name="BarbedWire4" type="Sprite2D" parent="Props"]
-position = Vector2(1830, 401)
+position = Vector2(1870, 401)
 texture = ExtResource("19_wire")
 
 [node name="Crate3_Ruins" type="Sprite2D" parent="Props"]
-position = Vector2(1950, 394)
+position = Vector2(1930, 394)
 texture = ExtResource("13_crate")
 
 [node name="TowerScaffold2" type="Sprite2D" parent="Props"]
@@ -433,11 +434,11 @@ position = Vector2(1640, 393)
 patrol_distance = 40.0
 
 [node name="Enemy7_LedgeSentry" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(1880, 283)
-patrol_distance = 30.0
+position = Vector2(1940, 243)
+patrol_distance = 25.0
 
 [node name="Enemy8_AmbushRuins" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(1990, 393)
+position = Vector2(2010, 393)
 patrol_distance = 0.0
 is_ambush = true
 ambush_type = 4

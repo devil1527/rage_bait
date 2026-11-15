@@ -66,7 +66,7 @@ func run_all_tests() -> void:
 	test_simultaneous_movement_and_shooting()
 	test_bullet_projectiles()
 	test_ammo_crate_pickup()
-	test_ambush_triggers()
+	await test_ambush_triggers()
 	test_10_enemy_objective_and_locked_exit()
 	test_rewarded_ad_revive_integration()
 	test_mobile_touch_controls_and_hud()
@@ -77,6 +77,7 @@ func run_all_tests() -> void:
 	test_phase3_ambush_archetypes_and_reaction_buffers()
 	test_phase3_ground_elevation_continuity_and_no_cliffs()
 	test_phase3_enemy_no_auto_despawn_simulation()
+	await test_phase3_fire_hazard_2_jump_clearance_and_platform_deconfliction()
 
 func test_audio_manager_bullet_betrayal_sfx() -> void:
 	print("\n--- TEST: Bullet Betrayal Audio SFX ---")
@@ -799,5 +800,82 @@ func test_phase3_enemy_no_auto_despawn_simulation() -> void:
 	assert_eq(alive_count, 10, "All 10 enemies remained alive after 180 physics frames")
 	assert_eq(level._enemies_eliminated, 0, "Zero automatic kills recorded (only actual bullets count)")
 	assert_true(not level.extraction_beacon.is_unlocked, "Extraction beacon strictly locked at 0/10")
+	
+	level.queue_free()
+
+func test_phase3_fire_hazard_2_jump_clearance_and_platform_deconfliction() -> void:
+	print("\n--- TEST: Phase 3 Fire Hazard 2 Jump Clearance & Platform Deconfliction ---")
+	var level_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_level_1.tscn")
+	var level: BulletBetrayalLevel1 = level_scene.instantiate()
+	add_child(level)
+	
+	var fire2: Area2D = level.get_node_or_null("Hazards/FireHazard2_Ruins")
+	assert_true(fire2 != null, "FireHazard2_Ruins exists in level")
+	
+	var plat3: StaticBody2D = level.get_node_or_null("Platforms/Platform3")
+	assert_true(plat3 != null, "Platform3 exists in level")
+	
+	var plat3_col: CollisionShape2D = plat3.get_node_or_null("CollisionShape2D")
+	assert_true(plat3_col != null, "Platform3 has CollisionShape2D")
+	assert_true(plat3_col.one_way_collision, "Platform3 has one_way_collision enabled to prevent underside ceiling collision")
+	
+	var plat3_shape: RectangleShape2D = plat3_col.shape as RectangleShape2D
+	assert_true(plat3_shape != null, "Platform3 has RectangleShape2D")
+	var plat3_left: float = plat3.position.x - (plat3_shape.size.x / 2.0)
+	var plat3_right: float = plat3.position.x + (plat3_shape.size.x / 2.0)
+	var plat3_bottom: float = plat3.position.y + (plat3_shape.size.y / 2.0)
+	var plat3_top: float = plat3.position.y - (plat3_shape.size.y / 2.0)
+	
+	# Horizontal deconfliction: platform starts well past the fire hazard
+	var fire_x: float = fire2.position.x
+	var horizontal_gap: float = plat3_left - fire_x
+	assert_true(horizontal_gap >= 60.0, "Platform3 left edge (%s) is >= 60px past FireHazard2 (%s), gap: %s px" % [plat3_left, fire_x, horizontal_gap])
+	
+	# Vertical clearance: platform bottom is elevated above player max jump apex
+	var ground_y: float = 410.0
+	var vertical_clearance: float = ground_y - plat3_bottom
+	assert_true(vertical_clearance >= 120.0, "Platform3 bottom (%s) provides >= 120px overhead clearance from ground (%s px)" % [plat3_bottom, vertical_clearance])
+	
+	# BarbedWire4 deconfliction: provides safe landing runway past fire
+	var wire4: Sprite2D = level.get_node_or_null("Props/BarbedWire4")
+	assert_true(wire4 != null, "BarbedWire4 exists in level")
+	assert_true(wire4.position.x >= 1860.0, "BarbedWire4 (%s) is positioned at X >= 1860 for safe landing runway" % wire4.position.x)
+	var landing_runway: float = wire4.position.x - fire_x
+	assert_true(landing_runway >= 65.0, "Landing runway after fire is >= 65px (actual %s px)" % landing_runway)
+	
+	# Enemy7 Ledge Sentry placement: stands properly on elevated platform
+	var enemy7 = level.get_node_or_null("Enemies/Enemy7_LedgeSentry")
+	assert_true(enemy7 != null, "Enemy7_LedgeSentry exists on platform")
+	assert_true(enemy7.position.y <= plat3_top, "Enemy7 y position (%s) is on/above Platform3 top surface (%s)" % [enemy7.position.y, plat3_top])
+	var sentry_patrol_min = enemy7.position.x - enemy7.patrol_distance
+	var sentry_patrol_max = enemy7.position.x + enemy7.patrol_distance
+	assert_true(sentry_patrol_min >= plat3_left and sentry_patrol_max <= plat3_right, "Enemy7 patrol range [%s, %s] is fully contained within Platform3 [%s, %s]" % [sentry_patrol_min, sentry_patrol_max, plat3_left, plat3_right])
+	
+	# Jump Kinematics Simulation:
+	# Spawn player at X=1740 (before fire), simulate mobile rightward running jump over fire
+	var player = level.player
+	player.global_position = Vector2(1740, 394)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	player.touch_right = true
+	player.touch_jump_just_pressed = true
+	var hit_ceiling: bool = false
+	var passed_fire: bool = false
+	var landed_safely: bool = false
+	
+	for frame in range(60):
+		await get_tree().physics_frame
+		if player.is_on_ceiling():
+			hit_ceiling = true
+		if player.global_position.x > fire_x + 20.0:
+			passed_fire = true
+		if passed_fire and player.is_on_floor() and player.current_health > 0:
+			landed_safely = true
+			break
+	
+	assert_true(not hit_ceiling, "Player never hit overhead ceiling during leap over FireHazard2")
+	assert_true(passed_fire, "Player cleared FireHazard2 horizontally")
+	assert_true(landed_safely, "Player landed safely on ground after leap without taking damage")
+	assert_true(player.is_alive, "Player is alive after completing jump over FireHazard2")
 	
 	level.queue_free()
