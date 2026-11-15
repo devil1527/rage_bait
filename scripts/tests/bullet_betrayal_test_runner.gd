@@ -522,41 +522,36 @@ func test_mobile_touch_controls_and_hud() -> void:
 	hud.queue_free()
 
 func test_pause_menu_and_confirmation_modals() -> void:
-	print("\n--- TEST: Pause Menu & Coin Hell Confirmation Modals ---")
+	print("\n--- TEST: Pause Menu & Victory Overlay Coin Hell Consistency ---")
 	var hud_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_hud.tscn")
 	var hud: BulletBetrayalHUD = hud_scene.instantiate()
 	add_child(hud)
 	
+	# Verify Pause Button consistency with Coin Hell
+	assert_true(hud.pause_btn != null, "HUD Pause button exists")
+	assert_eq(hud.pause_btn.text, "⏸ PAUSE", "Pause button text matches Coin Hell ('⏸ PAUSE')")
+	assert_eq(hud.pause_btn.custom_minimum_size, Vector2(80, 36), "Pause button size is 80x36 matching Coin Hell")
+	
 	assert_true(not hud.pause_overlay.visible, "Pause overlay starts hidden")
-	assert_true(not hud.confirm_modal.visible, "Confirm modal starts hidden")
+	assert_true(hud.confirm_modal == null, "Confirm modal removed from pause menu (matches Coin Hell direct actions)")
 	
 	# Open pause
 	hud.show_pause()
 	assert_true(hud.pause_overlay.visible, "Pause overlay visible after show_pause")
 	assert_true(get_tree().paused, "Game tree is paused")
 	
-	# Test restart confirmation popup
-	hud.pause_restart_btn.pressed.emit()
-	assert_true(hud.confirm_modal.visible, "Confirm modal visible after pressing Restart")
-	assert_eq(hud.modal_title.text, "RESTART LEVEL?", "Confirm modal title is RESTART LEVEL?")
-	assert_true(get_tree().paused, "Game remains paused under confirmation modal")
+	# Verify exact 4 options on Pause Menu matching Coin Hell
+	assert_true(hud.pause_resume_btn != null, "Pause menu has ResumeBtn")
+	assert_eq(hud.pause_resume_btn.text, "▶ RESUME", "Resume button text matches Coin Hell ('▶ RESUME')")
 	
-	# Cancel popup
-	hud.modal_cancel_btn.pressed.emit()
-	assert_true(not hud.confirm_modal.visible, "Confirm modal dismissed on Cancel")
-	assert_true(hud.pause_overlay.visible, "Pause overlay remains open on Cancel")
+	assert_true(hud.pause_restart_btn != null, "Pause menu has RestartBtn")
+	assert_eq(hud.pause_restart_btn.text, "↺ RESTART LEVEL", "Restart button text matches Coin Hell ('↺ RESTART LEVEL')")
 	
-	# Test mission select confirmation popup
-	hud.pause_mission_btn.pressed.emit()
-	assert_true(hud.confirm_modal.visible, "Confirm modal visible after pressing Stage Select")
-	assert_eq(hud.modal_title.text, "RETURN TO MENU?", "Confirm modal title is RETURN TO MENU?")
-	hud.modal_cancel_btn.pressed.emit()
+	assert_true(hud.pause_mission_btn != null, "Pause menu has LevelSelectBtn")
+	assert_eq(hud.pause_mission_btn.text, "☰ LEVEL SELECT", "Level Select button text matches Coin Hell ('☰ LEVEL SELECT')")
 	
-	# Test arcade menu confirmation popup
-	hud.pause_arcade_btn.pressed.emit()
-	assert_true(hud.confirm_modal.visible, "Confirm modal visible after pressing Arcade Menu")
-	assert_eq(hud.modal_title.text, "RETURN TO ARCADE?", "Confirm modal title is RETURN TO ARCADE?")
-	hud.modal_cancel_btn.pressed.emit()
+	assert_true(hud.pause_sfx_btn != null, "Pause menu has SfxBtn")
+	assert_true(hud.pause_arcade_btn == null, "Arcade Menu button omitted from pause overlay (matches Coin Hell 4-button layout)")
 	
 	# Test SFX toggle
 	var initial_sfx: bool = SaveManager.sfx_enabled
@@ -565,10 +560,52 @@ func test_pause_menu_and_confirmation_modals() -> void:
 	hud.pause_sfx_btn.pressed.emit()
 	assert_eq(SaveManager.sfx_enabled, initial_sfx, "SFX toggled back")
 	
-	# Resume game
+	# Test restart button triggers restart immediately without modal
+	var restart_called := [false]
+	hud.restart_requested.connect(func(): restart_called[0] = true)
+	hud.pause_restart_btn.pressed.emit()
+	assert_true(restart_called[0], "Restart triggers immediate restart_requested without confirmation modal")
+	assert_true(not hud.pause_overlay.visible, "Pause overlay dismissed on Restart")
+	assert_true(not get_tree().paused, "Game tree unpaused on Restart")
+	
+	# Test level select button triggers menu immediately without modal
+	hud.show_pause()
+	var menu_called := [false]
+	hud.menu_requested.connect(func(): menu_called[0] = true)
+	hud.pause_mission_btn.pressed.emit()
+	assert_true(menu_called[0], "Level Select triggers immediate menu_requested without confirmation modal")
+	assert_true(not hud.pause_overlay.visible, "Pause overlay dismissed on Level Select")
+	assert_true(not get_tree().paused, "Game tree unpaused on Level Select")
+	
+	# Test Resume button
+	hud.show_pause()
 	hud.pause_resume_btn.pressed.emit()
 	assert_true(not hud.pause_overlay.visible, "Pause overlay hidden on Resume")
 	assert_true(not get_tree().paused, "Game unpaused on Resume")
+	
+	# Test Victory Overlay and Next Stage Button consistency
+	hud.show_victory(8)
+	assert_true(hud.victory_overlay.visible, "Victory overlay displayed on show_victory")
+	assert_true(hud.victory_next_stage_btn != null, "Victory overlay includes NextStageBtn")
+	assert_eq(hud.victory_next_stage_btn.text, "▶ NEXT STAGE", "Next stage button says '▶ NEXT STAGE'")
+	assert_true(hud.victory_replay_btn != null, "Victory overlay has ReplayBtn")
+	assert_eq(hud.victory_replay_btn.text, "↺ REPLAY", "Replay button text matches Coin Hell ('↺ REPLAY')")
+	assert_true(hud.victory_mission_btn != null, "Victory overlay has LevelSelectBtn")
+	assert_eq(hud.victory_mission_btn.text, "☰ LEVEL SELECT", "Level Select button text matches Coin Hell ('☰ LEVEL SELECT')")
+	assert_true(hud.victory_arcade_btn == null, "Arcade Menu button omitted from Victory overlay (matches Coin Hell 3-button layout)")
+	
+	# Test Next Stage Button opens MessageModal for unreleased Stage 2
+	assert_true(hud.victory_message_modal != null, "Victory overlay has MessageModal")
+	assert_true(not hud.victory_message_modal.visible, "MessageModal starts hidden")
+	hud.victory_next_stage_btn.pressed.emit()
+	assert_true(hud.victory_message_modal.visible, "MessageModal opens when clicking Next Stage")
+	assert_eq(hud.victory_modal_title.text, "STAGE 2 IN PROGRESS", "MessageModal title is 'STAGE 2 IN PROGRESS'")
+	assert_true(hud.victory_modal_label.text.contains("still being built"), "MessageModal explains Stage 2 is being built")
+	
+	# Dismiss MessageModal
+	hud.victory_modal_ok_btn.pressed.emit()
+	assert_true(not hud.victory_message_modal.visible, "MessageModal dismissed on OK ('GOT IT')")
+	assert_true(hud.victory_overlay.visible, "Victory overlay remains visible after dismissing MessageModal")
 	
 	hud.queue_free()
 

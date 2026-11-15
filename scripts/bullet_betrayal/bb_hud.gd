@@ -28,32 +28,42 @@ signal revive_requested
 @onready var death_overlay: Control = $Overlays/DeathOverlay
 @onready var victory_overlay: Control = $Overlays/VictoryOverlay
 
-# Pause Overlay elements
+# Pause Overlay elements (Coin Hell 4-button layout)
 @onready var pause_resume_btn: Button = $Overlays/PauseOverlay/Panel/VBox/ResumeBtn
 @onready var pause_restart_btn: Button = $Overlays/PauseOverlay/Panel/VBox/RestartBtn
-@onready var pause_mission_btn: Button = $Overlays/PauseOverlay/Panel/VBox/MissionSelectBtn
-@onready var pause_arcade_btn: Button = $Overlays/PauseOverlay/Panel/VBox/ArcadeMenuBtn
+@onready var pause_level_select_btn: Button = get_node_or_null("Overlays/PauseOverlay/Panel/VBox/LevelSelectBtn")
+@onready var pause_mission_btn: Button = pause_level_select_btn if pause_level_select_btn else get_node_or_null("Overlays/PauseOverlay/Panel/VBox/MissionSelectBtn")
+@onready var pause_arcade_btn: Button = get_node_or_null("Overlays/PauseOverlay/Panel/VBox/ArcadeMenuBtn")
 @onready var pause_sfx_btn: Button = $Overlays/PauseOverlay/Panel/VBox/SfxBtn
 
-# Confirmation Modal inside PauseOverlay
-@onready var confirm_modal: Control = $Overlays/PauseOverlay/ConfirmModal
-@onready var modal_title: Label = $Overlays/PauseOverlay/ConfirmModal/Panel/VBox/TitleLabel
-@onready var modal_message: Label = $Overlays/PauseOverlay/ConfirmModal/Panel/VBox/MessageLabel
-@onready var modal_cancel_btn: Button = $Overlays/PauseOverlay/ConfirmModal/Panel/VBox/HBox/CancelBtn
-@onready var modal_confirm_btn: Button = $Overlays/PauseOverlay/ConfirmModal/Panel/VBox/HBox/ConfirmBtn
+# Confirmation Modal inside PauseOverlay (null-safe fallback)
+@onready var confirm_modal: Control = get_node_or_null("Overlays/PauseOverlay/ConfirmModal")
+@onready var modal_title: Label = get_node_or_null("Overlays/PauseOverlay/ConfirmModal/Panel/VBox/TitleLabel")
+@onready var modal_message: Label = get_node_or_null("Overlays/PauseOverlay/ConfirmModal/Panel/VBox/MessageLabel")
+@onready var modal_cancel_btn: Button = get_node_or_null("Overlays/PauseOverlay/ConfirmModal/Panel/VBox/HBox/CancelBtn")
+@onready var modal_confirm_btn: Button = get_node_or_null("Overlays/PauseOverlay/ConfirmModal/Panel/VBox/HBox/ConfirmBtn")
 
 # Death Overlay elements
 @onready var death_revive_btn: Button = get_node_or_null("Overlays/DeathOverlay/Panel/VBox/ReviveBtn")
 @onready var death_ad_status: Label = get_node_or_null("Overlays/DeathOverlay/Panel/VBox/AdStatusLabel")
 @onready var death_retry_btn: Button = $Overlays/DeathOverlay/Panel/VBox/RetryBtn
-@onready var death_mission_btn: Button = $Overlays/DeathOverlay/Panel/VBox/MissionSelectBtn
-@onready var death_arcade_btn: Button = $Overlays/DeathOverlay/Panel/VBox/ArcadeMenuBtn
+@onready var death_mission_btn: Button = get_node_or_null("Overlays/DeathOverlay/Panel/VBox/MissionSelectBtn")
+@onready var death_level_select_btn: Button = get_node_or_null("Overlays/DeathOverlay/Panel/VBox/LevelSelectBtn")
+@onready var death_arcade_btn: Button = get_node_or_null("Overlays/DeathOverlay/Panel/VBox/ArcadeMenuBtn")
 
-# Victory Overlay buttons
+# Victory Overlay elements (Coin Hell 3-button layout + Next Stage modal)
+@onready var victory_next_stage_btn: Button = get_node_or_null("Overlays/VictoryOverlay/Panel/VBox/NextStageBtn")
 @onready var victory_replay_btn: Button = $Overlays/VictoryOverlay/Panel/VBox/ReplayBtn
-@onready var victory_mission_btn: Button = $Overlays/VictoryOverlay/Panel/VBox/MissionSelectBtn
-@onready var victory_arcade_btn: Button = $Overlays/VictoryOverlay/Panel/VBox/ArcadeMenuBtn
+@onready var victory_level_select_btn: Button = get_node_or_null("Overlays/VictoryOverlay/Panel/VBox/LevelSelectBtn")
+@onready var victory_mission_btn: Button = victory_level_select_btn if victory_level_select_btn else get_node_or_null("Overlays/VictoryOverlay/Panel/VBox/MissionSelectBtn")
+@onready var victory_arcade_btn: Button = get_node_or_null("Overlays/VictoryOverlay/Panel/VBox/ArcadeMenuBtn")
 @onready var victory_stats_label: Label = $Overlays/VictoryOverlay/Panel/VBox/StatsLabel
+
+# Victory Message Modal (Coin Hell style for unreleased Stage 2)
+@onready var victory_message_modal: Control = get_node_or_null("Overlays/VictoryOverlay/MessageModal")
+@onready var victory_modal_title: Label = get_node_or_null("Overlays/VictoryOverlay/MessageModal/Panel/VBox/TitleLabel")
+@onready var victory_modal_label: Label = get_node_or_null("Overlays/VictoryOverlay/MessageModal/Panel/VBox/MessageLabel")
+@onready var victory_modal_ok_btn: Button = get_node_or_null("Overlays/VictoryOverlay/MessageModal/Panel/VBox/OkButton")
 
 var _player_ref: BulletBetrayalPlayer = null
 var _pending_confirm_action: String = ""
@@ -65,28 +75,46 @@ func _ready() -> void:
 	pause_btn.pressed.connect(_on_pause_pressed)
 	pause_btn.gui_input.connect(_on_pause_gui_input)
 
-	# Pause menu buttons
+	# Pause menu buttons - direct action matching Coin Hell!
 	pause_resume_btn.pressed.connect(_on_pause_resume_pressed)
-	pause_restart_btn.pressed.connect(func(): _open_confirm("restart"))
-	pause_mission_btn.pressed.connect(func(): _open_confirm("mission_select"))
-	pause_arcade_btn.pressed.connect(func(): _open_confirm("arcade_menu"))
+	pause_restart_btn.pressed.connect(_on_restart_pressed)
+	if pause_level_select_btn:
+		pause_level_select_btn.pressed.connect(_on_mission_pressed)
+	elif pause_mission_btn:
+		pause_mission_btn.pressed.connect(_on_mission_pressed)
+	if pause_arcade_btn:
+		pause_arcade_btn.pressed.connect(_on_arcade_pressed)
 	pause_sfx_btn.pressed.connect(_on_sfx_toggle_pressed)
 
-	# Confirm modal buttons
-	modal_cancel_btn.pressed.connect(_close_confirm)
-	modal_confirm_btn.pressed.connect(_execute_confirm)
+	# Confirm modal buttons (fallback if present)
+	if modal_cancel_btn:
+		modal_cancel_btn.pressed.connect(_close_confirm)
+	if modal_confirm_btn:
+		modal_confirm_btn.pressed.connect(_execute_confirm)
 
 	# Death menu buttons
 	if death_revive_btn:
 		death_revive_btn.pressed.connect(_on_revive_ad_pressed)
 	death_retry_btn.pressed.connect(_on_restart_pressed)
-	death_mission_btn.pressed.connect(_on_mission_pressed)
-	death_arcade_btn.pressed.connect(_on_arcade_pressed)
+	if death_level_select_btn:
+		death_level_select_btn.pressed.connect(_on_mission_pressed)
+	elif death_mission_btn:
+		death_mission_btn.pressed.connect(_on_mission_pressed)
+	if death_arcade_btn:
+		death_arcade_btn.pressed.connect(_on_arcade_pressed)
 
 	# Victory menu buttons
+	if victory_next_stage_btn:
+		victory_next_stage_btn.pressed.connect(_on_next_stage_pressed)
 	victory_replay_btn.pressed.connect(_on_restart_pressed)
-	victory_mission_btn.pressed.connect(_on_mission_pressed)
-	victory_arcade_btn.pressed.connect(_on_arcade_pressed)
+	if victory_level_select_btn:
+		victory_level_select_btn.pressed.connect(_on_mission_pressed)
+	elif victory_mission_btn:
+		victory_mission_btn.pressed.connect(_on_mission_pressed)
+	if victory_arcade_btn:
+		victory_arcade_btn.pressed.connect(_on_arcade_pressed)
+	if victory_modal_ok_btn:
+		victory_modal_ok_btn.pressed.connect(_on_victory_modal_ok_pressed)
 
 	# AdManager signals
 	if AdManager:
@@ -97,7 +125,10 @@ func _ready() -> void:
 
 	# Initial overlay states
 	pause_overlay.visible = false
-	confirm_modal.visible = false
+	if confirm_modal:
+		confirm_modal.visible = false
+	if victory_message_modal:
+		victory_message_modal.visible = false
 	death_overlay.visible = false
 	victory_overlay.visible = false
 	_update_sfx_btn_text()
@@ -203,13 +234,15 @@ func show_pause() -> void:
 	reset_touch_controls()
 	AudioManager.play_sfx("click")
 	_update_sfx_btn_text()
-	confirm_modal.visible = false
+	if confirm_modal:
+		confirm_modal.visible = false
 	pause_overlay.visible = true
 	get_tree().paused = true
 
 func _on_pause_resume_pressed() -> void:
 	AudioManager.play_sfx("click")
-	confirm_modal.visible = false
+	if confirm_modal:
+		confirm_modal.visible = false
 	pause_overlay.visible = false
 	reset_touch_controls()
 	get_tree().paused = false
@@ -396,4 +429,20 @@ func show_victory(ammo_remaining: int) -> void:
 	reset_touch_controls()
 	if victory_stats_label:
 		victory_stats_label.text = "BORDER INFILTRATION SUCCESSFUL\nAMMO REMAINING: %d ROUNDS" % ammo_remaining
+	if victory_message_modal:
+		victory_message_modal.visible = false
 	victory_overlay.visible = true
+
+func _on_next_stage_pressed() -> void:
+	AudioManager.play_sfx("click")
+	if victory_message_modal:
+		if victory_modal_title:
+			victory_modal_title.text = "STAGE 2 IN PROGRESS"
+		if victory_modal_label:
+			victory_modal_label.text = "Stage 2 is unlocked, but it's still being built. Replay Stage 1 for now."
+		victory_message_modal.visible = true
+
+func _on_victory_modal_ok_pressed() -> void:
+	AudioManager.play_sfx("click")
+	if victory_message_modal:
+		victory_message_modal.visible = false

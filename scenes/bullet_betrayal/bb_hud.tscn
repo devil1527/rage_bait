@@ -69,18 +69,16 @@ shadow_color = Color(0, 0.9, 1, 0.5)
 shadow_size = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal"]
-bg_color = Color(0.08, 0.06, 0.15, 0.98)
+bg_color = Color(0.12549, 0.101961, 0.211765, 0.96)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0, 0.92, 1, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-shadow_color = Color(0, 0.85, 1, 0.25)
-shadow_size = 12
+border_color = Color(0, 0.898039, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_death_panel"]
 bg_color = Color(0.15, 0.04, 0.06, 0.96)
@@ -95,12 +93,12 @@ corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_victory_panel"]
-bg_color = Color(0.04, 0.14, 0.08, 0.96)
+bg_color = Color(0.101961, 0.12549, 0.211765, 0.96)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.2, 1, 0.5, 1)
+border_color = Color(0, 1, 0.6, 1)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
@@ -185,9 +183,6 @@ text = "WORLD 1-1: THE GREEN HILLS"
 custom_minimum_size = Vector2(80, 36)
 layout_mode = 2
 focus_mode = 0
-theme_override_colors/font_color = Color(0, 0.94, 1, 1)
-theme_override_font_sizes/font_size = 13
-theme_override_styles/normal = SubResource("StyleBoxFlat_pause_btn")
 text = "⏸ PAUSE"
 
 [node name="TouchControls" type="Control" parent="."]
@@ -309,7 +304,7 @@ grow_vertical = 2
 color = Color(0, 0, 0, 0.7)
 
 [node name="Panel" type="PanelContainer" parent="Overlays/PauseOverlay"]
-custom_minimum_size = Vector2(360, 360)
+custom_minimum_size = Vector2(360, 320)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -317,16 +312,16 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -180.0
-offset_top = -180.0
+offset_top = -160.0
 offset_right = 180.0
-offset_bottom = 180.0
+offset_bottom = 160.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_pause_panel")
 
 [node name="VBox" type="VBoxContainer" parent="Overlays/PauseOverlay/Panel"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 14
 alignment = 1
 
 [node name="Title" type="Label" parent="Overlays/PauseOverlay/Panel/VBox"]
@@ -341,12 +336,6 @@ custom_minimum_size = Vector2(220, 42)
 layout_mode = 2
 size_flags_horizontal = 4
 focus_mode = 0
-theme_override_colors/font_color = Color(0, 0.95, 1, 1)
-theme_override_font_sizes/font_size = 13
-theme_override_styles/normal = SubResource("StyleBoxFlat_menu_btn")
-theme_override_styles/hover = SubResource("StyleBoxFlat_menu_btn_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_menu_btn")
-theme_override_styles/focus = SubResource("StyleBoxFlat_menu_btn_hover")
 text = "▶ RESUME"
 
 [node name="RestartBtn" type="Button" parent="Overlays/PauseOverlay/Panel/VBox"]
@@ -354,129 +343,21 @@ custom_minimum_size = Vector2(220, 42)
 layout_mode = 2
 size_flags_horizontal = 4
 focus_mode = 0
-theme_override_colors/font_color = Color(0, 0.95, 1, 1)
-theme_override_font_sizes/font_size = 13
-theme_override_styles/normal = SubResource("StyleBoxFlat_menu_btn")
-theme_override_styles/hover = SubResource("StyleBoxFlat_menu_btn_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_menu_btn")
-theme_override_styles/focus = SubResource("StyleBoxFlat_menu_btn_hover")
 text = "↺ RESTART LEVEL"
 
-[node name="MissionSelectBtn" type="Button" parent="Overlays/PauseOverlay/Panel/VBox"]
+[node name="LevelSelectBtn" type="Button" parent="Overlays/PauseOverlay/Panel/VBox"]
 custom_minimum_size = Vector2(220, 42)
 layout_mode = 2
 size_flags_horizontal = 4
 focus_mode = 0
-theme_override_colors/font_color = Color(0, 0.95, 1, 1)
-theme_override_font_sizes/font_size = 13
-theme_override_styles/normal = SubResource("StyleBoxFlat_menu_btn")
-theme_override_styles/hover = SubResource("StyleBoxFlat_menu_btn_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_menu_btn")
-theme_override_styles/focus = SubResource("StyleBoxFlat_menu_btn_hover")
-text = "☰ STAGE SELECT"
-
-[node name="ArcadeMenuBtn" type="Button" parent="Overlays/PauseOverlay/Panel/VBox"]
-custom_minimum_size = Vector2(220, 42)
-layout_mode = 2
-size_flags_horizontal = 4
-focus_mode = 0
-theme_override_colors/font_color = Color(0, 0.95, 1, 1)
-theme_override_font_sizes/font_size = 13
-theme_override_styles/normal = SubResource("StyleBoxFlat_menu_btn")
-theme_override_styles/hover = SubResource("StyleBoxFlat_menu_btn_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_menu_btn")
-theme_override_styles/focus = SubResource("StyleBoxFlat_menu_btn_hover")
-text = "🏠 ARCADE MENU"
+text = "☰ LEVEL SELECT"
 
 [node name="SfxBtn" type="Button" parent="Overlays/PauseOverlay/Panel/VBox"]
 custom_minimum_size = Vector2(220, 38)
 layout_mode = 2
 size_flags_horizontal = 4
 focus_mode = 0
-theme_override_colors/font_color = Color(0.85, 0.92, 1, 1)
-theme_override_font_sizes/font_size = 12
-theme_override_styles/normal = SubResource("StyleBoxFlat_menu_btn")
-theme_override_styles/hover = SubResource("StyleBoxFlat_menu_btn_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_menu_btn")
-theme_override_styles/focus = SubResource("StyleBoxFlat_menu_btn_hover")
 text = "SFX: ON"
-
-[node name="ConfirmModal" type="ColorRect" parent="Overlays/PauseOverlay"]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0, 0, 0, 0.75)
-
-[node name="Panel" type="PanelContainer" parent="Overlays/PauseOverlay/ConfirmModal"]
-custom_minimum_size = Vector2(460, 200)
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -230.0
-offset_top = -100.0
-offset_right = 230.0
-offset_bottom = 100.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
-
-[node name="VBox" type="VBoxContainer" parent="Overlays/PauseOverlay/ConfirmModal/Panel"]
-layout_mode = 2
-theme_override_constants/separation = 14
-alignment = 1
-
-[node name="TitleLabel" type="Label" parent="Overlays/PauseOverlay/ConfirmModal/Panel/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
-theme_override_font_sizes/font_size = 18
-text = "CONFIRMATION"
-horizontal_alignment = 1
-
-[node name="MessageLabel" type="Label" parent="Overlays/PauseOverlay/ConfirmModal/Panel/VBox"]
-custom_minimum_size = Vector2(400, 0)
-layout_mode = 2
-size_flags_horizontal = 4
-theme_override_colors/font_color = Color(0.92, 0.94, 1, 1)
-theme_override_font_sizes/font_size = 14
-text = "Are you sure you want to proceed?"
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="HBox" type="HBoxContainer" parent="Overlays/PauseOverlay/ConfirmModal/Panel/VBox"]
-layout_mode = 2
-theme_override_constants/separation = 20
-alignment = 1
-
-[node name="CancelBtn" type="Button" parent="Overlays/PauseOverlay/ConfirmModal/Panel/VBox/HBox"]
-custom_minimum_size = Vector2(120, 38)
-layout_mode = 2
-focus_mode = 0
-theme_override_colors/font_color = Color(0.85, 0.9, 1, 1)
-theme_override_font_sizes/font_size = 13
-theme_override_styles/normal = SubResource("StyleBoxFlat_menu_btn")
-theme_override_styles/hover = SubResource("StyleBoxFlat_menu_btn_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_menu_btn")
-theme_override_styles/focus = SubResource("StyleBoxFlat_menu_btn_hover")
-text = "CANCEL"
-
-[node name="ConfirmBtn" type="Button" parent="Overlays/PauseOverlay/ConfirmModal/Panel/VBox/HBox"]
-custom_minimum_size = Vector2(120, 38)
-layout_mode = 2
-focus_mode = 0
-theme_override_colors/font_color = Color(0, 0.95, 1, 1)
-theme_override_font_sizes/font_size = 13
-theme_override_styles/normal = SubResource("StyleBoxFlat_menu_btn")
-theme_override_styles/hover = SubResource("StyleBoxFlat_menu_btn_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_menu_btn")
-theme_override_styles/focus = SubResource("StyleBoxFlat_menu_btn_hover")
-text = "CONFIRM"
 
 [node name="DeathOverlay" type="Control" parent="Overlays"]
 visible = false
@@ -612,17 +493,17 @@ grow_vertical = 2
 color = Color(0, 0, 0, 0.75)
 
 [node name="Panel" type="PanelContainer" parent="Overlays/VictoryOverlay"]
-custom_minimum_size = Vector2(400, 300)
+custom_minimum_size = Vector2(380, 360)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -200.0
-offset_top = -150.0
-offset_right = 200.0
-offset_bottom = 150.0
+offset_left = -190.0
+offset_top = -180.0
+offset_right = 190.0
+offset_bottom = 180.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_victory_panel")
@@ -634,8 +515,11 @@ alignment = 1
 
 [node name="Title" type="Label" parent="Overlays/VictoryOverlay/Panel/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 1, 0.55, 1)
-theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0, 1, 0.6, 1)
+theme_override_colors/font_shadow_color = Color(0, 0.4, 0.2, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 28
 text = "STAGE 1 CLEARED!"
 horizontal_alignment = 1
 
@@ -646,41 +530,78 @@ theme_override_font_sizes/font_size = 13
 text = "BORDER INFILTRATION COMPLETE"
 horizontal_alignment = 1
 
+[node name="NextStageBtn" type="Button" parent="Overlays/VictoryOverlay/Panel/VBox"]
+custom_minimum_size = Vector2(240, 42)
+layout_mode = 2
+size_flags_horizontal = 4
+focus_mode = 0
+text = "▶ NEXT STAGE"
+
 [node name="ReplayBtn" type="Button" parent="Overlays/VictoryOverlay/Panel/VBox"]
-custom_minimum_size = Vector2(220, 42)
+custom_minimum_size = Vector2(240, 42)
 layout_mode = 2
 size_flags_horizontal = 4
 focus_mode = 0
-theme_override_colors/font_color = Color(0, 0.95, 1, 1)
-theme_override_font_sizes/font_size = 13
-theme_override_styles/normal = SubResource("StyleBoxFlat_menu_btn")
-theme_override_styles/hover = SubResource("StyleBoxFlat_menu_btn_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_menu_btn")
-theme_override_styles/focus = SubResource("StyleBoxFlat_menu_btn_hover")
-text = "↺ REPLAY MISSION"
+text = "↺ REPLAY"
 
-[node name="MissionSelectBtn" type="Button" parent="Overlays/VictoryOverlay/Panel/VBox"]
-custom_minimum_size = Vector2(220, 42)
+[node name="LevelSelectBtn" type="Button" parent="Overlays/VictoryOverlay/Panel/VBox"]
+custom_minimum_size = Vector2(240, 42)
 layout_mode = 2
 size_flags_horizontal = 4
 focus_mode = 0
-theme_override_colors/font_color = Color(0, 0.95, 1, 1)
-theme_override_font_sizes/font_size = 13
-theme_override_styles/normal = SubResource("StyleBoxFlat_menu_btn")
-theme_override_styles/hover = SubResource("StyleBoxFlat_menu_btn_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_menu_btn")
-theme_override_styles/focus = SubResource("StyleBoxFlat_menu_btn_hover")
-text = "☰ STAGE SELECT"
+text = "☰ LEVEL SELECT"
 
-[node name="ArcadeMenuBtn" type="Button" parent="Overlays/VictoryOverlay/Panel/VBox"]
-custom_minimum_size = Vector2(220, 42)
+[node name="MessageModal" type="ColorRect" parent="Overlays/VictoryOverlay"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.65)
+
+[node name="Panel" type="PanelContainer" parent="Overlays/VictoryOverlay/MessageModal"]
+custom_minimum_size = Vector2(460, 200)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -230.0
+offset_top = -100.0
+offset_right = 230.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="VBox" type="VBoxContainer" parent="Overlays/VictoryOverlay/MessageModal/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="Overlays/VictoryOverlay/MessageModal/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 18
+text = "STAGE 2 IN PROGRESS"
+horizontal_alignment = 1
+
+[node name="MessageLabel" type="Label" parent="Overlays/VictoryOverlay/MessageModal/Panel/VBox"]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.9, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "Stage 2 is unlocked, but it's still being built. Replay Stage 1 for now."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="OkButton" type="Button" parent="Overlays/VictoryOverlay/MessageModal/Panel/VBox"]
+custom_minimum_size = Vector2(120, 36)
 layout_mode = 2
 size_flags_horizontal = 4
 focus_mode = 0
-theme_override_colors/font_color = Color(0, 0.95, 1, 1)
-theme_override_font_sizes/font_size = 13
-theme_override_styles/normal = SubResource("StyleBoxFlat_menu_btn")
-theme_override_styles/hover = SubResource("StyleBoxFlat_menu_btn_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_menu_btn")
-theme_override_styles/focus = SubResource("StyleBoxFlat_menu_btn_hover")
-text = "🏠 ARCADE MENU"
+text = "GOT IT"
