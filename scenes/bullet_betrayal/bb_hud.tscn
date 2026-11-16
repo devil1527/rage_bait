@@ -177,7 +177,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(0, 0.92, 1, 1)
 theme_override_font_sizes/font_size = 14
-text = "WORLD 1-1: THE GREEN HILLS"
+text = "WORLD 1-1: BORDER INFILTRATION"
 
 [node name="PauseBtn" type="Button" parent="TopBar/Margin/HBox"]
 custom_minimum_size = Vector2(80, 36)

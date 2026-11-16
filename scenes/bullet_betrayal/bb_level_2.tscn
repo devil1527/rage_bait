@@ -1,9 +1,10 @@
-[gd_scene load_steps=29 format=3 uid="uid://bblevel2riverambush"]
+[gd_scene load_steps=28 format=3 uid="uid://bblevel2riverambush"]
 
 [ext_resource type="Script" path="res://scripts/bullet_betrayal/bb_level_2.gd" id="1_lev2"]
 [ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_player.tscn" id="2_play"]
 [ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_hud.tscn" id="3_hud"]
 [ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_enemy_soldier.tscn" id="4_esol"]
+[ext_resource type="PackedScene" uid="uid://bbladder001" path="res://scenes/bullet_betrayal/bb_ladder.tscn" id="5_ladd"]
 [ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_extraction_beacon.tscn" id="6_beac"]
 [ext_resource type="Texture2D" path="res://assets/sprites/bb_hills_bg.png" id="7_hbg"]
 [ext_resource type="Texture2D" path="res://assets/sprites/bb_jungle_tree.png" id="8_tree"]
@@ -12,7 +13,6 @@
 [ext_resource type="Texture2D" path="res://assets/sprites/bb_platform_wood.png" id="11_pwood"]
 [ext_resource type="Texture2D" path="res://assets/sprites/bb_sandbag.png" id="12_sbag"]
 [ext_resource type="Texture2D" path="res://assets/sprites/bb_crate.png" id="13_crate"]
-[ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_fire_hazard.tscn" id="14_fire"]
 [ext_resource type="Script" path="res://scripts/bullet_betrayal/bb_ambush_trigger.gd" id="15_atrig"]
 [ext_resource type="Texture2D" path="res://assets/sprites/bb_bunker.png" id="16_bunk"]
 [ext_resource type="Texture2D" path="res://assets/sprites/bb_watchtower.png" id="17_towr"]
@@ -44,7 +44,7 @@ size = Vector2(140, 20)
 size = Vector2(140, 20)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_plat4"]
-size = Vector2(140, 20)
+size = Vector2(160, 20)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
 size = Vector2(40, 600)
@@ -53,7 +53,7 @@ size = Vector2(40, 600)
 size = Vector2(40, 240)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_banner"]
-bg_color = Color(0.04, 0.08, 0.09, 0.90)
+bg_color = Color(0.04, 0.08, 0.09, 0.9)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
@@ -116,39 +116,39 @@ texture = ExtResource("7_hbg")
 [node name="Scenery" type="Node2D" parent="."]
 
 [node name="Tree1" type="Sprite2D" parent="Scenery"]
-position = Vector2(80, 330)
+position = Vector2(160, 345)
 texture = ExtResource("8_tree")
 
 [node name="Tree2" type="Sprite2D" parent="Scenery"]
-position = Vector2(320, 330)
+position = Vector2(620, 345)
 texture = ExtResource("8_tree")
 
 [node name="Tree3" type="Sprite2D" parent="Scenery"]
-position = Vector2(880, 330)
+position = Vector2(1060, 345)
 texture = ExtResource("8_tree")
 
 [node name="Tree4" type="Sprite2D" parent="Scenery"]
-position = Vector2(1280, 330)
+position = Vector2(1580, 345)
 texture = ExtResource("8_tree")
 
 [node name="Tree5" type="Sprite2D" parent="Scenery"]
-position = Vector2(1680, 330)
+position = Vector2(2120, 345)
 texture = ExtResource("8_tree")
 
 [node name="Tree6" type="Sprite2D" parent="Scenery"]
-position = Vector2(2540, 330)
+position = Vector2(2580, 345)
 texture = ExtResource("8_tree")
 
 [node name="SpawnPoint" type="Marker2D" parent="."]
-position = Vector2(140, 370)
+position = Vector2(120, 394)
 
 [node name="Player" parent="." instance=ExtResource("2_play")]
-position = Vector2(140, 370)
+position = Vector2(120, 394)
 
 [node name="Platforms" type="Node2D" parent="."]
 
 [node name="LeftWall" type="StaticBody2D" parent="Platforms"]
-position = Vector2(-20, 270)
+position = Vector2(-20, 200)
 collision_layer = 2
 collision_mask = 0
 
@@ -156,7 +156,7 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_wall")
 
 [node name="RightWall" type="StaticBody2D" parent="Platforms"]
-position = Vector2(2670, 270)
+position = Vector2(2690, 200)
 collision_layer = 2
 collision_mask = 0
 
@@ -172,7 +172,7 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_ground1")
 
 [node name="Grass" type="Sprite2D" parent="Platforms/Ground1"]
-position = Vector2(0, -34)
+position = Vector2(0, -42)
 scale = Vector2(15.625, 1)
 texture = ExtResource("9_tgrass")
 
@@ -190,7 +190,7 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_ground2")
 
 [node name="Grass" type="Sprite2D" parent="Platforms/Ground2"]
-position = Vector2(0, -34)
+position = Vector2(0, -42)
 scale = Vector2(15.625, 1)
 texture = ExtResource("9_tgrass")
 
@@ -208,7 +208,7 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_ground3")
 
 [node name="Grass" type="Sprite2D" parent="Platforms/Ground3"]
-position = Vector2(0, -34)
+position = Vector2(0, -42)
 scale = Vector2(15.625, 1)
 texture = ExtResource("9_tgrass")
 
@@ -226,7 +226,7 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_ground4")
 
 [node name="Grass" type="Sprite2D" parent="Platforms/Ground4"]
-position = Vector2(0, -34)
+position = Vector2(0, -42)
 scale = Vector2(15.625, 1)
 texture = ExtResource("9_tgrass")
 
@@ -244,7 +244,7 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_ground5")
 
 [node name="Grass" type="Sprite2D" parent="Platforms/Ground5"]
-position = Vector2(0, -34)
+position = Vector2(0, -42)
 scale = Vector2(20.938, 1)
 texture = ExtResource("9_tgrass")
 
@@ -254,7 +254,7 @@ scale = Vector2(20.938, 1.8)
 texture = ExtResource("10_trock")
 
 [node name="Platform1_Footbridge" type="StaticBody2D" parent="Platforms"]
-position = Vector2(780, 320)
+position = Vector2(850, 320)
 collision_layer = 2
 collision_mask = 0
 
@@ -299,155 +299,200 @@ collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform4_Watchtower"]
 shape = SubResource("RectangleShape2D_plat4")
+one_way_collision = true
+one_way_collision_margin = 8.0
 
 [node name="Wood" type="Sprite2D" parent="Platforms/Platform4_Watchtower"]
-scale = Vector2(2.187, 1)
+scale = Vector2(2.5, 1)
 texture = ExtResource("11_pwood")
+
+[node name="Ladder_Watchtower" parent="." instance=ExtResource("5_ladd")]
+position = Vector2(2440, 335)
 
 [node name="Props" type="Node2D" parent="."]
 
 [node name="Sandbag1_Entry" type="Sprite2D" parent="Props"]
-position = Vector2(580, 398)
+position = Vector2(380, 398)
 texture = ExtResource("12_sbag")
 
 [node name="Crate1_Entry" type="Sprite2D" parent="Props"]
-position = Vector2(555, 398)
+position = Vector2(340, 398)
 texture = ExtResource("13_crate")
 
 [node name="Sign1_Danger" type="Sprite2D" parent="Props"]
-position = Vector2(710, 398)
+position = Vector2(720, 398)
 texture = ExtResource("18_sign")
+
+[node name="Wire1_Trench" type="Sprite2D" parent="Props"]
+position = Vector2(820, 398)
+texture = ExtResource("19_wire")
+
+[node name="Sandbag2_Trench" type="Sprite2D" parent="Props"]
+position = Vector2(880, 398)
+texture = ExtResource("12_sbag")
+
+[node name="Sandbag3_Trench" type="Sprite2D" parent="Props"]
+position = Vector2(940, 398)
+texture = ExtResource("12_sbag")
+
+[node name="Crate2_Mid" type="Sprite2D" parent="Props"]
+position = Vector2(1180, 398)
+texture = ExtResource("13_crate")
 
 [node name="Bunker1_Ambush" type="Sprite2D" parent="Props"]
-position = Vector2(1120, 355)
+position = Vector2(1380, 355)
 texture = ExtResource("16_bunk")
 
-[node name="Sandbag2_Ambush" type="Sprite2D" parent="Props"]
-position = Vector2(1070, 398)
+[node name="Sandbag4_Mid" type="Sprite2D" parent="Props"]
+position = Vector2(1320, 398)
 texture = ExtResource("12_sbag")
 
-[node name="Crate2_Ambush" type="Sprite2D" parent="Props"]
-position = Vector2(1100, 398)
+[node name="Crate3_Canyon" type="Sprite2D" parent="Props"]
+position = Vector2(1540, 398)
 texture = ExtResource("13_crate")
 
-[node name="Sandbag3_Ambush" type="Sprite2D" parent="Props"]
-position = Vector2(1180, 398)
+[node name="Sandbag5_Canyon" type="Sprite2D" parent="Props"]
+position = Vector2(1620, 398)
 texture = ExtResource("12_sbag")
-
-[node name="Sandbag4_Trench" type="Sprite2D" parent="Props"]
-position = Vector2(1380, 398)
-texture = ExtResource("12_sbag")
-
-[node name="Crate3_Trench" type="Sprite2D" parent="Props"]
-position = Vector2(1410, 398)
-texture = ExtResource("13_crate")
-
-[node name="Sandbag5_Trench" type="Sprite2D" parent="Props"]
-position = Vector2(1500, 398)
-texture = ExtResource("12_sbag")
-
-[node name="Crate4_Ledge" type="Sprite2D" parent="Props"]
-position = Vector2(1710, 398)
-texture = ExtResource("13_crate")
 
 [node name="Sign2_Danger" type="Sprite2D" parent="Props"]
-position = Vector2(2100, 398)
+position = Vector2(1720, 398)
 texture = ExtResource("18_sign")
 
-[node name="Wire1_Outpost" type="Sprite2D" parent="Props"]
-position = Vector2(2200, 398)
-texture = ExtResource("19_wire")
-
-[node name="Bunker2_Outpost" type="Sprite2D" parent="Props"]
-position = Vector2(2270, 355)
-texture = ExtResource("16_bunk")
+[node name="Crate4_Outpost" type="Sprite2D" parent="Props"]
+position = Vector2(1980, 398)
+texture = ExtResource("13_crate")
 
 [node name="Wire2_Outpost" type="Sprite2D" parent="Props"]
-position = Vector2(2360, 398)
+position = Vector2(2120, 398)
 texture = ExtResource("19_wire")
 
-[node name="Watchtower1_Outpost" type="Sprite2D" parent="Props"]
-position = Vector2(2440, 335)
+[node name="Sandbag6_Outpost" type="Sprite2D" parent="Props"]
+position = Vector2(2180, 398)
+texture = ExtResource("12_sbag")
+
+[node name="Bunker2_Outpost" type="Sprite2D" parent="Props"]
+position = Vector2(2260, 355)
+texture = ExtResource("16_bunk")
+
+[node name="Watchtower_Base" type="Sprite2D" parent="Props"]
+position = Vector2(2440, 378)
 texture = ExtResource("17_towr")
 
-[node name="Sandbag6_Gate" type="Sprite2D" parent="Props"]
+[node name="Watchtower_Top" type="Sprite2D" parent="Props"]
+position = Vector2(2440, 314)
+texture = ExtResource("17_towr")
+
+[node name="Sandbag7_Gate" type="Sprite2D" parent="Props"]
 position = Vector2(2530, 398)
 texture = ExtResource("12_sbag")
 
 [node name="Enemies" type="Node2D" parent="."]
 
-[node name="Enemy1_RiverbankPatrol" parent="Enemies" instance=ExtResource("4_esol")]
+[node name="Enemy1_FrontSentry" parent="Enemies" instance=ExtResource("4_esol")]
 position = Vector2(460, 393)
-patrol_distance = 40.0
+patrol_distance = 35.0
 
-[node name="Enemy2_OutpostGuard" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(640, 393)
+[node name="Enemy2_RearAmbush" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(340, 393)
 patrol_distance = 0.0
+is_ambush = true
+ambush_type = 6
 
-[node name="Enemy3_TrenchGuard" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(920, 393)
-patrol_distance = 30.0
+[node name="Enemy3_TrenchAmbush" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(880, 393)
+patrol_distance = 0.0
+is_ambush = true
+ambush_type = 4
 
-[node name="Enemy4_BunkerAmbush" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(1150, 393)
+[node name="Enemy4_FootbridgeSniper" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(850, 293)
+patrol_distance = 25.0
+ambush_type = 3
+
+[node name="Enemy5_BunkerAmbush" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1380, 393)
 patrol_distance = 0.0
 is_ambush = true
 ambush_type = 1
 
-[node name="Enemy5_BarricadeRifleman" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(1460, 393)
-patrol_distance = 30.0
-
-[node name="Enemy6_LedgeSniper" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(1750, 243)
-patrol_distance = 25.0
-
-[node name="Enemy7_GroundSentry" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(1840, 393)
-patrol_distance = 30.0
-
-[node name="Enemy8_Reinforcement" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(2080, 393)
+[node name="Enemy6_RearFlanker2" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1200, 393)
 patrol_distance = 0.0
 is_ambush = true
-ambush_type = 5
+ambush_type = 6
+
+[node name="Enemy7_LedgeSniper" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1750, 243)
+patrol_distance = 25.0
+ambush_type = 3
+
+[node name="Enemy8_CrateAmbush" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1980, 393)
+patrol_distance = 0.0
+is_ambush = true
+ambush_type = 4
 
 [node name="Enemy9_BunkerCommander" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(2290, 393)
-patrol_distance = 35.0
+position = Vector2(2260, 393)
+patrol_distance = 25.0
+ambush_type = 1
 
 [node name="Enemy10_WatchtowerSniper" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(2440, 243)
+position = Vector2(2460, 243)
 patrol_distance = 0.0
-
-[node name="Hazards" type="Node2D" parent="."]
-
-[node name="FireHazard1_TrenchJet" parent="Hazards" instance=ExtResource("14_fire")]
-position = Vector2(780, 410)
-
-[node name="FireHazard2_Outpost" parent="Hazards" instance=ExtResource("14_fire")]
-position = Vector2(2140, 410)
+ambush_type = 3
 
 [node name="Ambushes" type="Node2D" parent="."]
 
-[node name="AmbushTrigger1" type="Area2D" parent="Ambushes"]
-position = Vector2(1020, 360)
+[node name="AmbushTrigger1_Rear" type="Area2D" parent="Ambushes"]
+position = Vector2(660, 360)
 collision_layer = 0
 collision_mask = 1
 script = ExtResource("15_atrig")
-target_enemies = [NodePath("../../Enemies/Enemy4_BunkerAmbush")]
+target_enemies = [NodePath("../../Enemies/Enemy2_RearAmbush")]
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Ambushes/AmbushTrigger1"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ambushes/AmbushTrigger1_Rear"]
 shape = SubResource("RectangleShape2D_trig")
 
-[node name="AmbushTrigger2" type="Area2D" parent="Ambushes"]
-position = Vector2(1940, 360)
+[node name="AmbushTrigger2_Trench" type="Area2D" parent="Ambushes"]
+position = Vector2(760, 360)
 collision_layer = 0
 collision_mask = 1
 script = ExtResource("15_atrig")
-target_enemies = [NodePath("../../Enemies/Enemy8_Reinforcement")]
+target_enemies = [NodePath("../../Enemies/Enemy3_TrenchAmbush")]
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Ambushes/AmbushTrigger2"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ambushes/AmbushTrigger2_Trench"]
+shape = SubResource("RectangleShape2D_trig")
+
+[node name="AmbushTrigger3_Bunker1" type="Area2D" parent="Ambushes"]
+position = Vector2(1240, 360)
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("15_atrig")
+target_enemies = [NodePath("../../Enemies/Enemy5_BunkerAmbush")]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ambushes/AmbushTrigger3_Bunker1"]
+shape = SubResource("RectangleShape2D_trig")
+
+[node name="AmbushTrigger4_Rear2" type="Area2D" parent="Ambushes"]
+position = Vector2(1560, 360)
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("15_atrig")
+target_enemies = [NodePath("../../Enemies/Enemy6_RearFlanker2")]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ambushes/AmbushTrigger4_Rear2"]
+shape = SubResource("RectangleShape2D_trig")
+
+[node name="AmbushTrigger5_Crate" type="Area2D" parent="Ambushes"]
+position = Vector2(1860, 360)
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("15_atrig")
+target_enemies = [NodePath("../../Enemies/Enemy8_CrateAmbush")]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ambushes/AmbushTrigger5_Crate"]
 shape = SubResource("RectangleShape2D_trig")
 
 [node name="Pickups" type="Node2D" parent="."]
@@ -458,28 +503,27 @@ required_enemies = 10
 
 [node name="HUD" parent="." instance=ExtResource("3_hud")]
 current_stage_id = 2
-stage_clear_subtitle = "RIVER AMBUSH CLEARED"
 
 [node name="IntroBanner" type="Control" parent="HUD"]
 layout_mode = 3
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -220.0
-offset_top = -60.0
-offset_right = 220.0
-offset_bottom = 60.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
 [node name="Panel" type="Panel" parent="HUD/IntroBanner"]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -65.0
+offset_right = 220.0
+offset_bottom = 65.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2

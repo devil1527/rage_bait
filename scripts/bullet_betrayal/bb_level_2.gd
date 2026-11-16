@@ -33,6 +33,7 @@ func _ready() -> void:
 	if hud and player:
 		hud.current_stage_id = 2
 		hud.stage_clear_subtitle = "RIVER AMBUSH CLEARED"
+		hud.update_stage_title(2)
 		hud.connect_player(player)
 		hud.restart_requested.connect(restart_level)
 		hud.menu_requested.connect(return_to_menu)

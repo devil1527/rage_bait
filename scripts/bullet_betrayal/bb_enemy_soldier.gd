@@ -15,7 +15,8 @@ enum AmbushType {
 	OFFSCREEN = 2,    # Flank reinforcement appearing into combat line
 	ELEVATED = 3,     # Sentry on watchtower / elevated perch
 	CONCEALED = 4,    # Pops up from trench / behind military crates
-	REINFORCEMENT = 5 # Reinforcement wave advancing into battle
+	REINFORCEMENT = 5,# Reinforcement wave advancing into battle
+	BEHIND = 6        # Surprise attack emerging from behind player
 }
 
 const ENEMY_BULLET_SCENE: PackedScene = preload("res://scenes/bullet_betrayal/bb_enemy_bullet.tscn")
@@ -229,6 +230,17 @@ func trigger_ambush() -> void:
 	var player = _get_active_player()
 	if player:
 		_face_player(player)
+
+	# Special tactical movement for ambush archetypes
+	if ambush_type == AmbushType.BEHIND:
+		facing_direction = 1 # Rear flanker emerges facing eastward toward advancing player
+		# Step out from behind cover/rear perimeter into shooting lane
+		velocity.x = facing_direction * 75.0
+		var stop_timer := get_tree().create_timer(0.35)
+		stop_timer.timeout.connect(func():
+			if not is_dead and is_instance_valid(self):
+				velocity = Vector2.ZERO
+		)
 
 	# Visual pop-up and alert telegraph ONCE
 	if alert_icon:

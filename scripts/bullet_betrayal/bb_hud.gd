@@ -52,7 +52,19 @@ signal revive_requested
 @onready var death_arcade_btn: Button = get_node_or_null("Overlays/DeathOverlay/Panel/VBox/ArcadeMenuBtn")
 
 # Victory Overlay elements (Coin Hell 3-button layout + Next Stage modal)
-@export var current_stage_id: int = 1
+const STAGE_TITLES: Dictionary = {
+	1: "WORLD 1-1: BORDER INFILTRATION",
+	2: "WORLD 1-2: RIVER AMBUSH",
+	3: "WORLD 1-3: SUPPLY DEPOT",
+	4: "WORLD 1-4: RADAR STATION",
+	5: "WORLD 1-5: COMMANDER'S CAMP",
+}
+
+@export var current_stage_id: int = 1:
+	set(val):
+		current_stage_id = val
+		if is_node_ready() and stage_label:
+			stage_label.text = STAGE_TITLES.get(current_stage_id, "WORLD 1-%d" % current_stage_id)
 @export var stage_clear_subtitle: String = "BORDER INFILTRATION SUCCESSFUL"
 @onready var victory_title: Label = get_node_or_null("Overlays/VictoryOverlay/Panel/VBox/Title")
 @onready var victory_next_stage_btn: Button = get_node_or_null("Overlays/VictoryOverlay/Panel/VBox/NextStageBtn")
@@ -73,6 +85,7 @@ var _pending_confirm_action: String = ""
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	update_stage_title(current_stage_id)
 
 	# Pause button inputs (both click and touchscreen touch)
 	pause_btn.pressed.connect(_on_pause_pressed)
@@ -203,6 +216,12 @@ func update_targets(current: int, required: int = 10) -> void:
 		targets_label.add_theme_color_override("font_color", Color(0.2, 1.0, 0.5, 1.0))
 	else:
 		targets_label.add_theme_color_override("font_color", Color(0.0, 0.92, 1.0, 1.0))
+
+func update_stage_title(stage_id: int = -1) -> void:
+	if stage_id != -1:
+		current_stage_id = stage_id
+	elif stage_label:
+		stage_label.text = STAGE_TITLES.get(current_stage_id, "WORLD 1-%d" % current_stage_id)
 
 func _on_dry_fire() -> void:
 	if not ammo_label:

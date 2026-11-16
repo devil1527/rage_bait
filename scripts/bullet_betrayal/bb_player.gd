@@ -31,6 +31,13 @@ var is_dead: bool:
 	get: return not is_alive
 var is_invulnerable: bool = false
 var input_disabled: bool = false
+var is_on_ladder: bool = false
+var ladder_climb_speed: float = 165.0
+
+func set_on_ladder(on_ladder: bool) -> void:
+	is_on_ladder = on_ladder
+	if is_on_ladder:
+		_coyote_timer = 0.14
 
 # Virtual touch input flags (direct mobile touch binding)
 var touch_left: bool = false
@@ -102,8 +109,12 @@ func _physics_process(delta: float) -> void:
 
 	# Gravity
 	if not is_on_floor():
-		velocity.y += gravity * delta
-		_coyote_timer = maxf(0.0, _coyote_timer - delta)
+		if is_on_ladder:
+			# Gravity suspended while on ladder so player clings to rungs
+			pass
+		else:
+			velocity.y += gravity * delta
+			_coyote_timer = maxf(0.0, _coyote_timer - delta)
 	else:
 		_coyote_timer = 0.14 # 140ms coyote time
 		velocity.y = 0.0
@@ -135,13 +146,32 @@ func _handle_input(delta: float) -> void:
 	else:
 		velocity.x = move_toward(velocity.x, 0.0, friction * delta)
 
-	# Jump input & buffering
+	# Ladder vertical climbing
+	if is_on_ladder:
+		_coyote_timer = 0.14 # Maintain coyote time while on ladder
+		var climb_up := Input.is_action_pressed("jump") or touch_jump or Input.is_action_pressed("ui_up")
+		var climb_down := Input.is_action_pressed("ui_down")
+		if climb_up:
+			velocity.y = -ladder_climb_speed
+		elif climb_down:
+			velocity.y = ladder_climb_speed
+		elif not is_on_floor():
+			velocity.y = 0.0 # Cling firmly to rungs when idle
+
+	# Jump input & buffering (ladder dismount or normal ground jump)
 	if Input.is_action_just_pressed("jump") or touch_jump_just_pressed:
 		_jump_buffer_timer = 0.12 # 120ms buffer
 	touch_jump_just_pressed = false
 
 	if _jump_buffer_timer > 0.0 and _coyote_timer > 0.0:
-		_execute_jump()
+		if is_on_ladder and not is_on_floor():
+			if move_input != 0.0:
+				velocity.y = jump_velocity * 0.8
+				_jump_buffer_timer = 0.0
+				_coyote_timer = 0.0
+				AudioManager.play_sfx("jump")
+		else:
+			_execute_jump()
 
 	# Variable jump height cut on early release
 	if (Input.is_action_just_released("jump") or touch_jump_just_released) and velocity.y < 0.0:

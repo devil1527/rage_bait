@@ -81,6 +81,7 @@ func run_all_tests() -> void:
 	test_bb_save_manager_and_stars()
 	test_bullet_betrayal_menu_stars_reflection()
 	test_level_2_scene_and_combat_rules()
+	test_level_2_ladder_rear_ambush_and_polish()
 
 func test_audio_manager_bullet_betrayal_sfx() -> void:
 	print("\n--- TEST: Bullet Betrayal Audio SFX ---")
@@ -1141,5 +1142,89 @@ func test_level_2_scene_and_combat_rules() -> void:
 	assert_eq(player.current_health, 1, "Player revived with 1 life")
 	assert_eq(player.current_ammo, 10, "Player revived with 10 bullets")
 	assert_true(player.is_alive, "Player is alive after revive")
+
+	level.queue_free()
+
+func test_level_2_ladder_rear_ambush_and_polish() -> void:
+	print("\n--- TEST: Level 2 Ladder Mechanics, Rear Ambush & Battlefield Polish ---")
+	var lvl2_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_level_2.tscn")
+	assert_true(lvl2_scene != null, "bb_level_2.tscn loads successfully")
+	var level = lvl2_scene.instantiate()
+	add_child(level)
+	if level.player:
+		level.player._physics_process(1.0 / 60.0)
+		level.player._physics_process(1.0 / 60.0)
+
+	var player = level.player
+	var hud = level.hud
+
+	# 1. Zero flame and burner hazards verification
+	var hazards_node = level.get_node_or_null("Hazards")
+	if hazards_node:
+		assert_eq(hazards_node.get_child_count(), 0, "Level 2 Hazards container has 0 children")
+	else:
+		assert_true(hazards_node == null, "Hazards node completely removed from Level 2")
+	var any_fire = level.find_children("*Fire*", "", true, false)
+	assert_eq(any_fire.size(), 0, "Zero fire hazard nodes exist anywhere in Level 2")
+	var any_burner = level.find_children("*Burner*", "", true, false)
+	assert_eq(any_burner.size(), 0, "Zero burner hazard nodes exist anywhere in Level 2")
+
+	# 2. Dynamic HUD title verification for Level 2
+	assert_eq(hud.current_stage_id, 2, "HUD current_stage_id is set to 2")
+	assert_eq(hud.stage_label.text, "WORLD 1-2: RIVER AMBUSH", "HUD top bar displays 'WORLD 1-2: RIVER AMBUSH'")
+
+	# 3. Watchtower platform & ladder mechanics
+	var plat4: StaticBody2D = level.get_node_or_null("Platforms/Platform4_Watchtower")
+	assert_true(plat4 != null, "Platform4_Watchtower exists")
+	var plat4_col: CollisionShape2D = plat4.get_node_or_null("CollisionShape2D")
+	assert_true(plat4_col != null, "Platform4_Watchtower has CollisionShape2D")
+	assert_true(plat4_col.one_way_collision, "Platform4_Watchtower has one_way_collision enabled for smooth landing")
+
+	var ladder = level.get_node_or_null("Ladder_Watchtower")
+	assert_true(ladder != null, "Ladder_Watchtower exists in Level 2")
+	assert_true(ladder is BulletBetrayalLadder, "Ladder_Watchtower is BulletBetrayalLadder instance")
+
+	# Test ladder trigger and player climbing kinematics
+	ladder._on_body_entered(player)
+	assert_true(player.is_on_ladder, "Player detects ladder upon overlap")
+
+	# Idle on ladder - no vertical movement, clinging to rungs
+	player.touch_jump = false
+	player._handle_input(1.0 / 60.0)
+	assert_eq(player.velocity.y, 0.0, "Player clings stationary to ladder when no climbing input is given")
+
+	# Climbing up ladder with jump/up input
+	player.touch_jump = true
+	player._handle_input(1.0 / 60.0)
+	assert_true(player.velocity.y < 0.0, "Player climbs upward with touch_jump input")
+	assert_eq(player.velocity.y, -player.ladder_climb_speed, "Climb speed equals ladder_climb_speed")
+
+	# Exit ladder
+	player.touch_jump = false
+	ladder._on_body_exited(player)
+	assert_true(not player.is_on_ladder, "Player exits ladder state on body_exited")
+
+	# 4. Rear ambush verification (Surprise attacks from behind)
+	var enemy2: BulletBetrayalEnemySoldier = level.get_node_or_null("Enemies/Enemy2_RearAmbush")
+	assert_true(enemy2 != null, "Enemy2_RearAmbush exists in Level 2")
+	assert_eq(enemy2.ambush_type, BulletBetrayalEnemySoldier.AmbushType.BEHIND, "Enemy2 has AmbushType.BEHIND")
+	assert_true(enemy2.is_dormant, "Enemy2 starts dormant")
+	assert_true(not enemy2.visible, "Enemy2 starts hidden")
+
+	# Trigger ambush from behind
+	enemy2.trigger_ambush()
+	assert_true(not enemy2.is_dormant, "Enemy2 is active after trigger")
+	assert_true(enemy2.visible, "Enemy2 is visible after trigger")
+	assert_eq(enemy2.facing_direction, 1, "Enemy2 turns right to face player's back")
+	assert_true(enemy2.alert_icon.visible, "Enemy2 displays '!' alert telegraph for fair reaction")
+
+	var enemy6: BulletBetrayalEnemySoldier = level.get_node_or_null("Enemies/Enemy6_RearFlanker2")
+	assert_true(enemy6 != null, "Enemy6_RearFlanker2 exists in Level 2")
+	assert_eq(enemy6.ambush_type, BulletBetrayalEnemySoldier.AmbushType.BEHIND, "Enemy6 has AmbushType.BEHIND")
+
+	# 5. Elevated Watchtower sniper verification
+	var enemy10: BulletBetrayalEnemySoldier = level.get_node_or_null("Enemies/Enemy10_WatchtowerSniper")
+	assert_true(enemy10 != null, "Enemy10_WatchtowerSniper exists atop watchtower")
+	assert_true(enemy10.position.y < plat4.position.y, "Enemy10 is stationed atop Platform4")
 
 	level.queue_free()
