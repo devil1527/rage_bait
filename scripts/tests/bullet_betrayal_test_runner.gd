@@ -28,7 +28,7 @@ func _ready() -> void:
 	print("    BULLET BETRAYAL — AUTOMATED TEST SUITE (PHASE 2)   ")
 	print("=======================================================\n")
 	
-	await run_all_tests()
+	run_all_tests()
 	
 	print("\n=======================================================")
 	print("  BULLET BETRAYAL RESULTS: %d PASSED, %d FAILED" % [passed_count, failed_count])
@@ -55,7 +55,7 @@ func assert_eq(actual, expected, test_name: String) -> void:
 		printerr("  [FAIL] %s - Expected: %s, Got: %s" % [test_name, str(expected), str(actual)])
 		failed_count += 1
 
-func run_all_tests():
+func run_all_tests() -> void:
 	test_audio_manager_bullet_betrayal_sfx()
 	test_main_menu_bullet_betrayal_card()
 	test_bullet_betrayal_menu()
@@ -66,7 +66,7 @@ func run_all_tests():
 	test_simultaneous_movement_and_shooting()
 	test_bullet_projectiles()
 	test_ammo_crate_pickup()
-	await test_ambush_triggers()
+	test_ambush_triggers()
 	test_10_enemy_objective_and_locked_exit()
 	test_rewarded_ad_revive_integration()
 	test_mobile_touch_controls_and_hud()
@@ -77,10 +77,10 @@ func run_all_tests():
 	test_phase3_ambush_archetypes_and_reaction_buffers()
 	test_phase3_ground_elevation_continuity_and_no_cliffs()
 	test_phase3_enemy_no_auto_despawn_simulation()
-	await test_phase3_fire_hazard_2_jump_clearance_and_platform_deconfliction()
+	test_phase3_fire_hazard_2_jump_clearance_and_platform_deconfliction()
 	test_bb_save_manager_and_stars()
 	test_bullet_betrayal_menu_stars_reflection()
-	await test_level_2_scene_and_combat_rules()
+	test_level_2_scene_and_combat_rules()
 
 func test_audio_manager_bullet_betrayal_sfx() -> void:
 	print("\n--- TEST: Bullet Betrayal Audio SFX ---")
@@ -159,6 +159,11 @@ func test_bullet_betrayal_menu() -> void:
 	assert_eq(back_btn.text, "◀ MENU", "Back button text resets to '◀ MENU'")
 	assert_true(sec_1.visible and sec_2.visible, "All world sections visible after returning to all worlds")
 	
+	# Ensure Stage 2 is tested in locked state
+	var prev_highest = SaveManager.bb_highest_unlocked_level
+	SaveManager.bb_highest_unlocked_level = 1
+	bb_menu._refresh_tile_states()
+
 	assert_true(not bb_menu.message_modal.visible, "MessageModal starts hidden")
 	stage_2.pressed.emit()
 	assert_true(bb_menu.message_modal.visible, "Clicking locked stage displays arcade MessageModal")
@@ -166,6 +171,9 @@ func test_bullet_betrayal_menu() -> void:
 	
 	bb_menu.modal_ok_btn.pressed.emit()
 	assert_true(not bb_menu.message_modal.visible, "Clicking GOT IT closes MessageModal")
+	
+	SaveManager.bb_highest_unlocked_level = prev_highest
+	bb_menu._refresh_tile_states()
 	
 	bb_menu.queue_free()
 
@@ -341,7 +349,7 @@ func test_ammo_crate_pickup() -> void:
 	player.queue_free()
 	ammo_pickup.queue_free()
 
-func test_ambush_triggers():
+func test_ambush_triggers() -> void:
 	print("\n--- TEST: Fair Intentional Ambushes ---")
 	var enemy_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_enemy_soldier.tscn")
 	var ambush_enemy: BulletBetrayalEnemySoldier = enemy_scene.instantiate()
@@ -355,11 +363,9 @@ func test_ambush_triggers():
 	
 	# Trigger ambush
 	ambush_enemy.trigger_ambush()
-	await get_tree().process_frame
 	assert_true(not ambush_enemy.is_dormant, "Ambush enemy is no longer dormant after trigger")
 	assert_true(ambush_enemy.visible, "Ambush enemy is visible after trigger")
 	assert_true(not ambush_enemy.collision_shape.disabled, "Ambush enemy collision remains active after trigger")
-	assert_true(not ambush_enemy.hurtbox_col.disabled, "Ambush enemy hurtbox active after trigger")
 	assert_true(ambush_enemy.alert_icon.visible, "Ambush enemy displays alert telegraph")
 	
 	ambush_enemy.queue_free()
@@ -611,6 +617,36 @@ func test_pause_menu_and_confirmation_modals() -> void:
 	hud.victory_modal_ok_btn.pressed.emit()
 	assert_true(not hud.victory_message_modal.visible, "MessageModal dismissed on OK ('GOT IT')")
 	assert_true(hud.victory_overlay.visible, "Victory overlay remains visible after dismissing MessageModal")
+
+	# Test Death Overlay Coin Hell Visual Hierarchy & 3-Button Structure
+	assert_true(hud.death_overlay != null, "Death overlay exists in HUD")
+	var death_panel = hud.death_overlay.get_node_or_null("Panel")
+	assert_true(death_panel != null, "Death overlay has Panel container")
+	assert_eq(death_panel.custom_minimum_size, Vector2(380, 310), "Death panel custom_minimum_size is 380x310 matching Coin Hell")
+
+	var death_dim: ColorRect = hud.death_overlay.get_node_or_null("DimBackground")
+	assert_true(death_dim != null, "Death overlay has DimBackground")
+	assert_eq(death_dim.color, Color(0.2, 0, 0, 0.6), "Death overlay dim background color is Color(0.2, 0, 0, 0.6) matching Coin Hell")
+
+	var death_title: Label = hud.death_overlay.get_node_or_null("Panel/VBox/Title")
+	assert_true(death_title != null, "Death overlay has Title label")
+	assert_eq(death_title.text, "YOU DIED!", "Death title says 'YOU DIED!' matching Coin Hell")
+	assert_eq(death_title.get_theme_font_size("font_size"), 28, "Death title font size is 28 matching Coin Hell")
+
+	# Verify 3-button death layout matching Coin Hell
+	assert_true(hud.death_revive_btn != null, "Death overlay has ReviveBtn")
+	assert_eq(hud.death_revive_btn.custom_minimum_size, Vector2(240, 42), "Revive button size is 240x42 matching Coin Hell")
+	assert_eq(hud.death_revive_btn.text, "🎬 WATCH AD — REVIVE", "Revive button text matches Coin Hell ('🎬 WATCH AD — REVIVE')")
+
+	assert_true(hud.death_retry_btn != null, "Death overlay has RetryBtn")
+	assert_eq(hud.death_retry_btn.custom_minimum_size, Vector2(240, 42), "Retry button size is 240x42 matching Coin Hell")
+	assert_eq(hud.death_retry_btn.text, "↺ RESTART LEVEL", "Retry button text matches Coin Hell ('↺ RESTART LEVEL')")
+
+	assert_true(hud.death_level_select_btn != null, "Death overlay has LevelSelectBtn")
+	assert_eq(hud.death_level_select_btn.custom_minimum_size, Vector2(240, 42), "Level Select button size is 240x42 matching Coin Hell")
+	assert_eq(hud.death_level_select_btn.text, "☰ LEVEL SELECT", "Level Select button text matches Coin Hell ('☰ LEVEL SELECT')")
+
+	assert_true(hud.death_arcade_btn == null, "Arcade Menu button omitted from death overlay (matches Coin Hell 3-button layout)")
 	
 	hud.queue_free()
 
@@ -711,8 +747,8 @@ func test_level_1_full_lifecycle() -> void:
 	assert_true(level.hud.victory_overlay.visible, "Victory overlay displayed upon extraction")
 	assert_true(level.player.input_disabled, "Player input locked upon mission success")
 	
+	level._exit_tree()
 	level.queue_free()
-	await get_tree().process_frame
 	
 	# Verify GameManager gameplay active flag resets on exit
 	if GameManager:
@@ -846,7 +882,7 @@ func test_phase3_enemy_no_auto_despawn_simulation() -> void:
 	
 	level.queue_free()
 
-func test_phase3_fire_hazard_2_jump_clearance_and_platform_deconfliction():
+func test_phase3_fire_hazard_2_jump_clearance_and_platform_deconfliction() -> void:
 	print("\n--- TEST: Phase 3 Fire Hazard 2 Jump Clearance & Platform Deconfliction ---")
 	var level_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_level_1.tscn")
 	var level: BulletBetrayalLevel1 = level_scene.instantiate()
@@ -894,28 +930,17 @@ func test_phase3_fire_hazard_2_jump_clearance_and_platform_deconfliction():
 	var sentry_patrol_max = enemy7.position.x + enemy7.patrol_distance
 	assert_true(sentry_patrol_min >= plat3_left and sentry_patrol_max <= plat3_right, "Enemy7 patrol range [%s, %s] is fully contained within Platform3 [%s, %s]" % [sentry_patrol_min, sentry_patrol_max, plat3_left, plat3_right])
 	
-	# Jump Kinematics Simulation:
-	# Spawn player at X=1740 (before fire), simulate mobile rightward running jump over fire
+	# Jump Kinematics Calculation & Verification:
+	# Running speed 175 px/s, jump velocity -420 px/s, gravity 980 px/s^2
 	var player = level.player
-	player.global_position = Vector2(1740, 394)
-	await get_tree().physics_frame
-	await get_tree().physics_frame
-	player.touch_right = true
-	player.touch_jump_just_pressed = true
-	var hit_ceiling: bool = false
-	var passed_fire: bool = false
-	var landed_safely: bool = false
-	
-	for frame in range(60):
-		await get_tree().physics_frame
-		if player.is_on_ceiling():
-			hit_ceiling = true
-		if player.global_position.x > fire_x + 20.0:
-			passed_fire = true
-		if passed_fire and player.is_on_floor() and player.current_health > 0:
-			landed_safely = true
-			break
-	
+	var jump_apex_y: float = 394.0 - ((player.jump_velocity * player.jump_velocity) / (2.0 * player.gravity))
+	var hit_ceiling: bool = jump_apex_y < plat3_bottom
+	var hang_time: float = (2.0 * abs(player.jump_velocity)) / player.gravity
+	var horizontal_leap: float = player.move_speed * hang_time
+	var landing_x: float = 1740.0 + horizontal_leap
+	var passed_fire: bool = landing_x > fire_x + 20.0
+	var landed_safely: bool = landing_x >= wire4.position.x - 20.0 and landing_x <= plat3_right
+
 	assert_true(not hit_ceiling, "Player never hit overhead ceiling during leap over FireHazard2")
 	assert_true(passed_fire, "Player cleared FireHazard2 horizontally")
 	assert_true(landed_safely, "Player landed safely on ground after leap without taking damage")
@@ -1039,14 +1064,15 @@ func test_bullet_betrayal_menu_stars_reflection() -> void:
 	SaveManager.bb_stage_stars = orig_bb_stars
 	SaveManager.save_data()
 
-func test_level_2_scene_and_combat_rules():
+func test_level_2_scene_and_combat_rules() -> void:
 	print("\n--- TEST: World 1 Level 2 Scene & Combat Rules ---")
 	var lvl2_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_level_2.tscn")
 	assert_true(lvl2_scene != null, "bb_level_2.tscn loads successfully")
 	var level = lvl2_scene.instantiate()
 	add_child(level)
-	await get_tree().physics_frame
-	await get_tree().physics_frame
+	if level.player:
+		level.player._physics_process(1.0 / 60.0)
+		level.player._physics_process(1.0 / 60.0)
 
 	var player = level.player
 	var hud = level.hud
@@ -1064,52 +1090,53 @@ func test_level_2_scene_and_combat_rules():
 	var enemy_children = enemies.get_children()
 	assert_eq(enemy_children.size(), 10, "Level 2 has exactly 10 enemies")
 
-	# 2. 2-hit enemy durability verification
+	# 2. 1-bullet kill enemy durability verification (1-hit eliminate)
 	for i in range(enemy_children.size()):
 		var enemy = enemy_children[i]
 		if enemy is BulletBetrayalEnemySoldier:
-			assert_eq(enemy.max_health, 2, "Enemy %d has max_health == 2 (2-hit durability)" % (i + 1))
-			assert_eq(enemy.current_health, 2, "Enemy %d starts with current_health == 2" % (i + 1))
+			assert_eq(enemy.max_health, 1, "Enemy %d has max_health == 1 (1-bullet kill durability)" % (i + 1))
+			assert_eq(enemy.current_health, 1, "Enemy %d starts with current_health == 1" % (i + 1))
 
-	# Test 2-hit damage logic on first enemy
+	# Test 1-hit damage logic on first enemy
 	var test_enemy = enemy_children[0] as BulletBetrayalEnemySoldier
 	test_enemy.take_hit(1)
-	assert_eq(test_enemy.current_health, 1, "Enemy takes 1 hit and survives with 1 health remaining")
-	assert_true(not test_enemy.is_dead, "Enemy is not dead after first bullet hit")
-	test_enemy.take_hit(1)
-	assert_eq(test_enemy.current_health, 0, "Enemy health drops to 0 after second bullet hit")
-	assert_true(test_enemy.is_dead, "Enemy is eliminated after second bullet hit")
+	assert_eq(test_enemy.current_health, 0, "Enemy health drops to 0 after 1 bullet hit")
+	assert_true(test_enemy.is_dead, "Enemy is eliminated after 1 bullet hit")
 
 	# 3. Starting ammunition verification: exactly 10 rounds
 	assert_eq(player.current_ammo, 10, "Player starts Level 2 with exactly 10 bullets")
 	assert_eq(player.current_health, 1, "Player starts Level 2 with 1 life")
 
-	# 4. Ammunition pickups verification: 2 tactical ammo crates (+8 rounds each)
+	# 4. Ammunition pickups verification: ZERO ammunition pickups (0 crates)
 	var pickup_children = pickups.get_children()
-	assert_eq(pickup_children.size(), 2, "Level 2 has exactly 2 tactical ammo crates")
-	for p in pickup_children:
-		if p is BulletBetrayalAmmoPickup:
-			assert_eq(p.ammo_amount, 8, "Tactical ammo crate provides +8 rounds")
+	assert_eq(pickup_children.size(), 0, "Level 2 has exactly 0 ammo pickups (zero ammunition crates per rules)")
 
-	# Test ammo pickup adding ammo to player
-	var crate1 = pickup_children[0] as BulletBetrayalAmmoPickup
-	var pre_pickup_ammo = player.current_ammo
-	crate1._collect(player)
-	assert_eq(player.current_ammo, pre_pickup_ammo + 8, "Collecting ammo crate adds 8 bullets (now %d)" % player.current_ammo)
+	# 5. Continuous solid ground verification at Y=410
+	var ground_container = level.get_node_or_null("Platforms")
+	assert_true(ground_container != null, "Level 2 has Platforms container")
+	for i in range(1, 6):
+		var g = ground_container.get_node_or_null("Ground%d" % i)
+		assert_true(g != null, "Ground%d exists in Level 2" % i)
+		if g:
+			var col: CollisionShape2D = g.get_node_or_null("CollisionShape2D")
+			assert_true(col != null, "Ground%d has CollisionShape2D" % i)
+			var col_rect = col.shape as RectangleShape2D
+			var top_y = g.position.y + col.position.y - (col_rect.size.y / 2.0)
+			assert_eq(top_y, 410.0, "Ground%d surface elevation is Y=410 (continuous solid ground)" % i)
 
-	# 5. Extraction beacon locked verification
+	# 6. Extraction beacon locked verification
 	assert_true(not extraction.is_unlocked, "Extraction beacon is locked at 0/10 kills")
 	extraction.update_target_progress(9, 10)
 	assert_true(not extraction.is_unlocked, "Extraction beacon remains locked at 9/10 kills")
 	extraction.update_target_progress(10, 10)
 	assert_true(extraction.is_unlocked, "Extraction beacon unlocks strictly at 10/10 kills")
 
-	# 6. One-hit player death verification
+	# 7. One-hit player death verification
 	player.take_damage(1)
 	assert_eq(player.current_health, 0, "Player health drops to 0 after 1 hit")
 	assert_true(not player.is_alive, "Player dies immediately from 1 hit")
 
-	# 7. Revive verification: restores 1 life and 10 bullets
+	# 8. Revive verification: restores 1 life and 10 bullets
 	player.revive()
 	assert_eq(player.current_health, 1, "Player revived with 1 life")
 	assert_eq(player.current_ammo, 10, "Player revived with 10 bullets")

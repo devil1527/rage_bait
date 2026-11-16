@@ -3,8 +3,8 @@ extends Node2D
 
 ## World 1 Level 2: "River Ambush" for Bullet Betrayal.
 ## Orchestrates level lifecycle, player respawns, 10-enemy elimination objective,
-## 2-hit enemy durability, locked/unlocked extraction beacon, ambush trigger zones,
-## tactical ammo crates (+8 rounds each), and HUD binding.
+## 1-hit enemy durability, locked/unlocked extraction beacon, ambush trigger zones,
+## continuous battlefield terrain, and HUD binding.
 
 const MENU_SCENE: String = "res://scenes/bullet_betrayal/bullet_betrayal_menu.tscn"
 const ARCADE_SCENE: String = "res://scenes/ui/main_menu.tscn"

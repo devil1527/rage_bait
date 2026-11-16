@@ -81,12 +81,12 @@ corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_death_panel"]
-bg_color = Color(0.15, 0.04, 0.06, 0.96)
+bg_color = Color(0.141176, 0.0784314, 0.12549, 0.96)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(1, 0.2, 0.3, 1)
+border_color = Color(1, 0.25, 0.35, 1)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
@@ -375,20 +375,20 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.75)
+color = Color(0.2, 0, 0, 0.6)
 
 [node name="Panel" type="PanelContainer" parent="Overlays/DeathOverlay"]
-custom_minimum_size = Vector2(360, 360)
+custom_minimum_size = Vector2(380, 310)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -180.0
-offset_top = -180.0
-offset_right = 180.0
-offset_bottom = 180.0
+offset_left = -190.0
+offset_top = -155.0
+offset_right = 190.0
+offset_bottom = 155.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_death_panel")
@@ -400,24 +400,27 @@ alignment = 1
 
 [node name="Title" type="Label" parent="Overlays/DeathOverlay/Panel/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.25, 0.35, 1)
-theme_override_font_sizes/font_size = 24
-text = "M.I.A. — CASUALTY"
+theme_override_colors/font_color = Color(1, 0.3, 0.4, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 28
+text = "YOU DIED!"
 horizontal_alignment = 1
 
 [node name="Subtitle" type="Label" parent="Overlays/DeathOverlay/Panel/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.7, 0.7, 0.8)
-theme_override_font_sizes/font_size = 12
-text = "OPERATION FAILED"
+theme_override_colors/font_color = Color(0.85, 0.85, 0.9, 1)
+theme_override_font_sizes/font_size = 13
+text = "Trust is a luxury you cannot afford."
 horizontal_alignment = 1
 
 [node name="ReviveBtn" type="Button" parent="Overlays/DeathOverlay/Panel/VBox"]
-custom_minimum_size = Vector2(220, 42)
+custom_minimum_size = Vector2(240, 42)
 layout_mode = 2
 size_flags_horizontal = 4
 focus_mode = 0
-theme_override_colors/font_color = Color(1, 0.88, 0.2, 1)
+theme_override_colors/font_color = Color(0.95, 1, 0.95, 1)
 theme_override_font_sizes/font_size = 13
 theme_override_styles/normal = SubResource("StyleBoxFlat_menu_btn")
 theme_override_styles/hover = SubResource("StyleBoxFlat_menu_btn_hover")
@@ -426,17 +429,14 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_menu_btn_hover")
 text = "🎬 WATCH AD — REVIVE"
 
 [node name="AdStatusLabel" type="Label" parent="Overlays/DeathOverlay/Panel/VBox"]
-custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
-size_flags_horizontal = 4
-theme_override_colors/font_color = Color(0.7, 0.9, 0.8, 0.8)
+theme_override_colors/font_color = Color(0.7, 0.9, 0.7, 0.9)
 theme_override_font_sizes/font_size = 11
 text = "Watch a short ad to revive here!"
 horizontal_alignment = 1
-autowrap_mode = 2
 
 [node name="RetryBtn" type="Button" parent="Overlays/DeathOverlay/Panel/VBox"]
-custom_minimum_size = Vector2(220, 42)
+custom_minimum_size = Vector2(240, 42)
 layout_mode = 2
 size_flags_horizontal = 4
 focus_mode = 0
@@ -446,10 +446,10 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_menu_btn")
 theme_override_styles/hover = SubResource("StyleBoxFlat_menu_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_menu_btn")
 theme_override_styles/focus = SubResource("StyleBoxFlat_menu_btn_hover")
-text = "↺ RETRY MISSION"
+text = "↺ RESTART LEVEL"
 
-[node name="MissionSelectBtn" type="Button" parent="Overlays/DeathOverlay/Panel/VBox"]
-custom_minimum_size = Vector2(220, 42)
+[node name="LevelSelectBtn" type="Button" parent="Overlays/DeathOverlay/Panel/VBox"]
+custom_minimum_size = Vector2(240, 42)
 layout_mode = 2
 size_flags_horizontal = 4
 focus_mode = 0
@@ -459,20 +459,7 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_menu_btn")
 theme_override_styles/hover = SubResource("StyleBoxFlat_menu_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_menu_btn")
 theme_override_styles/focus = SubResource("StyleBoxFlat_menu_btn_hover")
-text = "☰ STAGE SELECT"
-
-[node name="ArcadeMenuBtn" type="Button" parent="Overlays/DeathOverlay/Panel/VBox"]
-custom_minimum_size = Vector2(220, 42)
-layout_mode = 2
-size_flags_horizontal = 4
-focus_mode = 0
-theme_override_colors/font_color = Color(0, 0.95, 1, 1)
-theme_override_font_sizes/font_size = 13
-theme_override_styles/normal = SubResource("StyleBoxFlat_menu_btn")
-theme_override_styles/hover = SubResource("StyleBoxFlat_menu_btn_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_menu_btn")
-theme_override_styles/focus = SubResource("StyleBoxFlat_menu_btn_hover")
-text = "🏠 ARCADE MENU"
+text = "☰ LEVEL SELECT"
 
 [node name="VictoryOverlay" type="Control" parent="Overlays"]
 visible = false
