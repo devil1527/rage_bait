@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" path="res://assets/sprites/bb_extraction_beacon.png" id="2_tex"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_beac"]
-size = Vector2(48, 64)
+size = Vector2(64, 110)
 
 [node name="BulletBetrayalExtractionBeacon" type="Area2D"]
 collision_layer = 16
@@ -15,7 +15,7 @@ script = ExtResource("1_scr")
 texture = ExtResource("2_tex")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, 0)
+position = Vector2(0, -23)
 shape = SubResource("RectangleShape2D_beac")
 
 [node name="BeaconGlow" type="ColorRect" parent="."]

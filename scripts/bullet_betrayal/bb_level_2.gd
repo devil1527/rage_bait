@@ -41,6 +41,12 @@ func _ready() -> void:
 		hud.revive_requested.connect(_on_player_revived)
 		hud.update_targets(_enemies_eliminated, TOTAL_REQUIRED_ENEMIES)
 
+	# Configure Level 2 camera boundary to encompass watchtower landing zone
+	if player:
+		var cam: Camera2D = player.get_node_or_null("Camera2D")
+		if cam:
+			cam.limit_right = 2860
+
 	# Bind Extraction
 	if extraction_beacon:
 		extraction_beacon.required_enemies = TOTAL_REQUIRED_ENEMIES

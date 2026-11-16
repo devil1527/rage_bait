@@ -33,6 +33,7 @@ var is_invulnerable: bool = false
 var input_disabled: bool = false
 var is_on_ladder: bool = false
 var ladder_climb_speed: float = 165.0
+var _ladder_dismount_timer: float = 0.0
 
 func set_on_ladder(on_ladder: bool) -> void:
 	is_on_ladder = on_ladder
@@ -109,8 +110,8 @@ func _physics_process(delta: float) -> void:
 
 	# Gravity
 	if not is_on_floor():
-		if is_on_ladder:
-			# Gravity suspended while on ladder so player clings to rungs
+		if is_on_ladder and _ladder_dismount_timer <= 0.0:
+			# Gravity suspended while clinging to ladder rungs
 			pass
 		else:
 			velocity.y += gravity * delta
@@ -120,6 +121,7 @@ func _physics_process(delta: float) -> void:
 		velocity.y = 0.0
 
 	_jump_buffer_timer = maxf(0.0, _jump_buffer_timer - delta)
+	_ladder_dismount_timer = maxf(0.0, _ladder_dismount_timer - delta)
 
 	if not input_disabled:
 		_handle_input(delta)
@@ -147,9 +149,10 @@ func _handle_input(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, 0.0, friction * delta)
 
 	# Ladder vertical climbing
-	if is_on_ladder:
+	if is_on_ladder and _ladder_dismount_timer <= 0.0:
 		_coyote_timer = 0.14 # Maintain coyote time while on ladder
-		var climb_up := Input.is_action_pressed("jump") or touch_jump or Input.is_action_pressed("ui_up")
+		var is_jump_trigger := Input.is_action_just_pressed("jump") or touch_jump_just_pressed
+		var climb_up := (Input.is_action_pressed("jump") or touch_jump or Input.is_action_pressed("ui_up")) and not is_jump_trigger
 		var climb_down := Input.is_action_pressed("ui_down")
 		if climb_up:
 			velocity.y = -ladder_climb_speed
@@ -164,14 +167,7 @@ func _handle_input(delta: float) -> void:
 	touch_jump_just_pressed = false
 
 	if _jump_buffer_timer > 0.0 and _coyote_timer > 0.0:
-		if is_on_ladder and not is_on_floor():
-			if move_input != 0.0:
-				velocity.y = jump_velocity * 0.8
-				_jump_buffer_timer = 0.0
-				_coyote_timer = 0.0
-				AudioManager.play_sfx("jump")
-		else:
-			_execute_jump()
+		_execute_jump()
 
 	# Variable jump height cut on early release
 	if (Input.is_action_just_released("jump") or touch_jump_just_released) and velocity.y < 0.0:
@@ -197,6 +193,7 @@ func _execute_jump() -> void:
 	velocity.y = jump_velocity
 	_coyote_timer = 0.0
 	_jump_buffer_timer = 0.0
+	_ladder_dismount_timer = 0.28
 	AudioManager.play_sfx("jump")
 
 func _attempt_shoot() -> void:

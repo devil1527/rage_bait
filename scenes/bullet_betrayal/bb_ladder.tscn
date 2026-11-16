@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://2de3rbh2r8nt" path="res://assets/sprites/bb_ladder.png" id="2_lspr"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ladder"]
-size = Vector2(32, 144)
+size = Vector2(32, 128)
 
 [node name="Ladder" type="Area2D"]
 collision_layer = 0
@@ -17,4 +17,4 @@ shape = SubResource("RectangleShape2D_ladder")
 texture_repeat = 2
 texture = ExtResource("2_lspr")
 region_enabled = true
-region_rect = Rect2(0, 0, 24, 144)
+region_rect = Rect2(0, 0, 24, 128)

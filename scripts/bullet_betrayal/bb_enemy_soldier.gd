@@ -104,18 +104,19 @@ func _physics_process(delta: float) -> void:
 		return
 
 	var player = _get_active_player()
+	var player_alive: bool = (player != null and player.get("is_alive") == true)
 	
 	if is_ambush and has_ambushed:
 		# Surprise enemy: emerged once, holds ground, locks aim at player, and fires rhythmically
 		velocity.x = 0.0
-		if player and not player.is_dead:
+		if player_alive:
 			_face_player(player)
 		if can_shoot:
 			_aim_and_fire(player, delta)
 	else:
 		# Regular patrol enemy
 		var sees_player := false
-		if player and not player.is_dead:
+		if player_alive:
 			sees_player = _check_player_detection(player)
 
 		if sees_player and can_shoot:

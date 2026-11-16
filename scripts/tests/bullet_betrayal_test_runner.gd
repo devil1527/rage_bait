@@ -82,6 +82,7 @@ func run_all_tests() -> void:
 	test_bullet_betrayal_menu_stars_reflection()
 	test_level_2_scene_and_combat_rules()
 	test_level_2_ladder_rear_ambush_and_polish()
+	await test_level_2_final_jump_over_bar_and_landing()
 
 func test_audio_manager_bullet_betrayal_sfx() -> void:
 	print("\n--- TEST: Bullet Betrayal Audio SFX ---")
@@ -1227,4 +1228,119 @@ func test_level_2_ladder_rear_ambush_and_polish() -> void:
 	assert_true(enemy10 != null, "Enemy10_WatchtowerSniper exists atop watchtower")
 	assert_true(enemy10.position.y < plat4.position.y, "Enemy10 is stationed atop Platform4")
 
+	level.queue_free()
+
+
+func test_level_2_final_jump_over_bar_and_landing() -> void:
+	print("\n--- TEST: Level 2 Final Jump Over Bar, Safe Landing & Camera Boundary ---")
+	var level_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_level_2.tscn")
+	var level: BulletBetrayalLevel2 = level_scene.instantiate()
+	add_child(level)
+	
+	var player: BulletBetrayalPlayer = level.player
+	var enemy10: BulletBetrayalEnemySoldier = level.get_node_or_null("Enemies/Enemy10_WatchtowerSniper")
+	var plat4: StaticBody2D = level.get_node_or_null("Platforms/Platform4_Watchtower")
+	var ladder: Area2D = level.get_node_or_null("Ladder_Watchtower")
+	var beacon: BulletBetrayalExtractionBeacon = level.extraction_beacon
+	var right_wall: StaticBody2D = level.get_node_or_null("Platforms/RightWall")
+	var ground5: StaticBody2D = level.get_node_or_null("Platforms/Ground5")
+	var cam: Camera2D = player.get_node_or_null("Camera2D")
+	
+	assert_true(plat4 != null, "Platform4_Watchtower exists")
+	assert_true(ladder != null, "Ladder_Watchtower exists")
+	assert_true(right_wall != null, "RightWall exists")
+	assert_true(ground5 != null, "Ground5 exists")
+	assert_true(beacon != null, "ExtractionBeacon exists")
+	
+	# 1. Camera limit verification: Level 2 expands limit_right to encompass the full landing runway
+	assert_true(cam.limit_right >= 2860, "Camera limit_right covers full stage landing runway (%s >= 2860)" % cam.limit_right)
+	
+	# 2. Ground 5 & RightWall geometry verification
+	var g5_col: CollisionShape2D = ground5.get_node("CollisionShape2D")
+	var g5_shape: RectangleShape2D = g5_col.shape as RectangleShape2D
+	var g5_right_edge: float = ground5.global_position.x + (g5_shape.size.x / 2.0)
+	assert_true(g5_right_edge >= 2860.0, "Ground5 extends continuously to X >= 2860 (actual: %s)" % g5_right_edge)
+	assert_true(right_wall.global_position.x >= 2860.0, "RightWall position is positioned past landing runway (actual: %s)" % right_wall.global_position.x)
+	
+	# 3. Ladder Area2D vertical clearance: terminates strictly below platform surface
+	var ladder_col: CollisionShape2D = ladder.get_node("CollisionShape2D")
+	var ladder_shape: RectangleShape2D = ladder_col.shape as RectangleShape2D
+	var ladder_top: float = ladder.global_position.y - (ladder_shape.size.y / 2.0)
+	assert_true(ladder_top >= 280.0, "Ladder Area2D terminates at or below Y=280 (actual: %s, platform top: 260.0)" % ladder_top)
+	
+	# 4. Extraction Beacon position & extended landing reach
+	assert_true(beacon.global_position.x >= 2600.0, "ExtractionBeacon is positioned at X >= 2600 for optimal leap landing (actual: %s)" % beacon.global_position.x)
+	var beacon_col: CollisionShape2D = beacon.get_node("CollisionShape2D")
+	var beacon_shape: RectangleShape2D = beacon_col.shape as RectangleShape2D
+	assert_true(beacon_shape.size.y >= 100.0, "ExtractionBeacon trigger volume is >= 100px tall to reliably capture descending leaps")
+	
+	# 5. Physics Simulation: Climb ladder to watchtower top, stand on platform, leap over final bar
+	enemy10.can_shoot = false # Isolate platforming kinematics
+	player.global_position = Vector2(2440, 394)
+	player.reset_touch_inputs()
+	for i in range(5):
+		await get_tree().physics_frame
+	
+	# Ascend ladder to top
+	player.touch_jump = true
+	for f in range(60):
+		await get_tree().physics_frame
+	
+	player.touch_jump = false
+	for f in range(15):
+		await get_tree().physics_frame
+	
+	assert_true(player.is_on_floor(), "Player is firmly resting on Platform4 surface (is_on_floor == true)")
+	assert_true(not player.is_on_ladder, "Player is NOT inside ladder Area2D while standing atop Platform4")
+	
+	# Unlock extraction beacon (simulating all 10 enemies eliminated)
+	beacon.update_target_progress(10, 10)
+	assert_true(beacon.is_unlocked, "Extraction beacon is unlocked")
+	
+	# Execute running leap over the final bar towards the landing runway
+	player.touch_right = true
+	player.touch_jump_just_pressed = true
+	player.touch_jump = true
+	
+	var landed_safely := false
+	var hit_wall_midair := false
+	var extraction_triggered := false
+	
+	beacon.extraction_reached.connect(func():
+		extraction_triggered = true
+	)
+	
+	for f in range(80):
+		await get_tree().physics_frame
+		if player.is_on_wall():
+			hit_wall_midair = true
+		if player.is_on_floor() and player.global_position.y >= 393.0 and not landed_safely:
+			landed_safely = true
+		if extraction_triggered and landed_safely:
+			break
+	
+	assert_true(landed_safely, "Player landed safely on the intended ground runway after leaping over the final bar")
+	assert_true(not hit_wall_midair, "Player never collided with stage boundary wall in mid-air")
+	assert_true(player.global_position.x < cam.limit_right, "Player remained fully inside camera boundary throughout leap")
+	assert_true(extraction_triggered, "Extraction beacon was successfully triggered during or upon landing")
+	
+	# 6. Physics Simulation: Ground jump near watchtower base is not throttled
+	player.global_position = Vector2(2360, 394)
+	player.velocity = Vector2.ZERO
+	player.reset_touch_inputs()
+	for i in range(5):
+		await get_tree().physics_frame
+	
+	player.touch_right = true
+	player.touch_jump_just_pressed = true
+	player.touch_jump = true
+	
+	var peak_vertical_vel := 0.0
+	for f in range(40):
+		await get_tree().physics_frame
+		if player.velocity.y < peak_vertical_vel:
+			peak_vertical_vel = player.velocity.y
+	
+	assert_true(peak_vertical_vel <= -400.0, "Ground jump near watchtower executes with full natural jump velocity (actual: %s)" % peak_vertical_vel)
+	
 	level.queue_free()
