@@ -170,8 +170,8 @@ texture = ExtResource("17_towr")
 
 [node name="Ground1" type="StaticBody2D" parent="Terrain"]
 position = Vector2(250, 460)
-collision_layer = 1
-collision_mask = 3
+collision_layer = 2
+collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/Ground1"]
 shape = SubResource("RectangleShape2D_ground1")
@@ -188,8 +188,8 @@ texture = ExtResource("11_trock")
 
 [node name="Ground2" type="StaticBody2D" parent="Terrain"]
 position = Vector2(750, 460)
-collision_layer = 1
-collision_mask = 3
+collision_layer = 2
+collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/Ground2"]
 shape = SubResource("RectangleShape2D_ground2")
@@ -206,8 +206,8 @@ texture = ExtResource("11_trock")
 
 [node name="Ground3" type="StaticBody2D" parent="Terrain"]
 position = Vector2(1250, 460)
-collision_layer = 1
-collision_mask = 3
+collision_layer = 2
+collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/Ground3"]
 shape = SubResource("RectangleShape2D_ground3")
@@ -224,8 +224,8 @@ texture = ExtResource("11_trock")
 
 [node name="Ground4" type="StaticBody2D" parent="Terrain"]
 position = Vector2(1750, 460)
-collision_layer = 1
-collision_mask = 3
+collision_layer = 2
+collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/Ground4"]
 shape = SubResource("RectangleShape2D_ground4")
@@ -242,8 +242,8 @@ texture = ExtResource("11_trock")
 
 [node name="Ground5" type="StaticBody2D" parent="Terrain"]
 position = Vector2(2430, 460)
-collision_layer = 1
-collision_mask = 3
+collision_layer = 2
+collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/Ground5"]
 shape = SubResource("RectangleShape2D_ground5")
@@ -260,11 +260,12 @@ texture = ExtResource("11_trock")
 
 [node name="Platform1_Perch" type="StaticBody2D" parent="Terrain"]
 position = Vector2(980, 320)
-collision_layer = 1
-collision_mask = 3
+collision_layer = 2
+collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/Platform1_Perch"]
 shape = SubResource("RectangleShape2D_plat1")
+one_way_collision = true
 
 [node name="Sprite2D" type="Sprite2D" parent="Terrain/Platform1_Perch"]
 scale = Vector2(2.916, 1)
@@ -272,11 +273,12 @@ texture = ExtResource("12_pwood")
 
 [node name="Platform2_Overpass" type="StaticBody2D" parent="Terrain"]
 position = Vector2(1620, 270)
-collision_layer = 1
-collision_mask = 3
+collision_layer = 2
+collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/Platform2_Overpass"]
 shape = SubResource("RectangleShape2D_plat2")
+one_way_collision = true
 
 [node name="Sprite2D" type="Sprite2D" parent="Terrain/Platform2_Overpass"]
 scale = Vector2(2.916, 1)
@@ -284,16 +286,16 @@ texture = ExtResource("12_pwood")
 
 [node name="LeftWall" type="StaticBody2D" parent="Terrain"]
 position = Vector2(-20, 250)
-collision_layer = 1
-collision_mask = 3
+collision_layer = 2
+collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/LeftWall"]
 shape = SubResource("RectangleShape2D_wall")
 
 [node name="RightWall" type="StaticBody2D" parent="Terrain"]
 position = Vector2(2880, 250)
-collision_layer = 1
-collision_mask = 3
+collision_layer = 2
+collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/RightWall"]
 shape = SubResource("RectangleShape2D_wall")
@@ -320,16 +322,16 @@ position = Vector2(1280, 410)
 position = Vector2(2120, 410)
 
 [node name="SpawnPoint" type="Marker2D" parent="."]
-position = Vector2(120, 385)
+position = Vector2(120, 394)
 
 [node name="Player" parent="." instance=ExtResource("2_play")]
-position = Vector2(120, 385)
+position = Vector2(120, 394)
 
 [node name="Enemies" type="Node2D" parent="."]
 
 [node name="Enemy1_EntrySentry" parent="Enemies" instance=ExtResource("4_esol")]
-position = Vector2(420, 393)
-patrol_distance = 40.0
+position = Vector2(460, 393)
+patrol_distance = 35.0
 
 [node name="Enemy2_ForwardGunner" parent="Enemies" instance=ExtResource("4_esol")]
 position = Vector2(740, 393)

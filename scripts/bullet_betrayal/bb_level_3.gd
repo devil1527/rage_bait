@@ -47,7 +47,11 @@ func _ready() -> void:
 	if player:
 		var cam: Camera2D = player.get_node_or_null("Camera2D")
 		if cam:
+			cam.limit_left = 0
 			cam.limit_right = 2860
+			cam.limit_top = 0
+			cam.limit_bottom = 540
+			cam.reset_smoothing()
 
 	# Bind Extraction
 	if extraction_beacon:
@@ -118,6 +122,9 @@ func _on_extraction_reached() -> void:
 		hud.show_victory(player.current_ammo if player else 0, earned_stars)
 
 func _on_player_revived() -> void:
+	if player and spawn_point:
+		player.global_position = spawn_point.global_position
+		player.velocity = Vector2.ZERO
 	if hud:
 		hud.update_targets(_enemies_eliminated, TOTAL_REQUIRED_ENEMIES)
 

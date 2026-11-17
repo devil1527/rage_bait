@@ -1413,6 +1413,18 @@ func test_level_3_operation_dead_ground() -> void:
 	assert_eq(p.current_ammo, 10, "Player starts Level 3 with exactly 10 current rounds")
 	assert_eq(p.max_health, 1, "Player max_health is 1 (one-hit death rule)")
 	assert_eq(p.current_health, 1, "Player starts with 1 health")
+
+	# Verify ground terrain collision layer (Layer 2 terrain)
+	var ground1: StaticBody2D = level.get_node_or_null("Terrain/Ground1")
+	assert_true(ground1 != null, "Ground1 exists in Level 3")
+	assert_eq(ground1.collision_layer, 2, "Ground1 is on collision_layer 2 (terrain)")
+	assert_eq(ground1.collision_mask, 0, "Ground1 has collision_mask 0")
+
+	# Verify spawn point and player initial position calculation
+	var spawn_pt: Marker2D = level.get_node_or_null("SpawnPoint")
+	assert_true(spawn_pt != null, "SpawnPoint exists in Level 3")
+	assert_eq(spawn_pt.position, Vector2(120, 394), "SpawnPoint is calculated exactly on ground at (120, 394)")
+	assert_eq(p.position, Vector2(120, 394), "Player starts firmly aligned on ground at (120, 394)")
 	
 	# Verify pickups container has 0 ammo pickups
 	var pickups: Node2D = level.get_node_or_null("Pickups")
@@ -1478,8 +1490,10 @@ func test_level_3_operation_dead_ground() -> void:
 	assert_true(not mine_exploded[0], "Detonated mine does not explode a second time")
 	
 	# Revive player and verify revive mechanics
-	p.revive(Vector2(120, 385))
+	level._on_player_revived()
+	p.revive(spawn_pt.global_position)
 	assert_true(p.is_alive, "Player successfully revived")
+	assert_eq(p.global_position, spawn_pt.global_position, "Player revived at safe spawn position")
 	assert_eq(p.current_ammo, 10, "Player revived with 10 bullets")
 	assert_eq(p.current_health, 1, "Player revived with 1 life")
 	
@@ -1500,9 +1514,12 @@ func test_level_3_operation_dead_ground() -> void:
 	beacon.update_target_progress(10, 10)
 	assert_true(beacon.is_unlocked, "Extraction beacon unlocks strictly at 10/10 kills")
 	
-	# Verify camera limit right
+	# Verify camera limits
 	var cam: Camera2D = p.get_node_or_null("Camera2D")
 	if cam:
+		assert_eq(cam.limit_left, 0, "Camera limit_left is 0")
+		assert_eq(cam.limit_top, 0, "Camera limit_top is 0")
+		assert_eq(cam.limit_bottom, 540, "Camera limit_bottom is 540")
 		assert_true(cam.limit_right >= 2860, "Camera limit_right covers the entire Level 3 stage")
 	
 	level.queue_free()
