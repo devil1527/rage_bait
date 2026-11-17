@@ -20,7 +20,7 @@ func _on_body_entered(body: Node2D) -> void:
 		for path in target_enemies:
 			var node = get_node_or_null(path)
 			if node and node.has_method("trigger_ambush"):
-				node.trigger_ambush()
+				node.trigger_ambush(body)
 
 func reset() -> void:
 	_triggered = false

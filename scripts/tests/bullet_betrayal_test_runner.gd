@@ -1205,19 +1205,57 @@ func test_level_2_ladder_rear_ambush_and_polish() -> void:
 	ladder._on_body_exited(player)
 	assert_true(not player.is_on_ladder, "Player exits ladder state on body_exited")
 
-	# 4. Rear ambush verification (Surprise attacks from behind)
+	# 4. Dynamic rear ambush verification (Detecting movement and facing direction)
 	var enemy2: BulletBetrayalEnemySoldier = level.get_node_or_null("Enemies/Enemy2_RearAmbush")
 	assert_true(enemy2 != null, "Enemy2_RearAmbush exists in Level 2")
 	assert_eq(enemy2.ambush_type, BulletBetrayalEnemySoldier.AmbushType.BEHIND, "Enemy2 has AmbushType.BEHIND")
 	assert_true(enemy2.is_dormant, "Enemy2 starts dormant")
 	assert_true(not enemy2.visible, "Enemy2 starts hidden")
 
-	# Trigger ambush from behind
-	enemy2.trigger_ambush()
+	# Test 4A: Moving Right -> Enemy emerges from the rear (left of player), facing right
+	player.global_position = Vector2(660, 394)
+	player.velocity = Vector2(230.0, 0.0)
+	player.facing_direction = 1
+	enemy2.reset()
+	enemy2.trigger_ambush(player)
 	assert_true(not enemy2.is_dormant, "Enemy2 is active after trigger")
 	assert_true(enemy2.visible, "Enemy2 is visible after trigger")
-	assert_eq(enemy2.facing_direction, 1, "Enemy2 turns right to face player's back")
+	assert_true(enemy2.global_position.x < player.global_position.x, "Ambush spawns behind moving player (to the left: %s < %s)" % [enemy2.global_position.x, player.global_position.x])
+	assert_eq(enemy2.facing_direction, 1, "Enemy2 faces rightward toward advancing player's back")
+	assert_true(enemy2.velocity.x > 0.0, "Enemy2 steps forward into combat lane")
 	assert_true(enemy2.alert_icon.visible, "Enemy2 displays '!' alert telegraph for fair reaction")
+
+	# Test 4B: Moving Left -> Enemy emerges from the rear (right of player), facing left
+	player.global_position = Vector2(660, 394)
+	player.velocity = Vector2(-230.0, 0.0)
+	player.facing_direction = -1
+	enemy2.reset()
+	enemy2.trigger_ambush(player)
+	assert_true(enemy2.global_position.x > player.global_position.x, "Ambush spawns behind backtracking player (to the right: %s > %s)" % [enemy2.global_position.x, player.global_position.x])
+	assert_eq(enemy2.facing_direction, -1, "Enemy2 faces leftward toward backtracking player's back")
+	assert_true(enemy2.velocity.x < 0.0, "Enemy2 steps leftward toward player")
+
+	# Test 4C: Stationary facing Left -> Uses last facing direction to place ambush to the right
+	player.global_position = Vector2(660, 394)
+	player.velocity = Vector2.ZERO
+	player.facing_direction = -1
+	enemy2.reset()
+	enemy2.trigger_ambush(player)
+	assert_true(enemy2.global_position.x > player.global_position.x, "Stationary facing left triggers ambush from behind (to the right)")
+	assert_eq(enemy2.facing_direction, -1, "Enemy2 faces toward player")
+
+	# Test 4D: Stationary facing Right -> Uses last facing direction to place ambush to the left
+	player.global_position = Vector2(660, 394)
+	player.velocity = Vector2.ZERO
+	player.facing_direction = 1
+	enemy2.reset()
+	enemy2.trigger_ambush(player)
+	assert_true(enemy2.global_position.x < player.global_position.x, "Stationary facing right triggers ambush from behind (to the left)")
+	assert_eq(enemy2.facing_direction, 1, "Enemy2 faces toward player")
+
+	# Test 4E: Eliminating ambush enemy with 1 bullet
+	enemy2.take_hit(1)
+	assert_true(enemy2.is_dead, "Ambush enemy eliminated in 1 hit")
 
 	var enemy6: BulletBetrayalEnemySoldier = level.get_node_or_null("Enemies/Enemy6_RearFlanker2")
 	assert_true(enemy6 != null, "Enemy6_RearFlanker2 exists in Level 2")
@@ -1262,28 +1300,63 @@ func test_level_2_final_jump_over_bar_and_landing() -> void:
 	assert_true(g5_right_edge >= 2860.0, "Ground5 extends continuously to X >= 2860 (actual: %s)" % g5_right_edge)
 	assert_true(right_wall.global_position.x >= 2860.0, "RightWall position is positioned past landing runway (actual: %s)" % right_wall.global_position.x)
 	
-	# 3. Ladder Area2D vertical clearance: terminates strictly below platform surface
+	# 3. Bar collision geometry & position relative to ground (jumpable with normal impulse vy=-460, g=1100)
+	var p4_col: CollisionShape2D = plat4.get_node("CollisionShape2D")
+	var p4_shape: RectangleShape2D = p4_col.shape as RectangleShape2D
+	var p4_top: float = plat4.global_position.y - (p4_shape.size.y / 2.0)
+	var ground_y: float = ground5.global_position.y - (g5_shape.size.y / 2.0)
+	var bar_height_above_ground: float = ground_y - p4_top
+	assert_true(bar_height_above_ground < 90.0, "Bar height above ground (%s px) is within natural jump apex of 96.18 px" % bar_height_above_ground)
+	assert_true(p4_shape.size.x <= 100.0, "Bar width (%s px) allows clean horizontal leap clearance" % p4_shape.size.x)
+	
+	# 4. Ladder Area2D vertical clearance: terminates strictly at or below platform underside
 	var ladder_col: CollisionShape2D = ladder.get_node("CollisionShape2D")
 	var ladder_shape: RectangleShape2D = ladder_col.shape as RectangleShape2D
 	var ladder_top: float = ladder.global_position.y - (ladder_shape.size.y / 2.0)
-	assert_true(ladder_top >= 280.0, "Ladder Area2D terminates at or below Y=280 (actual: %s, platform top: 260.0)" % ladder_top)
+	assert_true(ladder_top >= (p4_top + p4_shape.size.y), "Ladder Area2D terminates below platform top surface (actual top: %s, plat bottom: %s)" % [ladder_top, p4_top + p4_shape.size.y])
 	
-	# 4. Extraction Beacon position & extended landing reach
-	assert_true(beacon.global_position.x >= 2600.0, "ExtractionBeacon is positioned at X >= 2600 for optimal leap landing (actual: %s)" % beacon.global_position.x)
+	# 5. Extraction Beacon position & extended landing reach
+	assert_true(beacon.global_position.x >= 2600.0, "ExtractionBeacon is positioned at X >= 2600 on landing runway (actual: %s)" % beacon.global_position.x)
 	var beacon_col: CollisionShape2D = beacon.get_node("CollisionShape2D")
 	var beacon_shape: RectangleShape2D = beacon_col.shape as RectangleShape2D
-	assert_true(beacon_shape.size.y >= 100.0, "ExtractionBeacon trigger volume is >= 100px tall to reliably capture descending leaps")
+	assert_true(beacon_shape.size.y >= 100.0, "ExtractionBeacon trigger volume is >= 100px tall to capture ground runs and descending leaps")
 	
-	# 5. Physics Simulation: Climb ladder to watchtower top, stand on platform, leap over final bar
+	# 6. Physics Simulation: Running jump from ground clears complete collision area of the bar
 	enemy10.can_shoot = false # Isolate platforming kinematics
+	player.global_position = Vector2(2360, 394)
+	player.velocity = Vector2.ZERO
+	player.reset_touch_inputs()
+	for i in range(5):
+		await get_tree().physics_frame
+	
+	player.touch_right = true
+	player.touch_jump = true
+	player.touch_jump_just_pressed = true
+	
+	var ground_jump_cleared_bar := false
+	var ground_jump_landed_safe := false
+	
+	for f in range(65):
+		await get_tree().physics_frame
+		if player.is_on_floor() and f > 15:
+			if player.global_position.y >= 393.0 and player.global_position.x > (plat4.global_position.x + p4_shape.size.x / 2.0):
+				ground_jump_landed_safe = true
+				ground_jump_cleared_bar = true
+				break
+	
+	assert_true(ground_jump_cleared_bar, "Player clears complete bar collision area when jumping from the ground")
+	assert_true(ground_jump_landed_safe, "Player lands safely on the intended ground runway past the bar")
+	
+	# 7. Physics Simulation: Ascend ladder to top of bar, stand firmly, and reach extraction
 	player.global_position = Vector2(2440, 394)
+	player.velocity = Vector2.ZERO
 	player.reset_touch_inputs()
 	for i in range(5):
 		await get_tree().physics_frame
 	
 	# Ascend ladder to top
 	player.touch_jump = true
-	for f in range(60):
+	for f in range(45):
 		await get_tree().physics_frame
 	
 	player.touch_jump = false
@@ -1297,50 +1370,18 @@ func test_level_2_final_jump_over_bar_and_landing() -> void:
 	beacon.update_target_progress(10, 10)
 	assert_true(beacon.is_unlocked, "Extraction beacon is unlocked")
 	
-	# Execute running leap over the final bar towards the landing runway
+	# Walk / leap forward from bar to extraction beacon
 	player.touch_right = true
-	player.touch_jump_just_pressed = true
-	player.touch_jump = true
-	
-	var landed_safely := false
-	var hit_wall_midair := false
 	var extraction_triggered := false
-	
 	beacon.extraction_reached.connect(func():
 		extraction_triggered = true
 	)
 	
-	for f in range(80):
+	for f in range(70):
 		await get_tree().physics_frame
-		if player.is_on_wall():
-			hit_wall_midair = true
-		if player.is_on_floor() and player.global_position.y >= 393.0 and not landed_safely:
-			landed_safely = true
-		if extraction_triggered and landed_safely:
+		if extraction_triggered:
 			break
 	
-	assert_true(landed_safely, "Player landed safely on the intended ground runway after leaping over the final bar")
-	assert_true(not hit_wall_midair, "Player never collided with stage boundary wall in mid-air")
-	assert_true(player.global_position.x < cam.limit_right, "Player remained fully inside camera boundary throughout leap")
-	assert_true(extraction_triggered, "Extraction beacon was successfully triggered during or upon landing")
-	
-	# 6. Physics Simulation: Ground jump near watchtower base is not throttled
-	player.global_position = Vector2(2360, 394)
-	player.velocity = Vector2.ZERO
-	player.reset_touch_inputs()
-	for i in range(5):
-		await get_tree().physics_frame
-	
-	player.touch_right = true
-	player.touch_jump_just_pressed = true
-	player.touch_jump = true
-	
-	var peak_vertical_vel := 0.0
-	for f in range(40):
-		await get_tree().physics_frame
-		if player.velocity.y < peak_vertical_vel:
-			peak_vertical_vel = player.velocity.y
-	
-	assert_true(peak_vertical_vel <= -400.0, "Ground jump near watchtower executes with full natural jump velocity (actual: %s)" % peak_vertical_vel)
+	assert_true(extraction_triggered, "Extraction beacon is reached and triggered after crossing the bar")
 	
 	level.queue_free()

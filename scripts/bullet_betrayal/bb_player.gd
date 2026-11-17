@@ -169,9 +169,9 @@ func _handle_input(delta: float) -> void:
 	if _jump_buffer_timer > 0.0 and _coyote_timer > 0.0:
 		_execute_jump()
 
-	# Variable jump height cut on early release
-	if (Input.is_action_just_released("jump") or touch_jump_just_released) and velocity.y < 0.0:
-		velocity.y *= 0.52
+	# Variable jump height cut on early release (clamped to ensure clean mobile obstacle jumps)
+	if (Input.is_action_just_released("jump") or touch_jump_just_released) and velocity.y < -160.0:
+		velocity.y = -160.0
 	touch_jump_just_released = false
 
 	# Shoot input (can fire while moving, running, jumping)

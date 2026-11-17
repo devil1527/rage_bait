@@ -41,6 +41,7 @@ var _initial_pos: Vector2 = Vector2.ZERO
 var _shoot_timer: float = 0.0
 var _anim_timer: float = 0.0
 var _run_frame: int = 1
+var _ambush_step_timer: float = 0.0
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
@@ -107,10 +108,14 @@ func _physics_process(delta: float) -> void:
 	var player_alive: bool = (player != null and player.get("is_alive") == true)
 	
 	if is_ambush and has_ambushed:
-		# Surprise enemy: emerged once, holds ground, locks aim at player, and fires rhythmically
-		velocity.x = 0.0
-		if player_alive:
-			_face_player(player)
+		# Surprise enemy: emerged once, steps in during initial entry, then holds ground, locks aim at player, and fires rhythmically
+		if _ambush_step_timer > 0.0:
+			_ambush_step_timer = maxf(0.0, _ambush_step_timer - delta)
+			velocity.x = facing_direction * 75.0
+		else:
+			velocity.x = 0.0
+			if player_alive:
+				_face_player(player)
 		if can_shoot:
 			_aim_and_fire(player, delta)
 	else:
@@ -213,7 +218,7 @@ func _update_animation(delta: float) -> void:
 		sprite.texture = _tex_idle
 
 ## Ambushes: trigger dormant enemy to emerge ONCE and start firing continuously
-func trigger_ambush() -> void:
+func trigger_ambush(active_player: Node2D = null) -> void:
 	if not is_dormant or is_dead or has_ambushed:
 		return
 	has_ambushed = true
@@ -227,21 +232,42 @@ func trigger_ambush() -> void:
 	if collision_shape:
 		collision_shape.set_deferred("disabled", false)
 	
-	# Face the player immediately
-	var player = _get_active_player()
-	if player:
-		_face_player(player)
+	var player = active_player if active_player else _get_active_player()
 
-	# Special tactical movement for ambush archetypes
-	if ambush_type == AmbushType.BEHIND:
-		facing_direction = 1 # Rear flanker emerges facing eastward toward advancing player
-		# Step out from behind cover/rear perimeter into shooting lane
+	# Special tactical positioning and movement for rear ambush archetypes
+	if ambush_type == AmbushType.BEHIND and player:
+		# Detect the player's current travel/movement and facing direction
+		var player_dir := 1
+		if absf(player.velocity.x) > 10.0:
+			player_dir = 1 if player.velocity.x > 0.0 else -1
+		elif "facing_direction" in player and player.facing_direction != 0:
+			player_dir = player.facing_direction
+		
+		# Rear direction is strictly opposite to the player's direction of travel/facing
+		# If player is moving/facing right (player_dir == 1), rear is left (rear_dir = -1)
+		# If player is moving/facing left (player_dir == -1), rear is right (rear_dir = 1)
+		var rear_dir := -player_dir
+		
+		# Spawn outside immediate player collision area, at a natural encounter distance (240px behind player)
+		var ambush_dist := 240.0
+		var spawn_x: float = player.global_position.x + (rear_dir * ambush_dist)
+		# Clamp within level boundaries so enemy is never placed outside the map
+		spawn_x = clampf(spawn_x, 80.0, 2750.0)
+		
+		# Place firmly on solid ground (Y=393 matches battlefield floor Y=410 - 17)
+		global_position = Vector2(spawn_x, 393.0)
+		_origin_x = spawn_x
+		
+		# Enemy enters facing towards the player's back
+		facing_direction = -rear_dir
+		_update_facing()
+		
+		# Natural entry: step out into combat lane toward player
+		_ambush_step_timer = 0.35
 		velocity.x = facing_direction * 75.0
-		var stop_timer := get_tree().create_timer(0.35)
-		stop_timer.timeout.connect(func():
-			if not is_dead and is_instance_valid(self):
-				velocity = Vector2.ZERO
-		)
+	else:
+		if player:
+			_face_player(player)
 
 	# Visual pop-up and alert telegraph ONCE
 	if alert_icon:
@@ -310,6 +336,7 @@ func _on_hurtbox_body_entered(body: Node2D) -> void:
 func reset() -> void:
 	is_dead = false
 	has_ambushed = false
+	_ambush_step_timer = 0.0
 	current_health = max_health
 	set_physics_process(true)
 	global_position = _initial_pos
