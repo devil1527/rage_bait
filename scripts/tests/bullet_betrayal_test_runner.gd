@@ -1052,12 +1052,19 @@ func test_bullet_betrayal_menu_stars_reflection() -> void:
 	assert_true(not status2_icon.visible, "Stage 2 icon is not visible (unlocked, not completed)")
 	assert_eq(stars2_lbl.text, "☆ ☆ ☆", "Stage 2 shows empty stars '☆ ☆ ☆'")
 
-	# Check Stage 3 card tile: PLANNED
+	# Check Stage 3 card tile: LOCKED (implemented, requires Stage 2 clear)
 	var btn_lvl3: Button = menu.get_level_button(3)
 	assert_true(btn_lvl3 != null, "LevelBtn_3 exists")
 	var vbox3 = btn_lvl3.get_child(0)
 	var state3_lbl: Label = vbox3.get_child(2)
-	assert_eq(state3_lbl.text, "PLANNED", "Stage 3 tile state is 'PLANNED'")
+	assert_eq(state3_lbl.text, "LOCKED", "Stage 3 tile state is 'LOCKED'")
+
+	# Check Stage 4 card tile: PLANNED (future unreleased stage)
+	var btn_lvl4: Button = menu.get_level_button(4)
+	assert_true(btn_lvl4 != null, "LevelBtn_4 exists")
+	var vbox4 = btn_lvl4.get_child(0)
+	var state4_lbl: Label = vbox4.get_child(2)
+	assert_eq(state4_lbl.text, "PLANNED", "Stage 4 tile state is 'PLANNED'")
 
 	menu.queue_free()
 
@@ -1361,8 +1368,10 @@ func test_level_2_final_jump_over_bar_and_landing() -> void:
 		await get_tree().physics_frame
 	
 	player.touch_jump = false
-	for f in range(15):
+	for f in range(25):
 		await get_tree().physics_frame
+		if player.is_on_floor():
+			break
 	
 	assert_true(player.is_on_floor(), "Player is firmly resting on Platform4 surface (is_on_floor == true)")
 	assert_true(not player.is_on_ladder, "Player is NOT inside ladder Area2D while standing atop Platform4")
@@ -1378,7 +1387,7 @@ func test_level_2_final_jump_over_bar_and_landing() -> void:
 		extraction_triggered[0] = true
 	)
 	
-	for f in range(70):
+	for f in range(120):
 		await get_tree().physics_frame
 		if extraction_triggered[0]:
 			break

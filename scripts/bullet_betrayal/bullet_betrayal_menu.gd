@@ -412,7 +412,7 @@ func _refresh_tile_states() -> void:
 		var is_unlocked: bool = SaveManager.is_bb_level_unlocked(lvl_id) if SaveManager else (lvl_id == 1)
 		var is_completed: bool = SaveManager.is_bb_level_completed(lvl_id) if SaveManager else false
 		var star_rating: int = SaveManager.get_bb_level_stars(lvl_id) if SaveManager else 0
-		var is_implemented: bool = (lvl_id <= 2)
+		var is_implemented: bool = (lvl_id <= 3)
 		var world_id: int = int((lvl_id - 1) / 5) + 1
 
 		if not is_implemented:
