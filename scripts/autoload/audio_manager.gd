@@ -33,6 +33,7 @@ func _generate_retro_sounds() -> void:
 	_sounds["player_hit"] = _synth_tone(0.16, 180.0, 90.0, 0.45, "saw")
 	_sounds["victory"] = _synth_arpeggio([523.25, 659.25, 783.99, 1046.5, 1318.5], 0.10)
 	_sounds["dry_fire"] = _synth_tone(0.04, 820.0, 750.0, 0.25, "triangle")
+	_sounds["explosion"] = _synth_explosion()
 
 func play_sfx(sound_name: String) -> void:
 	if not SaveManager.sfx_enabled:
@@ -226,3 +227,32 @@ func _synth_enemy_defeat() -> AudioStreamWAV:
 	stream.stereo = false
 	stream.data = data
 	return stream
+
+func _synth_explosion() -> AudioStreamWAV:
+	var sample_rate: int = 22050
+	var total_samples: int = int(0.55 * float(sample_rate))
+	var data := PackedByteArray()
+	data.resize(total_samples)
+
+	var phase: float = 0.0
+	for i: int in range(total_samples):
+		var t: float = float(i) / float(total_samples)
+		var freq: float = lerpf(260.0, 32.0, t * t)
+		phase += (freq * TAU) / float(sample_rate)
+		if phase > TAU:
+			phase -= TAU
+
+		var noise: float = randf_range(-0.7, 0.7)
+		var rumble: float = 1.0 if phase < PI else -1.0
+		var val: float = (rumble * 0.45) + (noise * 0.55)
+		var env: float = (1.0 - t) * (1.0 - (t * 0.5)) * 0.7
+		var sample_8bit: int = int(clampf((val * env * 120.0) + 128.0, 0.0, 255.0))
+		data[i] = sample_8bit
+
+	var stream := AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_8_BITS
+	stream.mix_rate = sample_rate
+	stream.stereo = false
+	stream.data = data
+	return stream
+

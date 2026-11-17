@@ -1,0 +1,486 @@
+[gd_scene load_steps=27 format=3 uid="uid://bblevel3operationdeadground"]
+
+[ext_resource type="Script" path="res://scripts/bullet_betrayal/bb_level_3.gd" id="1_lev3"]
+[ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_player.tscn" id="2_play"]
+[ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_hud.tscn" id="3_hud"]
+[ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_enemy_soldier.tscn" id="4_esol"]
+[ext_resource type="PackedScene" uid="uid://bbladder001" path="res://scenes/bullet_betrayal/bb_ladder.tscn" id="5_ladd"]
+[ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_extraction_beacon.tscn" id="6_beac"]
+[ext_resource type="PackedScene" uid="uid://bblandmine001" path="res://scenes/bullet_betrayal/bb_landmine.tscn" id="7_mine"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_hills_bg.png" id="8_hbg"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_jungle_tree.png" id="9_tree"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_terrain_grass.png" id="10_tgrass"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_terrain_rock.png" id="11_trock"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_platform_wood.png" id="12_pwood"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_sandbag.png" id="13_sbag"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_crate.png" id="14_crate"]
+[ext_resource type="Script" path="res://scripts/bullet_betrayal/bb_ambush_trigger.gd" id="15_atrig"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_bunker.png" id="16_bunk"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_watchtower.png" id="17_towr"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_sign_danger.png" id="18_sign"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_barbed_wire.png" id="19_wire"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground1"]
+size = Vector2(500, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground2"]
+size = Vector2(500, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground3"]
+size = Vector2(500, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground4"]
+size = Vector2(500, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground5"]
+size = Vector2(860, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat1"]
+size = Vector2(140, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat2"]
+size = Vector2(140, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
+size = Vector2(40, 600)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_trig"]
+size = Vector2(40, 240)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_banner"]
+bg_color = Color(0.05, 0.08, 0.07, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85, 0.35, 0.2, 0.95)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="BulletBetrayalLevel3" type="Node2D"]
+script = ExtResource("1_lev3")
+
+[node name="BackgroundCanvas" type="CanvasLayer" parent="."]
+layer = -2
+
+[node name="SkyGradient" type="ColorRect" parent="BackgroundCanvas"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.08, 0.11, 0.14, 1)
+
+[node name="DeadGroundMist" type="ColorRect" parent="BackgroundCanvas"]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -150.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+color = Color(0.05, 0.08, 0.09, 0.9)
+
+[node name="ParallaxHills" type="Node2D" parent="."]
+modulate = Color(0.65, 0.75, 0.8, 0.7)
+
+[node name="Hills1" type="Sprite2D" parent="ParallaxHills"]
+position = Vector2(300, 280)
+texture = ExtResource("8_hbg")
+
+[node name="Hills2" type="Sprite2D" parent="ParallaxHills"]
+position = Vector2(900, 280)
+texture = ExtResource("8_hbg")
+
+[node name="Hills3" type="Sprite2D" parent="ParallaxHills"]
+position = Vector2(1500, 280)
+texture = ExtResource("8_hbg")
+
+[node name="Hills4" type="Sprite2D" parent="ParallaxHills"]
+position = Vector2(2100, 280)
+texture = ExtResource("8_hbg")
+
+[node name="Hills5" type="Sprite2D" parent="ParallaxHills"]
+position = Vector2(2700, 280)
+texture = ExtResource("8_hbg")
+
+[node name="EnvironmentProps" type="Node2D" parent="."]
+
+[node name="Tree1" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(80, 340)
+texture = ExtResource("9_tree")
+
+[node name="DangerSign1" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(490, 395)
+texture = ExtResource("18_sign")
+
+[node name="Tree2" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(660, 335)
+texture = ExtResource("9_tree")
+
+[node name="Sandbag1" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(820, 398)
+texture = ExtResource("13_sbag")
+
+[node name="Bunker1" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(1140, 370)
+texture = ExtResource("16_bunk")
+
+[node name="DangerSign2" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(1230, 395)
+texture = ExtResource("18_sign")
+
+[node name="Crates1" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(1380, 394)
+texture = ExtResource("14_crate")
+
+[node name="BarbedWire1" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(1460, 401)
+texture = ExtResource("19_wire")
+
+[node name="Tree3" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(1780, 335)
+texture = ExtResource("9_tree")
+
+[node name="DangerSign3" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(2070, 395)
+texture = ExtResource("18_sign")
+
+[node name="Sandbag2" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(2170, 398)
+texture = ExtResource("13_sbag")
+
+[node name="BarbedWire2" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(2200, 401)
+texture = ExtResource("19_wire")
+
+[node name="Bunker2" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(2320, 370)
+texture = ExtResource("16_bunk")
+
+[node name="Watchtower" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(2480, 320)
+texture = ExtResource("17_towr")
+
+[node name="Terrain" type="Node2D" parent="."]
+
+[node name="Ground1" type="StaticBody2D" parent="Terrain"]
+position = Vector2(250, 460)
+collision_layer = 1
+collision_mask = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/Ground1"]
+shape = SubResource("RectangleShape2D_ground1")
+
+[node name="Grass" type="Sprite2D" parent="Terrain/Ground1"]
+position = Vector2(0, -42)
+scale = Vector2(15.625, 1)
+texture = ExtResource("10_tgrass")
+
+[node name="Rock" type="Sprite2D" parent="Terrain/Ground1"]
+position = Vector2(0, 0)
+scale = Vector2(15.625, 2.5)
+texture = ExtResource("11_trock")
+
+[node name="Ground2" type="StaticBody2D" parent="Terrain"]
+position = Vector2(750, 460)
+collision_layer = 1
+collision_mask = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/Ground2"]
+shape = SubResource("RectangleShape2D_ground2")
+
+[node name="Grass" type="Sprite2D" parent="Terrain/Ground2"]
+position = Vector2(0, -42)
+scale = Vector2(15.625, 1)
+texture = ExtResource("10_tgrass")
+
+[node name="Rock" type="Sprite2D" parent="Terrain/Ground2"]
+position = Vector2(0, 0)
+scale = Vector2(15.625, 2.5)
+texture = ExtResource("11_trock")
+
+[node name="Ground3" type="StaticBody2D" parent="Terrain"]
+position = Vector2(1250, 460)
+collision_layer = 1
+collision_mask = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/Ground3"]
+shape = SubResource("RectangleShape2D_ground3")
+
+[node name="Grass" type="Sprite2D" parent="Terrain/Ground3"]
+position = Vector2(0, -42)
+scale = Vector2(15.625, 1)
+texture = ExtResource("10_tgrass")
+
+[node name="Rock" type="Sprite2D" parent="Terrain/Ground3"]
+position = Vector2(0, 0)
+scale = Vector2(15.625, 2.5)
+texture = ExtResource("11_trock")
+
+[node name="Ground4" type="StaticBody2D" parent="Terrain"]
+position = Vector2(1750, 460)
+collision_layer = 1
+collision_mask = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/Ground4"]
+shape = SubResource("RectangleShape2D_ground4")
+
+[node name="Grass" type="Sprite2D" parent="Terrain/Ground4"]
+position = Vector2(0, -42)
+scale = Vector2(15.625, 1)
+texture = ExtResource("10_tgrass")
+
+[node name="Rock" type="Sprite2D" parent="Terrain/Ground4"]
+position = Vector2(0, 0)
+scale = Vector2(15.625, 2.5)
+texture = ExtResource("11_trock")
+
+[node name="Ground5" type="StaticBody2D" parent="Terrain"]
+position = Vector2(2430, 460)
+collision_layer = 1
+collision_mask = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/Ground5"]
+shape = SubResource("RectangleShape2D_ground5")
+
+[node name="Grass" type="Sprite2D" parent="Terrain/Ground5"]
+position = Vector2(0, -42)
+scale = Vector2(26.875, 1)
+texture = ExtResource("10_tgrass")
+
+[node name="Rock" type="Sprite2D" parent="Terrain/Ground5"]
+position = Vector2(0, 0)
+scale = Vector2(26.875, 2.5)
+texture = ExtResource("11_trock")
+
+[node name="Platform1_Perch" type="StaticBody2D" parent="Terrain"]
+position = Vector2(980, 320)
+collision_layer = 1
+collision_mask = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/Platform1_Perch"]
+shape = SubResource("RectangleShape2D_plat1")
+
+[node name="Sprite2D" type="Sprite2D" parent="Terrain/Platform1_Perch"]
+scale = Vector2(2.916, 1)
+texture = ExtResource("12_pwood")
+
+[node name="Platform2_Overpass" type="StaticBody2D" parent="Terrain"]
+position = Vector2(1620, 270)
+collision_layer = 1
+collision_mask = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/Platform2_Overpass"]
+shape = SubResource("RectangleShape2D_plat2")
+
+[node name="Sprite2D" type="Sprite2D" parent="Terrain/Platform2_Overpass"]
+scale = Vector2(2.916, 1)
+texture = ExtResource("12_pwood")
+
+[node name="LeftWall" type="StaticBody2D" parent="Terrain"]
+position = Vector2(-20, 250)
+collision_layer = 1
+collision_mask = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/LeftWall"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="RightWall" type="StaticBody2D" parent="Terrain"]
+position = Vector2(2880, 250)
+collision_layer = 1
+collision_mask = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/RightWall"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="Ladders" type="Node2D" parent="."]
+
+[node name="Ladder1" parent="Ladders" instance=ExtResource("5_ladd")]
+position = Vector2(920, 410)
+ladder_height = 100.0
+
+[node name="Ladder2" parent="Ladders" instance=ExtResource("5_ladd")]
+position = Vector2(1560, 410)
+ladder_height = 140.0
+
+[node name="Landmines" type="Node2D" parent="."]
+
+[node name="Mine1_Intro" parent="Landmines" instance=ExtResource("7_mine")]
+position = Vector2(540, 410)
+
+[node name="Mine2_Tactical" parent="Landmines" instance=ExtResource("7_mine")]
+position = Vector2(1280, 410)
+
+[node name="Mine3_Final" parent="Landmines" instance=ExtResource("7_mine")]
+position = Vector2(2120, 410)
+
+[node name="SpawnPoint" type="Marker2D" parent="."]
+position = Vector2(120, 385)
+
+[node name="Player" parent="." instance=ExtResource("2_play")]
+position = Vector2(120, 385)
+
+[node name="Enemies" type="Node2D" parent="."]
+
+[node name="Enemy1_EntrySentry" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(420, 393)
+patrol_distance = 40.0
+
+[node name="Enemy2_ForwardGunner" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(740, 393)
+patrol_distance = 60.0
+
+[node name="Enemy3_PerchSniper" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(980, 285)
+patrol_distance = 0.0
+
+[node name="Enemy4_TrenchAmbush" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1140, 393)
+is_ambush = true
+ambush_type = 1
+
+[node name="Enemy5_BunkerGuard" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1420, 393)
+patrol_distance = 50.0
+
+[node name="Enemy6_OverpassSniper" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1620, 235)
+is_ambush = true
+ambush_type = 3
+
+[node name="Enemy7_OutpostSentry" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1940, 393)
+patrol_distance = 60.0
+
+[node name="Enemy8_RearAmbush" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1850, 393)
+is_ambush = true
+ambush_type = 6
+
+[node name="Enemy9_HeavyBunker" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(2320, 393)
+is_ambush = true
+ambush_type = 1
+
+[node name="Enemy10_OutpostCommander" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(2520, 393)
+patrol_distance = 50.0
+
+[node name="Ambushes" type="Node2D" parent="."]
+
+[node name="AmbushTrigger1_Trench" type="Area2D" parent="Ambushes"]
+position = Vector2(1040, 360)
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("15_atrig")
+target_enemies = [NodePath("../../Enemies/Enemy4_TrenchAmbush")]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ambushes/AmbushTrigger1_Trench"]
+shape = SubResource("RectangleShape2D_trig")
+
+[node name="AmbushTrigger2_Overpass" type="Area2D" parent="Ambushes"]
+position = Vector2(1480, 360)
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("15_atrig")
+target_enemies = [NodePath("../../Enemies/Enemy6_OverpassSniper")]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ambushes/AmbushTrigger2_Overpass"]
+shape = SubResource("RectangleShape2D_trig")
+
+[node name="AmbushTrigger3_Rear" type="Area2D" parent="Ambushes"]
+position = Vector2(2020, 360)
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("15_atrig")
+target_enemies = [NodePath("../../Enemies/Enemy8_RearAmbush")]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ambushes/AmbushTrigger3_Rear"]
+shape = SubResource("RectangleShape2D_trig")
+
+[node name="AmbushTrigger4_Bunker" type="Area2D" parent="Ambushes"]
+position = Vector2(2240, 360)
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("15_atrig")
+target_enemies = [NodePath("../../Enemies/Enemy9_HeavyBunker")]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ambushes/AmbushTrigger4_Bunker"]
+shape = SubResource("RectangleShape2D_trig")
+
+[node name="Pickups" type="Node2D" parent="."]
+
+[node name="ExtractionBeacon" parent="." instance=ExtResource("6_beac")]
+position = Vector2(2680, 378)
+required_enemies = 10
+
+[node name="HUD" parent="." instance=ExtResource("3_hud")]
+current_stage_id = 3
+
+[node name="IntroBanner" type="Control" parent="HUD"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="Panel" parent="HUD/IntroBanner"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -230.0
+offset_top = -65.0
+offset_right = 230.0
+offset_bottom = 65.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_banner")
+
+[node name="VBox" type="VBoxContainer" parent="HUD/IntroBanner/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="WorldTitle" type="Label" parent="HUD/IntroBanner/Panel/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.95, 0.45, 0.3, 1)
+theme_override_font_sizes/font_size = 18
+text = "WORLD 1 — THE GREEN HILLS"
+horizontal_alignment = 1
+
+[node name="StageTitle" type="Label" parent="HUD/IntroBanner/Panel/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.9, 1)
+theme_override_font_sizes/font_size = 14
+text = "STAGE 3: OPERATION DEAD GROUND"
+horizontal_alignment = 1
+
+[node name="Briefing" type="Label" parent="HUD/IntroBanner/Panel/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 0.85)
+theme_override_font_sizes/font_size = 11
+text = "Mine-infested battlefield. 3 live landmines detected. 10 enemy guards. 10 rounds issued. Watch your step."
+horizontal_alignment = 1

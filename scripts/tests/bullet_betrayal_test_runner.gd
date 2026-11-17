@@ -28,7 +28,7 @@ func _ready() -> void:
 	print("    BULLET BETRAYAL — AUTOMATED TEST SUITE (PHASE 2)   ")
 	print("=======================================================\n")
 	
-	run_all_tests()
+	await run_all_tests()
 	
 	print("\n=======================================================")
 	print("  BULLET BETRAYAL RESULTS: %d PASSED, %d FAILED" % [passed_count, failed_count])
@@ -83,10 +83,11 @@ func run_all_tests() -> void:
 	test_level_2_scene_and_combat_rules()
 	test_level_2_ladder_rear_ambush_and_polish()
 	await test_level_2_final_jump_over_bar_and_landing()
+	await test_level_3_operation_dead_ground()
 
 func test_audio_manager_bullet_betrayal_sfx() -> void:
 	print("\n--- TEST: Bullet Betrayal Audio SFX ---")
-	var required_sounds = ["shoot", "enemy_hit", "enemy_kill", "ammo_pickup", "player_hit", "victory", "dry_fire"]
+	var required_sounds = ["shoot", "enemy_hit", "enemy_kill", "ammo_pickup", "player_hit", "victory", "dry_fire", "explosion"]
 	for snd in required_sounds:
 		assert_true(AudioManager._sounds.has(snd), "AudioManager has synthesized '%s' SFX" % snd)
 		AudioManager.play_sfx(snd)
@@ -606,14 +607,14 @@ func test_pause_menu_and_confirmation_modals() -> void:
 	assert_eq(hud.victory_mission_btn.text, "☰ LEVEL SELECT", "Level Select button text matches Coin Hell ('☰ LEVEL SELECT')")
 	assert_true(hud.victory_arcade_btn == null, "Arcade Menu button omitted from Victory overlay (matches Coin Hell 3-button layout)")
 	
-	# Test Next Stage Button opens MessageModal for unreleased Stage 3 (when on Stage 2)
-	hud.current_stage_id = 2
+	# Test Next Stage Button opens MessageModal for unreleased Stage 4 (when on Stage 3)
+	hud.current_stage_id = 3
 	assert_true(hud.victory_message_modal != null, "Victory overlay has MessageModal")
 	assert_true(not hud.victory_message_modal.visible, "MessageModal starts hidden")
 	hud.victory_next_stage_btn.pressed.emit()
 	assert_true(hud.victory_message_modal.visible, "MessageModal opens when clicking Next Stage on last implemented stage")
-	assert_eq(hud.victory_modal_title.text, "STAGE 3 IN PROGRESS", "MessageModal title is 'STAGE 3 IN PROGRESS'")
-	assert_true(hud.victory_modal_label.text.contains("still being built"), "MessageModal explains Stage 3 is being built")
+	assert_eq(hud.victory_modal_title.text, "STAGE 4 IN PROGRESS", "MessageModal title is 'STAGE 4 IN PROGRESS'")
+	assert_true(hud.victory_modal_label.text.contains("still being built"), "MessageModal explains Stage 4 is being built")
 	
 	# Dismiss MessageModal
 	hud.victory_modal_ok_btn.pressed.emit()
@@ -1372,16 +1373,128 @@ func test_level_2_final_jump_over_bar_and_landing() -> void:
 	
 	# Walk / leap forward from bar to extraction beacon
 	player.touch_right = true
-	var extraction_triggered := false
+	var extraction_triggered := [false]
 	beacon.extraction_reached.connect(func():
-		extraction_triggered = true
+		extraction_triggered[0] = true
 	)
 	
 	for f in range(70):
 		await get_tree().physics_frame
-		if extraction_triggered:
+		if extraction_triggered[0]:
 			break
 	
-	assert_true(extraction_triggered, "Extraction beacon is reached and triggered after crossing the bar")
+	assert_true(extraction_triggered[0], "Extraction beacon is reached and triggered after crossing the bar")
 	
 	level.queue_free()
+
+func test_level_3_operation_dead_ground() -> void:
+	print("\n--- TEST: Level 3 Operation Dead Ground ---")
+	var l3_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_level_3.tscn")
+	assert_true(l3_scene != null, "bb_level_3.tscn scene exists and loads successfully")
+	var level = l3_scene.instantiate()
+	add_child(level)
+	
+	# Verify root controller
+	assert_true(level is BulletBetrayalLevel3, "Level 3 root node is BulletBetrayalLevel3")
+	
+	# Verify player and spawn
+	var p: BulletBetrayalPlayer = level.get_node_or_null("Player")
+	assert_true(p != null, "Player exists in Level 3")
+	assert_eq(p.initial_ammo, 10, "Player starts Level 3 with exactly 10 initial bullets")
+	assert_eq(p.current_ammo, 10, "Player starts Level 3 with exactly 10 current rounds")
+	assert_eq(p.max_health, 1, "Player max_health is 1 (one-hit death rule)")
+	assert_eq(p.current_health, 1, "Player starts with 1 health")
+	
+	# Verify pickups container has 0 ammo pickups
+	var pickups: Node2D = level.get_node_or_null("Pickups")
+	assert_true(pickups != null, "Pickups container exists in Level 3")
+	assert_eq(pickups.get_child_count(), 0, "Level 3 has zero ammo pickups per combat rules")
+	
+	# Verify no fire or burner hazards
+	var hazards = level.get_node_or_null("Hazards")
+	assert_true(hazards == null, "Zero fire or burner hazards in Level 3")
+	
+	# Verify HUD configuration
+	var hud: BulletBetrayalHUD = level.get_node_or_null("HUD")
+	assert_true(hud != null, "HUD exists in Level 3")
+	assert_eq(hud.current_stage_id, 3, "HUD current_stage_id is set to 3")
+	var stage_lbl: Label = hud.get_node_or_null("TopBar/StageTitle")
+	if stage_lbl:
+		assert_eq(stage_lbl.text, "WORLD 1-3: OPERATION DEAD GROUND", "HUD displays 'WORLD 1-3: OPERATION DEAD GROUND'")
+	
+	# Verify Enemies (Exactly 10 required enemies, 1 bullet kills each)
+	var enemies: Node2D = level.get_node_or_null("Enemies")
+	assert_true(enemies != null, "Enemies container exists in Level 3")
+	assert_eq(enemies.get_child_count(), 10, "Level 3 has exactly 10 required enemies")
+	for i in range(10):
+		var enemy = enemies.get_child(i)
+		assert_true(enemy is BulletBetrayalEnemySoldier, "Enemy %d is BulletBetrayalEnemySoldier" % (i + 1))
+		assert_eq(enemy.max_health, 1, "Enemy %d has max_health == 1 (1-bullet kill)" % (i + 1))
+		assert_eq(enemy.current_health, 1, "Enemy %d starts with current_health == 1" % (i + 1))
+	
+	# Verify Landmines (Exactly 3 landmines, contact lethal, 0 at distance)
+	var landmines: Node2D = level.get_node_or_null("Landmines")
+	assert_true(landmines != null, "Landmines container exists in Level 3")
+	assert_eq(landmines.get_child_count(), 3, "Level 3 has exactly 3 landmines (Mine 1, Mine 2, Mine 3)")
+	
+	var mine1: BulletBetrayalLandmine = level.get_node_or_null("Landmines/Mine1_Intro")
+	var mine2: BulletBetrayalLandmine = level.get_node_or_null("Landmines/Mine2_Tactical")
+	var mine3: BulletBetrayalLandmine = level.get_node_or_null("Landmines/Mine3_Final")
+	assert_true(mine1 != null, "Mine1_Intro exists in Level 3")
+	assert_true(mine2 != null, "Mine2_Tactical exists in Level 3")
+	assert_true(mine3 != null, "Mine3_Final exists in Level 3")
+	
+	# Check mine collision setup
+	assert_eq(mine1.collision_layer, 0, "Landmine is on collision_layer 0 (immune to bullets)")
+	assert_eq(mine1.collision_mask, 1, "Landmine detects player on collision_mask 1")
+	
+	# Verify Mine 1 is safe from distance
+	p.global_position = Vector2(mine1.global_position.x - 50.0, mine1.global_position.y - 10.0)
+	assert_true(not mine1._triggered, "Mine 1 does not detonate from distance")
+	assert_true(p.is_alive, "Player is alive when standing away from mine")
+	
+	# Verify Mine 1 contact kills player in 1 hit and triggers explosion
+	var mine_exploded := [false]
+	mine1.exploded.connect(func(): mine_exploded[0] = true)
+	mine1.detonate(p)
+	await get_tree().physics_frame
+	assert_true(mine1._triggered, "Mine 1 marks triggered upon contact")
+	assert_true(mine_exploded[0], "Mine 1 emits exploded signal")
+	assert_true(p.is_dead, "Player dies immediately from 1-hit landmine blast")
+	assert_true(mine1.collision_shape.disabled, "Mine 1 collision shape is deferred disabled (single trigger guarantee)")
+	
+	# Verify duplicate trigger on already exploded mine does nothing
+	mine_exploded[0] = false
+	mine1.detonate(p)
+	assert_true(not mine_exploded[0], "Detonated mine does not explode a second time")
+	
+	# Revive player and verify revive mechanics
+	p.revive(Vector2(120, 385))
+	assert_true(p.is_alive, "Player successfully revived")
+	assert_eq(p.current_ammo, 10, "Player revived with 10 bullets")
+	assert_eq(p.current_health, 1, "Player revived with 1 life")
+	
+	# Verify Rear Ambush (Enemy 8)
+	var rear_ambush: BulletBetrayalEnemySoldier = level.get_node_or_null("Enemies/Enemy8_RearAmbush")
+	assert_true(rear_ambush != null, "Enemy8_RearAmbush exists in Level 3")
+	assert_eq(rear_ambush.ambush_type, BulletBetrayalEnemySoldier.AmbushType.BEHIND, "Enemy 8 uses AmbushType.BEHIND")
+	assert_true(rear_ambush.is_dormant, "Enemy 8 starts dormant")
+	
+	# Verify Extraction Beacon & 10/10 locked gate
+	var beacon: BulletBetrayalExtractionBeacon = level.get_node_or_null("ExtractionBeacon")
+	assert_true(beacon != null, "ExtractionBeacon exists in Level 3")
+	assert_eq(beacon.required_enemies, 10, "Extraction beacon requires 10 enemies")
+	beacon.update_target_progress(0, 10)
+	assert_true(not beacon.is_unlocked, "Extraction beacon is locked at 0/10 kills")
+	beacon.update_target_progress(9, 10)
+	assert_true(not beacon.is_unlocked, "Extraction beacon remains locked at 9/10 kills")
+	beacon.update_target_progress(10, 10)
+	assert_true(beacon.is_unlocked, "Extraction beacon unlocks strictly at 10/10 kills")
+	
+	# Verify camera limit right
+	var cam: Camera2D = p.get_node_or_null("Camera2D")
+	if cam:
+		assert_true(cam.limit_right >= 2860, "Camera limit_right covers the entire Level 3 stage")
+	
+	level.queue_free()
+

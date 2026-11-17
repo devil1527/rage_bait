@@ -1,0 +1,48 @@
+[gd_scene load_steps=4 format=3 uid="uid://bblandmine001"]
+
+[ext_resource type="Script" path="res://scripts/bullet_betrayal/bb_landmine.gd" id="1_mine"]
+[ext_resource type="Texture2D" uid="uid://ba1cubxonamlh" path="res://assets/sprites/bb_landmine.png" id="2_tspr"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_mine"]
+size = Vector2(16, 6)
+
+[node name="BulletBetrayalLandmine" type="Area2D"]
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("1_mine")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(0, -6)
+texture = ExtResource("2_tspr")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -3)
+shape = SubResource("RectangleShape2D_mine")
+
+[node name="WarningLED" type="ColorRect" parent="."]
+offset_left = -1.0
+offset_top = -10.0
+offset_right = 1.0
+offset_bottom = -8.0
+mouse_filter = 2
+color = Color(1, 0.2, 0.15, 0.95)
+
+[node name="ExplosionFX" type="Node2D" parent="."]
+visible = false
+position = Vector2(0, -8)
+
+[node name="Shockwave" type="ColorRect" parent="ExplosionFX"]
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+mouse_filter = 2
+color = Color(1, 0.25, 0.1, 0.7)
+
+[node name="FireCore" type="ColorRect" parent="ExplosionFX"]
+offset_left = -12.0
+offset_top = -12.0
+offset_right = 12.0
+offset_bottom = 12.0
+mouse_filter = 2
+color = Color(1, 0.8, 0.2, 0.95)
