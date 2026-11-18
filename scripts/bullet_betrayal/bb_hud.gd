@@ -56,7 +56,7 @@ const STAGE_TITLES: Dictionary = {
 	1: "WORLD 1-1: BORDER INFILTRATION",
 	2: "WORLD 1-2: RIVER AMBUSH",
 	3: "WORLD 1-3: OPERATION DEAD GROUND",
-	4: "WORLD 1-4: RADAR STATION",
+	4: "WORLD 1-4: THE HUNTING MINES",
 	5: "WORLD 1-5: COMMANDER'S CAMP",
 }
 
@@ -470,6 +470,11 @@ func _on_next_stage_pressed() -> void:
 			return
 		get_tree().paused = false
 		get_tree().change_scene_to_file("res://scenes/bullet_betrayal/bb_level_3.tscn")
+	elif current_stage_id == 3:
+		if get_tree().current_scene and (get_tree().current_scene.name == "BulletBetrayalTestRunner" or get_tree().current_scene.name == "TestRunner"):
+			return
+		get_tree().paused = false
+		get_tree().change_scene_to_file("res://scenes/bullet_betrayal/bb_level_4.tscn")
 	else:
 		if victory_message_modal:
 			if victory_modal_title:

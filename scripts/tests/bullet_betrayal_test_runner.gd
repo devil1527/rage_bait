@@ -84,6 +84,7 @@ func run_all_tests() -> void:
 	test_level_2_ladder_rear_ambush_and_polish()
 	await test_level_2_final_jump_over_bar_and_landing()
 	await test_level_3_operation_dead_ground()
+	await test_level_4_the_hunting_mines()
 
 func test_audio_manager_bullet_betrayal_sfx() -> void:
 	print("\n--- TEST: Bullet Betrayal Audio SFX ---")
@@ -607,14 +608,14 @@ func test_pause_menu_and_confirmation_modals() -> void:
 	assert_eq(hud.victory_mission_btn.text, "☰ LEVEL SELECT", "Level Select button text matches Coin Hell ('☰ LEVEL SELECT')")
 	assert_true(hud.victory_arcade_btn == null, "Arcade Menu button omitted from Victory overlay (matches Coin Hell 3-button layout)")
 	
-	# Test Next Stage Button opens MessageModal for unreleased Stage 4 (when on Stage 3)
-	hud.current_stage_id = 3
+	# Test Next Stage Button opens MessageModal for unreleased Stage 5 (when on Stage 4)
+	hud.current_stage_id = 4
 	assert_true(hud.victory_message_modal != null, "Victory overlay has MessageModal")
 	assert_true(not hud.victory_message_modal.visible, "MessageModal starts hidden")
 	hud.victory_next_stage_btn.pressed.emit()
 	assert_true(hud.victory_message_modal.visible, "MessageModal opens when clicking Next Stage on last implemented stage")
-	assert_eq(hud.victory_modal_title.text, "STAGE 4 IN PROGRESS", "MessageModal title is 'STAGE 4 IN PROGRESS'")
-	assert_true(hud.victory_modal_label.text.contains("still being built"), "MessageModal explains Stage 4 is being built")
+	assert_eq(hud.victory_modal_title.text, "STAGE 5 IN PROGRESS", "MessageModal title is 'STAGE 5 IN PROGRESS'")
+	assert_true(hud.victory_modal_label.text.contains("still being built"), "MessageModal explains Stage 5 is being built")
 	
 	# Dismiss MessageModal
 	hud.victory_modal_ok_btn.pressed.emit()
@@ -1059,12 +1060,19 @@ func test_bullet_betrayal_menu_stars_reflection() -> void:
 	var state3_lbl: Label = vbox3.get_child(2)
 	assert_eq(state3_lbl.text, "LOCKED", "Stage 3 tile state is 'LOCKED'")
 
-	# Check Stage 4 card tile: PLANNED (future unreleased stage)
+	# Check Stage 4 card tile: LOCKED (implemented stage)
 	var btn_lvl4: Button = menu.get_level_button(4)
 	assert_true(btn_lvl4 != null, "LevelBtn_4 exists")
 	var vbox4 = btn_lvl4.get_child(0)
 	var state4_lbl: Label = vbox4.get_child(2)
-	assert_eq(state4_lbl.text, "PLANNED", "Stage 4 tile state is 'PLANNED'")
+	assert_eq(state4_lbl.text, "LOCKED", "Stage 4 tile state is 'LOCKED'")
+
+	# Check Stage 5 card tile: PLANNED (future unreleased stage)
+	var btn_lvl5: Button = menu.get_level_button(5)
+	assert_true(btn_lvl5 != null, "LevelBtn_5 exists")
+	var vbox5 = btn_lvl5.get_child(0)
+	var state5_lbl: Label = vbox5.get_child(2)
+	assert_eq(state5_lbl.text, "PLANNED", "Stage 5 tile state is 'PLANNED'")
 
 	menu.queue_free()
 
@@ -1547,5 +1555,158 @@ func test_level_3_operation_dead_ground() -> void:
 		assert_eq(cam.limit_bottom, 540, "Camera limit_bottom is 540")
 		assert_true(cam.limit_right >= 2860, "Camera limit_right covers the entire Level 3 stage")
 	
+	level.queue_free()
+
+func test_level_4_the_hunting_mines() -> void:
+	print("\n--- TEST: World 1 Level 4 'The Hunting Mines' ---")
+	var level_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_level_4.tscn")
+	assert_true(level_scene != null, "Level 4 scene loads successfully")
+	var level = level_scene.instantiate()
+	add_child(level)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+
+	assert_true(level is BulletBetrayalLevel4, "Level 4 root is BulletBetrayalLevel4")
+
+	# Safe spawn check
+	var p: BulletBetrayalPlayer = level.get_node_or_null("Player")
+	var spawn_pt: Marker2D = level.get_node_or_null("SpawnPoint")
+	assert_true(p != null, "Player exists in Level 4")
+	assert_true(spawn_pt != null, "SpawnPoint exists in Level 4")
+	assert_eq(p.global_position, Vector2(120, 394), "Player starts at safe spawn position (120, 394)")
+	assert_true(p.is_alive, "Player is alive at level start")
+	assert_eq(p.current_ammo, 10, "Player starts with exactly 10 bullets")
+	assert_eq(p.current_health, 1, "Player starts with 1 life (1-hit death)")
+
+	# Pickups check: exactly 0
+	var pickups: Node2D = level.get_node_or_null("Pickups")
+	assert_true(pickups != null, "Pickups container exists in Level 4")
+	assert_eq(pickups.get_child_count(), 0, "Level 4 has 0 ammunition pickups (strict ammo discipline)")
+
+	# Enemies check: exactly 10 required enemies, 1-bullet kills
+	var enemies: Node2D = level.get_node_or_null("Enemies")
+	assert_true(enemies != null, "Enemies container exists in Level 4")
+	assert_eq(enemies.get_child_count(), 10, "Level 4 has exactly 10 required enemies")
+	for i in range(10):
+		var enemy = enemies.get_child(i)
+		assert_true(enemy is BulletBetrayalEnemySoldier, "Enemy %d is BulletBetrayalEnemySoldier" % (i + 1))
+		assert_eq(enemy.max_health, 1, "Enemy %d has max_health == 1 (1-bullet kill)" % (i + 1))
+		assert_eq(enemy.current_health, 1, "Enemy %d starts with current_health == 1" % (i + 1))
+
+	# Stationary Landmines check
+	var stationary_mines: Node2D = level.get_node_or_null("Landmines")
+	assert_true(stationary_mines != null, "Landmines container exists in Level 4")
+	assert_eq(stationary_mines.get_child_count(), 2, "Level 4 has 2 stationary landmines")
+
+	# Hunting Landmines check
+	var hunting_mines: Node2D = level.get_node_or_null("HuntingMines")
+	assert_true(hunting_mines != null, "HuntingMines container exists in Level 4")
+	assert_eq(hunting_mines.get_child_count(), 3, "Level 4 has exactly 3 hunting landmines")
+
+	var hmine1: BulletBetrayalHuntingMine = level.get_node_or_null("HuntingMines/HuntingMine1_Intro")
+	var hmine2: BulletBetrayalHuntingMine = level.get_node_or_null("HuntingMines/HuntingMine2_Field")
+	var hmine3: BulletBetrayalHuntingMine = level.get_node_or_null("HuntingMines/HuntingMine3_Passage")
+	assert_true(hmine1 != null, "HuntingMine1_Intro exists in Level 4")
+	assert_true(hmine2 != null, "HuntingMine2_Field exists in Level 4")
+	assert_true(hmine3 != null, "HuntingMine3_Passage exists in Level 4")
+
+	# Verify visual and collision parity with stationary landmines
+	assert_eq(hmine1.collision_layer, 0, "Hunting mine is on collision_layer 0 (immune to bullets)")
+	assert_eq(hmine1.collision_mask, 2, "Hunting mine collides with solid terrain on layer 2")
+	assert_true(hmine1.hurt_area != null, "Hunting mine has hurt_area Area2D")
+	assert_eq(hmine1.hurt_area.collision_mask, 1, "Hunting mine hurt_area detects player on mask 1")
+	assert_true(hmine1.warning_led != null, "Hunting mine has warning_led ColorRect")
+	assert_true(hmine1.warning_glow != null, "Hunting mine has warning_glow Sprite2D")
+	assert_true(hmine1.scorch_mark != null, "Hunting mine has scorch_mark Sprite2D")
+	assert_true(hmine1.explosion_fx != null, "Hunting mine has explosion_fx Node2D")
+
+	# Verify State Machine: Initial Patrol State & Locomotion
+	assert_eq(hmine1.current_state, BulletBetrayalHuntingMine.State.PATROL, "Hunting mine starts in PATROL state")
+	hmine1._physics_process(0.016)
+	assert_true(abs(hmine1.velocity.x) > 0.0, "Hunting mine moves horizontally during patrol")
+
+	# Verify Alert & Chase Transitions
+	# Move player within detection radius of HuntingMine 1
+	p.global_position = Vector2(hmine1.global_position.x + 60.0, hmine1.global_position.y - 10.0)
+	hmine1._physics_process(0.016)
+	assert_eq(hmine1.current_state, BulletBetrayalHuntingMine.State.ALERT, "Hunting mine enters ALERT state when player detected within radius")
+
+	# Advance alert timer to trigger Chase
+	hmine1._alert_timer = 0.0
+	hmine1._physics_process(0.016)
+	assert_eq(hmine1.current_state, BulletBetrayalHuntingMine.State.CHASE, "Hunting mine transitions from ALERT to CHASE")
+	assert_true(hmine1.velocity.x > 0.0, "Hunting mine pursues toward the player's position")
+
+	# Verify Pursuit Boundary & Give-Up Behavior (never follows across level)
+	# Position mine 80px out during chase so it is outside patrol reset threshold
+	hmine1.global_position.x = hmine1.spawn_position.x + 80.0
+	# Move player far away beyond max pursuit boundary
+	p.global_position = Vector2(120.0, 394.0)
+	hmine1._physics_process(0.016)
+	assert_eq(hmine1.current_state, BulletBetrayalHuntingMine.State.RETURNING, "Hunting mine enters RETURNING state when player escapes pursuit range")
+	assert_true(hmine1.velocity.x < 0.0, "Hunting mine heads back toward spawn/patrol origin")
+
+	# Return mine close to spawn position -> resumes PATROL
+	hmine1.global_position.x = hmine1.spawn_position.x + 5.0
+	hmine1._process_returning(0.016)
+	assert_eq(hmine1.current_state, BulletBetrayalHuntingMine.State.PATROL, "Hunting mine resumes PATROL once safely home")
+
+	# Verify Detonation on Contact kills player in 1 hit
+	var hmine_exploded := [false]
+	hmine1.exploded.connect(func(): hmine_exploded[0] = true)
+	hmine1.detonate(p)
+	await get_tree().physics_frame
+	assert_true(hmine1._triggered, "Hunting mine marks triggered upon contact")
+	assert_true(hmine_exploded[0], "Hunting mine emits exploded signal")
+	assert_true(p.is_dead, "Player dies immediately from hunting mine explosion")
+	assert_true(hmine1.scorch_mark.visible, "Ground scorch mark revealed on explosion")
+	assert_true(hmine1.explosion_fx.visible, "Explosion FX triggered")
+
+	# Verify single-trigger guarantee (no duplicate explosions)
+	hmine_exploded[0] = false
+	hmine1.detonate(p)
+	assert_true(not hmine_exploded[0], "Detonated hunting mine does not explode a second time")
+
+	# Verify player revive
+	level._on_player_revived()
+	p.revive(spawn_pt.global_position)
+	assert_true(p.is_alive, "Player successfully revived")
+	assert_eq(p.global_position, spawn_pt.global_position, "Player revived at safe spawn position")
+	assert_eq(p.current_ammo, 10, "Player revived with 10 bullets")
+	assert_eq(p.current_health, 1, "Player revived with 1 life")
+
+	# Verify Section D narrow passage geometry
+	var ceiling: StaticBody2D = level.get_node_or_null("Terrain/SectionD_Ceiling")
+	assert_true(ceiling != null, "Section D tunnel ceiling exists in Terrain")
+	var clearance: float = 410.0 - 340.0
+	assert_true(clearance >= 70.0, "Section D corridor has at least 70px clearance (clearance = %.1f px)" % clearance)
+	var alcove: StaticBody2D = level.get_node_or_null("Terrain/Platform3_Alcove")
+	assert_true(alcove != null, "Waiting alcove platform exists before Section D entrance")
+
+	# Verify Rear Ambush (Enemy 7)
+	var rear_ambush: BulletBetrayalEnemySoldier = level.get_node_or_null("Enemies/Enemy7_RearAmbush")
+	assert_true(rear_ambush != null, "Enemy7_RearAmbush exists in Level 4")
+	assert_eq(rear_ambush.ambush_type, BulletBetrayalEnemySoldier.AmbushType.BEHIND, "Enemy 7 uses AmbushType.BEHIND")
+	assert_true(rear_ambush.is_dormant, "Enemy 7 starts dormant")
+
+	# Verify Extraction Beacon & 10/10 locked gate
+	var beacon: BulletBetrayalExtractionBeacon = level.get_node_or_null("ExtractionBeacon")
+	assert_true(beacon != null, "ExtractionBeacon exists in Level 4")
+	assert_eq(beacon.required_enemies, 10, "Extraction beacon requires 10 enemies")
+	beacon.update_target_progress(0, 10)
+	assert_true(not beacon.is_unlocked, "Extraction beacon is locked at 0/10 kills")
+	beacon.update_target_progress(9, 10)
+	assert_true(not beacon.is_unlocked, "Extraction beacon remains locked at 9/10 kills")
+	beacon.update_target_progress(10, 10)
+	assert_true(beacon.is_unlocked, "Extraction beacon unlocks strictly at 10/10 kills")
+
+	# Verify camera limits
+	var cam: Camera2D = p.get_node_or_null("Camera2D")
+	if cam:
+		assert_eq(cam.limit_left, 0, "Camera limit_left is 0")
+		assert_eq(cam.limit_top, 0, "Camera limit_top is 0")
+		assert_eq(cam.limit_bottom, 540, "Camera limit_bottom is 540")
+		assert_true(cam.limit_right >= 2860, "Camera limit_right covers the entire Level 4 stage")
+
 	level.queue_free()
 

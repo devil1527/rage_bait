@@ -1,0 +1,542 @@
+[gd_scene load_steps=29 format=3 uid="uid://bblevel4huntingmines"]
+
+[ext_resource type="Script" path="res://scripts/bullet_betrayal/bb_level_4.gd" id="1_lev4"]
+[ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_player.tscn" id="2_play"]
+[ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_hud.tscn" id="3_hud"]
+[ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_enemy_soldier.tscn" id="4_esol"]
+[ext_resource type="PackedScene" uid="uid://bbladder001" path="res://scenes/bullet_betrayal/bb_ladder.tscn" id="5_ladd"]
+[ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_extraction_beacon.tscn" id="6_beac"]
+[ext_resource type="PackedScene" uid="uid://bblandmine001" path="res://scenes/bullet_betrayal/bb_landmine.tscn" id="7_mine"]
+[ext_resource type="PackedScene" uid="uid://bbhuntingmine01" path="res://scenes/bullet_betrayal/bb_hunting_mine.tscn" id="8_hmine"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_hills_bg.png" id="9_hbg"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_jungle_tree.png" id="10_tree"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_terrain_grass.png" id="11_tgrass"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_terrain_rock.png" id="12_trock"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_platform_wood.png" id="13_pwood"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_sandbag.png" id="14_sbag"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_crate.png" id="15_crate"]
+[ext_resource type="Script" path="res://scripts/bullet_betrayal/bb_ambush_trigger.gd" id="16_atrig"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_bunker.png" id="17_bunk"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_watchtower.png" id="18_towr"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_sign_danger.png" id="19_sign"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_barbed_wire.png" id="20_wire"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground1"]
+size = Vector2(500, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground2"]
+size = Vector2(500, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground3"]
+size = Vector2(500, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground4"]
+size = Vector2(500, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground5"]
+size = Vector2(860, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat1"]
+size = Vector2(140, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat2"]
+size = Vector2(180, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_alcove"]
+size = Vector2(100, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ceiling"]
+size = Vector2(240, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
+size = Vector2(40, 600)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_trig"]
+size = Vector2(40, 240)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_banner"]
+bg_color = Color(0.05, 0.08, 0.07, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9, 0.3, 0.15, 0.95)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="BulletBetrayalLevel4" type="Node2D"]
+script = ExtResource("1_lev4")
+
+[node name="BackgroundCanvas" type="CanvasLayer" parent="."]
+layer = -2
+
+[node name="SkyGradient" type="ColorRect" parent="BackgroundCanvas"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.07, 0.10, 0.13, 1)
+
+[node name="DeadGroundMist" type="ColorRect" parent="BackgroundCanvas"]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -150.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+color = Color(0.06, 0.07, 0.08, 0.92)
+
+[node name="ParallaxHills" type="Node2D" parent="."]
+modulate = Color(0.60, 0.70, 0.75, 0.65)
+
+[node name="Hills1" type="Sprite2D" parent="ParallaxHills"]
+position = Vector2(300, 280)
+texture = ExtResource("9_hbg")
+
+[node name="Hills2" type="Sprite2D" parent="ParallaxHills"]
+position = Vector2(900, 280)
+texture = ExtResource("9_hbg")
+
+[node name="Hills3" type="Sprite2D" parent="ParallaxHills"]
+position = Vector2(1500, 280)
+texture = ExtResource("9_hbg")
+
+[node name="Hills4" type="Sprite2D" parent="ParallaxHills"]
+position = Vector2(2100, 280)
+texture = ExtResource("9_hbg")
+
+[node name="Hills5" type="Sprite2D" parent="ParallaxHills"]
+position = Vector2(2700, 280)
+texture = ExtResource("9_hbg")
+
+[node name="EnvironmentProps" type="Node2D" parent="."]
+
+[node name="Tree1" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(80, 340)
+texture = ExtResource("10_tree")
+
+[node name="DangerSign1" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(490, 395)
+texture = ExtResource("19_sign")
+
+[node name="Tree2" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(660, 335)
+texture = ExtResource("10_tree")
+
+[node name="Sandbag1" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(830, 398)
+texture = ExtResource("14_sbag")
+
+[node name="DangerSign2" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(910, 395)
+texture = ExtResource("19_sign")
+
+[node name="Bunker1" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(1160, 370)
+texture = ExtResource("17_bunk")
+
+[node name="Crates1" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(1390, 394)
+texture = ExtResource("15_crate")
+
+[node name="BarbedWire1" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(1470, 401)
+texture = ExtResource("20_wire")
+
+[node name="DangerSign3" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(1580, 395)
+texture = ExtResource("19_sign")
+
+[node name="Tree3" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(1880, 335)
+texture = ExtResource("10_tree")
+
+[node name="Sandbag2" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(2040, 398)
+texture = ExtResource("14_sbag")
+
+[node name="DangerSign4" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(2140, 395)
+texture = ExtResource("19_sign")
+
+[node name="BunkerSectionD" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(2360, 275)
+texture = ExtResource("17_bunk")
+
+[node name="Watchtower" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(2520, 320)
+texture = ExtResource("18_towr")
+
+[node name="BarbedWire2" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(2620, 401)
+texture = ExtResource("20_wire")
+
+[node name="Terrain" type="Node2D" parent="."]
+
+[node name="Ground1" type="StaticBody2D" parent="Terrain"]
+position = Vector2(250, 460)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/Ground1"]
+shape = SubResource("RectangleShape2D_ground1")
+
+[node name="Grass" type="Sprite2D" parent="Terrain/Ground1"]
+position = Vector2(0, -42)
+scale = Vector2(15.625, 1)
+texture = ExtResource("11_tgrass")
+
+[node name="Rock" type="Sprite2D" parent="Terrain/Ground1"]
+position = Vector2(0, 0)
+scale = Vector2(15.625, 2.5)
+texture = ExtResource("12_trock")
+
+[node name="Ground2" type="StaticBody2D" parent="Terrain"]
+position = Vector2(750, 460)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/Ground2"]
+shape = SubResource("RectangleShape2D_ground2")
+
+[node name="Grass" type="Sprite2D" parent="Terrain/Ground2"]
+position = Vector2(0, -42)
+scale = Vector2(15.625, 1)
+texture = ExtResource("11_tgrass")
+
+[node name="Rock" type="Sprite2D" parent="Terrain/Ground2"]
+position = Vector2(0, 0)
+scale = Vector2(15.625, 2.5)
+texture = ExtResource("12_trock")
+
+[node name="Ground3" type="StaticBody2D" parent="Terrain"]
+position = Vector2(1250, 460)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/Ground3"]
+shape = SubResource("RectangleShape2D_ground3")
+
+[node name="Grass" type="Sprite2D" parent="Terrain/Ground3"]
+position = Vector2(0, -42)
+scale = Vector2(15.625, 1)
+texture = ExtResource("11_tgrass")
+
+[node name="Rock" type="Sprite2D" parent="Terrain/Ground3"]
+position = Vector2(0, 0)
+scale = Vector2(15.625, 2.5)
+texture = ExtResource("12_trock")
+
+[node name="Ground4" type="StaticBody2D" parent="Terrain"]
+position = Vector2(1750, 460)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/Ground4"]
+shape = SubResource("RectangleShape2D_ground4")
+
+[node name="Grass" type="Sprite2D" parent="Terrain/Ground4"]
+position = Vector2(0, -42)
+scale = Vector2(15.625, 1)
+texture = ExtResource("11_tgrass")
+
+[node name="Rock" type="Sprite2D" parent="Terrain/Ground4"]
+position = Vector2(0, 0)
+scale = Vector2(15.625, 2.5)
+texture = ExtResource("12_trock")
+
+[node name="Ground5" type="StaticBody2D" parent="Terrain"]
+position = Vector2(2430, 460)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/Ground5"]
+shape = SubResource("RectangleShape2D_ground5")
+
+[node name="Grass" type="Sprite2D" parent="Terrain/Ground5"]
+position = Vector2(0, -42)
+scale = Vector2(26.875, 1)
+texture = ExtResource("11_tgrass")
+
+[node name="Rock" type="Sprite2D" parent="Terrain/Ground5"]
+position = Vector2(0, 0)
+scale = Vector2(26.875, 2.5)
+texture = ExtResource("12_trock")
+
+[node name="Platform1_Perch" type="StaticBody2D" parent="Terrain"]
+position = Vector2(1380, 320)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/Platform1_Perch"]
+shape = SubResource("RectangleShape2D_plat1")
+one_way_collision = true
+
+[node name="Sprite2D" type="Sprite2D" parent="Terrain/Platform1_Perch"]
+scale = Vector2(2.916, 1)
+texture = ExtResource("13_pwood")
+
+[node name="Platform2_Overpass" type="StaticBody2D" parent="Terrain"]
+position = Vector2(1660, 270)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/Platform2_Overpass"]
+shape = SubResource("RectangleShape2D_plat2")
+one_way_collision = true
+
+[node name="Sprite2D" type="Sprite2D" parent="Terrain/Platform2_Overpass"]
+scale = Vector2(3.75, 1)
+texture = ExtResource("13_pwood")
+
+[node name="Platform3_Alcove" type="StaticBody2D" parent="Terrain"]
+position = Vector2(2180, 320)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/Platform3_Alcove"]
+shape = SubResource("RectangleShape2D_alcove")
+one_way_collision = true
+
+[node name="Sprite2D" type="Sprite2D" parent="Terrain/Platform3_Alcove"]
+scale = Vector2(2.08, 1)
+texture = ExtResource("13_pwood")
+
+[node name="SectionD_Ceiling" type="StaticBody2D" parent="Terrain"]
+position = Vector2(2360, 320)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/SectionD_Ceiling"]
+shape = SubResource("RectangleShape2D_ceiling")
+
+[node name="CeilingRock" type="Sprite2D" parent="Terrain/SectionD_Ceiling"]
+position = Vector2(0, 0)
+scale = Vector2(7.5, 1.0)
+texture = ExtResource("12_trock")
+
+[node name="CeilingTrim" type="Sprite2D" parent="Terrain/SectionD_Ceiling"]
+position = Vector2(0, 15)
+scale = Vector2(5.0, 0.5)
+texture = ExtResource("13_pwood")
+
+[node name="LeftWall" type="StaticBody2D" parent="Terrain"]
+position = Vector2(-20, 250)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/LeftWall"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="RightWall" type="StaticBody2D" parent="Terrain"]
+position = Vector2(2880, 250)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/RightWall"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="Ladders" type="Node2D" parent="."]
+
+[node name="Ladder1_Overpass" parent="Ladders" instance=ExtResource("5_ladd")]
+position = Vector2(1570, 410)
+ladder_height = 140.0
+
+[node name="Ladder2_Alcove" parent="Ladders" instance=ExtResource("5_ladd")]
+position = Vector2(2130, 410)
+ladder_height = 90.0
+
+[node name="Landmines" type="Node2D" parent="."]
+
+[node name="StationaryMine1" parent="Landmines" instance=ExtResource("7_mine")]
+position = Vector2(880, 410)
+
+[node name="StationaryMine2" parent="Landmines" instance=ExtResource("7_mine")]
+position = Vector2(1300, 410)
+
+[node name="HuntingMines" type="Node2D" parent="."]
+
+[node name="HuntingMine1_Intro" parent="HuntingMines" instance=ExtResource("8_hmine")]
+position = Vector2(550, 410)
+patrol_distance = 60.0
+patrol_speed = 45.0
+detection_radius = 110.0
+chase_speed = 75.0
+max_pursuit_distance = 180.0
+
+[node name="HuntingMine2_Field" parent="HuntingMines" instance=ExtResource("8_hmine")]
+position = Vector2(1660, 410)
+patrol_distance = 70.0
+patrol_speed = 50.0
+detection_radius = 120.0
+chase_speed = 80.0
+max_pursuit_distance = 200.0
+
+[node name="HuntingMine3_Passage" parent="HuntingMines" instance=ExtResource("8_hmine")]
+position = Vector2(2360, 410)
+patrol_distance = 75.0
+patrol_speed = 45.0
+detection_radius = 90.0
+chase_speed = 75.0
+max_pursuit_distance = 120.0
+
+[node name="SpawnPoint" type="Marker2D" parent="."]
+position = Vector2(120, 394)
+
+[node name="Player" parent="." instance=ExtResource("2_play")]
+position = Vector2(120, 394)
+
+[node name="Enemies" type="Node2D" parent="."]
+
+[node name="Enemy1_IntroScout" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(420, 393)
+patrol_distance = 30.0
+
+[node name="Enemy2_IntroGunner" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(720, 393)
+patrol_distance = 45.0
+
+[node name="Enemy3_BunkerGuard" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(980, 393)
+patrol_distance = 40.0
+
+[node name="Enemy4_TrenchAmbush" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1160, 393)
+is_ambush = true
+ambush_type = 1
+
+[node name="Enemy5_PerchSniper" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1380, 285)
+patrol_distance = 0.0
+
+[node name="Enemy6_OverpassGunner" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1660, 235)
+patrol_distance = 40.0
+
+[node name="Enemy7_RearAmbush" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1820, 393)
+is_ambush = true
+ambush_type = 6
+
+[node name="Enemy8_OutpostSentry" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(2080, 393)
+patrol_distance = 40.0
+
+[node name="Enemy9_TunnelAmbush" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(2240, 393)
+is_ambush = true
+ambush_type = 1
+
+[node name="Enemy10_Commander" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(2560, 393)
+patrol_distance = 40.0
+
+[node name="Ambushes" type="Node2D" parent="."]
+
+[node name="AmbushTrigger1_Trench" type="Area2D" parent="Ambushes"]
+position = Vector2(1060, 360)
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("16_atrig")
+target_enemies = [NodePath("../../Enemies/Enemy4_TrenchAmbush")]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ambushes/AmbushTrigger1_Trench"]
+shape = SubResource("RectangleShape2D_trig")
+
+[node name="AmbushTrigger2_Rear" type="Area2D" parent="Ambushes"]
+position = Vector2(1960, 360)
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("16_atrig")
+target_enemies = [NodePath("../../Enemies/Enemy7_RearAmbush")]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ambushes/AmbushTrigger2_Rear"]
+shape = SubResource("RectangleShape2D_trig")
+
+[node name="AmbushTrigger3_Tunnel" type="Area2D" parent="Ambushes"]
+position = Vector2(2170, 360)
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("16_atrig")
+target_enemies = [NodePath("../../Enemies/Enemy9_TunnelAmbush")]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ambushes/AmbushTrigger3_Tunnel"]
+shape = SubResource("RectangleShape2D_trig")
+
+[node name="Pickups" type="Node2D" parent="."]
+
+[node name="ExtractionBeacon" parent="." instance=ExtResource("6_beac")]
+position = Vector2(2680, 378)
+required_enemies = 10
+
+[node name="HUD" parent="." instance=ExtResource("3_hud")]
+current_stage_id = 4
+
+[node name="IntroBanner" type="Control" parent="HUD"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="Panel" parent="HUD/IntroBanner"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -230.0
+offset_top = -65.0
+offset_right = 230.0
+offset_bottom = 65.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_banner")
+
+[node name="VBox" type="VBoxContainer" parent="HUD/IntroBanner/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="WorldTitle" type="Label" parent="HUD/IntroBanner/Panel/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.95, 0.45, 0.3, 1)
+theme_override_font_sizes/font_size = 18
+text = "WORLD 1 — THE GREEN HILLS"
+horizontal_alignment = 1
+
+[node name="StageTitle" type="Label" parent="HUD/IntroBanner/Panel/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.9, 1)
+theme_override_font_sizes/font_size = 14
+text = "STAGE 4: THE HUNTING MINES"
+horizontal_alignment = 1
+
+[node name="Briefing" type="Label" parent="HUD/IntroBanner/Panel/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 0.85)
+theme_override_font_sizes/font_size = 11
+text = "Mobile landmines detected. Limited pursuit range. Watch your distance and time your movement."
+horizontal_alignment = 1
