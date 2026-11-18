@@ -1468,6 +1468,23 @@ func test_level_3_operation_dead_ground() -> void:
 	# Check mine collision setup
 	assert_eq(mine1.collision_layer, 0, "Landmine is on collision_layer 0 (immune to bullets)")
 	assert_eq(mine1.collision_mask, 1, "Landmine detects player on collision_mask 1")
+
+	# Verify Blinking Red Light System (high-visibility digital pulse)
+	assert_true(mine2.warning_led != null, "Mine 2 has warning_led ColorRect diode")
+	assert_true(mine2.warning_glow != null, "Mine 2 has warning_glow Sprite2D halo")
+	# Test digital strobe cadence states
+	mine2._blink_timer = 0.05 # During Flash 1
+	mine2._process(0.0)
+	assert_true(mine2.warning_glow.visible, "Mine 2 LED glow is active during Flash 1")
+	mine2._blink_timer = 0.16 # During Gap 1
+	mine2._process(0.0)
+	assert_true(not mine2.warning_glow.visible, "Mine 2 LED turns dark during Gap 1")
+	mine2._blink_timer = 0.25 # During Flash 2 (double-pulse)
+	mine2._process(0.0)
+	assert_true(mine2.warning_glow.visible, "Mine 2 LED glow is active during Flash 2")
+	mine2._blink_timer = 0.50 # During Rest interval
+	mine2._process(0.0)
+	assert_true(not mine2.warning_glow.visible, "Mine 2 LED rests dark during pause interval")
 	
 	# Verify Mine 1 is safe from distance
 	p.global_position = Vector2(mine1.global_position.x - 50.0, mine1.global_position.y - 10.0)
@@ -1483,6 +1500,14 @@ func test_level_3_operation_dead_ground() -> void:
 	assert_true(mine_exploded[0], "Mine 1 emits exploded signal")
 	assert_true(p.is_dead, "Player dies immediately from 1-hit landmine blast")
 	assert_true(mine1.collision_shape.disabled, "Mine 1 collision shape is deferred disabled (single trigger guarantee)")
+	# Verify Enhanced Explosion Blast FX (Scorch, Fire, Shockwave, Shrapnel & Smoke)
+	assert_true(mine1.scorch_mark != null and mine1.scorch_mark.visible, "Mine 1 reveals ground scorch mark upon detonation")
+	assert_true(mine1.explosion_fx != null and mine1.explosion_fx.visible, "Mine 1 explosion FX node is visible")
+	assert_true(mine1.shockwave != null, "Mine 1 features expanding shockwave ring")
+	assert_true(mine1.fire_core != null, "Mine 1 features incandescent fireball core")
+	assert_true(mine1.fire_plume != null, "Mine 1 features billowing fireball plume")
+	assert_true(mine1.shrapnel_particles != null and mine1.shrapnel_particles.emitting, "Mine 1 bursts shrapnel spark particles")
+	assert_true(mine1.smoke_particles != null and mine1.smoke_particles.emitting, "Mine 1 emits rising smoke particles")
 	
 	# Verify duplicate trigger on already exploded mine does nothing
 	mine_exploded[0] = false

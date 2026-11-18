@@ -1,15 +1,33 @@
-[gd_scene load_steps=4 format=3 uid="uid://bblandmine001"]
+[gd_scene load_steps=9 format=3 uid="uid://bblandmine001"]
 
 [ext_resource type="Script" path="res://scripts/bullet_betrayal/bb_landmine.gd" id="1_mine"]
 [ext_resource type="Texture2D" uid="uid://ba1cubxonamlh" path="res://assets/sprites/bb_landmine.png" id="2_tspr"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_led_glow.png" id="3_glow"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_blast_scorch.png" id="4_scorch"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_shockwave_ring.png" id="5_ring"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_explosion_fire.png" id="6_fire"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_mine"]
 size = Vector2(16, 6)
+
+[sub_resource type="Gradient" id="Gradient_shrapnel"]
+offsets = PackedFloat32Array(0, 0.25, 0.65, 1)
+colors = PackedColorArray(1, 0.95, 0.8, 1, 1, 0.5, 0.1, 0.95, 0.85, 0.2, 0.05, 0.7, 0.15, 0.12, 0.12, 0)
+
+[sub_resource type="Gradient" id="Gradient_smoke"]
+offsets = PackedFloat32Array(0, 0.3, 0.7, 1)
+colors = PackedColorArray(1, 0.35, 0.1, 0.85, 0.3, 0.25, 0.25, 0.6, 0.2, 0.2, 0.2, 0.35, 0.15, 0.15, 0.15, 0)
 
 [node name="BulletBetrayalLandmine" type="Area2D"]
 collision_layer = 0
 collision_mask = 1
 script = ExtResource("1_mine")
+
+[node name="ScorchMark" type="Sprite2D" parent="."]
+visible = false
+z_index = -1
+position = Vector2(0, -3)
+texture = ExtResource("4_scorch")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 position = Vector2(0, -6)
@@ -19,30 +37,72 @@ texture = ExtResource("2_tspr")
 position = Vector2(0, -3)
 shape = SubResource("RectangleShape2D_mine")
 
+[node name="WarningGlow" type="Sprite2D" parent="."]
+position = Vector2(0, -9.5)
+scale = Vector2(1.2, 1.2)
+texture = ExtResource("3_glow")
+modulate = Color(1, 0.2, 0.1, 0.85)
+
 [node name="WarningLED" type="ColorRect" parent="."]
-offset_left = -1.0
-offset_top = -10.0
-offset_right = 1.0
+offset_left = -2.0
+offset_top = -11.0
+offset_right = 2.0
 offset_bottom = -8.0
 mouse_filter = 2
 color = Color(1, 0.2, 0.15, 0.95)
 
 [node name="ExplosionFX" type="Node2D" parent="."]
 visible = false
-position = Vector2(0, -8)
+position = Vector2(0, -10)
 
-[node name="Shockwave" type="ColorRect" parent="ExplosionFX"]
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
+[node name="Flash" type="ColorRect" parent="ExplosionFX"]
+offset_left = -28.0
+offset_top = -28.0
+offset_right = 28.0
+offset_bottom = 28.0
 mouse_filter = 2
-color = Color(1, 0.25, 0.1, 0.7)
+color = Color(1, 0.95, 0.7, 1)
 
-[node name="FireCore" type="ColorRect" parent="ExplosionFX"]
-offset_left = -12.0
-offset_top = -12.0
-offset_right = 12.0
-offset_bottom = 12.0
-mouse_filter = 2
-color = Color(1, 0.8, 0.2, 0.95)
+[node name="Shockwave" type="Sprite2D" parent="ExplosionFX"]
+texture = ExtResource("5_ring")
+
+[node name="FireCore" type="Sprite2D" parent="ExplosionFX"]
+texture = ExtResource("6_fire")
+
+[node name="FirePlume" type="Sprite2D" parent="ExplosionFX"]
+position = Vector2(2, -6)
+scale = Vector2(0.85, 0.85)
+texture = ExtResource("6_fire")
+flip_h = true
+
+[node name="ShrapnelParticles" type="CPUParticles2D" parent="ExplosionFX"]
+emitting = false
+amount = 26
+lifetime = 0.55
+one_shot = true
+explosiveness = 1.0
+emission_shape = 0
+direction = Vector2(0, -1)
+spread = 75.0
+gravity = Vector2(0, 480)
+initial_velocity_min = 130.0
+initial_velocity_max = 230.0
+scale_amount_min = 2.5
+scale_amount_max = 4.5
+color_ramp = SubResource("Gradient_shrapnel")
+
+[node name="SmokeParticles" type="CPUParticles2D" parent="ExplosionFX"]
+emitting = false
+amount = 12
+lifetime = 0.65
+one_shot = true
+explosiveness = 0.85
+emission_shape = 0
+direction = Vector2(0, -1)
+spread = 55.0
+gravity = Vector2(0, -35)
+initial_velocity_min = 35.0
+initial_velocity_max = 75.0
+scale_amount_min = 5.0
+scale_amount_max = 9.0
+color_ramp = SubResource("Gradient_smoke")
