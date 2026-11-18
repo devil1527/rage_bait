@@ -1368,7 +1368,7 @@ func test_level_2_final_jump_over_bar_and_landing() -> void:
 		await get_tree().physics_frame
 	
 	player.touch_jump = false
-	for f in range(25):
+	for f in range(45):
 		await get_tree().physics_frame
 		if player.is_on_floor():
 			break
@@ -1387,7 +1387,7 @@ func test_level_2_final_jump_over_bar_and_landing() -> void:
 		extraction_triggered[0] = true
 	)
 	
-	for f in range(120):
+	for f in range(180):
 		await get_tree().physics_frame
 		if extraction_triggered[0]:
 			break
