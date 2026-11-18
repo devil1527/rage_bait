@@ -85,6 +85,7 @@ func run_all_tests() -> void:
 	await test_level_2_final_jump_over_bar_and_landing()
 	await test_level_3_operation_dead_ground()
 	await test_level_4_the_hunting_mines()
+	await test_level_5_operation_last_stand()
 
 func test_audio_manager_bullet_betrayal_sfx() -> void:
 	print("\n--- TEST: Bullet Betrayal Audio SFX ---")
@@ -608,14 +609,14 @@ func test_pause_menu_and_confirmation_modals() -> void:
 	assert_eq(hud.victory_mission_btn.text, "☰ LEVEL SELECT", "Level Select button text matches Coin Hell ('☰ LEVEL SELECT')")
 	assert_true(hud.victory_arcade_btn == null, "Arcade Menu button omitted from Victory overlay (matches Coin Hell 3-button layout)")
 	
-	# Test Next Stage Button opens MessageModal for unreleased Stage 5 (when on Stage 4)
-	hud.current_stage_id = 4
+	# Test Next Stage Button opens MessageModal for unreleased Stage 6 (when on Stage 5)
+	hud.current_stage_id = 5
 	assert_true(hud.victory_message_modal != null, "Victory overlay has MessageModal")
 	assert_true(not hud.victory_message_modal.visible, "MessageModal starts hidden")
 	hud.victory_next_stage_btn.pressed.emit()
 	assert_true(hud.victory_message_modal.visible, "MessageModal opens when clicking Next Stage on last implemented stage")
-	assert_eq(hud.victory_modal_title.text, "STAGE 5 IN PROGRESS", "MessageModal title is 'STAGE 5 IN PROGRESS'")
-	assert_true(hud.victory_modal_label.text.contains("still being built"), "MessageModal explains Stage 5 is being built")
+	assert_eq(hud.victory_modal_title.text, "STAGE 6 IN PROGRESS", "MessageModal title is 'STAGE 6 IN PROGRESS'")
+	assert_true(hud.victory_modal_label.text.contains("still being built"), "MessageModal explains Stage 6 is being built")
 	
 	# Dismiss MessageModal
 	hud.victory_modal_ok_btn.pressed.emit()
@@ -1067,12 +1068,19 @@ func test_bullet_betrayal_menu_stars_reflection() -> void:
 	var state4_lbl: Label = vbox4.get_child(2)
 	assert_eq(state4_lbl.text, "LOCKED", "Stage 4 tile state is 'LOCKED'")
 
-	# Check Stage 5 card tile: PLANNED (future unreleased stage)
+	# Check Stage 5 card tile: LOCKED (implemented stage)
 	var btn_lvl5: Button = menu.get_level_button(5)
 	assert_true(btn_lvl5 != null, "LevelBtn_5 exists")
 	var vbox5 = btn_lvl5.get_child(0)
 	var state5_lbl: Label = vbox5.get_child(2)
-	assert_eq(state5_lbl.text, "PLANNED", "Stage 5 tile state is 'PLANNED'")
+	assert_eq(state5_lbl.text, "LOCKED", "Stage 5 tile state is 'LOCKED'")
+
+	# Check Stage 6 card tile: PLANNED (future unreleased stage)
+	var btn_lvl6: Button = menu.get_level_button(6)
+	assert_true(btn_lvl6 != null, "LevelBtn_6 exists")
+	var vbox6 = btn_lvl6.get_child(0)
+	var state6_lbl: Label = vbox6.get_child(2)
+	assert_eq(state6_lbl.text, "PLANNED", "Stage 6 tile state is 'PLANNED'")
 
 	menu.queue_free()
 
@@ -1707,6 +1715,156 @@ func test_level_4_the_hunting_mines() -> void:
 		assert_eq(cam.limit_top, 0, "Camera limit_top is 0")
 		assert_eq(cam.limit_bottom, 540, "Camera limit_bottom is 540")
 		assert_true(cam.limit_right >= 2860, "Camera limit_right covers the entire Level 4 stage")
+
+	level.queue_free()
+
+func test_level_5_operation_last_stand() -> void:
+	print("\n--- TEST: World 1 Level 5 'Operation Last Stand' ---")
+	var level_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_level_5.tscn")
+	assert_true(level_scene != null, "Level 5 scene loads successfully")
+	var level = level_scene.instantiate()
+	add_child(level)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+
+	assert_true(level is BulletBetrayalLevel5, "Level 5 root is BulletBetrayalLevel5")
+
+	# Safe spawn check
+	var p: BulletBetrayalPlayer = level.get_node_or_null("Player")
+	var spawn_pt: Marker2D = level.get_node_or_null("SpawnPoint")
+	assert_true(p != null, "Player exists in Level 5")
+	assert_true(spawn_pt != null, "SpawnPoint exists in Level 5")
+	assert_eq(p.global_position, Vector2(120, 394), "Player starts at safe spawn position (120, 394)")
+	assert_true(p.is_alive, "Player is alive at level start")
+	assert_eq(p.current_ammo, 10, "Player starts with exactly 10 bullets")
+	assert_eq(p.current_health, 1, "Player starts with 1 life (1-hit death)")
+
+	# Pickups check: exactly 0
+	var pickups: Node2D = level.get_node_or_null("Pickups")
+	assert_true(pickups != null, "Pickups container exists in Level 5")
+	assert_eq(pickups.get_child_count(), 0, "Level 5 has 0 ammunition pickups (strict ammo discipline)")
+
+	# Enemies check: exactly 10 required enemies (7 ordinary soldiers + 3 explosive rushers)
+	var enemies: Node2D = level.get_node_or_null("Enemies")
+	assert_true(enemies != null, "Enemies container exists in Level 5")
+	assert_eq(enemies.get_child_count(), 10, "Level 5 has exactly 10 required enemies")
+
+	var ordinary_count: int = 0
+	var rusher_count: int = 0
+	for i in range(10):
+		var enemy = enemies.get_child(i)
+		assert_true(enemy is BulletBetrayalEnemySoldier, "Enemy %d inherits BulletBetrayalEnemySoldier" % (i + 1))
+		assert_eq(enemy.max_health, 1, "Enemy %d has max_health == 1 (1-bullet kill)" % (i + 1))
+		assert_eq(enemy.current_health, 1, "Enemy %d starts with current_health == 1" % (i + 1))
+		if enemy is BulletBetrayalExplosiveRusher:
+			rusher_count += 1
+		else:
+			ordinary_count += 1
+
+	assert_eq(ordinary_count, 7, "Level 5 has exactly 7 ordinary enemy soldiers")
+	assert_eq(rusher_count, 3, "Level 5 has exactly 3 surprise explosive rushers")
+
+	# Explosive Rusher instances
+	var rusher1: BulletBetrayalExplosiveRusher = level.get_node_or_null("Enemies/Enemy3_Rusher1_Bunker")
+	var rusher2: BulletBetrayalExplosiveRusher = level.get_node_or_null("Enemies/Enemy6_Rusher2_Rear")
+	var rusher3: BulletBetrayalExplosiveRusher = level.get_node_or_null("Enemies/Enemy8_Rusher3_Tunnel")
+	assert_true(rusher1 != null, "Enemy3_Rusher1_Bunker exists in Level 5")
+	assert_true(rusher2 != null, "Enemy6_Rusher2_Rear exists in Level 5")
+	assert_true(rusher3 != null, "Enemy8_Rusher3_Tunnel exists in Level 5")
+
+	# 1. Disguised appearance test: looks ordinary while waiting
+	assert_eq(rusher1.rusher_state, BulletBetrayalExplosiveRusher.RusherState.WAITING, "Rusher starts in WAITING state")
+	assert_true(rusher1.warning_led != null and not rusher1.warning_led.visible, "Warning LED starts hidden")
+	assert_true(rusher1.warning_glow != null and not rusher1.warning_glow.visible, "Warning glow starts hidden")
+	assert_true(rusher1.alert_icon != null and not rusher1.alert_icon.visible, "Alert icon starts hidden")
+
+	# 2. Surprise activation test
+	rusher1.activate_rusher(p)
+	assert_eq(rusher1.rusher_state, BulletBetrayalExplosiveRusher.RusherState.ALERT, "Rusher transitions to ALERT state upon activation")
+	assert_true(rusher1.alert_icon.visible, "Alert icon displays '!' telegraph")
+	assert_true(rusher1.warning_led.visible, "Warning LED activates upon detection")
+	assert_true(rusher1.warning_glow.visible, "Warning glow activates upon detection")
+
+	# 3. Rushing pursuit test
+	rusher1._state_timer = 0.0
+	rusher1._physics_process(0.016)
+	assert_eq(rusher1.rusher_state, BulletBetrayalExplosiveRusher.RusherState.RUSHING, "Rusher transitions to RUSHING state")
+	assert_true(rusher1.velocity.x < 0.0, "Rusher charges towards player (player is to the left at X=120)")
+	assert_true(abs(rusher1.velocity.x) >= 140.0, "Rusher runs at high pursuit speed (>= 140 px/s)")
+
+	# 4. Shooting rusher before detonation: 1 bullet eliminates it cleanly without exploding
+	var rusher3_killed := [false]
+	rusher3.eliminated.connect(func(): rusher3_killed[0] = true)
+	rusher3.take_hit(1)
+	assert_true(rusher3.is_dead, "Shooting rusher with 1 bullet kills it immediately")
+	assert_true(rusher3_killed[0], "Killed rusher emits eliminated signal")
+	assert_true(not rusher3._has_detonated, "Cleanly shot rusher does NOT detonate")
+	assert_true(p.is_alive, "Player survives when shooting rusher before it explodes")
+
+	# 5. Detonation & Blast Radius Test
+	p.global_position = Vector2(rusher1.global_position.x + 30.0, rusher1.global_position.y)
+	var rusher1_eliminated := [false]
+	rusher1.eliminated.connect(func(): rusher1_eliminated[0] = true)
+	rusher1.detonate()
+	await get_tree().physics_frame
+	assert_true(rusher1._has_detonated, "Rusher marks _has_detonated upon explosion")
+	assert_true(rusher1_eliminated[0], "Detonating rusher emits eliminated signal")
+	assert_true(p.is_dead, "Player dies from lethal explosion when inside blast radius")
+	assert_true(rusher1.scorch_mark != null and rusher1.scorch_mark.visible, "Ground scorch mark revealed on explosion")
+
+	# 6. Duplicate detonation prevention
+	rusher1_eliminated[0] = false
+	rusher1.detonate()
+	assert_true(not rusher1_eliminated[0], "Detonated rusher does not explode a second time")
+
+	# 7. Player revive
+	level._on_player_revived()
+	p.revive(spawn_pt.global_position)
+	assert_true(p.is_alive, "Player successfully revived")
+	assert_eq(p.global_position, spawn_pt.global_position, "Player revived at safe spawn position")
+	assert_eq(p.current_ammo, 10, "Player revived with 10 bullets")
+	assert_eq(p.current_health, 1, "Player revived with 1 life")
+
+	# 8. Enemy blast interaction: nearby ordinary enemy killed by blast without double counting
+	var nearby_enemy: BulletBetrayalEnemySoldier = level.get_node_or_null("Enemies/Enemy4_BunkerSniper")
+	assert_true(nearby_enemy != null, "Enemy4_BunkerSniper exists")
+	nearby_enemy.global_position = Vector2(rusher2.global_position.x + 25.0, rusher2.global_position.y)
+	var nearby_eliminated := [false]
+	nearby_enemy.eliminated.connect(func(): nearby_eliminated[0] = true)
+	p.global_position = Vector2(120.0, 394.0)
+	rusher2.detonate()
+	await get_tree().physics_frame
+	assert_true(nearby_enemy.is_dead, "Nearby ordinary enemy caught in blast radius is eliminated")
+	assert_true(nearby_eliminated[0], "Eliminated nearby enemy emits eliminated signal")
+	assert_true(p.is_alive, "Player is outside blast radius and survives")
+
+	# 9. Verify Rear Ambush Archetype on Rusher 2
+	assert_eq(rusher2.ambush_type, BulletBetrayalEnemySoldier.AmbushType.BEHIND, "Rusher 2 uses AmbushType.BEHIND")
+
+	# 10. Verify Section D Narrow Passage Geometry (clearance >= 70px)
+	var ceiling: StaticBody2D = level.get_node_or_null("Terrain/SectionD_Ceiling")
+	assert_true(ceiling != null, "Section D tunnel ceiling exists in Level 5 Terrain")
+	var clearance: float = 410.0 - 340.0
+	assert_true(clearance >= 70.0, "Section D corridor has at least 70px clearance (clearance = %.1f px)" % clearance)
+
+	# 11. Verify Extraction Beacon & 10/10 locked gate
+	var beacon: BulletBetrayalExtractionBeacon = level.get_node_or_null("ExtractionBeacon")
+	assert_true(beacon != null, "ExtractionBeacon exists in Level 5")
+	assert_eq(beacon.required_enemies, 10, "Extraction beacon requires 10 enemies")
+	beacon.update_target_progress(0, 10)
+	assert_true(not beacon.is_unlocked, "Extraction beacon is locked at 0/10 kills")
+	beacon.update_target_progress(9, 10)
+	assert_true(not beacon.is_unlocked, "Extraction beacon remains locked at 9/10 kills")
+	beacon.update_target_progress(10, 10)
+	assert_true(beacon.is_unlocked, "Extraction beacon unlocks strictly at 10/10 kills")
+
+	# 12. Verify Camera Limits
+	var cam: Camera2D = p.get_node_or_null("Camera2D")
+	if cam:
+		assert_eq(cam.limit_left, 0, "Camera limit_left is 0")
+		assert_eq(cam.limit_top, 0, "Camera limit_top is 0")
+		assert_eq(cam.limit_bottom, 540, "Camera limit_bottom is 540")
+		assert_true(cam.limit_right >= 2860, "Camera limit_right covers the entire Level 5 stage")
 
 	level.queue_free()
 

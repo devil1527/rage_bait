@@ -12,6 +12,7 @@ const LEVEL_1_SCENE: String = "res://scenes/bullet_betrayal/bb_level_1.tscn"
 const LEVEL_2_SCENE: String = "res://scenes/bullet_betrayal/bb_level_2.tscn"
 const LEVEL_3_SCENE: String = "res://scenes/bullet_betrayal/bb_level_3.tscn"
 const LEVEL_4_SCENE: String = "res://scenes/bullet_betrayal/bb_level_4.tscn"
+const LEVEL_5_SCENE: String = "res://scenes/bullet_betrayal/bb_level_5.tscn"
 const ARCADE_MAIN_MENU: String = "res://scenes/ui/main_menu.tscn"
 
 @onready var back_button: Button = $MarginContainer/VBox/HeaderBar/BackButton
@@ -78,7 +79,7 @@ const STAGE_NAMES: Dictionary = {
 	2: "River Ambush",
 	3: "Operation Dead Ground",
 	4: "The Hunting Mines",
-	5: "Commander's Camp",
+	5: "Operation Last Stand",
 	6: "Dune Patrol",
 	7: "Oasis Outpost",
 	8: "Canyon Ambush",
@@ -413,7 +414,7 @@ func _refresh_tile_states() -> void:
 		var is_unlocked: bool = SaveManager.is_bb_level_unlocked(lvl_id) if SaveManager else (lvl_id == 1)
 		var is_completed: bool = SaveManager.is_bb_level_completed(lvl_id) if SaveManager else false
 		var star_rating: int = SaveManager.get_bb_level_stars(lvl_id) if SaveManager else 0
-		var is_implemented: bool = (lvl_id <= 4)
+		var is_implemented: bool = (lvl_id <= 5)
 		var world_id: int = int((lvl_id - 1) / 5) + 1
 
 		if not is_implemented:
@@ -522,7 +523,7 @@ func _on_level_tile_pressed(level_id: int) -> void:
 	if _is_dragging or now < _drag_suppress_click_until:
 		return
 
-	if level_id > 4:
+	if level_id > 5:
 		AudioManager.play_sfx("warning")
 		modal_title.text = "STAGE %d IN PROGRESS" % level_id
 		var stage_name: String = STAGE_NAMES.get(level_id, "Stage %d" % level_id)
@@ -548,6 +549,8 @@ func _on_level_tile_pressed(level_id: int) -> void:
 		get_tree().change_scene_to_file(LEVEL_3_SCENE)
 	elif level_id == 4:
 		get_tree().change_scene_to_file(LEVEL_4_SCENE)
+	elif level_id == 5:
+		get_tree().change_scene_to_file(LEVEL_5_SCENE)
 
 func _on_back_pressed() -> void:
 	AudioManager.play_sfx("click")

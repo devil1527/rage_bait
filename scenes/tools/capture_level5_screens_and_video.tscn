@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://capturelevel5screens01"]
+
+[ext_resource type="Script" path="res://scripts/tools/capture_level5_screens_and_video.gd" id="1_capt"]
+
+[node name="CaptureLevel5ScreensAndVideo" type="Node"]
+script = ExtResource("1_capt")
