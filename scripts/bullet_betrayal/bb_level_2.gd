@@ -115,6 +115,12 @@ func _on_extraction_reached() -> void:
 		hud.show_victory(player.current_ammo if player else 0, earned_stars)
 
 func _on_player_revived() -> void:
+	if player and spawn_point:
+		player.global_position = spawn_point.global_position
+		player.velocity = Vector2.ZERO
+		var cam: Camera2D = player.get_node_or_null("Camera2D")
+		if cam:
+			cam.reset_smoothing()
 	if hud:
 		hud.update_targets(_enemies_eliminated, TOTAL_REQUIRED_ENEMIES)
 

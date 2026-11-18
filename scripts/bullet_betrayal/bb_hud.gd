@@ -374,7 +374,7 @@ func _update_death_ad_status() -> void:
 
 	if AdManager.is_rewarded_ad_ready():
 		death_revive_btn.disabled = false
-		death_ad_status.text = "Watch a short ad to revive here!"
+		death_ad_status.text = "Watch a short ad to revive!"
 		death_ad_status.modulate = Color(0.5, 1.0, 0.6, 0.9)
 	elif AdManager.is_initializing():
 		death_revive_btn.disabled = true

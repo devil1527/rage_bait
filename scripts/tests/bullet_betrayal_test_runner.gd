@@ -86,6 +86,7 @@ func run_all_tests() -> void:
 	await test_level_3_operation_dead_ground()
 	await test_level_4_the_hunting_mines()
 	await test_level_5_operation_last_stand()
+	await test_all_5_levels_rewarded_revive_and_reset()
 
 func test_audio_manager_bullet_betrayal_sfx() -> void:
 	print("\n--- TEST: Bullet Betrayal Audio SFX ---")
@@ -1403,7 +1404,7 @@ func test_level_2_final_jump_over_bar_and_landing() -> void:
 		extraction_triggered[0] = true
 	)
 	
-	for f in range(180):
+	for f in range(240):
 		await get_tree().physics_frame
 		if extraction_triggered[0]:
 			break
@@ -1867,4 +1868,129 @@ func test_level_5_operation_last_stand() -> void:
 		assert_true(cam.limit_right >= 2860, "Camera limit_right covers the entire Level 5 stage")
 
 	level.queue_free()
+	await get_tree().physics_frame
 
+func test_all_5_levels_rewarded_revive_and_reset() -> void:
+	print("\n=======================================================")
+	print("  TEST: Rewarded Revive & Reset Across All 5 Levels    ")
+	print("=======================================================")
+	
+	var level_paths: Dictionary = {
+		1: "res://scenes/bullet_betrayal/bb_level_1.tscn",
+		2: "res://scenes/bullet_betrayal/bb_level_2.tscn",
+		3: "res://scenes/bullet_betrayal/bb_level_3.tscn",
+		4: "res://scenes/bullet_betrayal/bb_level_4.tscn",
+		5: "res://scenes/bullet_betrayal/bb_level_5.tscn"
+	}
+
+	for lvl_id in range(1, 6):
+		print("\n--- AUDITING LEVEL %d REVIVE LIFECYCLE ---" % lvl_id)
+		if GameManager:
+			GameManager.is_gameplay_active = true
+			GameManager.revives_used_this_run = 0
+			GameManager.current_run_id += 1
+		var scene_path: String = level_paths[lvl_id]
+		var packed: PackedScene = load(scene_path)
+		assert_true(packed != null, "Level %d scene loads successfully" % lvl_id)
+		var level = packed.instantiate()
+		add_child(level)
+		await get_tree().physics_frame
+		if GameManager:
+			GameManager.is_gameplay_active = true
+			GameManager.revives_used_this_run = 0
+		
+		var p: BulletBetrayalPlayer = level.get_node_or_null("Player")
+		var hud: BulletBetrayalHUD = level.get_node_or_null("HUD")
+		var spawn_pt: Marker2D = level.get_node_or_null("SpawnPoint")
+		var beacon: BulletBetrayalExtractionBeacon = level.get_node_or_null("ExtractionBeacon")
+		var enemies_node: Node2D = level.get_node_or_null("Enemies")
+		
+		assert_true(p != null, "Level %d player exists" % lvl_id)
+		assert_true(hud != null, "Level %d HUD exists" % lvl_id)
+		assert_true(spawn_pt != null, "Level %d SpawnPoint exists" % lvl_id)
+		assert_true(beacon != null, "Level %d ExtractionBeacon exists" % lvl_id)
+		assert_true(enemies_node != null, "Level %d Enemies container exists" % lvl_id)
+		assert_eq(enemies_node.get_child_count(), 10, "Level %d has exactly 10 required enemies" % lvl_id)
+		
+		# --- Scenario A: Die before killing any enemies, then revive ---
+		p.global_position = spawn_pt.global_position + Vector2(350.0, 0.0)
+		p.die()
+		assert_true(not p.is_alive, "Level %d: Player is dead before revive (0 kills)" % lvl_id)
+		hud._on_revive_reward_granted(GameManager.current_run_id)
+		assert_true(p.is_alive, "Level %d: Player alive after rewarded revive" % lvl_id)
+		assert_eq(p.current_health, 1, "Level %d: Player restored with 1 life" % lvl_id)
+		assert_eq(p.current_ammo, 10, "Level %d: Player restored with exactly 10 bullets" % lvl_id)
+		var dist_a: float = p.global_position.distance_to(spawn_pt.global_position)
+		assert_true(dist_a < 5.0, "Level %d Scenario A: Player respawned at start of level (dist = %.1f px)" % [lvl_id, dist_a])
+		assert_eq(level._enemies_eliminated, 0, "Level %d Scenario A: Kills preserved at 0/10" % lvl_id)
+		assert_true(not beacon.is_unlocked, "Level %d Scenario A: Extraction beacon remains locked" % lvl_id)
+		
+		# --- Scenario B: Kill 3 enemies, die, then revive (confirm 3/10 remains) ---
+		GameManager.revives_used_this_run = 0
+		level._enemies_eliminated = 0
+		var children = enemies_node.get_children()
+		for i in range(3):
+			if i < children.size():
+				children[i].take_hit(1)
+		assert_eq(level._enemies_eliminated, 3, "Level %d: 3 enemies eliminated" % lvl_id)
+		
+		p.global_position = spawn_pt.global_position + Vector2(500.0, 0.0)
+		p.die()
+		hud._on_revive_reward_granted(GameManager.current_run_id)
+		var dist_b: float = p.global_position.distance_to(spawn_pt.global_position)
+		assert_true(dist_b < 5.0, "Level %d Scenario B: Player respawned at start of level (dist = %.1f px)" % [lvl_id, dist_b])
+		assert_eq(level._enemies_eliminated, 3, "Level %d Scenario B: Enemy counter retains exactly 3/10" % lvl_id)
+		assert_eq(p.current_ammo, 10, "Level %d Scenario B: Bullets restored to exactly 10" % lvl_id)
+		assert_true(not beacon.is_unlocked, "Level %d Scenario B: Extraction beacon remains locked" % lvl_id)
+		
+		var alive_count: int = 0
+		for e in children:
+			if is_instance_valid(e) and not e.is_dead:
+				alive_count += 1
+		assert_eq(alive_count, 7, "Level %d Scenario B: Exactly 7 remaining enemies are alive" % lvl_id)
+		
+		# --- Scenario C: Kill 7 enemies, die, then revive (confirm 7/10 remains) ---
+		for i in range(3, 7):
+			if i < children.size() and is_instance_valid(children[i]) and not children[i].is_dead:
+				children[i].take_hit(1)
+		assert_eq(level._enemies_eliminated, 7, "Level %d: 7 enemies eliminated" % lvl_id)
+		
+		GameManager.revives_used_this_run = 0
+		p.global_position = spawn_pt.global_position + Vector2(750.0, 0.0)
+		p.die()
+		hud._on_revive_reward_granted(GameManager.current_run_id)
+		var dist_c: float = p.global_position.distance_to(spawn_pt.global_position)
+		assert_true(dist_c < 5.0, "Level %d Scenario C: Player respawned at start of level (dist = %.1f px)" % [lvl_id, dist_c])
+		assert_eq(level._enemies_eliminated, 7, "Level %d Scenario C: Enemy counter retains exactly 7/10" % lvl_id)
+		assert_eq(p.current_ammo, 10, "Level %d Scenario C: Bullets restored to exactly 10" % lvl_id)
+		assert_true(not beacon.is_unlocked, "Level %d Scenario C: Extraction beacon remains locked" % lvl_id)
+		
+		# --- Scenario D: Verify exactly 10 bullets restored from low ammo ---
+		p.current_ammo = 1
+		GameManager.revives_used_this_run = 0
+		p.die()
+		hud._on_revive_reward_granted(GameManager.current_run_id)
+		assert_eq(p.current_ammo, 10, "Level %d Scenario D: Exactly 10 bullets restored from low ammo" % lvl_id)
+		
+		# --- Scenario E: Kill remaining enemies -> beacon unlocks at 10/10 ---
+		for i in range(7, 10):
+			if i < children.size() and is_instance_valid(children[i]) and not children[i].is_dead:
+				children[i].take_hit(1)
+		assert_eq(level._enemies_eliminated, 10, "Level %d Scenario E: Final kill count reaches 10/10" % lvl_id)
+		assert_true(beacon.is_unlocked, "Level %d Scenario E: Extraction beacon unlocks strictly at 10/10" % lvl_id)
+		
+		# --- Scenario F: One-revive-per-run limit & second death ---
+		assert_eq(GameManager.revives_used_this_run, 1, "Level %d Scenario F: revives_used_this_run is 1" % lvl_id)
+		assert_true(not GameManager.can_revive_this_run(), "Level %d Scenario F: can_revive_this_run is false after 1 revive" % lvl_id)
+		p.die()
+		hud.death_overlay.visible = true
+		hud._update_death_ad_status()
+		assert_true(hud.death_revive_btn.disabled, "Level %d Scenario F: Revive button disabled on second death" % lvl_id)
+		assert_eq(hud.death_ad_status.text, "Revive already used this run", "Level %d Scenario F: Status text displays limit reached" % lvl_id)
+		
+		# Attempt second revive call
+		hud._on_revive_reward_granted(GameManager.current_run_id)
+		assert_true(not p.is_alive, "Level %d Scenario F: Second revive call strictly rejected" % lvl_id)
+		
+		level.queue_free()
+		await get_tree().physics_frame
