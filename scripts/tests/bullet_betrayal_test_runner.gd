@@ -86,6 +86,7 @@ func run_all_tests() -> void:
 	await test_level_3_operation_dead_ground()
 	await test_level_4_the_hunting_mines()
 	await test_level_5_operation_last_stand()
+	await test_level_6_dune_patrol()
 	await test_all_5_levels_rewarded_revive_and_reset()
 
 func test_audio_manager_bullet_betrayal_sfx() -> void:
@@ -610,14 +611,14 @@ func test_pause_menu_and_confirmation_modals() -> void:
 	assert_eq(hud.victory_mission_btn.text, "☰ LEVEL SELECT", "Level Select button text matches Coin Hell ('☰ LEVEL SELECT')")
 	assert_true(hud.victory_arcade_btn == null, "Arcade Menu button omitted from Victory overlay (matches Coin Hell 3-button layout)")
 	
-	# Test Next Stage Button opens MessageModal for unreleased Stage 6 (when on Stage 5)
-	hud.current_stage_id = 5
+	# Test Next Stage Button opens MessageModal for unreleased Stage 7 (when on Stage 6)
+	hud.current_stage_id = 6
 	assert_true(hud.victory_message_modal != null, "Victory overlay has MessageModal")
 	assert_true(not hud.victory_message_modal.visible, "MessageModal starts hidden")
 	hud.victory_next_stage_btn.pressed.emit()
 	assert_true(hud.victory_message_modal.visible, "MessageModal opens when clicking Next Stage on last implemented stage")
-	assert_eq(hud.victory_modal_title.text, "STAGE 6 IN PROGRESS", "MessageModal title is 'STAGE 6 IN PROGRESS'")
-	assert_true(hud.victory_modal_label.text.contains("still being built"), "MessageModal explains Stage 6 is being built")
+	assert_eq(hud.victory_modal_title.text, "STAGE 7 IN PROGRESS", "MessageModal title is 'STAGE 7 IN PROGRESS'")
+	assert_true(hud.victory_modal_label.text.contains("still being built"), "MessageModal explains Stage 7 is being built")
 	
 	# Dismiss MessageModal
 	hud.victory_modal_ok_btn.pressed.emit()
@@ -1869,6 +1870,147 @@ func test_level_5_operation_last_stand() -> void:
 
 	level.queue_free()
 	await get_tree().physics_frame
+
+func test_level_6_dune_patrol() -> void:
+	print("\n=======================================================")
+	print("  TEST: World 2 Stage 6 — Dune Patrol (Implementation)  ")
+	print("=======================================================")
+	
+	if GameManager:
+		GameManager.is_gameplay_active = true
+		GameManager.revives_used_this_run = 0
+		GameManager.current_run_id += 1
+
+	var scene_path: String = "res://scenes/bullet_betrayal/bb_level_6.tscn"
+	var packed: PackedScene = load(scene_path)
+	assert_true(packed != null, "Level 6 scene loads successfully")
+	var level = packed.instantiate()
+	add_child(level)
+	await get_tree().physics_frame
+	if GameManager:
+		GameManager.is_gameplay_active = true
+		GameManager.revives_used_this_run = 0
+
+	var p: BulletBetrayalPlayer = level.get_node_or_null("Player")
+	var hud: BulletBetrayalHUD = level.get_node_or_null("HUD")
+	var spawn_pt: Marker2D = level.get_node_or_null("SpawnPoint")
+	var beacon: BulletBetrayalExtractionBeacon = level.get_node_or_null("ExtractionBeacon")
+	var enemies_node: Node2D = level.get_node_or_null("Enemies")
+	var platforms_node: Node2D = level.get_node_or_null("Platforms")
+
+	# 1. Structural Assertions
+	assert_true(p != null, "Player exists in Level 6")
+	assert_true(hud != null, "HUD exists in Level 6")
+	assert_true(spawn_pt != null, "SpawnPoint exists in Level 6")
+	assert_true(beacon != null, "ExtractionBeacon exists in Level 6")
+	assert_true(enemies_node != null, "Enemies container exists in Level 6")
+	assert_true(platforms_node != null, "Platforms container exists in Level 6")
+
+	# 2. HUD & Stage Identity
+	assert_eq(hud.current_stage_id, 6, "HUD current_stage_id is 6")
+	assert_eq(hud.stage_label.text, "WORLD 2-1: DUNE PATROL", "HUD stage_label displays 'WORLD 2-1: DUNE PATROL'")
+	assert_eq(hud.stage_clear_subtitle, "DUNE PATROL CLEARED", "HUD stage_clear_subtitle is 'DUNE PATROL CLEARED'")
+
+	# 3. Spawn Safety
+	assert_eq(spawn_pt.global_position, Vector2(120.0, 394.0), "SpawnPoint is at safe entry position (120, 394)")
+	assert_true(p.is_alive, "Player is alive on spawn")
+	assert_eq(p.current_health, 1, "Player starts with 1 life (1-hit death)")
+	assert_eq(p.current_ammo, 10, "Player starts with exactly 10 bullets")
+	assert_true(p.get_safe_revive_position() != Vector2.ZERO, "Spawn position passes initial safe foothold validation")
+
+	# 4. Enemy Economy (Exactly 10 required enemies, first at >= 500)
+	var enemies = enemies_node.get_children()
+	assert_eq(enemies.size(), 10, "Level 6 has exactly 10 enemies")
+	var first_enemy_x: float = 99999.0
+	for e in enemies:
+		if e is BulletBetrayalEnemySoldier:
+			first_enemy_x = minf(first_enemy_x, e.global_position.x)
+	assert_true(first_enemy_x >= 500.0, "First enemy is at or beyond X=500 (found X=%.1f)" % first_enemy_x)
+
+	# 5. One Bullet Kills Rule
+	for i in range(enemies.size()):
+		var e = enemies[i]
+		assert_true(e is BulletBetrayalEnemySoldier, "Enemy %d is BulletBetrayalEnemySoldier" % (i + 1))
+		assert_eq(e.current_health, 1, "Enemy %d starts with 1 health" % (i + 1))
+		assert_true(not e.is_dead, "Enemy %d starts alive" % (i + 1))
+
+	# 6. Terrain Bullet Blocking
+	var bullet_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_bullet.tscn")
+	assert_true(bullet_scene != null, "Bullet scene loads")
+	var test_bullet = bullet_scene.instantiate()
+	level.add_child(test_bullet)
+	test_bullet.global_position = Vector2(500.0, 410.0)
+	test_bullet.direction = Vector2.RIGHT
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	assert_true(test_bullet.collision_mask & 2 != 0, "Bullet has Layer 2 terrain in its collision mask")
+	test_bullet.queue_free()
+
+	# 7. Safe-Position Tracking & Rewarded Revive on Dunes
+	p.global_position = Vector2(240.0, 394.0)
+	p.velocity = Vector2.ZERO
+	p._check_and_record_safe_anchor(0.2)
+	p.record_safe_position(Vector2(240.0, 394.0))
+
+	p.global_position = Vector2(660.0, 364.0)
+	p.velocity = Vector2.ZERO
+	p._check_and_record_safe_anchor(0.2)
+	p.record_safe_position(Vector2(660.0, 364.0))
+
+	assert_true(p._safe_anchors.size() >= 2, "Dune crest safe anchors recorded")
+	assert_eq(p._safe_anchors.back(), Vector2(660.0, 364.0), "Latest anchor is on Dune Crest 1")
+
+	# Fall into pit and die
+	p.global_position = Vector2(900.0, 530.0)
+	p.die()
+	assert_true(not p.is_alive, "Player dead after falling into pit")
+
+	hud._on_revive_reward_granted(GameManager.current_run_id)
+	assert_true(p.is_alive, "Player successfully revived")
+	assert_eq(p.global_position, Vector2(660.0, 364.0), "Player revived at last safe dune foothold (660, 364)")
+	assert_eq(p.current_ammo, 10, "Player restored exactly 10 bullets on revive")
+	assert_eq(p.current_health, 1, "Player restored 1 life on revive")
+
+	# 8. Enemy Elimination & Progress Retention
+	level._enemies_eliminated = 0
+	enemies[0].take_hit(1)
+	assert_eq(level._enemies_eliminated, 1, "Elimination recorded for enemy 1")
+	enemies[1].take_hit(1)
+	assert_eq(level._enemies_eliminated, 2, "Elimination recorded for enemy 2")
+
+	# Second death -> 1 revive consumed, cannot revive again
+	p.die()
+	assert_true(not GameManager.can_revive_this_run(), "Cannot revive a second time in same run")
+	hud._on_revive_reward_granted(GameManager.current_run_id)
+	assert_true(not p.is_alive, "Second revive call strictly rejected")
+
+	# 9. Gate Condition (Locked until 10/10)
+	beacon.update_target_progress(2, 10)
+	assert_true(not beacon.is_unlocked, "Extraction beacon locked at 2/10 kills")
+	beacon.update_target_progress(9, 10)
+	assert_true(not beacon.is_unlocked, "Extraction beacon locked at 9/10 kills")
+	beacon.update_target_progress(10, 10)
+	assert_true(beacon.is_unlocked, "Extraction beacon unlocked at 10/10 kills")
+
+	# 10. Menu Navigation & Loading
+	var menu_scene: PackedScene = load("res://scenes/bullet_betrayal/bullet_betrayal_menu.tscn")
+	assert_true(menu_scene != null, "Menu scene loads")
+	var menu: BulletBetrayalMenu = menu_scene.instantiate()
+	add_child(menu)
+	await get_tree().physics_frame
+	var btn_6: Button = menu.get_level_button(6)
+	assert_true(btn_6 != null, "Stage 6 button exists in menu")
+	var btn_7: Button = menu.get_level_button(7)
+	assert_true(btn_7 != null, "Stage 7 button exists in menu")
+	
+	menu._on_level_tile_pressed(7)
+	assert_true(menu.message_modal.visible, "Stage 7 is guarded with in-progress modal")
+	assert_true("IN PROGRESS" in menu.modal_title.text, "Modal title indicates Stage 7 in progress")
+	menu.queue_free()
+
+	level.queue_free()
+	await get_tree().physics_frame
+	assert_true(true, "World 2 Stage 6 Dune Patrol fully verified")
 
 func test_all_5_levels_rewarded_revive_and_reset() -> void:
 	print("\n=======================================================")

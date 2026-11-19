@@ -13,6 +13,7 @@ const LEVEL_2_SCENE: String = "res://scenes/bullet_betrayal/bb_level_2.tscn"
 const LEVEL_3_SCENE: String = "res://scenes/bullet_betrayal/bb_level_3.tscn"
 const LEVEL_4_SCENE: String = "res://scenes/bullet_betrayal/bb_level_4.tscn"
 const LEVEL_5_SCENE: String = "res://scenes/bullet_betrayal/bb_level_5.tscn"
+const LEVEL_6_SCENE: String = "res://scenes/bullet_betrayal/bb_level_6.tscn"
 const ARCADE_MAIN_MENU: String = "res://scenes/ui/main_menu.tscn"
 
 @onready var back_button: Button = $MarginContainer/VBox/HeaderBar/BackButton
@@ -523,7 +524,7 @@ func _on_level_tile_pressed(level_id: int) -> void:
 	if _is_dragging or now < _drag_suppress_click_until:
 		return
 
-	if level_id > 5:
+	if level_id > 6:
 		AudioManager.play_sfx("warning")
 		modal_title.text = "STAGE %d IN PROGRESS" % level_id
 		var stage_name: String = STAGE_NAMES.get(level_id, "Stage %d" % level_id)
@@ -551,6 +552,8 @@ func _on_level_tile_pressed(level_id: int) -> void:
 		get_tree().change_scene_to_file(LEVEL_4_SCENE)
 	elif level_id == 5:
 		get_tree().change_scene_to_file(LEVEL_5_SCENE)
+	elif level_id == 6:
+		get_tree().change_scene_to_file(LEVEL_6_SCENE)
 
 func _on_back_pressed() -> void:
 	AudioManager.play_sfx("click")
