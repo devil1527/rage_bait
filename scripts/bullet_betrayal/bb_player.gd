@@ -49,6 +49,14 @@ var touch_jump_just_released: bool = false
 var touch_shoot: bool = false
 var touch_shoot_just_pressed: bool = false
 
+# Safe anchor & foothold tracking (Coin Hell architecture)
+var _safe_anchors: Array[Vector2] = []
+var _grounded_safety_timer: float = 0.0
+var last_safe_position: Vector2 = Vector2.ZERO
+var last_death_position: Vector2 = Vector2.ZERO
+const MAX_SAFE_ANCHORS: int = 15
+const MIN_ANCHOR_DISTANCE: float = 48.0
+
 # Internal timers
 var _fire_timer: float = 0.0
 var _coyote_timer: float = 0.0
@@ -80,6 +88,8 @@ func _ready() -> void:
 		
 	_update_facing()
 	call_deferred("_emit_initial_stats")
+	_safe_anchors.clear()
+	call_deferred("_record_initial_anchor")
 
 func _emit_initial_stats() -> void:
 	health_updated.emit(current_health, max_health)
@@ -129,6 +139,7 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, 0.0, friction * delta)
 
 	move_and_slide()
+	_check_and_record_safe_anchor(delta)
 	_update_animation(delta)
 
 func _handle_input(delta: float) -> void:
@@ -271,6 +282,8 @@ func die() -> void:
 	is_alive = false
 	input_disabled = true
 	velocity = Vector2.ZERO
+	last_death_position = global_position
+	_grounded_safety_timer = 0.0
 	AudioManager.play_sfx("death")
 	player_died.emit()
 
@@ -290,8 +303,11 @@ func die() -> void:
 
 ## Authoritative revive method: restores 1 life and exactly 10 bullets
 func revive(safe_position: Vector2 = Vector2.ZERO) -> void:
-	if safe_position != Vector2.ZERO:
-		global_position = safe_position
+	var target_pos: Vector2 = safe_position
+	if target_pos == Vector2.ZERO:
+		target_pos = get_safe_revive_position()
+	if target_pos != Vector2.ZERO:
+		global_position = target_pos
 	is_alive = true
 	input_disabled = false
 	current_health = 1
@@ -348,3 +364,201 @@ func respawn(pos: Vector2) -> void:
 		hurtbox_col.set_deferred("disabled", false)
 	reset_touch_inputs()
 	_emit_initial_stats()
+
+
+# =========================================================================
+# SAFE-POSITION RESPAWN ARCHITECTURE (MATCHING COIN HELL BEHAVIOR)
+# =========================================================================
+
+func _record_initial_anchor() -> void:
+	if is_position_safe_for_revive(global_position):
+		record_safe_position(global_position)
+	else:
+		var ground_pos := Vector2(global_position.x, 394.0)
+		if is_position_safe_for_revive(ground_pos):
+			record_safe_position(ground_pos)
+
+func _check_and_record_safe_anchor(delta: float) -> void:
+	if not is_alive or input_disabled or is_invulnerable:
+		_grounded_safety_timer = 0.0
+		return
+
+	# 1. Stably resting on floor (not airborne, bouncing or on ladder)
+	if not is_on_floor() or absf(velocity.y) > 1.0 or is_on_ladder:
+		_grounded_safety_timer = 0.0
+		return
+
+	# 2. Within legitimate level vertical bounds (Y between 50 and 430)
+	if global_position.y > 430.0 or global_position.y < 50.0:
+		_grounded_safety_timer = 0.0
+		return
+
+	# 3. Slide collision check: normal points upward (flat stable footing)
+	var floor_is_flat := false
+	for i in range(get_slide_collision_count()):
+		var coll := get_slide_collision(i)
+		if coll.get_normal().y < -0.7:
+			floor_is_flat = true
+			break
+
+	if not floor_is_flat:
+		_grounded_safety_timer = 0.0
+		return
+
+	# 4. Immediate hazard and enemy proximity clearance check
+	if not _is_current_area_clear_of_hazards(global_position):
+		_grounded_safety_timer = 0.0
+		return
+
+	# 5. Stability timer: must remain on safe ground continuously for >= 0.15s
+	_grounded_safety_timer += delta
+	if _grounded_safety_timer >= 0.15:
+		_grounded_safety_timer = 0.0
+		record_safe_position(global_position)
+
+func record_safe_position(pos: Vector2) -> void:
+	if pos.y > 430.0 or pos.y < 50.0:
+		return
+	if _safe_anchors.is_empty():
+		_safe_anchors.append(pos)
+		last_safe_position = pos
+		return
+	var last_pos: Vector2 = _safe_anchors.back()
+	if pos.distance_to(last_pos) >= MIN_ANCHOR_DISTANCE:
+		_safe_anchors.append(pos)
+		last_safe_position = pos
+		if _safe_anchors.size() > MAX_SAFE_ANCHORS:
+			_safe_anchors.pop_front()
+
+func _is_current_area_clear_of_hazards(pos: Vector2) -> bool:
+	var tree := get_tree()
+	if not tree:
+		return true
+
+	# Active un-triggered stationary landmines (safe threshold: 45px)
+	var landmines := tree.get_nodes_in_group("landmines")
+	for node in landmines:
+		if is_instance_valid(node) and node is Node2D:
+			var is_active := true
+			if "_triggered" in node and node._triggered:
+				is_active = false
+			if is_active and node.global_position.distance_to(pos) < 45.0:
+				return false
+
+	# Active hunting mines (safe threshold: 65px)
+	var hunting_mines := tree.get_nodes_in_group("hunting_mines")
+	for node in hunting_mines:
+		if is_instance_valid(node) and node is Node2D:
+			var is_active := true
+			if "_triggered" in node and node._triggered:
+				is_active = false
+			if is_active and node.global_position.distance_to(pos) < 65.0:
+				return false
+
+	# Living enemy soldiers and explosive rushers (safe threshold: 50px)
+	var enemies := tree.get_nodes_in_group("enemies")
+	for node in enemies:
+		if is_instance_valid(node) and node is Node2D:
+			var is_alive_enemy := true
+			if "is_dead" in node and node.is_dead:
+				is_alive_enemy = false
+			if is_alive_enemy and node.global_position.distance_to(pos) < 50.0:
+				return false
+
+	# Layer 4 Fire hazards
+	if get_world_2d():
+		var space := get_world_2d().direct_space_state
+		var col := get_node_or_null("CollisionShape2D") as CollisionShape2D
+		if space and col and col.shape:
+			var query := PhysicsShapeQueryParameters2D.new()
+			query.shape = col.shape
+			query.transform = Transform2D(0.0, pos + col.position)
+			query.collision_mask = 4 # Hazard layer
+			query.collide_with_areas = true
+			query.collide_with_bodies = true
+			var hits := space.intersect_shape(query, 1)
+			if not hits.is_empty():
+				return false
+
+	return true
+
+func is_position_safe_for_revive(pos: Vector2) -> bool:
+	# Safeguard 1: Vertical and horizontal bounds check
+	if pos.y > 430.0 or pos.y < 50.0:
+		return false
+	if pos.x < 50.0 or pos.x > 2860.0:
+		return false
+
+	var space := get_world_2d().direct_space_state if get_world_2d() else null
+	if not space:
+		return true
+
+	var col_shape := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if not col_shape or not col_shape.shape:
+		return true
+
+	# 1. Ground Support Raycast (40px downwards on solid terrain layer 2)
+	var ray := PhysicsRayQueryParameters2D.create(pos, pos + Vector2(0, 40), 2)
+	var ground_hit: Dictionary = space.intersect_ray(ray)
+	if ground_hit.is_empty():
+		return false
+	var ground_y: float = ground_hit.get("position", Vector2.ZERO).y
+	if ground_y - pos.y < 10.0 or ground_y - pos.y > 28.0:
+		return false
+
+	# 2. Wall / Ceiling Clearance: verify body is not embedded in Layer 2 terrain
+	var test_shape := RectangleShape2D.new()
+	var base_shape := col_shape.shape as RectangleShape2D
+	if base_shape:
+		test_shape.size = base_shape.size - Vector2(2.0, 4.0)
+	else:
+		test_shape.size = Vector2(14.0, 24.0)
+
+	var shape_query := PhysicsShapeQueryParameters2D.new()
+	shape_query.shape = test_shape
+	shape_query.transform = Transform2D(0.0, pos + col_shape.position - Vector2(0.0, 2.0))
+	shape_query.collision_mask = 2 # Solid terrain
+	shape_query.collide_with_areas = false
+	shape_query.collide_with_bodies = true
+	var wall_hits: Array[Dictionary] = space.intersect_shape(shape_query, 1)
+	if not wall_hits.is_empty():
+		return false
+
+	# 3. Fire Hazard Check (Layer 4)
+	shape_query.collision_mask = 4
+	shape_query.collide_with_areas = true
+	shape_query.collide_with_bodies = true
+	var hazard_hits: Array[Dictionary] = space.intersect_shape(shape_query, 1)
+	if not hazard_hits.is_empty():
+		return false
+
+	# 4. Hazard & Enemy Proximity Check
+	return _is_current_area_clear_of_hazards(pos)
+
+func get_safe_revive_position() -> Vector2:
+	# Priority 1: Search backwards through safe anchor history (Coin Hell approach)
+	for i in range(_safe_anchors.size() - 1, -1, -1):
+		var candidate: Vector2 = _safe_anchors[i]
+		if is_position_safe_for_revive(candidate):
+			return candidate
+
+	# Priority 2: Fallback to level SpawnPoint with full validation (Safeguard 3)
+	var spawn_node: Node2D = null
+	if get_parent():
+		spawn_node = get_parent().get_node_or_null("SpawnPoint")
+
+	if spawn_node:
+		var spawn_pos: Vector2 = spawn_node.global_position
+		if is_position_safe_for_revive(spawn_pos):
+			return spawn_pos
+		var ground_spawn := Vector2(spawn_pos.x, 394.0)
+		if is_position_safe_for_revive(ground_spawn):
+			return ground_spawn
+		# Horizontal safe offsets along spawn runway
+		for offset in [32.0, -32.0, 64.0, -64.0, 96.0]:
+			var offset_pos := Vector2(spawn_pos.x + offset, 394.0)
+			if is_position_safe_for_revive(offset_pos):
+				return offset_pos
+
+	# Fallback safe coordinate
+	return Vector2(120.0, 394.0)

@@ -67,6 +67,7 @@ var _redetect_cooldown: float = 0.0
 var _player_ref: BulletBetrayalPlayer = null
 
 func _ready() -> void:
+	add_to_group("hunting_mines")
 	spawn_position = global_position
 
 	# Setup collision layers

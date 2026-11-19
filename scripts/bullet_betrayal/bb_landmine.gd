@@ -32,6 +32,7 @@ var _blink_timer: float = 0.0
 @onready var smoke_particles: CPUParticles2D = get_node_or_null("ExplosionFX/SmokeParticles")
 
 func _ready() -> void:
+	add_to_group("landmines")
 	# Layer 0 (not a solid body), Mask 1 (detects player on layer 1)
 	collision_layer = 0
 	collision_mask = 1
