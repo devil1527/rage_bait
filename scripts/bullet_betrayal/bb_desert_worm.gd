@@ -1,0 +1,405 @@
+class_name BulletBetrayalDesertWorm
+extends Node2D
+
+## Subterranean Desert Sandworm hazard for Bullet Betrayal (World 2, Level 7).
+## Lives beneath the sand surface, telegraphs emergence via a shaking sand mound
+## and grit particles, bursts onto the surface to crawl within its dune territory,
+## and dives back underground at varied intervals.
+## Instant-kills the player on contact ONLY when surfaced (never while underground).
+## Never spawns directly on top of the player and never gets permanently stuck.
+
+signal emerged(pos: Vector2)
+signal submerged
+signal player_killed_by_worm
+
+enum WormState {
+	UNDERGROUND,
+	WARNING,
+	EMERGING,
+	CRAWLING,
+	SUBMERGING
+}
+
+@export var territory_min_x: float = 520.0
+@export var territory_max_x: float = 840.0
+@export var surface_y: float = 400.0
+@export var use_node_y_as_surface: bool = true
+@export var crawl_speed: float = 84.0
+@export var underground_time_min: float = 1.6
+@export var underground_time_max: float = 3.4
+@export var warning_duration: float = 0.78
+@export var emerge_duration: float = 0.28
+@export var crawl_time_min: float = 1.8
+@export var crawl_time_max: float = 3.2
+@export var submerge_duration: float = 0.30
+@export var min_player_spawn_clearance: float = 72.0
+@export var initial_delay: float = -1.0
+
+var state: WormState = WormState.UNDERGROUND
+var facing_direction: int = 1 # 1 = Right, -1 = Left
+
+var _state_timer: float = 1.5
+var _anim_timer: float = 0.0
+var _frame_idx: int = 1
+var _warning_elapsed: float = 0.0
+var _emerge_progress: float = 0.0
+var _last_emerge_x: float = -9999.0
+
+const BODY_REST_Y: float = 23.0      # Inside BodyClip (-34..0), center at -11 above surface
+const BODY_HIDDEN_Y: float = 45.0    # Clipped cleanly below surface line
+
+@onready var sand_mound: Sprite2D = $SandMound
+@onready var sand_particles: CPUParticles2D = get_node_or_null("SandParticles")
+@onready var body_clip: Control = $BodyClip
+@onready var worm_sprite: Sprite2D = $BodyClip/WormSprite
+@onready var kill_zone: Area2D = $KillZone
+@onready var kill_col: CollisionShape2D = $KillZone/CollisionShape2D
+
+var _tex_crawl_1: Texture2D
+var _tex_crawl_2: Texture2D
+
+
+func _ready() -> void:
+	add_to_group("desert_worms")
+	add_to_group("hazards")
+
+	if use_node_y_as_surface:
+		surface_y = global_position.y
+	else:
+		global_position.y = surface_y
+
+	if territory_max_x < territory_min_x + 48.0:
+		territory_min_x = global_position.x - 100.0
+		territory_max_x = global_position.x + 100.0
+
+	_tex_crawl_1 = load("res://assets/sprites/bb_desert_worm_crawl_1.png")
+	_tex_crawl_2 = load("res://assets/sprites/bb_desert_worm_crawl_2.png")
+
+	if kill_zone:
+		kill_zone.collision_layer = 4
+		kill_zone.collision_mask = 1
+		if not kill_zone.body_entered.is_connected(_on_kill_zone_body_entered):
+			kill_zone.body_entered.connect(_on_kill_zone_body_entered)
+
+	var start_wait: float = initial_delay if initial_delay >= 0.0 else randf_range(0.5, underground_time_max)
+	_enter_underground(start_wait)
+
+
+func _physics_process(delta: float) -> void:
+	# Always lock vertical anchor to intended desert floor
+	global_position.y = surface_y
+
+	match state:
+		WormState.UNDERGROUND:
+			_process_underground(delta)
+		WormState.WARNING:
+			_process_warning(delta)
+		WormState.EMERGING:
+			_process_emerging(delta)
+		WormState.CRAWLING:
+			_process_crawling(delta)
+		WormState.SUBMERGING:
+			_process_submerging(delta)
+
+
+func _process_underground(delta: float) -> void:
+	_state_timer -= delta
+	if _state_timer > 0.0:
+		return
+
+	var target_x: float = _pick_safe_emergence_x()
+	if target_x < -9000.0:
+		# Player currently occupies every valid point; wait briefly instead of spawning on them
+		_state_timer = 0.32
+		return
+
+	_enter_warning(target_x)
+
+
+func _process_warning(delta: float) -> void:
+	_warning_elapsed += delta
+	_state_timer -= delta
+
+	# Quiver sand mound as visual rumble cue
+	if sand_mound:
+		sand_mound.position.x = sin(_warning_elapsed * 46.0) * 2.5
+		sand_mound.position.y = -7.5 + absf(cos(_warning_elapsed * 28.0)) * 1.2
+
+	if _state_timer <= 0.0:
+		# Final fairness check: never burst directly onto a player who ran atop the mound
+		if _is_player_on_spot(global_position.x, 38.0):
+			_enter_underground(0.45)
+			return
+		_enter_emerging()
+
+
+func _process_emerging(delta: float) -> void:
+	_emerge_progress = minf(1.0, _emerge_progress + delta / maxf(0.05, emerge_duration))
+	if worm_sprite:
+		worm_sprite.position.y = lerpf(BODY_HIDDEN_Y, BODY_REST_Y, _emerge_progress)
+
+	# Activate hitbox only once visibly breaking through the sand
+	if _emerge_progress >= 0.45:
+		_set_hitbox_enabled(true)
+		_check_overlapping_player()
+
+	if _emerge_progress >= 1.0:
+		_enter_crawling()
+
+
+func _process_crawling(delta: float) -> void:
+	_state_timer -= delta
+
+	var left_bound: float = territory_min_x + 22.0
+	var right_bound: float = territory_max_x - 22.0
+	global_position.x += facing_direction * crawl_speed * delta
+
+	if global_position.x <= left_bound:
+		global_position.x = left_bound
+		facing_direction = 1
+		_update_facing()
+	elif global_position.x >= right_bound:
+		global_position.x = right_bound
+		facing_direction = -1
+		_update_facing()
+
+	# Crawl frame animation & subtle undulation
+	_anim_timer += delta
+	if _anim_timer >= 0.14:
+		_anim_timer = 0.0
+		_frame_idx = 2 if _frame_idx == 1 else 1
+		if worm_sprite:
+			worm_sprite.texture = _tex_crawl_2 if _frame_idx == 2 else _tex_crawl_1
+	if worm_sprite:
+		var squash: float = sin(Time.get_ticks_msec() * 0.014) * 0.05
+		worm_sprite.scale = Vector2(1.0 + squash, 1.0 - squash)
+
+	_check_overlapping_player()
+
+	if _state_timer <= 0.0:
+		_enter_submerging()
+
+
+func _process_submerging(delta: float) -> void:
+	_emerge_progress = minf(1.0, _emerge_progress + delta / maxf(0.05, submerge_duration))
+	if worm_sprite:
+		worm_sprite.position.y = lerpf(BODY_REST_Y, BODY_HIDDEN_Y, _emerge_progress)
+
+	if _emerge_progress >= 0.45:
+		_set_hitbox_enabled(false)
+	else:
+		_check_overlapping_player()
+
+	if _emerge_progress >= 1.0:
+		submerged.emit()
+		_enter_underground(randf_range(underground_time_min, underground_time_max))
+
+
+func _enter_underground(duration: float) -> void:
+	state = WormState.UNDERGROUND
+	_state_timer = maxf(0.25, duration)
+	_set_hitbox_enabled(false)
+	if sand_mound:
+		sand_mound.visible = false
+		sand_mound.position = Vector2(0, -8)
+	if sand_particles:
+		sand_particles.emitting = false
+	if worm_sprite:
+		worm_sprite.visible = false
+		worm_sprite.position.y = BODY_HIDDEN_Y
+		worm_sprite.scale = Vector2.ONE
+
+
+func _enter_warning(emerge_x: float) -> void:
+	state = WormState.WARNING
+	_last_emerge_x = emerge_x
+	global_position = Vector2(clampf(emerge_x, territory_min_x + 22.0, territory_max_x - 22.0), surface_y)
+	_warning_elapsed = 0.0
+	_state_timer = clampf(warning_duration * randf_range(0.90, 1.15), 0.55, 1.10)
+	_set_hitbox_enabled(false)
+	if worm_sprite:
+		worm_sprite.visible = false
+		worm_sprite.position.y = BODY_HIDDEN_Y
+	if sand_mound:
+		sand_mound.visible = true
+		sand_mound.position = Vector2(0, -8)
+	if sand_particles:
+		sand_particles.emitting = true
+
+
+func _enter_emerging() -> void:
+	state = WormState.EMERGING
+	_emerge_progress = 0.0
+	_set_hitbox_enabled(false)
+
+	var p := _get_active_player()
+	if p:
+		facing_direction = 1 if p.global_position.x >= global_position.x else -1
+	else:
+		facing_direction = 1 if randf() > 0.5 else -1
+	_update_facing()
+
+	if worm_sprite:
+		worm_sprite.visible = true
+		worm_sprite.texture = _tex_crawl_1
+		worm_sprite.position.y = BODY_HIDDEN_Y
+		worm_sprite.scale = Vector2.ONE
+	if sand_mound:
+		sand_mound.visible = true
+		sand_mound.position = Vector2(0, -8)
+	if sand_particles:
+		sand_particles.emitting = true
+	emerged.emit(global_position)
+
+
+func _enter_crawling() -> void:
+	state = WormState.CRAWLING
+	_state_timer = randf_range(crawl_time_min, crawl_time_max)
+	_anim_timer = 0.0
+	_set_hitbox_enabled(true)
+	if worm_sprite:
+		worm_sprite.visible = true
+		worm_sprite.position.y = BODY_REST_Y
+	if sand_mound:
+		sand_mound.visible = false
+	if sand_particles:
+		sand_particles.emitting = false
+
+
+func _enter_submerging() -> void:
+	state = WormState.SUBMERGING
+	_emerge_progress = 0.0
+	if worm_sprite:
+		worm_sprite.scale = Vector2.ONE
+	if sand_mound:
+		sand_mound.visible = true
+		sand_mound.position = Vector2(0, -8)
+	if sand_particles:
+		sand_particles.emitting = true
+
+
+func _update_facing() -> void:
+	if worm_sprite:
+		worm_sprite.flip_h = (facing_direction < 0)
+
+
+func _set_hitbox_enabled(enabled: bool) -> void:
+	if kill_zone:
+		kill_zone.monitoring = enabled
+		kill_zone.monitorable = enabled
+	if kill_col:
+		kill_col.disabled = not enabled
+
+
+func _pick_safe_emergence_x() -> float:
+	var min_x: float = territory_min_x + 24.0
+	var max_x: float = territory_max_x - 24.0
+	if max_x <= min_x:
+		var mid: float = (territory_min_x + territory_max_x) * 0.5
+		return -9999.0 if _is_player_on_spot(mid, min_player_spawn_clearance) else mid
+
+	var candidates: Array[float] = []
+	for _i in range(14):
+		var cand: float = randf_range(min_x, max_x)
+		if not _is_player_on_spot(cand, min_player_spawn_clearance):
+			candidates.append(cand)
+
+	if not candidates.is_empty():
+		# Avoid spawning at the exact same spot twice if alternatives exist
+		if candidates.size() > 1 and _last_emerge_x > -9000.0:
+			var varied: Array[float] = []
+			for c in candidates:
+				if absf(c - _last_emerge_x) >= 32.0:
+					varied.append(c)
+			if not varied.is_empty():
+				return varied[randi() % varied.size()]
+		return candidates[randi() % candidates.size()]
+
+	# Deterministic sweep across territory in case random rolls missed a safe pocket
+	var step: float = 20.0
+	var x: float = min_x
+	while x <= max_x:
+		if not _is_player_on_spot(x, min_player_spawn_clearance):
+			candidates.append(x)
+		x += step
+	if not candidates.is_empty():
+		return candidates[randi() % candidates.size()]
+	return -9999.0
+
+
+func _is_player_on_spot(x_pos: float, clearance: float) -> bool:
+	var p := _get_active_player()
+	if not p:
+		return false
+	if "is_alive" in p and not p.is_alive:
+		return false
+	# Consider clearance primarily when player is near or above this sand level
+	var dy: float = absf(p.global_position.y - (surface_y - 16.0))
+	if dy > 140.0:
+		return false
+	return absf(p.global_position.x - x_pos) < clearance
+
+
+func _check_overlapping_player() -> void:
+	if not kill_zone or not kill_zone.monitoring:
+		return
+	for body in kill_zone.get_overlapping_bodies():
+		_on_kill_zone_body_entered(body)
+
+
+func _on_kill_zone_body_entered(body: Node2D) -> void:
+	if not is_emerged():
+		return
+	if body is BulletBetrayalPlayer or body.is_in_group("player"):
+		if "is_alive" in body and not body.is_alive:
+			return
+		if "is_invulnerable" in body and body.is_invulnerable:
+			return
+		if body.has_method("take_damage"):
+			body.take_damage(1)
+			player_killed_by_worm.emit()
+
+
+func _get_active_player() -> Node2D:
+	var tree := get_tree()
+	if not tree:
+		return null
+	var level_root: Node = get_parent().get_parent() if get_parent() else null
+	var best: Node2D = null
+	var best_dist: float = INF
+	for node in tree.get_nodes_in_group("player"):
+		if not is_instance_valid(node) or not (node is Node2D):
+			continue
+		var candidate := node as Node2D
+		if level_root and level_root.is_ancestor_of(candidate):
+			return candidate
+		var d: float = absf(candidate.global_position.x - global_position.x)
+		if d < best_dist:
+			best_dist = d
+			best = candidate
+	return best
+
+
+## Helper queries & controlled overrides for safe-position validation & unit tests
+func is_emerged() -> bool:
+	if state == WormState.CRAWLING:
+		return true
+	if state == WormState.EMERGING or state == WormState.SUBMERGING:
+		return kill_zone != null and kill_zone.monitoring
+	return false
+
+
+func is_underground() -> bool:
+	return state == WormState.UNDERGROUND
+
+
+func force_emerge_at(x_pos: float, dir: int = 1) -> void:
+	var clamped_x: float = clampf(x_pos, territory_min_x + 22.0, territory_max_x - 22.0)
+	global_position = Vector2(clamped_x, surface_y)
+	facing_direction = 1 if dir >= 0 else -1
+	_update_facing()
+	_enter_crawling()
+
+
+func force_submerge(wait_duration: float = 1.8) -> void:
+	_enter_underground(wait_duration)

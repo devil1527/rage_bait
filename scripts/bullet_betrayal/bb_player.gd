@@ -455,6 +455,16 @@ func _is_current_area_clear_of_hazards(pos: Vector2) -> bool:
 			if is_active and node.global_position.distance_to(pos) < 65.0:
 				return false
 
+	# Active emerged desert sandworms (safe threshold: 65px)
+	var worms := tree.get_nodes_in_group("desert_worms")
+	for node in worms:
+		if is_instance_valid(node) and node is Node2D:
+			var is_active_worm := true
+			if node.has_method("is_emerged"):
+				is_active_worm = node.is_emerged()
+			if is_active_worm and node.global_position.distance_to(pos) < 65.0:
+				return false
+
 	# Living enemy soldiers and explosive rushers (safe threshold: 50px)
 	var enemies := tree.get_nodes_in_group("enemies")
 	for node in enemies:

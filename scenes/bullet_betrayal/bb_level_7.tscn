@@ -1,0 +1,649 @@
+[gd_scene load_steps=34 format=3 uid="uid://bblevel7desertworms"]
+
+[ext_resource type="Script" path="res://scripts/bullet_betrayal/bb_level_7.gd" id="1_lev7"]
+[ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_player.tscn" id="2_play"]
+[ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_hud.tscn" id="3_hud"]
+[ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_enemy_soldier.tscn" id="4_esol"]
+[ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_extraction_beacon.tscn" id="5_beac"]
+[ext_resource type="PackedScene" uid="uid://bbdesertworm001" path="res://scenes/bullet_betrayal/bb_desert_worm.tscn" id="6_worm"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_desert_dunes_far.png" id="7_dfar"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_desert_dunes_mid.png" id="8_dmid"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_desert_sand_top.png" id="9_dsand"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_desert_subsurface.png" id="10_drock"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_sandbag.png" id="11_sbag"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_crate.png" id="12_crate"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_sign_danger.png" id="13_sign"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_bunker.png" id="14_bunk"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_platform_wood.png" id="15_pwood"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_watchtower.png" id="16_towr"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_desert_cactus.png" id="17_cact"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_desert_rock.png" id="18_drok"]
+
+[sub_resource type="Gradient" id="Gradient_sky"]
+offsets = PackedFloat32Array(0, 0.25, 0.50, 0.72, 1)
+colors = PackedColorArray(0.15, 0.08, 0.17, 1, 0.42, 0.16, 0.18, 1, 0.78, 0.34, 0.18, 1, 0.95, 0.58, 0.26, 1, 0.85, 0.46, 0.22, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_sky"]
+gradient = SubResource("Gradient_sky")
+width = 16
+height = 256
+fill_to = Vector2(0, 1)
+
+[sub_resource type="Gradient" id="Gradient_sun"]
+offsets = PackedFloat32Array(0, 0.22, 0.26, 0.58, 1)
+colors = PackedColorArray(1, 0.92, 0.68, 0.9, 1, 0.80, 0.40, 0.82, 0.98, 0.56, 0.22, 0.36, 0.96, 0.44, 0.18, 0.10, 0.96, 0.44, 0.18, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_sun"]
+gradient = SubResource("Gradient_sun")
+width = 160
+height = 160
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
+size = Vector2(40, 600)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground1"]
+size = Vector2(480, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground2"]
+size = Vector2(440, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground3"]
+size = Vector2(160, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground4"]
+size = Vector2(420, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground5"]
+size = Vector2(480, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground6"]
+size = Vector2(120, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground7"]
+size = Vector2(300, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground8"]
+size = Vector2(390, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat_140"]
+size = Vector2(140, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_plat_160"]
+size = Vector2(160, 16)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_banner"]
+bg_color = Color(0.14, 0.08, 0.05, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.96, 0.55, 0.25, 0.95)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="BulletBetrayalLevel7" type="Node2D"]
+script = ExtResource("1_lev7")
+
+[node name="DesertSkyCanvas" type="CanvasLayer" parent="."]
+layer = -20
+
+[node name="SkyGradient" type="TextureRect" parent="DesertSkyCanvas"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("GradientTexture2D_sky")
+expand_mode = 1
+stretch_mode = 0
+
+[node name="ParallaxBackground" type="ParallaxBackground" parent="."]
+layer = -10
+
+[node name="SunLayer" type="ParallaxLayer" parent="ParallaxBackground"]
+motion_scale = Vector2(0.04, 1)
+
+[node name="DesertSun" type="Sprite2D" parent="ParallaxBackground/SunLayer"]
+position = Vector2(540, 212)
+texture = SubResource("GradientTexture2D_sun")
+
+[node name="FarMesas" type="ParallaxLayer" parent="ParallaxBackground"]
+modulate = Color(0.95, 0.85, 0.82, 1)
+motion_scale = Vector2(0.18, 1)
+motion_mirroring = Vector2(1024, 0)
+
+[node name="MesaTile1" type="Sprite2D" parent="ParallaxBackground/FarMesas"]
+position = Vector2(256, 268)
+texture = ExtResource("7_dfar")
+
+[node name="MesaTile2" type="Sprite2D" parent="ParallaxBackground/FarMesas"]
+position = Vector2(768, 268)
+texture = ExtResource("7_dfar")
+
+[node name="MesaBaseFill" type="ColorRect" parent="ParallaxBackground/FarMesas"]
+offset_top = 346.0
+offset_right = 1024.0
+offset_bottom = 720.0
+mouse_filter = 2
+color = Color(0.502, 0.275, 0.157, 1)
+
+[node name="MidDunes" type="ParallaxLayer" parent="ParallaxBackground"]
+motion_scale = Vector2(0.42, 1)
+motion_mirroring = Vector2(1024, 0)
+
+[node name="DuneTile1" type="Sprite2D" parent="ParallaxBackground/MidDunes"]
+position = Vector2(256, 330)
+texture = ExtResource("8_dmid")
+
+[node name="DuneTile2" type="Sprite2D" parent="ParallaxBackground/MidDunes"]
+position = Vector2(768, 330)
+texture = ExtResource("8_dmid")
+
+[node name="DuneBaseFill" type="ColorRect" parent="ParallaxBackground/MidDunes"]
+offset_top = 392.0
+offset_right = 1024.0
+offset_bottom = 740.0
+mouse_filter = 2
+color = Color(0.588, 0.345, 0.165, 1)
+
+[node name="EnvironmentProps" type="Node2D" parent="."]
+
+[node name="DesertRock1" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(215, 401)
+texture = ExtResource("18_drok")
+
+[node name="Cactus1" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(300, 392)
+texture = ExtResource("17_cact")
+
+[node name="Sandbag1" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(380, 398)
+texture = ExtResource("11_sbag")
+
+[node name="Crates1" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(425, 395)
+texture = ExtResource("12_crate")
+
+[node name="Sign1_WormWarning" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(460, 395)
+texture = ExtResource("13_sign")
+
+[node name="Watchtower1" type="Sprite2D" parent="EnvironmentProps"]
+z_index = -1
+position = Vector2(700, 368)
+texture = ExtResource("16_towr")
+
+[node name="DesertRock2" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(825, 391)
+texture = ExtResource("18_drok")
+
+[node name="Cactus2" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(955, 362)
+texture = ExtResource("17_cact")
+
+[node name="Watchtower2" type="Sprite2D" parent="EnvironmentProps"]
+z_index = -1
+position = Vector2(1290, 378)
+texture = ExtResource("16_towr")
+
+[node name="Sandbag2" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(1380, 398)
+texture = ExtResource("11_sbag")
+
+[node name="Crates2" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(1430, 395)
+texture = ExtResource("12_crate")
+
+[node name="Sign2_Caution" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(1600, 360)
+texture = ExtResource("13_sign")
+
+[node name="Watchtower3" type="Sprite2D" parent="EnvironmentProps"]
+z_index = -1
+position = Vector2(1810, 343)
+texture = ExtResource("16_towr")
+
+[node name="Sandbag3" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(1885, 363)
+texture = ExtResource("11_sbag")
+
+[node name="Sign3_Warn" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(2080, 380)
+texture = ExtResource("13_sign")
+
+[node name="DesertRock3" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(2135, 386)
+texture = ExtResource("18_drok")
+
+[node name="Cactus3" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(2215, 392)
+texture = ExtResource("17_cact")
+
+[node name="Crates3" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(2510, 395)
+texture = ExtResource("12_crate")
+
+[node name="BunkerCheckpoint" type="Sprite2D" parent="EnvironmentProps"]
+z_index = -1
+position = Vector2(2565, 389)
+texture = ExtResource("14_bunk")
+
+[node name="Sandbag4" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(2640, 398)
+texture = ExtResource("11_sbag")
+
+[node name="DesertRock4" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(2690, 401)
+texture = ExtResource("18_drok")
+
+[node name="Platforms" type="Node2D" parent="."]
+
+[node name="LeftWall" type="StaticBody2D" parent="Platforms"]
+position = Vector2(-20, 200)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/LeftWall"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="RightWall" type="StaticBody2D" parent="Platforms"]
+position = Vector2(2880, 200)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/RightWall"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="Ground1_Entry" type="StaticBody2D" parent="Platforms"]
+position = Vector2(240, 460)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Ground1_Entry"]
+shape = SubResource("RectangleShape2D_ground1")
+
+[node name="SandTop" type="Sprite2D" parent="Platforms/Ground1_Entry"]
+texture_repeat = 2
+position = Vector2(0, -34)
+texture = ExtResource("9_dsand")
+region_enabled = true
+region_rect = Rect2(0, 0, 480, 32)
+
+[node name="SandRock" type="Sprite2D" parent="Platforms/Ground1_Entry"]
+texture_repeat = 2
+position = Vector2(0, 62)
+texture = ExtResource("10_drock")
+region_enabled = true
+region_rect = Rect2(0, 0, 480, 160)
+
+[node name="Ground2_WormIntro" type="StaticBody2D" parent="Platforms"]
+position = Vector2(700, 450)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Ground2_WormIntro"]
+shape = SubResource("RectangleShape2D_ground2")
+
+[node name="SandTop" type="Sprite2D" parent="Platforms/Ground2_WormIntro"]
+texture_repeat = 2
+position = Vector2(0, -34)
+texture = ExtResource("9_dsand")
+region_enabled = true
+region_rect = Rect2(0, 0, 440, 32)
+
+[node name="SandRock" type="Sprite2D" parent="Platforms/Ground2_WormIntro"]
+texture_repeat = 2
+position = Vector2(0, 62)
+texture = ExtResource("10_drock")
+region_enabled = true
+region_rect = Rect2(0, 0, 440, 160)
+
+[node name="Platform1_Refuge" type="StaticBody2D" parent="Platforms"]
+position = Vector2(700, 336)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform1_Refuge"]
+shape = SubResource("RectangleShape2D_plat_140")
+
+[node name="Wood" type="Sprite2D" parent="Platforms/Platform1_Refuge"]
+texture_repeat = 2
+texture = ExtResource("15_pwood")
+region_enabled = true
+region_rect = Rect2(0, 0, 140, 20)
+
+[node name="Ground3_RidgeSafe" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1000, 430)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Ground3_RidgeSafe"]
+shape = SubResource("RectangleShape2D_ground3")
+
+[node name="SandTop" type="Sprite2D" parent="Platforms/Ground3_RidgeSafe"]
+texture_repeat = 2
+position = Vector2(0, -34)
+texture = ExtResource("9_dsand")
+region_enabled = true
+region_rect = Rect2(0, 0, 160, 32)
+
+[node name="SandRock" type="Sprite2D" parent="Platforms/Ground3_RidgeSafe"]
+texture_repeat = 2
+position = Vector2(0, 62)
+texture = ExtResource("10_drock")
+region_enabled = true
+region_rect = Rect2(0, 0, 160, 160)
+
+[node name="Ground4_Basin" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1290, 460)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Ground4_Basin"]
+shape = SubResource("RectangleShape2D_ground4")
+
+[node name="SandTop" type="Sprite2D" parent="Platforms/Ground4_Basin"]
+texture_repeat = 2
+position = Vector2(0, -34)
+texture = ExtResource("9_dsand")
+region_enabled = true
+region_rect = Rect2(0, 0, 420, 32)
+
+[node name="SandRock" type="Sprite2D" parent="Platforms/Ground4_Basin"]
+texture_repeat = 2
+position = Vector2(0, 62)
+texture = ExtResource("10_drock")
+region_enabled = true
+region_rect = Rect2(0, 0, 420, 160)
+
+[node name="Platform2_Overpass" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1290, 346)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform2_Overpass"]
+shape = SubResource("RectangleShape2D_plat_160")
+
+[node name="Wood" type="Sprite2D" parent="Platforms/Platform2_Overpass"]
+texture_repeat = 2
+texture = ExtResource("15_pwood")
+region_enabled = true
+region_rect = Rect2(0, 0, 160, 20)
+
+[node name="Ground5_HighPlateau" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1810, 425)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Ground5_HighPlateau"]
+shape = SubResource("RectangleShape2D_ground5")
+
+[node name="SandTop" type="Sprite2D" parent="Platforms/Ground5_HighPlateau"]
+texture_repeat = 2
+position = Vector2(0, -34)
+texture = ExtResource("9_dsand")
+region_enabled = true
+region_rect = Rect2(0, 0, 480, 32)
+
+[node name="SandRock" type="Sprite2D" parent="Platforms/Ground5_HighPlateau"]
+texture_repeat = 2
+position = Vector2(0, 62)
+texture = ExtResource("10_drock")
+region_enabled = true
+region_rect = Rect2(0, 0, 480, 160)
+
+[node name="Platform3_SafeRefuge" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1810, 311)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform3_SafeRefuge"]
+shape = SubResource("RectangleShape2D_plat_140")
+
+[node name="Wood" type="Sprite2D" parent="Platforms/Platform3_SafeRefuge"]
+texture_repeat = 2
+texture = ExtResource("15_pwood")
+region_enabled = true
+region_rect = Rect2(0, 0, 140, 20)
+
+[node name="Ground6_Descent" type="StaticBody2D" parent="Platforms"]
+position = Vector2(2110, 445)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Ground6_Descent"]
+shape = SubResource("RectangleShape2D_ground6")
+
+[node name="SandTop" type="Sprite2D" parent="Platforms/Ground6_Descent"]
+texture_repeat = 2
+position = Vector2(0, -34)
+texture = ExtResource("9_dsand")
+region_enabled = true
+region_rect = Rect2(0, 0, 120, 32)
+
+[node name="SandRock" type="Sprite2D" parent="Platforms/Ground6_Descent"]
+texture_repeat = 2
+position = Vector2(0, 62)
+texture = ExtResource("10_drock")
+region_enabled = true
+region_rect = Rect2(0, 0, 120, 160)
+
+[node name="Ground7_WormTrough" type="StaticBody2D" parent="Platforms"]
+position = Vector2(2320, 460)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Ground7_WormTrough"]
+shape = SubResource("RectangleShape2D_ground7")
+
+[node name="SandTop" type="Sprite2D" parent="Platforms/Ground7_WormTrough"]
+texture_repeat = 2
+position = Vector2(0, -34)
+texture = ExtResource("9_dsand")
+region_enabled = true
+region_rect = Rect2(0, 0, 300, 32)
+
+[node name="SandRock" type="Sprite2D" parent="Platforms/Ground7_WormTrough"]
+texture_repeat = 2
+position = Vector2(0, 62)
+texture = ExtResource("10_drock")
+region_enabled = true
+region_rect = Rect2(0, 0, 300, 160)
+
+[node name="Ground8_Runway" type="StaticBody2D" parent="Platforms"]
+position = Vector2(2665, 460)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Ground8_Runway"]
+shape = SubResource("RectangleShape2D_ground8")
+
+[node name="SandTop" type="Sprite2D" parent="Platforms/Ground8_Runway"]
+texture_repeat = 2
+position = Vector2(0, -34)
+texture = ExtResource("9_dsand")
+region_enabled = true
+region_rect = Rect2(0, 0, 390, 32)
+
+[node name="SandRock" type="Sprite2D" parent="Platforms/Ground8_Runway"]
+texture_repeat = 2
+position = Vector2(0, 62)
+texture = ExtResource("10_drock")
+region_enabled = true
+region_rect = Rect2(0, 0, 390, 160)
+
+[node name="Worms" type="Node2D" parent="."]
+
+[node name="Worm1_Intro" parent="Worms" instance=ExtResource("6_worm")]
+position = Vector2(700, 400)
+territory_min_x = 520.0
+territory_max_x = 880.0
+surface_y = 400.0
+crawl_speed = 78.0
+underground_time_min = 1.5
+underground_time_max = 2.6
+initial_delay = 0.35
+
+[node name="Worm2_Basin" parent="Worms" instance=ExtResource("6_worm")]
+position = Vector2(1290, 410)
+territory_min_x = 1115.0
+territory_max_x = 1465.0
+surface_y = 410.0
+crawl_speed = 86.0
+underground_time_min = 1.6
+underground_time_max = 3.1
+initial_delay = 1.1
+
+[node name="Worm3_PlateauWest" parent="Worms" instance=ExtResource("6_worm")]
+position = Vector2(1690, 375)
+territory_min_x = 1600.0
+territory_max_x = 1825.0
+surface_y = 375.0
+crawl_speed = 84.0
+underground_time_min = 1.7
+underground_time_max = 3.2
+initial_delay = 0.7
+
+[node name="Worm4_PlateauEast" parent="Worms" instance=ExtResource("6_worm")]
+position = Vector2(1930, 375)
+territory_min_x = 1815.0
+territory_max_x = 2020.0
+surface_y = 375.0
+crawl_speed = 90.0
+underground_time_min = 1.8
+underground_time_max = 3.3
+initial_delay = 1.9
+
+[node name="Worm5_Gauntlet" parent="Worms" instance=ExtResource("6_worm")]
+position = Vector2(2320, 410)
+territory_min_x = 2200.0
+territory_max_x = 2440.0
+surface_y = 410.0
+crawl_speed = 96.0
+underground_time_min = 1.4
+underground_time_max = 2.7
+initial_delay = 0.9
+
+[node name="SpawnPoint" type="Marker2D" parent="."]
+position = Vector2(120, 394)
+
+[node name="Player" parent="." instance=ExtResource("2_play")]
+position = Vector2(120, 394)
+
+[node name="Enemies" type="Node2D" parent="."]
+
+[node name="Enemy1_OutpostScout" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(640, 383)
+patrol_distance = 30.0
+
+[node name="Enemy2_RefugeGuard" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(700, 311)
+patrol_distance = 0.0
+
+[node name="Enemy3_RidgeRifleman" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1010, 363)
+patrol_distance = 25.0
+
+[node name="Enemy4_BasinTrooper" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1210, 393)
+patrol_distance = 30.0
+
+[node name="Enemy5_BasinGunner" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1465, 393)
+patrol_distance = 0.0
+
+[node name="Enemy6_OverpassSentry" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1290, 321)
+patrol_distance = 25.0
+
+[node name="Enemy7_PlateauScout" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1715, 358)
+patrol_distance = 30.0
+
+[node name="Enemy8_PlateauSniper" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1955, 358)
+patrol_distance = 25.0
+
+[node name="Enemy9_TrenchTrooper" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(2340, 393)
+patrol_distance = 25.0
+
+[node name="Enemy10_StrongholdCommander" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(2610, 393)
+patrol_distance = 20.0
+
+[node name="ExtractionBeacon" parent="." instance=ExtResource("5_beac")]
+position = Vector2(2760, 378)
+required_enemies = 10
+
+[node name="HUD" parent="." instance=ExtResource("3_hud")]
+current_stage_id = 7
+
+[node name="IntroBanner" type="Control" parent="HUD"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="Panel" parent="HUD/IntroBanner"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -230.0
+offset_top = -65.0
+offset_right = 230.0
+offset_bottom = 65.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_banner")
+
+[node name="VBox" type="VBoxContainer" parent="HUD/IntroBanner/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="WorldTitle" type="Label" parent="HUD/IntroBanner/Panel/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.96, 0.55, 0.25, 1)
+theme_override_font_sizes/font_size = 18
+text = "WORLD 2 — DESERT OUTPOST"
+horizontal_alignment = 1
+
+[node name="StageTitle" type="Label" parent="HUD/IntroBanner/Panel/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.9, 1)
+theme_override_font_sizes/font_size = 14
+text = "STAGE 7: DESERT WORMS"
+horizontal_alignment = 1
+
+[node name="Briefing" type="Label" parent="HUD/IntroBanner/Panel/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.82, 0.9)
+theme_override_font_sizes/font_size = 11
+text = "Subterranean sandworms strike from disturbed sand mounds. Watch the ground and eliminate all 10 scouts."
+horizontal_alignment = 1

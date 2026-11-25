@@ -59,6 +59,7 @@ const STAGE_TITLES: Dictionary = {
 	4: "WORLD 1-4: THE HUNTING MINES",
 	5: "WORLD 1-5: OPERATION LAST STAND",
 	6: "WORLD 2-1: DUNE PATROL",
+	7: "WORLD 2-2: DESERT WORMS",
 }
 
 @export var current_stage_id: int = 1:
@@ -425,12 +426,16 @@ func _on_revive_reward_granted(expected_run_id: int = -1) -> void:
 		_update_death_ad_status()
 		return
 
+	if not _player_ref or not is_instance_valid(_player_ref) or _player_ref.is_alive:
+		get_tree().paused = false
+		death_overlay.visible = false
+		return
+
 	# Revive player authoritatively with 1 life and 10 bullets
 	if GameManager:
 		GameManager.revives_used_this_run += 1
 
-	if _player_ref:
-		_player_ref.revive()
+	_player_ref.revive()
 
 	death_overlay.visible = false
 	if death_revive_btn:
@@ -453,7 +458,15 @@ func show_victory(ammo_remaining: int, earned_stars: int = 3) -> void:
 	if victory_title:
 		victory_title.text = "STAGE %d CLEARED!" % current_stage_id
 	if victory_stats_label:
-		var stars_str := "★ ★ ★  (PERFECT)" if earned_stars == 3 else ("★ ★ ☆  (REVIVED)" if earned_stars == 2 else "★ ☆ ☆")
+		var saved_best: int = SaveManager.get_bb_level_stars(current_stage_id) if SaveManager else 0
+		var display_stars: int = maxi(earned_stars, saved_best)
+		var stars_str := "★ ★ ★  (PERFECT)"
+		if display_stars == 3 and earned_stars < 3:
+			stars_str = "★ ★ ★  (BEST SAVED)"
+		elif display_stars == 2:
+			stars_str = "★ ★ ☆  (REVIVED)"
+		elif display_stars < 2:
+			stars_str = "★ ☆ ☆"
 		victory_stats_label.text = "%s\nRATING: %s\nAMMO REMAINING: %d ROUNDS" % [stage_clear_subtitle, stars_str, ammo_remaining]
 	if victory_message_modal:
 		victory_message_modal.visible = false
@@ -486,6 +499,11 @@ func _on_next_stage_pressed() -> void:
 			return
 		get_tree().paused = false
 		get_tree().change_scene_to_file("res://scenes/bullet_betrayal/bb_level_6.tscn")
+	elif current_stage_id == 6:
+		if get_tree().current_scene and (get_tree().current_scene.name == "BulletBetrayalTestRunner" or get_tree().current_scene.name == "TestRunner"):
+			return
+		get_tree().paused = false
+		get_tree().change_scene_to_file("res://scenes/bullet_betrayal/bb_level_7.tscn")
 	else:
 		if victory_message_modal:
 			if victory_modal_title:

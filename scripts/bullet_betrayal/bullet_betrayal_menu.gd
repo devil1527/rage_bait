@@ -14,6 +14,8 @@ const LEVEL_3_SCENE: String = "res://scenes/bullet_betrayal/bb_level_3.tscn"
 const LEVEL_4_SCENE: String = "res://scenes/bullet_betrayal/bb_level_4.tscn"
 const LEVEL_5_SCENE: String = "res://scenes/bullet_betrayal/bb_level_5.tscn"
 const LEVEL_6_SCENE: String = "res://scenes/bullet_betrayal/bb_level_6.tscn"
+const LEVEL_7_SCENE: String = "res://scenes/bullet_betrayal/bb_level_7.tscn"
+const HIGHEST_IMPLEMENTED_STAGE: int = 7
 const ARCADE_MAIN_MENU: String = "res://scenes/ui/main_menu.tscn"
 
 @onready var back_button: Button = $MarginContainer/VBox/HeaderBar/BackButton
@@ -82,7 +84,7 @@ const STAGE_NAMES: Dictionary = {
 	4: "The Hunting Mines",
 	5: "Operation Last Stand",
 	6: "Dune Patrol",
-	7: "Oasis Outpost",
+	7: "Desert Worms",
 	8: "Canyon Ambush",
 	9: "Fuel Station",
 	10: "Desert Command",
@@ -415,7 +417,7 @@ func _refresh_tile_states() -> void:
 		var is_unlocked: bool = SaveManager.is_bb_level_unlocked(lvl_id) if SaveManager else (lvl_id == 1)
 		var is_completed: bool = SaveManager.is_bb_level_completed(lvl_id) if SaveManager else false
 		var star_rating: int = SaveManager.get_bb_level_stars(lvl_id) if SaveManager else 0
-		var is_implemented: bool = (lvl_id <= 5)
+		var is_implemented: bool = (lvl_id <= HIGHEST_IMPLEMENTED_STAGE)
 		var world_id: int = int((lvl_id - 1) / 5) + 1
 
 		if not is_implemented:
@@ -524,7 +526,7 @@ func _on_level_tile_pressed(level_id: int) -> void:
 	if _is_dragging or now < _drag_suppress_click_until:
 		return
 
-	if level_id > 6:
+	if level_id > HIGHEST_IMPLEMENTED_STAGE:
 		AudioManager.play_sfx("warning")
 		modal_title.text = "STAGE %d IN PROGRESS" % level_id
 		var stage_name: String = STAGE_NAMES.get(level_id, "Stage %d" % level_id)
@@ -554,6 +556,8 @@ func _on_level_tile_pressed(level_id: int) -> void:
 		get_tree().change_scene_to_file(LEVEL_5_SCENE)
 	elif level_id == 6:
 		get_tree().change_scene_to_file(LEVEL_6_SCENE)
+	elif level_id == 7:
+		get_tree().change_scene_to_file(LEVEL_7_SCENE)
 
 func _on_back_pressed() -> void:
 	AudioManager.play_sfx("click")

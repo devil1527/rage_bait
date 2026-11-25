@@ -159,8 +159,74 @@ def create_desert_props() -> None:
 	img_r.save(f"{SPRITES_DIR}/bb_desert_rock.png")
 
 
+def create_desert_worm_sprites() -> None:
+	# 7. Disturbed Erupting Sand Mound (44x16) — bottom flush at y=15 (+8 from center)
+	img_mound = Image.new("RGBA", (44, 16), (0, 0, 0, 0))
+	dm = ImageDraw.Draw(img_mound)
+	# Irregular sandy disturbance mound with dark cracked burrow opening
+	dm.polygon([(2, 15), (7, 9), (14, 7), (22, 6), (30, 8), (37, 10), (42, 15)], fill=(196, 134, 68, 255), outline=(102, 56, 24, 255))
+	dm.polygon([(9, 15), (14, 10), (22, 9), (30, 10), (34, 15)], fill=(148, 86, 40, 255))
+	# Dark burrow crack & sunlit sand specks
+	dm.rectangle([15, 11, 28, 15], fill=(78, 38, 18, 255))
+	dm.line([(8, 9), (14, 8), (22, 7), (29, 9)], fill=(248, 210, 136, 255))
+	for sx, sy in [(5, 5), (12, 3), (21, 2), (31, 4), (38, 6)]:
+		dm.rectangle([sx, sy, sx + 1, sy + 1], fill=(246, 206, 130, 255))
+	img_mound.save(f"{SPRITES_DIR}/bb_desert_sand_mound.png")
+
+	# 8. Desert Sandworm Crawl Frames (44x22, facing right) — bottom at y=21 (+11 from center)
+	for frame in (1, 2):
+		img_w = Image.new("RGBA", (44, 22), (0, 0, 0, 0))
+		dw = ImageDraw.Draw(img_w)
+		# Segment layout (tail -> mid -> arch -> neck -> armored head)
+		if frame == 1:
+			segs = [
+				(6, 17, 4),    # tail tip
+				(12, 15, 5),   # seg 1
+				(18, 12, 6),   # high arch
+				(25, 14, 6),   # mid body
+				(32, 13, 7),   # armored head
+			]
+			jaw_spread = 3
+		else:
+			segs = [
+				(8, 16, 4),    # compressed tail forward
+				(14, 13, 5),   # shifted arch
+				(21, 11, 6),   # peak arch
+				(27, 14, 6),   # mid body
+				(33, 13, 7),   # head lunging slightly
+			]
+			jaw_spread = 4
+
+		# Draw body segments back-to-front with crisp dark carapace outline
+		for idx, (cx, cy, r) in enumerate(segs):
+			# Keep bottom resting cleanly at <= y=21
+			y_bot = min(21, cy + r)
+			y_top = cy - r
+			box = [cx - r, y_top, cx + r, y_bot]
+			col_fill = (168, 34, 58, 255) if idx % 2 == 0 else (196, 48, 72, 255)
+			if idx == len(segs) - 1:
+				col_fill = (138, 28, 52, 255)  # darker armored head plate
+			dw.ellipse(box, fill=col_fill, outline=(36, 12, 34, 255), width=1)
+			# Bright ridge highlight along upper spine
+			dw.line([(cx - r + 2, y_top + 1), (cx + r - 2, y_top + 1)], fill=(238, 112, 92, 255))
+			# Glowing amber-orange underbelly armor segment
+			dw.line([(cx - r + 2, y_bot - 2), (cx + r - 2, y_bot - 2)], fill=(242, 152, 48, 255))
+
+		# Head details on rightmost segment
+		hx, hy, hr = segs[-1]
+		# Glowing predator eyes (bright yellow-red)
+		dw.rectangle([hx + 1, hy - 3, hx + 3, hy - 1], fill=(255, 60, 40, 255))
+		dw.point((hx + 2, hy - 2), fill=(255, 240, 140, 255))
+		# Sharp ivory mandibles pointing forward-right
+		dw.polygon([(hx + hr - 1, hy - 2), (hx + hr + 4, hy - jaw_spread), (hx + hr + 1, hy)], fill=(255, 248, 224, 255), outline=(64, 24, 34, 255))
+		dw.polygon([(hx + hr - 1, hy + 2), (hx + hr + 4, hy + jaw_spread), (hx + hr + 1, hy)], fill=(255, 248, 224, 255), outline=(64, 24, 34, 255))
+
+		img_w.save(f"{SPRITES_DIR}/bb_desert_worm_crawl_{frame}.png")
+
+
 if __name__ == "__main__":
 	create_desert_terrain_tiles()
 	create_desert_parallax_layers()
 	create_desert_props()
-	print("Generated refined desert sprites.")
+	create_desert_worm_sprites()
+	print("Generated refined desert sprites and sandworm sprites.")
