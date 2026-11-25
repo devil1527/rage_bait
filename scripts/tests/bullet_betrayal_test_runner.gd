@@ -1992,7 +1992,86 @@ func test_level_6_dune_patrol() -> void:
 	beacon.update_target_progress(10, 10)
 	assert_true(beacon.is_unlocked, "Extraction beacon unlocked at 10/10 kills")
 
-	# 10. Menu Navigation & Loading
+	# 10. Visual Alignment, Proportions, Parallax & Camera Framing Verification
+	assert_true(level.get_node_or_null("DesertSkyCanvas/SkyGradient") != null, "Level 6 has dedicated DesertSkyCanvas sky gradient")
+	assert_true(level.get_node_or_null("ParallaxBackground/FarMesas") != null, "Level 6 has layered FarMesas parallax horizon")
+	assert_true(level.get_node_or_null("ParallaxBackground/MidDunes") != null, "Level 6 has layered MidDunes parallax depth")
+	assert_true(level.get_node_or_null("ParallaxDunes") == null, "Legacy broken ParallaxDunes green bush layer removed")
+
+	var cam6: Camera2D = p.get_node_or_null("Camera2D")
+	assert_true(cam6 != null, "Player Camera2D exists in Level 6")
+	if cam6:
+		assert_eq(cam6.zoom.x, cam6.zoom.y, "Camera2D maintains uniform 1:1 aspect zoom without stretching")
+		assert_true(cam6.zoom.x >= 1.2, "Camera2D zoom (%s) frames desert terrain & characters proportionally" % cam6.zoom.x)
+		assert_true(cam6.limit_top >= 60 and cam6.limit_bottom <= 520, "Camera vertical limits tighten sky ratio (%d..%d)" % [cam6.limit_top, cam6.limit_bottom])
+
+	# Verify every Ground* and Platform* visual sprite matches its exact CollisionShape2D width
+	for child in platforms_node.get_children():
+		if not (child is StaticBody2D):
+			continue
+		var col := child.get_node_or_null("CollisionShape2D") as CollisionShape2D
+		if not col or not (col.shape is RectangleShape2D):
+			continue
+		var rect_size: Vector2 = (col.shape as RectangleShape2D).size
+		if child.name.begins_with("Ground"):
+			var sand_top := child.get_node_or_null("SandTop") as Sprite2D
+			var sand_rock := child.get_node_or_null("SandRock") as Sprite2D
+			assert_true(sand_top != null and sand_top.region_enabled, "%s has tiled SandTop crust sprite" % child.name)
+			assert_true(sand_rock != null and sand_rock.region_enabled, "%s has tiled SandRock subsurface sprite" % child.name)
+			if sand_top:
+				assert_eq(sand_top.region_rect.size.x, rect_size.x, "%s SandTop width matches CollisionShape2D width" % child.name)
+			if sand_rock:
+				assert_eq(sand_rock.region_rect.size.x, rect_size.x, "%s SandRock width matches CollisionShape2D width" % child.name)
+		elif child.name.begins_with("Platform_"):
+			var wood := child.get_node_or_null("Wood") as Sprite2D
+			assert_true(wood != null and wood.region_enabled, "%s has tiled Wood platform sprite" % child.name)
+			if wood:
+				assert_eq(wood.region_rect.size.x, rect_size.x, "%s Wood sprite width matches CollisionShape2D width" % child.name)
+
+	# Verify every enemy stands flush on a ground/platform surface (zero sinking/floating)
+	for e in enemies:
+		var enemy_node := e as Node2D
+		var col_bottom: float = enemy_node.global_position.y + 17.0
+		var grounded := false
+		for child in platforms_node.get_children():
+			if child is StaticBody2D and (child.name.begins_with("Ground") or child.name.begins_with("Platform_")):
+				var col := child.get_node_or_null("CollisionShape2D") as CollisionShape2D
+				if col and col.shape is RectangleShape2D:
+					var half: Vector2 = (col.shape as RectangleShape2D).size * 0.5
+					var left_x: float = child.global_position.x - half.x
+					var right_x: float = child.global_position.x + half.x
+					var top_y: float = child.global_position.y - half.y
+					if enemy_node.global_position.x >= left_x and enemy_node.global_position.x <= right_x:
+						if absf(col_bottom - top_y) <= 1.0:
+							grounded = true
+							break
+		assert_true(grounded, "%s col_bot (%.1f) sits flush on supporting terrain top" % [enemy_node.name, col_bottom])
+
+	# Verify all EnvironmentProps sit flush on ground surfaces (zero floating/sunken props)
+	var props_node: Node2D = level.get_node_or_null("EnvironmentProps")
+	assert_true(props_node != null, "EnvironmentProps container exists")
+	if props_node:
+		for prop in props_node.get_children():
+			if prop is Sprite2D and prop.texture:
+				var tex_h: float = float(prop.texture.get_height())
+				var half_h: float = tex_h * 0.5
+				if prop.texture.resource_path.ends_with("bb_crate.png"):
+					half_h = 15.0 # 1px transparent bottom margin in crate PNG
+				var vis_bot: float = prop.global_position.y + half_h
+				var prop_grounded := false
+				for child in platforms_node.get_children():
+					if child is StaticBody2D and child.name.begins_with("Ground"):
+						var col := child.get_node_or_null("CollisionShape2D") as CollisionShape2D
+						if col and col.shape is RectangleShape2D:
+							var half: Vector2 = (col.shape as RectangleShape2D).size * 0.5
+							if prop.global_position.x >= child.global_position.x - half.x and prop.global_position.x <= child.global_position.x + half.x:
+								var top_y: float = child.global_position.y - half.y
+								if absf(vis_bot - top_y) <= 1.0:
+									prop_grounded = true
+									break
+				assert_true(prop_grounded, "Prop %s bottom (%.1f) sits flush on ground top" % [prop.name, vis_bot])
+
+	# 11. Menu Navigation & Loading
 	var menu_scene: PackedScene = load("res://scenes/bullet_betrayal/bullet_betrayal_menu.tscn")
 	assert_true(menu_scene != null, "Menu scene loads")
 	var menu: BulletBetrayalMenu = menu_scene.instantiate()

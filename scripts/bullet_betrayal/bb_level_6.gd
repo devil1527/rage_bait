@@ -43,14 +43,13 @@ func _ready() -> void:
 		hud.revive_requested.connect(_on_player_revived)
 		hud.update_targets(_enemies_eliminated, TOTAL_REQUIRED_ENEMIES)
 
-	# Configure Level 6 camera boundary to encompass full desert battlefield
+	# Configure Level 6 camera framing & boundaries across desktop and mobile aspects
+	_update_camera_framing()
+	if get_viewport() and not get_viewport().size_changed.is_connected(_update_camera_framing):
+		get_viewport().size_changed.connect(_update_camera_framing)
 	if player:
 		var cam: Camera2D = player.get_node_or_null("Camera2D")
 		if cam:
-			cam.limit_left = 0
-			cam.limit_right = 2860
-			cam.limit_top = 0
-			cam.limit_bottom = 540
 			cam.reset_smoothing()
 
 	# Bind Extraction Beacon
@@ -64,6 +63,31 @@ func _ready() -> void:
 
 	# Intro Banner animation
 	_animate_intro_banner()
+
+func _update_camera_framing() -> void:
+	if not player:
+		return
+	var cam: Camera2D = player.get_node_or_null("Camera2D")
+	if not cam:
+		return
+	cam.limit_left = 0
+	cam.limit_right = 2860
+	cam.limit_top = 80
+	cam.limit_bottom = 508
+
+	var vp := get_viewport()
+	var vis_size: Vector2 = vp.get_visible_rect().size if vp else Vector2(960.0, 540.0)
+	if vis_size.x <= 0.0 or vis_size.y <= 0.0:
+		vis_size = Vector2(960.0, 540.0)
+
+	# Maintain ~360px visible vertical world space (1.50x zoom at 540p) so characters,
+	# dunes and obstacles stand out clearly while eliminating excess blank sky.
+	# Guard minimum horizontal sightline (>= 640px) on narrower/taller 4:3 displays.
+	var target_vis_height: float = 360.0
+	var base_zoom: float = clampf(vis_size.y / target_vis_height, 1.30, 1.60)
+	var max_horz_zoom: float = vis_size.x / 640.0
+	var final_zoom: float = clampf(minf(base_zoom, max_horz_zoom), 1.20, 1.60)
+	cam.zoom = Vector2(final_zoom, final_zoom)
 
 func _exit_tree() -> void:
 	if GameManager:
