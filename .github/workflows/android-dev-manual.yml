@@ -1,0 +1,285 @@
+name: Manual Development APK Build (One-Artifact Policy)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: android-dev-manual-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-dev-apk:
+    name: Build Single Development APK (Godot 4.7.2 / API 36)
+    if: github.ref == 'refs/heads/migration/android-api36-godot47'
+    runs-on: ubuntu-latest
+
+    env:
+      GODOT_VERSION: "4.7.2"
+      GODOT_RELEASE: "4.7.2-stable"
+      DEV_ARTIFACT_NAME: "retro-rage-arcade-dev-apk"
+
+    steps:
+      - name: Verify Target Branch
+        run: |
+          if [ "${{ github.ref }}" != "refs/heads/migration/android-api36-godot47" ]; then
+            echo "::error::This manual workflow may only run on migration/android-api36-godot47 (got ${{ github.ref }})."
+            exit 1
+          fi
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
+
+      - name: Install Android Build Tools 36 and Platform 36
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager --install "cmdline-tools;latest" "platform-tools" "build-tools;36.0.0" "platforms;android-36"
+          echo "$ANDROID_HOME/build-tools/36.0.0" >> $GITHUB_PATH
+
+      - name: Download Godot 4.7.2 Headless & Export Templates
+        run: |
+          mkdir -p ~/.local/bin ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          curl -fsSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/Godot_v${GODOT_RELEASE}_linux.x86_64.zip"
+          unzip -q godot.zip
+          mv "Godot_v${GODOT_RELEASE}_linux.x86_64" ~/.local/bin/godot
+          chmod +x ~/.local/bin/godot
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+          curl -fsSL -o templates.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/Godot_v${GODOT_RELEASE}_export_templates.tpz"
+          unzip -q templates.tpz
+          mv templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
+          rm -rf godot.zip templates.tpz templates
+
+      - name: Install Android Build Template for Gradle Build
+        run: |
+          if [ -f ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/android_source.zip ]; then
+            mkdir -p android/build
+            unzip -q -o ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/android_source.zip -d android/build
+            echo "${GODOT_VERSION}.stable" > android/.build_version
+            echo "Installed Android build template from android_source.zip"
+          else
+            godot --headless --install-android-build-template
+          fi
+          if [ -f android/build/gradlew ]; then
+            chmod +x android/build/gradlew
+          fi
+
+      - name: Cache Persistent Android Keystore
+        id: cache-keystore
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: android-debug-keystore-v1
+          restore-keys: |
+            android-debug-keystore-
+
+      - name: Setup Android Keystore and Editor Settings
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_BASE64 || secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          mkdir -p ~/.config/godot ~/.local/share/godot ~/.android
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "Using debug keystore provided via repository secret."
+            echo "$KEYSTORE_BASE64" | base64 -d > ~/.android/debug.keystore
+          elif [ ! -f ~/.android/debug.keystore ]; then
+            echo "Generating persistent debug keystore (cached across builds)..."
+            keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore ~/.android/debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999
+          else
+            echo "Reusing cached persistent debug keystore."
+          fi
+          for d in ~/.config/godot ~/.local/share/godot; do
+            for f in "$d/editor_settings-4.tres" "$d/editor_settings-4.7.tres"; do
+              echo '[gd_resource type="EditorSettings" format=3]' > "$f"
+              echo '' >> "$f"
+              echo '[resource]' >> "$f"
+              echo "export/android/android_sdk_path = \"$ANDROID_HOME\"" >> "$f"
+              echo "export/android/debug_keystore = \"$HOME/.android/debug.keystore\"" >> "$f"
+              echo 'export/android/debug_keystore_user = "androiddebugkey"' >> "$f"
+              echo 'export/android/debug_keystore_pass = "android"' >> "$f"
+              echo "export/android/java_sdk_path = \"$JAVA_HOME\"" >> "$f"
+            done
+          done
+
+      - name: Import Assets Headlessly
+        run: |
+          godot --headless --editor --quit
+
+      - name: Export Development APK
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          APK_PATH="build/retro-rage-arcade-dev.apk"
+          echo "Exporting debug APK via existing preset 'Android' -> $APK_PATH"
+          set +e
+          godot --verbose --headless --export-debug "Android" "$APK_PATH" 2>&1 | tee /tmp/godot_export.log
+          EXPORT_STATUS=${PIPESTATUS[0]}
+          set -e
+
+          if [ "$EXPORT_STATUS" -ne 0 ] || [ ! -f "$APK_PATH" ]; then
+            ERR_MSG=$(grep -i -C 2 -E "error|failure|exception" /tmp/godot_export.log | head -n 25 | tr '\r\n' ' ' || true)
+            echo "::error title=Development APK Export Failed::${ERR_MSG:-Godot export exited with status $EXPORT_STATUS}"
+            tail -n 150 /tmp/godot_export.log || true
+            exit 1
+          fi
+
+          FILE_SIZE=$(stat -c%s "$APK_PATH")
+          if [ "$FILE_SIZE" -lt 10000000 ]; then
+            echo "::error title=Invalid APK Output::Exported APK is unexpectedly small ($FILE_SIZE bytes)."
+            exit 1
+          fi
+
+          echo "Export succeeded: $APK_PATH ($FILE_SIZE bytes)"
+
+      - name: Delete Previous Development APK Artifact Before Upload
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TARGET_NAME: ${{ env.DEV_ARTIFACT_NAME }}
+        run: |
+          python3 - << 'EOF'
+          import json
+          import os
+          import sys
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+
+          token = os.environ["GH_TOKEN"]
+          repo = os.environ["REPO"]
+          target_name = os.environ["TARGET_NAME"]
+
+          headers = {
+              "Authorization": f"Bearer {token}",
+              "Accept": "application/vnd.github+json",
+              "User-Agent": "retro-rage-arcade-one-artifact-policy",
+              "X-GitHub-Api-Version": "2022-11-28",
+          }
+
+          def api_request(url, method="GET"):
+              req = urllib.request.Request(url, headers=headers, method=method)
+              with urllib.request.urlopen(req) as resp:
+                  body = resp.read().decode("utf-8")
+                  return resp.status, (json.loads(body) if body else None)
+
+          encoded_name = urllib.parse.quote(target_name, safe="")
+          page = 1
+          matches = []
+          while True:
+              url = f"https://api.github.com/repos/{repo}/actions/artifacts?per_page=100&page={page}&name={encoded_name}"
+              _, data = api_request(url)
+              items = data.get("artifacts", [])
+              if not items:
+                  break
+              matches.extend(items)
+              if len(matches) >= data.get("total_count", 0):
+                  break
+              page += 1
+
+          print(f"Found {len(matches)} prior artifact(s) named '{target_name}'.")
+          for art in matches:
+              art_id = art["id"]
+              art_name = art.get("name", "")
+              branch = (art.get("workflow_run") or {}).get("head_branch", "")
+
+              # Strict safety guards: never touch production AABs or release/play artifacts
+              if art_name != target_name or "aab" in art_name.lower() or branch == "release/play":
+                  print(f"SAFETY SKIP: Refusing to delete artifact {art_id} (name={art_name}, branch={branch}).")
+                  continue
+
+              del_url = f"https://api.github.com/repos/{repo}/actions/artifacts/{art_id}"
+              status, _ = api_request(del_url, method="DELETE")
+              print(f"Deleted prior dev APK artifact ID {art_id} ({art.get('size_in_bytes')} bytes, branch={branch}) -> HTTP {status}")
+          EOF
+
+      - name: Upload Single Development APK Artifact
+        id: upload-dev-apk
+        uses: actions/upload-artifact@v4
+        with:
+          name: retro-rage-arcade-dev-apk
+          path: build/retro-rage-arcade-dev.apk
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Verify One-Artifact Policy
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TARGET_NAME: ${{ env.DEV_ARTIFACT_NAME }}
+          UPLOADED_ID: ${{ steps.upload-dev-apk.outputs.artifact-id }}
+        run: |
+          python3 - << 'EOF'
+          import json
+          import os
+          import sys
+          import time
+          import urllib.parse
+          import urllib.request
+
+          token = os.environ["GH_TOKEN"]
+          repo = os.environ["REPO"]
+          target_name = os.environ["TARGET_NAME"]
+          uploaded_id = os.environ.get("UPLOADED_ID", "")
+
+          headers = {
+              "Authorization": f"Bearer {token}",
+              "Accept": "application/vnd.github+json",
+              "User-Agent": "retro-rage-arcade-one-artifact-policy",
+              "X-GitHub-Api-Version": "2022-11-28",
+          }
+
+          encoded_name = urllib.parse.quote(target_name, safe="")
+          active_dev = []
+          for attempt in range(10):
+              req = urllib.request.Request(
+                  f"https://api.github.com/repos/{repo}/actions/artifacts?per_page=100&name={encoded_name}",
+                  headers=headers,
+              )
+              with urllib.request.urlopen(req) as resp:
+                  data = json.loads(resp.read().decode("utf-8"))
+              active_dev = [
+                  a for a in data.get("artifacts", [])
+                  if not a.get("expired", False) and a.get("name") == target_name
+              ]
+              if len(active_dev) == 1:
+                  break
+              time.sleep(3)
+
+          print(f"Active '{target_name}' artifact count: {len(active_dev)} (expected: 1)")
+          for a in active_dev:
+              print(f"  - ID {a['id']} | {a['name']} | {a['size_in_bytes']} bytes | expires {a['expires_at']}")
+
+          if len(active_dev) != 1:
+              print(f"::error::Expected exactly 1 active '{target_name}' artifact, found {len(active_dev)}.")
+              sys.exit(1)
+
+          if uploaded_id and str(active_dev[0]["id"]) != str(uploaded_id):
+              print(f"::warning::Uploaded artifact ID ({uploaded_id}) differs from active entry ({active_dev[0]['id']}).")
+
+          # Verify production AAB remains intact
+          req_aab = urllib.request.Request(
+              f"https://api.github.com/repos/{repo}/actions/artifacts?per_page=100&name=retro-rage-arcade-release-aab",
+              headers=headers,
+          )
+          with urllib.request.urlopen(req_aab) as resp:
+              aab_data = json.loads(resp.read().decode("utf-8"))
+          active_aabs = [a for a in aab_data.get("artifacts", []) if not a.get("expired", False)]
+          print(f"Active production AAB artifact count: {len(active_aabs)}")
+          if not active_aabs:
+              print("::warning::No active production AAB artifact detected.")
+          EOF
