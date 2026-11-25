@@ -1,6 +1,20 @@
-name: Manual Development APK Build (One-Artifact Policy)
+name: Development APK Build (One-Artifact Policy)
 
 on:
+  push:
+    branches:
+      - migration/android-api36-godot47
+    paths:
+      - 'scenes/**'
+      - 'scripts/**'
+      - 'assets/**'
+      - 'addons/**'
+      - 'android/**'
+      - 'project.godot'
+      - 'export_presets.cfg'
+      - 'ad_config.json'
+      - 'icon.png'
+      - 'icon.png.import'
   workflow_dispatch:
 
 permissions:
@@ -13,7 +27,7 @@ concurrency:
 
 jobs:
   build-dev-apk:
-    name: Build Single Development APK (Godot 4.7.2 / API 36)
+    name: Build Development APK (Godot 4.7.2 / API 36)
     if: github.ref == 'refs/heads/migration/android-api36-godot47'
     runs-on: ubuntu-latest
 
@@ -21,12 +35,13 @@ jobs:
       GODOT_VERSION: "4.7.2"
       GODOT_RELEASE: "4.7.2-stable"
       DEV_ARTIFACT_NAME: "retro-rage-arcade-dev-apk"
+      PROD_AAB_ARTIFACT_ID: "13032030739"
 
     steps:
       - name: Verify Target Branch
         run: |
           if [ "${{ github.ref }}" != "refs/heads/migration/android-api36-godot47" ]; then
-            echo "::error::This manual workflow may only run on migration/android-api36-godot47 (got ${{ github.ref }})."
+            echo "::error::Development APK builds may only execute on migration/android-api36-godot47 (got ${{ github.ref }})."
             exit 1
           fi
 
@@ -118,7 +133,7 @@ jobs:
         run: |
           godot --headless --editor --quit
 
-      - name: Export Development APK
+      - name: Export and Validate Development APK
         run: |
           set -euo pipefail
           mkdir -p build
@@ -142,7 +157,13 @@ jobs:
             exit 1
           fi
 
-          echo "Export succeeded: $APK_PATH ($FILE_SIZE bytes)"
+          unzip -tq "$APK_PATH" >/dev/null
+          if ! unzip -l "$APK_PATH" | grep -q "AndroidManifest.xml"; then
+            echo "::error title=Invalid APK Structure::AndroidManifest.xml missing from $APK_PATH"
+            exit 1
+          fi
+
+          echo "Export validated successfully: $APK_PATH ($FILE_SIZE bytes)"
 
       - name: Delete Previous Development APK Artifact Before Upload
         if: success()
@@ -150,18 +171,18 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           TARGET_NAME: ${{ env.DEV_ARTIFACT_NAME }}
+          PROD_ID: ${{ env.PROD_AAB_ARTIFACT_ID }}
         run: |
           python3 - << 'EOF'
           import json
           import os
-          import sys
-          import urllib.error
           import urllib.parse
           import urllib.request
 
           token = os.environ["GH_TOKEN"]
           repo = os.environ["REPO"]
           target_name = os.environ["TARGET_NAME"]
+          prod_id = str(os.environ["PROD_ID"])
 
           headers = {
               "Authorization": f"Bearer {token}",
@@ -192,12 +213,18 @@ jobs:
 
           print(f"Found {len(matches)} prior artifact(s) named '{target_name}'.")
           for art in matches:
-              art_id = art["id"]
+              art_id = str(art["id"])
               art_name = art.get("name", "")
               branch = (art.get("workflow_run") or {}).get("head_branch", "")
 
               # Strict safety guards: never touch production AABs or release/play artifacts
-              if art_name != target_name or "aab" in art_name.lower() or branch == "release/play":
+              if (
+                  art_id == prod_id
+                  or art_name != target_name
+                  or "aab" in art_name.lower()
+                  or "release" in art_name.lower()
+                  or branch == "release/play"
+              ):
                   print(f"SAFETY SKIP: Refusing to delete artifact {art_id} (name={art_name}, branch={branch}).")
                   continue
 
@@ -208,6 +235,7 @@ jobs:
 
       - name: Upload Single Development APK Artifact
         id: upload-dev-apk
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: retro-rage-arcade-dev-apk
@@ -222,6 +250,7 @@ jobs:
           REPO: ${{ github.repository }}
           TARGET_NAME: ${{ env.DEV_ARTIFACT_NAME }}
           UPLOADED_ID: ${{ steps.upload-dev-apk.outputs.artifact-id }}
+          PROD_ID: ${{ env.PROD_AAB_ARTIFACT_ID }}
         run: |
           python3 - << 'EOF'
           import json
@@ -235,6 +264,7 @@ jobs:
           repo = os.environ["REPO"]
           target_name = os.environ["TARGET_NAME"]
           uploaded_id = os.environ.get("UPLOADED_ID", "")
+          prod_id = str(os.environ["PROD_ID"])
 
           headers = {
               "Authorization": f"Bearer {token}",
@@ -271,7 +301,6 @@ jobs:
           if uploaded_id and str(active_dev[0]["id"]) != str(uploaded_id):
               print(f"::warning::Uploaded artifact ID ({uploaded_id}) differs from active entry ({active_dev[0]['id']}).")
 
-          # Verify production AAB remains intact
           req_aab = urllib.request.Request(
               f"https://api.github.com/repos/{repo}/actions/artifacts?per_page=100&name=retro-rage-arcade-release-aab",
               headers=headers,
@@ -279,7 +308,13 @@ jobs:
           with urllib.request.urlopen(req_aab) as resp:
               aab_data = json.loads(resp.read().decode("utf-8"))
           active_aabs = [a for a in aab_data.get("artifacts", []) if not a.get("expired", False)]
-          print(f"Active production AAB artifact count: {len(active_aabs)}")
+          prod_present = any(str(a["id"]) == prod_id for a in active_aabs)
+          print(f"Active production AAB artifact count: {len(active_aabs)} (ID {prod_id} intact: {prod_present})")
           if not active_aabs:
               print("::warning::No active production AAB artifact detected.")
           EOF
+
+      - name: Report Build or Upload Failure
+        if: failure()
+        run: |
+          echo "::error::Development APK workflow failed. Review the failed step logs above. Production AAB ($PROD_AAB_ARTIFACT_ID) was not modified or deleted, and paid storage was never enabled."
