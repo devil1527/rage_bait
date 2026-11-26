@@ -15,6 +15,7 @@ on:
       - 'ad_config.json'
       - 'icon.png'
       - 'icon.png.import'
+      - '.github/workflows/android-dev-manual.yml'
   workflow_dispatch:
 
 permissions:
@@ -133,6 +134,65 @@ jobs:
         run: |
           godot --headless --editor --quit
 
+      - name: Configure Temporary Maven Central Mirror and Verify Resolution
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.gradle/init.d
+          cat << 'EOF' > ~/.gradle/init.d/maven-central-mirror.gradle
+          import org.gradle.api.artifacts.repositories.MavenArtifactRepository
+
+          void rewriteMavenCentral(String scopeName, Object repo) {
+              if (repo instanceof MavenArtifactRepository && repo.url != null) {
+                  def currentUrl = repo.url.toString().replaceAll('/+$', '')
+                  if (currentUrl == 'https://repo.maven.apache.org/maven2') {
+                      def mirrorUrl = 'https://maven-central.storage-download.googleapis.com/maven2'
+                      println("[GradleMirror] Redirected (${scopeName}): ${repo.name} ${repo.url} -> ${mirrorUrl}")
+                      repo.setUrl(mirrorUrl)
+                  } else {
+                      println("[GradleMirror] Preserved (${scopeName}): ${repo.name} ${repo.url}")
+                  }
+              }
+          }
+
+          beforeSettings { settings ->
+              settings.pluginManagement.repositories.all { repo ->
+                  rewriteMavenCentral("pluginManagement", repo)
+              }
+              settings.dependencyResolutionManagement.repositories.all { repo ->
+                  rewriteMavenCentral("dependencyResolutionManagement", repo)
+              }
+          }
+
+          allprojects { proj ->
+              proj.buildscript.repositories.all { repo ->
+                  rewriteMavenCentral("buildscript:${proj.path}", repo)
+              }
+              proj.repositories.all { repo ->
+                  rewriteMavenCentral("project:${proj.path}", repo)
+              }
+          }
+          EOF
+
+          echo "Verifying Maven Central mirror & Google Maven POM availability..."
+          curl -fsSIL "https://maven-central.storage-download.googleapis.com/maven2/org/jetbrains/kotlin/kotlin-gradle-plugin/2.1.21/kotlin-gradle-plugin-2.1.21.pom" >/dev/null
+          curl -fsSIL "https://maven-central.storage-download.googleapis.com/maven2/org/jetbrains/kotlin/kotlin-gradle-plugins-bom/2.1.21/kotlin-gradle-plugins-bom-2.1.21.pom" >/dev/null
+          curl -fsSIL "https://maven-central.storage-download.googleapis.com/maven2/org/jetbrains/kotlin/kotlin-stdlib-jdk8/1.9.20/kotlin-stdlib-jdk8-1.9.20.pom" >/dev/null
+          curl -fsSIL "https://dl.google.com/dl/android/maven2/com/android/tools/build/gradle/8.6.1/gradle-8.6.1.pom" >/dev/null
+
+          echo "Verifying Gradle resolution against temporary mirror..."
+          (
+            cd android/build
+            ./gradlew :buildEnvironment --no-daemon --console=plain | tee /tmp/gradle_verify.log
+          )
+
+          grep -q '\[GradleMirror\] Redirected' /tmp/gradle_verify.log
+          grep -q '\[GradleMirror\] Preserved' /tmp/gradle_verify.log
+          grep -q 'kotlin-gradle-plugin:2.1.21' /tmp/gradle_verify.log
+          grep -q 'kotlin-stdlib-jdk8' /tmp/gradle_verify.log
+          grep -q 'com.android.tools.build:gradle:8.6.1' /tmp/gradle_verify.log
+          echo "=== Verified Gradle mirror & key dependencies ==="
+          grep -E '\[GradleMirror\]|kotlin-gradle-plugin|kotlin-stdlib-jdk8|com\.android\.tools\.build:gradle' /tmp/gradle_verify.log || true
+
       - name: Export and Validate Development APK
         run: |
           set -euo pipefail
@@ -145,8 +205,11 @@ jobs:
           set -e
 
           if [ "$EXPORT_STATUS" -ne 0 ] || [ ! -f "$APK_PATH" ]; then
-            ERR_MSG=$(grep -i -C 2 -E "error|failure|exception" /tmp/godot_export.log | head -n 25 | tr '\r\n' ' ' || true)
-            echo "::error title=Development APK Export Failed::${ERR_MSG:-Godot export exited with status $EXPORT_STATUS}"
+            ERR_MSG=$(grep -E '^(FAILURE:|ERROR:|SCRIPT ERROR:|Execution failed|\* What went wrong:|> Could not )' /tmp/godot_export.log | tail -n 25 | tr '\r\n' ' ' || true)
+            if [ -z "$ERR_MSG" ]; then
+              ERR_MSG="Godot export exited with status $EXPORT_STATUS"
+            fi
+            echo "::error title=Development APK Export Failed::${ERR_MSG}"
             tail -n 150 /tmp/godot_export.log || true
             exit 1
           fi
@@ -164,6 +227,10 @@ jobs:
           fi
 
           echo "Export validated successfully: $APK_PATH ($FILE_SIZE bytes)"
+
+      - name: Remove Temporary Maven Central Mirror Init Script
+        if: always()
+        run: rm -f ~/.gradle/init.d/maven-central-mirror.gradle
 
       - name: Delete Previous Development APK Artifact Before Upload
         if: success()
