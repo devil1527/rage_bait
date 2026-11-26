@@ -3,11 +3,11 @@ extends Node2D
 
 ## World 2 Level 4 (Stage 9): "Worm Minefield" for Bullet Betrayal.
 ## World: DESERT OUTPOST.
-## Introduces slower, cunning subterranean desert sandworms that leave a
-## partially buried proximity mine at each completed retreat underground.
-## Difficulty comes from accumulating battlefield pressure, multi-worm basins,
-## tactical waiting decisions, and elevated watchtower escape routes while
-## guaranteeing fair landing/takeoff clearances and safe cap cleanup.
+## Multi-elevation uneven desert terrain (raised mesas, sunken canyon basins,
+## narrow stepping pillars, deep pits, steep climbs, and controlled descents)
+## with ZERO overhead bars or sky-bridge bypasses.
+## Slower sandworms burrow back underground on varied paths and leave a live,
+## partially buried proximity mine at their exact submerge coordinate.
 ## Mandatory Rules: 10 starting bullets, 10 required enemies, 1-hit enemy kills,
 ## 0 ammo pickups, locked extraction beacon requiring 10 kills, safe-position revive.
 
@@ -16,11 +16,11 @@ const ARCADE_SCENE: String = "res://scenes/ui/main_menu.tscn"
 const WORM_MINE_SCENE: PackedScene = preload("res://scenes/bullet_betrayal/bb_worm_mine.tscn")
 
 const TOTAL_REQUIRED_ENEMIES: int = 10
-const MAX_ACTIVE_MINES: int = 8
+const MAX_ACTIVE_MINES: int = 10
 const MAX_MINES_PER_ZONE: int = 3
 const MIN_MINE_SPACING: float = 42.0
-const PLATFORM_EDGE_MARGIN: float = 42.0
-const SAFE_SPAWN_MAX_X: float = 480.0
+const PLATFORM_EDGE_MARGIN: float = 46.0
+const SAFE_SPAWN_MAX_X: float = 360.0
 const EXTRACTION_CLEARANCE: float = 95.0
 const PLAYER_CLEARANCE_X: float = 58.0
 const PLAYER_CLEARANCE_Y: float = 56.0
@@ -36,6 +36,7 @@ const SAFE_CLEANUP_ABS_MIN_DIST: float = 96.0
 @onready var worms_container: Node2D = get_node_or_null("Worms")
 @onready var worm_mines_container: Node2D = get_node_or_null("WormMines")
 @onready var platforms_container: Node2D = get_node_or_null("Platforms")
+@onready var props_container: Node2D = get_node_or_null("EnvironmentProps")
 
 var _enemies_eliminated: int = 0
 var _is_completed: bool = false
@@ -85,9 +86,9 @@ func _update_camera_framing() -> void:
 	if not cam:
 		return
 	cam.limit_left = 0
-	cam.limit_right = 3240
-	cam.limit_top = 80
-	cam.limit_bottom = 508
+	cam.limit_right = 3655
+	cam.limit_top = 40
+	cam.limit_bottom = 540
 
 	var vp := get_viewport()
 	var vis_size: Vector2 = vp.get_visible_rect().size if vp else Vector2(960.0, 540.0)
@@ -137,7 +138,7 @@ func _animate_intro_banner() -> void:
 
 
 func _physics_process(_delta: float) -> void:
-	if player and player.is_alive and player.global_position.y > 520.0:
+	if player and player.is_alive and player.global_position.y > 518.0:
 		player.die()
 
 
@@ -182,6 +183,9 @@ func can_place_mine_at(world_pos: Vector2) -> bool:
 		return false
 
 	if _is_blocked_by_wall_or_platform(Vector2(world_pos.x, surface_y - 6.0)):
+		return false
+
+	if _is_blocked_by_prop(Vector2(world_pos.x, surface_y)):
 		return false
 
 	if player and (not ("is_alive" in player) or player.is_alive):
@@ -242,14 +246,38 @@ func _is_blocked_by_wall_or_platform(check_pos: Vector2) -> bool:
 	return false
 
 
+func _is_blocked_by_prop(surface_pos: Vector2) -> bool:
+	if not props_container:
+		return false
+
+	for node in props_container.get_children():
+		if not (node is Sprite2D):
+			continue
+		var spr := node as Sprite2D
+		if not spr.texture:
+			continue
+		var half_w := float(spr.texture.get_width()) * 0.5 * absf(spr.scale.x)
+		var half_h := float(spr.texture.get_height()) * 0.5 * absf(spr.scale.y)
+		var prop_bottom_y := spr.global_position.y + half_h
+		if absf(prop_bottom_y - surface_pos.y) <= 14.0:
+			if absf(surface_pos.x - spr.global_position.x) < (half_w + 10.0):
+				return true
+
+	return false
+
+
 func get_zone_for_x(x_pos: float) -> int:
-	if x_pos < 1100.0:
+	if x_pos < 760.0:
 		return 0
-	if x_pos < 1980.0:
+	if x_pos < 1350.0:
 		return 1
-	if x_pos < 2320.0:
+	if x_pos < 2100.0:
 		return 2
-	return 3
+	if x_pos < 2550.0:
+		return 3
+	if x_pos < 3180.0:
+		return 4
+	return 5
 
 
 func get_active_worm_mines() -> Array[BulletBetrayalWormMine]:

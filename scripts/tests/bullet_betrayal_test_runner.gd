@@ -2718,6 +2718,9 @@ func test_level_7_desert_worms() -> void:
 		"Worm movement stays strictly within territory [%.1f..%.1f] (seen %.1f..%.1f)" % [worm1.territory_min_x, worm1.territory_max_x, min_x_seen, max_x_seen])
 
 	# 7. Safe-Position Rewarded Revive & worm dispersion + kill preservation in Level 7
+	worm1.set_physics_process(false)
+	worm1.force_submerge(2.0)
+	await get_tree().physics_frame
 	if GameManager:
 		GameManager.revives_used_this_run = 0
 		GameManager.current_run_id += 1
@@ -3206,15 +3209,27 @@ func test_level_9_worm_minefield() -> void:
 		"Level 9 has Enemies, Worms, WormMines, and Platforms containers")
 	assert_eq(hud.current_stage_id, 9, "HUD stage id is 9")
 	assert_eq(hud.stage_label.text, "WORLD 2-4: WORM MINEFIELD", "HUD displays 'WORLD 2-4: WORM MINEFIELD'")
-	assert_eq(level.spawn_point.position, Vector2(120, 394), "SpawnPoint located at (120, 394)")
-	assert_eq(p.global_position, Vector2(120, 394), "Player spawns cleanly on Ground1_Entry")
+	assert_eq(level.spawn_point.position, Vector2(85, 394), "SpawnPoint located at (85, 394)")
+	assert_eq(p.global_position, Vector2(85, 394), "Player spawns cleanly on Ground1_EntryPad")
 
-	# 1. Core rules, HUD & Mobile Touch Controls
+	# 1. Core rules, HUD, Mobile Touch Controls & ZERO Overhead Bars (Part 2)
 	assert_eq(p.current_ammo, 10, "Player starts Level 9 with 10 bullets")
 	assert_eq(p.current_health, 1, "Player starts Level 9 with 1/1 life")
 	assert_true(level.get_node_or_null("Pickups") == null, "Level 9 contains 0 pickups")
 	assert_eq(worm_mines_node.get_child_count(), 0, "Level 9 starts with 0 hardcoded static worm mines")
 	assert_true(not beacon.is_unlocked, "Extraction beacon starts locked (0/10)")
+	assert_true(not p.is_on_ladder, "Player has no hanging/ladder climb active in Level 9")
+
+	var stack: Array[Node] = [level]
+	var forbidden_bar_nodes: Array[String] = []
+	while not stack.is_empty():
+		var cur: Node = stack.pop_back()
+		var lower_name := cur.name.to_lower()
+		if "hanging" in lower_name or "overhead" in lower_name or "ladder" in lower_name or cur is BulletBetrayalLadder or cur.is_in_group("ladders") or cur.is_in_group("hanging_bars"):
+			forbidden_bar_nodes.append(cur.name)
+		for ch in cur.get_children():
+			stack.append(ch)
+	assert_eq(forbidden_bar_nodes.size(), 0, "Level 9 contains ZERO overhead bars, hanging bars, or ladder shortcuts")
 
 	hud.right_btn.touch_down.emit()
 	assert_true(p.touch_right, "Level 9 mobile touch_right responds cleanly")
@@ -3230,7 +3245,7 @@ func test_level_9_worm_minefield() -> void:
 		assert_eq(e.max_health, 1, "Enemy %s has 1 HP" % e.name)
 		assert_true(e.global_position.x >= 500.0, "Enemy %s outside safe spawn sanctuary" % e.name)
 
-	# 2. Visual framing, ground/platform/enemy/prop alignment & jump fairness
+	# 2. Uneven Desert Terrain, Multi-Resolution Camera Framing, Collision Alignment & Ballistic Jumps
 	assert_true(level.get_node_or_null("DesertSkyCanvas/SkyGradient") != null, "Level 9 has DesertSkyCanvas")
 	assert_true(level.get_node_or_null("ParallaxBackground/FarMesas") != null, "Level 9 has FarMesas")
 	assert_true(level.get_node_or_null("ParallaxBackground/MidDunes") != null, "Level 9 has MidDunes")
@@ -3238,11 +3253,12 @@ func test_level_9_worm_minefield() -> void:
 	assert_true(cam9 != null, "Level 9 Camera2D present")
 	if cam9:
 		assert_eq(cam9.zoom.x, cam9.zoom.y, "Level 9 Camera2D uniform zoom")
-		assert_eq(cam9.limit_right, 3240, "Level 9 Camera2D limit_right covers Stronghold")
-		assert_eq(cam9.limit_top, 80, "Level 9 Camera2D limit_top frames sky")
-		assert_eq(cam9.limit_bottom, 508, "Level 9 Camera2D limit_bottom frames desert")
+		assert_eq(cam9.limit_right, 3655, "Level 9 Camera2D limit_right covers Stronghold")
+		assert_eq(cam9.limit_top, 40, "Level 9 Camera2D limit_top frames elevated ridges at all resolutions")
+		assert_eq(cam9.limit_bottom, 540, "Level 9 Camera2D limit_bottom accommodates 1024x768 & 1600x720")
 
 	var grounds: Array[Dictionary] = []
+	var floating_platforms: int = 0
 	for child in platforms_node.get_children():
 		if child is StaticBody2D:
 			var col := child.get_node_or_null("CollisionShape2D") as CollisionShape2D
@@ -3252,29 +3268,54 @@ func test_level_9_worm_minefield() -> void:
 					var left_x: float = child.global_position.x - sz.x * 0.5
 					var right_x: float = child.global_position.x + sz.x * 0.5
 					var top_y: float = child.global_position.y - sz.y * 0.5
-					grounds.append({"name": child.name, "left": left_x, "right": right_x, "top": top_y})
+					grounds.append({"name": child.name, "left": left_x, "right": right_x, "top": top_y, "width": sz.x})
 					var st := child.get_node_or_null("SandTop") as Sprite2D
 					var sr := child.get_node_or_null("SandRock") as Sprite2D
-					assert_true(st != null and st.region_rect.size.x == sz.x, "%s SandTop matches width" % child.name)
-					assert_true(sr != null and sr.region_rect.size.x == sz.x, "%s SandRock matches width" % child.name)
+					assert_true(st != null and st.visible and st.region_rect.size.x == sz.x, "%s visible SandTop matches width" % child.name)
+					assert_true(sr != null and sr.visible and sr.region_rect.size.x == sz.x, "%s visible SandRock matches width" % child.name)
+					assert_true(absf((child.global_position.y + st.position.y - 16.0) - top_y) <= 0.5, "%s SandTop aligns flush with collider top" % child.name)
 				elif child.name.begins_with("Platform"):
-					var wd := child.get_node_or_null("Wood") as Sprite2D
-					assert_true(wd != null and wd.region_rect.size.x == sz.x, "%s Wood matches width" % child.name)
+					floating_platforms += 1
+
+	assert_eq(floating_platforms, 0, "Level 9 removes overhead bypass platforms cleanly")
+	assert_eq(grounds.size(), 10, "Level 9 features 10 uneven terrain ground segments")
 
 	grounds.sort_custom(func(a, b): return a["left"] < b["left"])
+	var min_top_y: float = 9999.0
+	var max_top_y: float = -9999.0
+	var has_uphill_jump := false
+	var has_descent_jump := false
+	var narrow_pillars := 0
+	for g in grounds:
+		min_top_y = minf(min_top_y, g["top"])
+		max_top_y = maxf(max_top_y, g["top"])
+		if g["width"] <= 105.0:
+			narrow_pillars += 1
+	assert_true((max_top_y - min_top_y) >= 105.0, "Uneven terrain spans >=105px vertical relief (%.1f px)" % (max_top_y - min_top_y))
+	assert_true(narrow_pillars >= 3, "Level 9 includes >=3 narrow precision landing pillars (%d found)" % narrow_pillars)
+
 	for gi in range(grounds.size() - 1):
 		var gap_w: float = grounds[gi + 1]["left"] - grounds[gi]["right"]
 		var rise_px: float = grounds[gi]["top"] - grounds[gi + 1]["top"]
-		assert_true(gap_w >= 60.0 and gap_w <= 120.0,
-			"Level 9 gap %s -> %s (%.1f px) is jumpable" % [grounds[gi]["name"], grounds[gi + 1]["name"], gap_w])
-		assert_true(rise_px <= 30.0, "Level 9 ascent %s -> %s (%.1f px) is fair" % [grounds[gi]["name"], grounds[gi + 1]["name"], rise_px])
+		if rise_px > 10.0:
+			has_uphill_jump = true
+		if rise_px < -10.0:
+			has_descent_jump = true
+		assert_true(rise_px <= 65.0, "Uphill ascent %s -> %s (%.1f px) stays safely below 96px apex" % [grounds[gi]["name"], grounds[gi + 1]["name"], rise_px])
+		var disc: float = 460.0 * 460.0 - 2.0 * 1100.0 * rise_px
+		assert_true(disc > 0.0, "Trajectory discriminant positive for %s -> %s" % [grounds[gi]["name"], grounds[gi + 1]["name"]])
+		var air_time: float = (460.0 + sqrt(disc)) / 1100.0
+		var max_horiz: float = 230.0 * air_time + 14.0
+		assert_true(gap_w >= 80.0 and gap_w <= max_horiz - 35.0,
+			"Level 9 jump %s -> %s (gap %.1f, dY %.1f, reach %.1f) is challenging & physically fair" % [grounds[gi]["name"], grounds[gi + 1]["name"], gap_w, rise_px, max_horiz])
+	assert_true(has_uphill_jump and has_descent_jump, "Terrain enforces both steep uphill jumps and controlled lower descents")
 
 	for e in enemies:
 		var enemy_node := e as Node2D
 		var col_bottom: float = enemy_node.global_position.y + 17.0
 		var grounded := false
 		for child in platforms_node.get_children():
-			if child is StaticBody2D and (child.name.begins_with("Ground") or child.name.begins_with("Platform")):
+			if child is StaticBody2D and child.name.begins_with("Ground"):
 				var col := child.get_node_or_null("CollisionShape2D") as CollisionShape2D
 				if col and col.shape is RectangleShape2D:
 					var half: Vector2 = (col.shape as RectangleShape2D).size * 0.5
@@ -3282,7 +3323,7 @@ func test_level_9_worm_minefield() -> void:
 						if absf(col_bottom - (child.global_position.y - half.y)) <= 1.0:
 							grounded = true
 							break
-		assert_true(grounded, "Enemy %s stands flush on Level 9 geometry" % enemy_node.name)
+		assert_true(grounded, "Enemy %s stands flush on Level 9 sand geometry" % enemy_node.name)
 
 	# 3. Slow Desert Worms vs Level 8 speeds, territory safety & underground non-lethality
 	var lvl8_probe: Node = load("res://scenes/bullet_betrayal/bb_level_8.tscn").instantiate()
@@ -3293,7 +3334,7 @@ func test_level_9_worm_minefield() -> void:
 	lvl8_probe.queue_free()
 
 	var worms: Array = worms_node.get_children()
-	assert_eq(worms.size(), 6, "Level 9 features 6 slow desert sandworms")
+	assert_eq(worms.size(), 8, "Level 9 features 8 slow desert sandworms across terrain tiers")
 	for w in worms:
 		var worm := w as BulletBetrayalDesertWorm
 		assert_true(worm != null, "Worm is BulletBetrayalDesertWorm")
@@ -3305,10 +3346,10 @@ func test_level_9_worm_minefield() -> void:
 		assert_true(worm.warning_duration >= 0.60, "%s preserves clear warning telegraph (%.2fs)" % [worm.name, worm.warning_duration])
 		var on_safe_ground := false
 		for g in grounds:
-			if worm.territory_min_x >= g["left"] + 40.0 and worm.territory_max_x <= g["right"] - 40.0 and absf(worm.surface_y - g["top"]) <= 1.0:
+			if worm.territory_min_x >= g["left"] + 44.0 and worm.territory_max_x <= g["right"] - 44.0 and absf(worm.surface_y - g["top"]) <= 1.0:
 				on_safe_ground = true
 				break
-		assert_true(on_safe_ground, "%s territory sits cleanly inside ground with >=40px edge margin" % worm.name)
+		assert_true(on_safe_ground, "%s territory sits cleanly inside ground with >=44px edge margin" % worm.name)
 
 	# Underground worm never harms player
 	var w1 := worms[0] as BulletBetrayalDesertWorm
@@ -3319,17 +3360,20 @@ func test_level_9_worm_minefield() -> void:
 	assert_true(p.is_alive, "Underground worm causes zero damage to player overhead")
 
 	# Surfaced worm instant-kills player cleanly (test & revive)
-	w1.force_emerge_at(700.0, 1)
-	p.global_position = Vector2(700.0, 384.0)
+	w1.force_emerge_at(550.0, 1)
+	p.global_position = Vector2(550.0, 349.0)
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 	assert_true(not p.is_alive, "Surfaced slow worm causes instant death on player contact")
-	p.global_position = Vector2(120.0, 394.0)
+	w1.force_submerge(1.5)
+	await get_tree().physics_frame
+	p.global_position = Vector2(85.0, 394.0)
 	p.revive()
 	p.is_invulnerable = false
 	if GameManager:
 		GameManager.revives_used_this_run = 0
 	p.velocity = Vector2.ZERO
+	await get_tree().physics_frame
 	await get_tree().physics_frame
 
 	# 4. Worm-triggered Mine Spawning, Arming Guard, Proximity Warning & Single-Trigger Detonation
@@ -3339,10 +3383,10 @@ func test_level_9_worm_minefield() -> void:
 		retreat_count[0] += 1
 		last_retreat_pos[0] = pos
 	)
-	p.global_position = Vector2(120.0, 394.0) # Keep player away during spawn
+	p.global_position = Vector2(85.0, 394.0) # Keep player away during spawn
 	w1.set_physics_process(true)
-	w1.force_emerge_at(815.0, -1)
-	w1.global_position = Vector2(815.0, 400.0)
+	w1.force_emerge_at(545.0, -1)
+	w1.global_position = Vector2(545.0, 365.0)
 	w1.state = BulletBetrayalDesertWorm.WormState.SUBMERGING
 	w1._emerge_progress = 0.99
 	for _tick in range(6):
@@ -3352,49 +3396,49 @@ func test_level_9_worm_minefield() -> void:
 	w1.set_physics_process(false)
 
 	assert_eq(retreat_count[0], 1, "Completed worm retreat emits submerged_at once")
-	assert_eq(last_retreat_pos[0], Vector2(815.0, 400.0), "submerged_at reports exact worm disappearance coordinates")
+	assert_eq(last_retreat_pos[0], Vector2(545.0, 365.0), "submerged_at reports exact worm disappearance coordinates")
 	var mines_after_retreat := level.get_active_worm_mines()
 	assert_eq(mines_after_retreat.size(), 1, "Completed worm retreat dynamically spawns 1 worm mine")
 	var first_mine: BulletBetrayalWormMine = mines_after_retreat[0]
-	assert_eq(first_mine.global_position, Vector2(815.0, 400.0), "Spawned mine sits at exact worm submerge coordinate")
+	assert_eq(first_mine.global_position, Vector2(545.0, 365.0), "Spawned mine sits at exact worm submerge coordinate")
 	assert_true(first_mine.is_in_group("landmines") and first_mine.is_in_group("worm_mines"), "Worm mine joins expected hazard groups")
 
 	# Arming guard: before arm_delay elapses, walking atop mine MUST NOT detonate it
 	assert_true(not first_mine.is_armed and not first_mine.monitoring and first_mine.collision_shape.disabled,
 		"Newly spawned worm mine starts unarmed with collision disabled")
-	p.global_position = Vector2(815.0, 384.0)
+	p.global_position = Vector2(545.0, 349.0)
 	await get_tree().physics_frame
 	assert_true(p.is_alive and not first_mine.has_detonated(), "Unarmed worm mine cannot detonate before settling")
 
 	# Return player safely to sanctuary while mine finishes arming
-	p.global_position = Vector2(120.0, 394.0)
+	p.global_position = Vector2(85.0, 394.0)
 	await get_tree().create_timer(0.36).timeout
 	assert_true(first_mine.is_armed and first_mine.monitoring and not first_mine.collision_shape.disabled,
 		"Worm mine arms cleanly after arm_delay")
 
 	# Stationary persistence & force_submerge isolation check
-	w1.force_emerge_at(675.0, 1)
+	w1.force_emerge_at(480.0, 1)
 	w1.force_submerge(1.5)
-	assert_eq(first_mine.global_position, Vector2(815.0, 400.0), "Mine remains stationary after worm moves/submerges elsewhere")
+	assert_eq(first_mine.global_position, Vector2(545.0, 365.0), "Mine remains stationary after worm moves/submerges elsewhere")
 	assert_eq(level.get_active_worm_mines().size(), 1, "force_submerge does NOT emit submerged_at or spawn a fake mine")
 
 	# Proximity warning glow/pulse
 	assert_true(not first_mine.is_proximity_warning_active(), "Proximity warning inactive when player far away")
 	p.is_invulnerable = false
-	p.global_position = Vector2(745.0, 384.0) # 70px away (< 94px proximity range)
+	p.global_position = Vector2(490.0, 349.0) # 55px away (< 94px proximity range)
 	p.velocity = Vector2.ZERO
 	for _f in range(14):
 		await get_tree().physics_frame
 	assert_true(first_mine.is_proximity_warning_active() and first_mine.proximity_ring.visible,
 		"Proximity warning shimmer activates when alive player approaches mine")
-	assert_eq(p.get_safe_revive_position(), Vector2(745.0, 384.0), "Safe anchor tracks valid approach position")
+	assert_eq(p.get_safe_revive_position(), Vector2(490.0, 349.0), "Safe anchor tracks valid approach position")
 
 	# Single-trigger detonation + instant kill
 	var death_signals: Array[int] = [0]
 	var explosion_signals: Array[int] = [0]
 	p.player_died.connect(func(): death_signals[0] += 1)
 	first_mine.exploded.connect(func(): explosion_signals[0] += 1)
-	p.global_position = Vector2(815.0, 384.0)
+	p.global_position = Vector2(545.0, 349.0)
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 	assert_true(not p.is_alive and first_mine.has_detonated(), "Armed worm mine detonates and instant-kills player on contact")
@@ -3404,61 +3448,67 @@ func test_level_9_worm_minefield() -> void:
 
 	# Rewarded revive near surfaced worm & active mine clearance
 	await get_tree().create_timer(0.45).timeout
-	w1.force_emerge_at(820.0, -1) # 75px from 745 -> inside 65..95px dispersion band
+	w1.force_emerge_at(565.0, -1) # 75px from 490 -> inside 65..95px dispersion band
+	await get_tree().physics_frame
 	hud._on_revive_reward_granted(GameManager.current_run_id)
-	assert_true(p.is_alive and p.global_position == Vector2(745.0, 384.0), "Rewarded revive restores player at safe anchor")
+	assert_true(p.is_alive and p.global_position == Vector2(490.0, 349.0), "Rewarded revive restores player at safe anchor")
 	assert_true(w1.is_underground(), "Nearby surfaced worm disperses on revive")
 	assert_eq(level.get_active_worm_mines().size(), 0, "Detonated mine excluded from active mines")
 
-	# 5. Placement Fairness, Geometry Suppression & Safe Cap Cleanup
-	p.global_position = Vector2(1640.0, 394.0)
+	# 5. Placement Fairness, Geometry/Prop Suppression & Safe Cap Cleanup
+	p.global_position = Vector2(1625.0, 309.0)
 	await get_tree().physics_frame
-	assert_true(level.try_spawn_worm_mine(Vector2(250.0, 410.0)) == null, "Rejects mine in spawn sanctuary")
-	assert_true(level.try_spawn_worm_mine(Vector2(1655.0, 410.0)) == null, "Rejects mine directly underneath player")
-	assert_true(level.try_spawn_worm_mine(Vector2(500.0, 410.0)) == null, "Rejects mine inside canyon gap")
-	assert_true(level.try_spawn_worm_mine(Vector2(552.0, 400.0)) == null, "Rejects mine in gap landing margin")
-	assert_true(level.try_spawn_worm_mine(Vector2(3255.0, 410.0)) == null, "Rejects mine inside RightWall")
-	assert_true(level.try_spawn_worm_mine(Vector2(3175.0, 410.0)) == null, "Rejects mine beside ExtractionBeacon")
+	assert_true(level.try_spawn_worm_mine(Vector2(200.0, 410.0)) == null, "Rejects mine in spawn sanctuary")
+	assert_true(level.try_spawn_worm_mine(Vector2(1620.0, 325.0)) == null, "Rejects mine directly underneath player")
+	assert_true(level.try_spawn_worm_mine(Vector2(750.0, 400.0)) == null, "Rejects mine inside canyon pit")
+	assert_true(level.try_spawn_worm_mine(Vector2(430.0, 365.0)) == null, "Rejects mine in gap landing margin (<46px)")
+	assert_true(level.try_spawn_worm_mine(Vector2(1430.0, 325.0)) == null, "Rejects mine hidden behind Sandbag3 prop")
+	assert_true(level.try_spawn_worm_mine(Vector2(2618.0, 335.0)) == null, "Rejects mine hidden behind Crates1 prop")
+	assert_true(level.try_spawn_worm_mine(Vector2(3665.0, 380.0)) == null, "Rejects mine inside RightWall")
+	assert_true(level.try_spawn_worm_mine(Vector2(3600.0, 380.0)) == null, "Rejects mine beside ExtractionBeacon")
 
 	# Per-zone & global mine cap with distant-first safe cleanup
-	p.global_position = Vector2(120.0, 394.0)
+	p.global_position = Vector2(85.0, 394.0)
 	await get_tree().physics_frame
-	var m_z1_a := level.try_spawn_worm_mine(Vector2(1445.0, 410.0))
-	var m_z1_b := level.try_spawn_worm_mine(Vector2(1525.0, 410.0))
-	var m_z1_c := level.try_spawn_worm_mine(Vector2(1615.0, 410.0))
-	assert_true(m_z1_a != null and m_z1_b != null and m_z1_c != null, "Zone 1 accepts 3 well-spaced mines")
-	assert_true(level.try_spawn_worm_mine(Vector2(1540.0, 410.0)) == null, "Spacing guard blocks overlapping mine (< 42px)")
-	var m_z1_d := level.try_spawn_worm_mine(Vector2(1795.0, 410.0))
-	assert_true(m_z1_d != null, "Zone 1 spawns 4th mine by safely disarming oldest distant mine")
-	assert_eq(level.get_active_mines_in_zone(1).size(), 3, "Zone 1 enforces MAX_MINES_PER_ZONE = 3")
-	assert_true(m_z1_a.is_disarming() or not is_instance_valid(m_z1_a), "Oldest distant mine in Zone 1 disarmed cleanly")
+	var m_z2_a := level.try_spawn_worm_mine(Vector2(1485.0, 325.0))
+	var m_z2_b := level.try_spawn_worm_mine(Vector2(1555.0, 325.0))
+	var m_z2_c := level.try_spawn_worm_mine(Vector2(1640.0, 325.0))
+	assert_true(m_z2_a != null and m_z2_b != null and m_z2_c != null, "Zone 2 accepts 3 well-spaced mines")
+	assert_true(level.try_spawn_worm_mine(Vector2(1568.0, 325.0)) == null, "Spacing guard blocks overlapping mine (< 42px)")
+	var m_z2_d := level.try_spawn_worm_mine(Vector2(1740.0, 325.0))
+	assert_true(m_z2_d != null, "Zone 2 spawns 4th mine by safely disarming oldest distant mine")
+	assert_eq(level.get_active_mines_in_zone(2).size(), 3, "Zone 2 enforces MAX_MINES_PER_ZONE = 3")
+	assert_true(m_z2_a.is_disarming() or not is_instance_valid(m_z2_a), "Oldest distant mine in Zone 2 disarmed cleanly")
 
-	# Global cap <= 8
-	level.try_spawn_worm_mine(Vector2(650.0, 400.0))
-	level.try_spawn_worm_mine(Vector2(760.0, 400.0))
-	level.try_spawn_worm_mine(Vector2(880.0, 400.0))
-	level.try_spawn_worm_mine(Vector2(2460.0, 410.0))
-	level.try_spawn_worm_mine(Vector2(2580.0, 410.0))
-	level.try_spawn_worm_mine(Vector2(2720.0, 410.0))
+	# Global cap <= 10
+	level.try_spawn_worm_mine(Vector2(500.0, 365.0))
+	level.try_spawn_worm_mine(Vector2(560.0, 365.0))
+	level.try_spawn_worm_mine(Vector2(620.0, 365.0))
+	level.try_spawn_worm_mine(Vector2(925.0, 440.0))
+	level.try_spawn_worm_mine(Vector2(985.0, 440.0))
+	level.try_spawn_worm_mine(Vector2(1055.0, 440.0))
+	level.try_spawn_worm_mine(Vector2(2260.0, 390.0))
+	level.try_spawn_worm_mine(Vector2(2330.0, 390.0))
+	level.try_spawn_worm_mine(Vector2(2410.0, 390.0))
 	assert_true(level.get_active_worm_mines().size() <= BulletBetrayalLevel9.MAX_ACTIVE_MINES,
-		"Total active mines never exceeds MAX_ACTIVE_MINES (8)")
+		"Total active mines never exceeds MAX_ACTIVE_MINES (10)")
 
-	# Never silently delete a hazard right beside the player in a full zone
-	var z2_a := level.try_spawn_worm_mine(Vector2(2072.0, 390.0))
-	var z2_b := level.try_spawn_worm_mine(Vector2(2120.0, 390.0))
-	var z2_c := level.try_spawn_worm_mine(Vector2(2168.0, 390.0))
-	assert_true(z2_a != null and z2_b != null and z2_c != null, "Zone 2 accepts 3 valid mines for cap test")
-	if z2_a and z2_b and z2_c:
-		p.global_position = Vector2(2120.0, 374.0) # All 3 mines <= 48px (< 96px protected radius)
+	# Never silently delete a hazard right beside the player in a full zone (Zone 4: 2646..2894)
+	var z4_a := level.try_spawn_worm_mine(Vector2(2675.0, 335.0))
+	var z4_b := level.try_spawn_worm_mine(Vector2(2725.0, 335.0))
+	var z4_c := level.try_spawn_worm_mine(Vector2(2775.0, 335.0))
+	assert_true(z4_a != null and z4_b != null and z4_c != null, "Zone 4 accepts 3 valid mines for cap test")
+	if z4_a and z4_b and z4_c:
+		p.global_position = Vector2(2725.0, 319.0) # All 3 mines <= 50px (< 96px protected radius)
 		await get_tree().physics_frame
-		# 2214 passes all placement checks (46px from z2_c, 94px from player) so _ensure_mine_capacity_for_zone is exercised
-		var blocked_cleanup := level.try_spawn_worm_mine(Vector2(2214.0, 390.0))
+		# 2835 passes all placement checks (60px from z4_c, 110px from player) so _ensure_mine_capacity_for_zone executes
+		var blocked_cleanup := level.try_spawn_worm_mine(Vector2(2835.0, 335.0))
 		assert_true(blocked_cleanup == null, "Safe cleanup refuses to delete mines adjacent to alive player")
-		assert_true(not z2_a.is_disarming() and not z2_b.is_disarming() and not z2_c.is_disarming(),
+		assert_true(not z4_a.is_disarming() and not z4_b.is_disarming() and not z4_c.is_disarming(),
 			"Adjacent hazards near player preserved intact")
 
 	# Clean remaining active mines before completion test
-	p.global_position = Vector2(120.0, 394.0)
+	p.global_position = Vector2(85.0, 394.0)
 	for m in level.get_active_worm_mines():
 		m.disarm_and_cleanup()
 	await get_tree().create_timer(0.32).timeout
