@@ -34,6 +34,14 @@ enum WormState {
 @export var submerge_duration: float = 0.30
 @export var min_player_spawn_clearance: float = 72.0
 @export var initial_delay: float = -1.0
+@export var unpredictable_intervals: bool = false
+@export var crawl_distance_min: float = 0.0
+@export var crawl_distance_max: float = 0.0
+@export var ambush_ahead_of_player: bool = false
+@export var require_player_in_zone: bool = false
+@export var trigger_range_x: float = 300.0
+@export var ambush_lead_min: float = 95.0
+@export var ambush_lead_max: float = 165.0
 
 var state: WormState = WormState.UNDERGROUND
 var facing_direction: int = 1 # 1 = Right, -1 = Left
@@ -42,8 +50,11 @@ var _state_timer: float = 1.5
 var _anim_timer: float = 0.0
 var _frame_idx: int = 1
 var _warning_elapsed: float = 0.0
+var _active_warning_duration: float = 0.78
 var _emerge_progress: float = 0.0
 var _last_emerge_x: float = -9999.0
+var _crawl_distance_traveled: float = 0.0
+var _crawl_distance_limit: float = 0.0
 
 const BODY_REST_Y: float = 23.0      # Inside BodyClip (-34..0), center at -11 above surface
 const BODY_HIDDEN_Y: float = 45.0    # Clipped cleanly below surface line
@@ -103,6 +114,20 @@ func _physics_process(delta: float) -> void:
 
 
 func _process_underground(delta: float) -> void:
+	if require_player_in_zone:
+		var p := _get_active_player()
+		if not p or ("is_alive" in p and not p.is_alive):
+			return
+		var territory_dist_x: float = 0.0
+		if p.global_position.x < territory_min_x:
+			territory_dist_x = territory_min_x - p.global_position.x
+		elif p.global_position.x > territory_max_x:
+			territory_dist_x = p.global_position.x - territory_max_x
+		var dy: float = absf(p.global_position.y - (surface_y - 16.0))
+		if territory_dist_x > trigger_range_x or dy > 180.0:
+			_state_timer = minf(_state_timer, maxf(0.16, initial_delay if initial_delay >= 0.0 else 0.25))
+			return
+
 	_state_timer -= delta
 	if _state_timer > 0.0:
 		return
@@ -120,9 +145,10 @@ func _process_warning(delta: float) -> void:
 	_warning_elapsed += delta
 	_state_timer -= delta
 
-	# Quiver sand mound as visual rumble cue
+	# Quiver sand mound as visual rumble cue (faster pulse on tighter warnings)
 	if sand_mound:
-		sand_mound.position.x = sin(_warning_elapsed * 46.0) * 2.5
+		var shake_freq: float = 46.0 * (0.78 / clampf(_active_warning_duration, 0.34, 1.0))
+		sand_mound.position.x = sin(_warning_elapsed * shake_freq) * 2.5
 		sand_mound.position.y = -7.5 + absf(cos(_warning_elapsed * 28.0)) * 1.2
 
 	if _state_timer <= 0.0:
@@ -152,7 +178,9 @@ func _process_crawling(delta: float) -> void:
 
 	var left_bound: float = territory_min_x + 22.0
 	var right_bound: float = territory_max_x - 22.0
-	global_position.x += facing_direction * crawl_speed * delta
+	var step_x: float = facing_direction * crawl_speed * delta
+	global_position.x += step_x
+	_crawl_distance_traveled += absf(step_x)
 
 	if global_position.x <= left_bound:
 		global_position.x = left_bound
@@ -176,7 +204,7 @@ func _process_crawling(delta: float) -> void:
 
 	_check_overlapping_player()
 
-	if _state_timer <= 0.0:
+	if _state_timer <= 0.0 or (_crawl_distance_limit > 0.0 and _crawl_distance_traveled >= _crawl_distance_limit):
 		_enter_submerging()
 
 
@@ -192,7 +220,7 @@ func _process_submerging(delta: float) -> void:
 
 	if _emerge_progress >= 1.0:
 		submerged.emit()
-		_enter_underground(randf_range(underground_time_min, underground_time_max))
+		_enter_underground(_next_underground_duration())
 
 
 func _enter_underground(duration: float) -> void:
@@ -215,7 +243,8 @@ func _enter_warning(emerge_x: float) -> void:
 	_last_emerge_x = emerge_x
 	global_position = Vector2(clampf(emerge_x, territory_min_x + 22.0, territory_max_x - 22.0), surface_y)
 	_warning_elapsed = 0.0
-	_state_timer = clampf(warning_duration * randf_range(0.90, 1.15), 0.55, 1.10)
+	_active_warning_duration = clampf(warning_duration * randf_range(0.90, 1.15), 0.34, 1.10)
+	_state_timer = _active_warning_duration
 	_set_hitbox_enabled(false)
 	if worm_sprite:
 		worm_sprite.visible = false
@@ -255,6 +284,13 @@ func _enter_emerging() -> void:
 func _enter_crawling() -> void:
 	state = WormState.CRAWLING
 	_state_timer = randf_range(crawl_time_min, crawl_time_max)
+	_crawl_distance_traveled = 0.0
+	if crawl_distance_max > 0.0:
+		var d_min: float = maxf(32.0, crawl_distance_min)
+		var d_max: float = maxf(d_min + 10.0, crawl_distance_max)
+		_crawl_distance_limit = randf_range(d_min, d_max)
+	else:
+		_crawl_distance_limit = 0.0
 	_anim_timer = 0.0
 	_set_hitbox_enabled(true)
 	if worm_sprite:
@@ -291,12 +327,43 @@ func _set_hitbox_enabled(enabled: bool) -> void:
 		kill_col.disabled = not enabled
 
 
+func _next_underground_duration() -> float:
+	if not unpredictable_intervals:
+		return randf_range(underground_time_min, underground_time_max)
+	var span_low: float = lerpf(underground_time_min, underground_time_max, 0.35)
+	var span_high: float = lerpf(underground_time_min, underground_time_max, 0.72)
+	var roll: float = randf()
+	if roll < 0.38:
+		return randf_range(underground_time_min, span_low)
+	elif roll < 0.72:
+		return randf_range(span_low, span_high)
+	return randf_range(span_high, underground_time_max)
+
+
 func _pick_safe_emergence_x() -> float:
 	var min_x: float = territory_min_x + 24.0
 	var max_x: float = territory_max_x - 24.0
 	if max_x <= min_x:
 		var mid: float = (territory_min_x + territory_max_x) * 0.5
 		return -9999.0 if _is_player_on_spot(mid, min_player_spawn_clearance) else mid
+
+	if ambush_ahead_of_player:
+		var p := _get_active_player()
+		if p and (not ("is_alive" in p) or p.is_alive):
+			var route_dir: int = 1
+			if "velocity" in p and p.velocity.x < -12.0:
+				route_dir = -1
+			elif "facing_direction" in p and p.facing_direction != 0:
+				route_dir = 1 if p.facing_direction > 0 else -1
+			var lead_min: float = maxf(min_player_spawn_clearance + 16.0, ambush_lead_min)
+			var lead_max: float = maxf(lead_min + 18.0, ambush_lead_max)
+			var ambush_candidates: Array[float] = []
+			for _j in range(10):
+				var ahead_x: float = p.global_position.x + route_dir * randf_range(lead_min, lead_max)
+				if ahead_x >= min_x and ahead_x <= max_x and not _is_player_on_spot(ahead_x, min_player_spawn_clearance):
+					ambush_candidates.append(ahead_x)
+			if not ambush_candidates.is_empty():
+				return ambush_candidates[randi() % ambush_candidates.size()]
 
 	var candidates: Array[float] = []
 	for _i in range(14):

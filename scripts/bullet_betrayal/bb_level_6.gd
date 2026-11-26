@@ -133,17 +133,14 @@ func _on_extraction_reached() -> void:
 		player.input_disabled = true
 		player.velocity = Vector2.ZERO
 
-	# Calculate stars: 3 stars for clean run (0 revives), 2 stars if revived
-	var earned_stars: int = 2 if (GameManager and GameManager.revives_used_this_run > 0) else 3
-	if SaveManager:
-		SaveManager.complete_bb_level(6, earned_stars)
-	if AudioManager:
-		AudioManager.play_sfx("complete")
-
 	if hud:
-		hud.current_stage_id = 6
-		hud.stage_clear_subtitle = "DUNE PATROL CLEARED"
-		hud.show_victory(player.current_ammo if player else 0, earned_stars)
+		hud.complete_and_record_stage(6, "DUNE PATROL CLEARED", player.current_ammo if player else 0)
+	else:
+		var earned_stars: int = 2 if (GameManager and GameManager.revives_used_this_run > 0) else 3
+		if SaveManager:
+			SaveManager.complete_bb_level(6, earned_stars)
+		if AudioManager:
+			AudioManager.play_sfx("complete")
 
 func _on_player_revived() -> void:
 	if player:

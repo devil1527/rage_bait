@@ -60,6 +60,7 @@ const STAGE_TITLES: Dictionary = {
 	5: "WORLD 1-5: OPERATION LAST STAND",
 	6: "WORLD 2-1: DUNE PATROL",
 	7: "WORLD 2-2: DESERT WORMS",
+	8: "WORLD 2-3: DESERT WORM NIGHTMARE",
 }
 
 @export var current_stage_id: int = 1:
@@ -84,9 +85,11 @@ const STAGE_TITLES: Dictionary = {
 
 var _player_ref: BulletBetrayalPlayer = null
 var _pending_confirm_action: String = ""
+var revives_used_in_run: int = 0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	revives_used_in_run = 0
 	update_stage_title(current_stage_id)
 
 	# Pause button inputs (both click and touchscreen touch)
@@ -153,6 +156,7 @@ func _ready() -> void:
 
 func connect_player(player: BulletBetrayalPlayer) -> void:
 	_player_ref = player
+	revives_used_in_run = 0
 	player.health_updated.connect(update_health)
 	player.ammo_updated.connect(update_ammo)
 	player.dry_fire.connect(_on_dry_fire)
@@ -318,6 +322,7 @@ func _execute_confirm() -> void:
 
 func _on_restart_pressed() -> void:
 	AudioManager.play_sfx("click")
+	revives_used_in_run = 0
 	pause_overlay.visible = false
 	death_overlay.visible = false
 	victory_overlay.visible = false
@@ -432,6 +437,7 @@ func _on_revive_reward_granted(expected_run_id: int = -1) -> void:
 		return
 
 	# Revive player authoritatively with 1 life and 10 bullets
+	revives_used_in_run += 1
 	if GameManager:
 		GameManager.revives_used_this_run += 1
 
@@ -453,19 +459,35 @@ func _on_revive_ad_failed(reason: String) -> void:
 		death_ad_status.modulate = Color(1.0, 0.4, 0.4, 1.0)
 	_update_death_ad_status()
 
-func show_victory(ammo_remaining: int, earned_stars: int = 3) -> void:
+func has_used_rewarded_revive() -> bool:
+	return revives_used_in_run > 0 or (GameManager != null and GameManager.revives_used_this_run > 0)
+
+func get_run_star_rating() -> int:
+	return 2 if has_used_rewarded_revive() else 3
+
+func complete_and_record_stage(stage_id: int, subtitle: String, ammo_remaining: int) -> int:
+	var earned_stars: int = get_run_star_rating()
+	if SaveManager:
+		SaveManager.complete_bb_level(stage_id, earned_stars)
+	if AudioManager:
+		AudioManager.play_sfx("complete")
+	current_stage_id = stage_id
+	stage_clear_subtitle = subtitle
+	show_victory(ammo_remaining, earned_stars)
+	return earned_stars
+
+func show_victory(ammo_remaining: int, earned_stars: int = -1) -> void:
 	reset_touch_controls()
 	if victory_title:
 		victory_title.text = "STAGE %d CLEARED!" % current_stage_id
+	var run_stars: int = earned_stars if earned_stars >= 0 else get_run_star_rating()
+	if has_used_rewarded_revive():
+		run_stars = mini(run_stars, 2)
 	if victory_stats_label:
-		var saved_best: int = SaveManager.get_bb_level_stars(current_stage_id) if SaveManager else 0
-		var display_stars: int = maxi(earned_stars, saved_best)
 		var stars_str := "★ ★ ★  (PERFECT)"
-		if display_stars == 3 and earned_stars < 3:
-			stars_str = "★ ★ ★  (BEST SAVED)"
-		elif display_stars == 2:
+		if run_stars == 2:
 			stars_str = "★ ★ ☆  (REVIVED)"
-		elif display_stars < 2:
+		elif run_stars < 2:
 			stars_str = "★ ☆ ☆"
 		victory_stats_label.text = "%s\nRATING: %s\nAMMO REMAINING: %d ROUNDS" % [stage_clear_subtitle, stars_str, ammo_remaining]
 	if victory_message_modal:
@@ -504,6 +526,11 @@ func _on_next_stage_pressed() -> void:
 			return
 		get_tree().paused = false
 		get_tree().change_scene_to_file("res://scenes/bullet_betrayal/bb_level_7.tscn")
+	elif current_stage_id == 7:
+		if get_tree().current_scene and (get_tree().current_scene.name == "BulletBetrayalTestRunner" or get_tree().current_scene.name == "TestRunner"):
+			return
+		get_tree().paused = false
+		get_tree().change_scene_to_file("res://scenes/bullet_betrayal/bb_level_8.tscn")
 	else:
 		if victory_message_modal:
 			if victory_modal_title:

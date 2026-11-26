@@ -89,6 +89,8 @@ func run_all_tests() -> void:
 	await test_level_6_dune_patrol()
 	await test_stage6_to_7_progression_and_stars()
 	await test_level_7_desert_worms()
+	await test_rewarded_revive_star_pipeline_across_stages()
+	await test_level_8_desert_worm_nightmare()
 	await test_all_5_levels_rewarded_revive_and_reset()
 
 func test_audio_manager_bullet_betrayal_sfx() -> void:
@@ -613,14 +615,14 @@ func test_pause_menu_and_confirmation_modals() -> void:
 	assert_eq(hud.victory_mission_btn.text, "☰ LEVEL SELECT", "Level Select button text matches Coin Hell ('☰ LEVEL SELECT')")
 	assert_true(hud.victory_arcade_btn == null, "Arcade Menu button omitted from Victory overlay (matches Coin Hell 3-button layout)")
 	
-	# Test Next Stage Button opens MessageModal for unreleased Stage 8 (when on last implemented Stage 7)
-	hud.current_stage_id = 7
+	# Test Next Stage Button opens MessageModal for unreleased Stage 9 (when on last implemented Stage 8)
+	hud.current_stage_id = 8
 	assert_true(hud.victory_message_modal != null, "Victory overlay has MessageModal")
 	assert_true(not hud.victory_message_modal.visible, "MessageModal starts hidden")
 	hud.victory_next_stage_btn.pressed.emit()
 	assert_true(hud.victory_message_modal.visible, "MessageModal opens when clicking Next Stage on last implemented stage")
-	assert_eq(hud.victory_modal_title.text, "STAGE 8 IN PROGRESS", "MessageModal title is 'STAGE 8 IN PROGRESS'")
-	assert_true(hud.victory_modal_label.text.contains("still being built"), "MessageModal explains Stage 8 is being built")
+	assert_eq(hud.victory_modal_title.text, "STAGE 9 IN PROGRESS", "MessageModal title is 'STAGE 9 IN PROGRESS'")
+	assert_true(hud.victory_modal_label.text.contains("still being built"), "MessageModal explains Stage 9 is being built")
 	
 	# Dismiss MessageModal
 	hud.victory_modal_ok_btn.pressed.emit()
@@ -1092,12 +1094,18 @@ func test_bullet_betrayal_menu_stars_reflection() -> void:
 	var state7_lbl: Label = vbox7.get_child(2)
 	assert_eq(state7_lbl.text, "LOCKED", "Stage 7 tile state is 'LOCKED'")
 
-	# Check Stage 8 card tile: PLANNED (future unreleased stage)
 	var btn_lvl8: Button = menu.get_level_button(8)
 	assert_true(btn_lvl8 != null, "LevelBtn_8 exists")
 	var vbox8 = btn_lvl8.get_child(0)
 	var state8_lbl: Label = vbox8.get_child(2)
-	assert_eq(state8_lbl.text, "PLANNED", "Stage 8 tile state is 'PLANNED'")
+	assert_eq(state8_lbl.text, "LOCKED", "Stage 8 tile state is 'LOCKED'")
+
+	# Check Stage 9 card tile: PLANNED (future unreleased stage)
+	var btn_lvl9: Button = menu.get_level_button(9)
+	assert_true(btn_lvl9 != null, "LevelBtn_9 exists")
+	var vbox9 = btn_lvl9.get_child(0)
+	var state9_lbl: Label = vbox9.get_child(2)
+	assert_eq(state9_lbl.text, "PLANNED", "Stage 9 tile state is 'PLANNED'")
 
 	menu.queue_free()
 
@@ -2099,10 +2107,12 @@ func test_level_6_dune_patrol() -> void:
 	assert_true(btn_7 != null, "Stage 7 button exists in menu")
 	var btn_8: Button = menu.get_level_button(8)
 	assert_true(btn_8 != null, "Stage 8 button exists in menu")
+	var btn_9: Button = menu.get_level_button(9)
+	assert_true(btn_9 != null, "Stage 9 button exists in menu")
 
-	menu._on_level_tile_pressed(8)
-	assert_true(menu.message_modal.visible, "Stage 8 is guarded with in-progress modal")
-	assert_true("IN PROGRESS" in menu.modal_title.text, "Modal title indicates Stage 8 in progress")
+	menu._on_level_tile_pressed(9)
+	assert_true(menu.message_modal.visible, "Stage 9 is guarded with in-progress modal")
+	assert_true("IN PROGRESS" in menu.modal_title.text, "Modal title indicates Stage 9 in progress")
 	menu.queue_free()
 
 	level.queue_free()
@@ -2402,7 +2412,8 @@ func test_stage6_to_7_progression_and_stars() -> void:
 		enemy.take_hit(1)
 	lvl6_replay.extraction_beacon.extraction_reached.emit()
 	assert_eq(SaveManager.get_bb_level_stars(6), 3, "Best saved star rating (3) never decreases on 2-star replay")
-	assert_true("★ ★ ★" in lvl6_replay.hud.victory_stats_label.text, "Completion screen reflects preserved best rating ★ ★ ★")
+	assert_true("★ ★ ☆" in lvl6_replay.hud.victory_stats_label.text, "Completion screen displays 2 stars (REVIVED) on revived attempt, never 3")
+	assert_true(not ("★ ★ ★" in lvl6_replay.hud.victory_stats_label.text), "Completion screen does not show 3 stars after rewarded revive")
 	lvl6_replay.queue_free()
 	await get_tree().physics_frame
 
@@ -2427,12 +2438,14 @@ func test_stage6_to_7_progression_and_stars() -> void:
 	var btn6: Button = menu_after.get_level_button(6)
 	var btn7: Button = menu_after.get_level_button(7)
 	var btn8: Button = menu_after.get_level_button(8)
+	var btn9: Button = menu_after.get_level_button(9)
 	assert_eq((btn6.get_child(0).get_child(2) as Label).text, "COMPLETED", "Menu shows Stage 6 as COMPLETED")
 	assert_eq((btn6.get_child(0).get_node("StarsLabel") as Label).text, "★ ★ ★", "Menu shows saved ★ ★ ★ on Stage 6")
 	assert_eq((btn7.get_child(0).get_child(2) as Label).text, "AVAILABLE", "Menu shows Stage 7 as AVAILABLE after Stage 6 completion")
 	assert_eq((btn7.get_child(0).get_node("StarsLabel") as Label).text, "☆ ☆ ☆", "Menu shows unrated ☆ ☆ ☆ on uncompleted Stage 7")
 	assert_true(not (btn7.get_child(0).get_child(0).get_child(1) as TextureRect).visible, "Stage 7 lock/check icon hidden when AVAILABLE")
-	assert_eq((btn8.get_child(0).get_child(2) as Label).text, "PLANNED", "Menu keeps unimplemented Stage 8 as PLANNED")
+	assert_eq((btn8.get_child(0).get_child(2) as Label).text, "LOCKED", "Menu shows implemented Stage 8 as LOCKED before Stage 7 clear")
+	assert_eq((btn9.get_child(0).get_child(2) as Label).text, "PLANNED", "Menu keeps unimplemented Stage 9 as PLANNED")
 
 	# Verify HUD Next Stage on Stage 6 points to bb_level_7 scene constant
 	assert_true(ResourceLoader.exists("res://scenes/bullet_betrayal/bb_level_7.tscn"), "Next Stage target bb_level_7.tscn exists")
@@ -2730,4 +2743,426 @@ func test_level_7_desert_worms() -> void:
 	level.queue_free()
 	await get_tree().physics_frame
 	assert_true(true, "World 2 Stage 7 Desert Worms fully verified")
+
+
+func test_rewarded_revive_star_pipeline_across_stages() -> void:
+	print("\n=======================================================")
+	print("  TEST: Rewarded Revive Star Fix (Stages 6, 7, 8)      ")
+	print("=======================================================")
+
+	var orig_bb_highest: int = SaveManager.bb_highest_unlocked_level
+	var orig_bb_completed: Array = SaveManager.bb_completed_levels.duplicate()
+	var orig_bb_stars: Dictionary = SaveManager.bb_stage_stars.duplicate()
+	var orig_ch_highest: int = SaveManager.highest_unlocked_level
+	var orig_ch_completed: Array = SaveManager.completed_levels.duplicate()
+
+	if AdManager:
+		AdManager.enable_mock_mode(true)
+
+	# Helper check across Stage 6, Stage 7, and Stage 8
+	var stage_paths: Dictionary = {
+		6: "res://scenes/bullet_betrayal/bb_level_6.tscn",
+		7: "res://scenes/bullet_betrayal/bb_level_7.tscn",
+		8: "res://scenes/bullet_betrayal/bb_level_8.tscn",
+	}
+
+	# Start cleanly with 1..5 completed and Stage 6 unlocked (no saved stars on 6/7/8)
+	SaveManager.bb_highest_unlocked_level = 8
+	SaveManager.bb_completed_levels = [1, 2, 3, 4, 5]
+	SaveManager.bb_stage_stars = {"1": 3, "2": 3, "3": 3, "4": 3, "5": 3}
+	SaveManager.save_data()
+
+	for sid in [6, 7, 8]:
+		var scn: PackedScene = load(stage_paths[sid])
+		assert_true(scn != null, "Stage %d scene loads for scoring test" % sid)
+
+		# A. First clear WITH rewarded revive -> 2 stars on completion & menu, never 3
+		var lvl_rev: Node2D = scn.instantiate()
+		add_child(lvl_rev)
+		await get_tree().physics_frame
+		for enemy in lvl_rev.enemies_container.get_children():
+			enemy.set_physics_process(false)
+		if lvl_rev.get_node_or_null("Worms"):
+			for w in lvl_rev.get_node("Worms").get_children():
+				w.set_physics_process(false)
+
+		lvl_rev.player.die()
+		await get_tree().create_timer(0.45).timeout
+		AdManager.set_mock_ad_available(true)
+		lvl_rev.hud._on_revive_ad_pressed()
+		AdManager.simulate_mock_reward()
+		assert_true(lvl_rev.hud.has_used_rewarded_revive(), "Stage %d HUD tracks applied rewarded revive" % sid)
+		assert_eq(lvl_rev.hud.get_run_star_rating(), 2, "Stage %d shared star rating returns 2 after revive" % sid)
+
+		# Regression guard: even if global counter were clobbered externally, HUD run revive state prevents 3 stars
+		var saved_global_revives: int = GameManager.revives_used_this_run
+		if sid == 6 or sid == 8:
+			GameManager.revives_used_this_run = 0
+			assert_eq(lvl_rev.hud.get_run_star_rating(), 2, "Stage %d shared scoring still enforces 2 stars if global counter resets" % sid)
+		GameManager.revives_used_this_run = saved_global_revives
+
+		for enemy in lvl_rev.enemies_container.get_children():
+			enemy.take_hit(1)
+		lvl_rev.extraction_beacon.extraction_reached.emit()
+
+		assert_eq(SaveManager.get_bb_level_stars(sid), 2, "Stage %d saves 2 stars on first revived clear" % sid)
+		assert_true("★ ★ ☆" in lvl_rev.hud.victory_stats_label.text, "Stage %d completion displays ★ ★ ☆ after revived clear" % sid)
+		assert_true(not ("★ ★ ★" in lvl_rev.hud.victory_stats_label.text), "Stage %d completion never shows 3 stars after revive" % sid)
+		lvl_rev.queue_free()
+		await get_tree().physics_frame
+
+		# Verify Stage Select displays matching 2 stars
+		var menu_rev: BulletBetrayalMenu = load("res://scenes/bullet_betrayal/bullet_betrayal_menu.tscn").instantiate()
+		add_child(menu_rev)
+		await get_tree().physics_frame
+		var rev_btn: Button = menu_rev.get_level_button(sid)
+		assert_eq((rev_btn.get_child(0).get_node("StarsLabel") as Label).text, "★ ★ ☆",
+			"Menu displays matching ★ ★ ☆ for revived Stage %d" % sid)
+		menu_rev.queue_free()
+		await get_tree().physics_frame
+
+		# B. Normal retry / failed ad / dismissed ad -> 3 stars earned on clean finish
+		var lvl_fail_ad: Node2D = scn.instantiate()
+		add_child(lvl_fail_ad)
+		await get_tree().physics_frame
+		for enemy in lvl_fail_ad.enemies_container.get_children():
+			enemy.set_physics_process(false)
+		if lvl_fail_ad.get_node_or_null("Worms"):
+			for w in lvl_fail_ad.get_node("Worms").get_children():
+				w.set_physics_process(false)
+
+		lvl_fail_ad.player.die()
+		await get_tree().create_timer(0.45).timeout
+		AdManager.set_mock_ad_available(true)
+		lvl_fail_ad.hud._on_revive_ad_pressed()
+		AdManager.simulate_mock_dismiss_without_reward()
+		AdManager.simulate_mock_load_failure(AdManager.AdErrorType.NO_FILL, 3, "No fill")
+		lvl_fail_ad.hud._on_revive_ad_pressed()
+		assert_true(not lvl_fail_ad.hud.has_used_rewarded_revive(), "Stage %d failed/dismissed ad does not mark revive used" % sid)
+		assert_eq(lvl_fail_ad.hud.get_run_star_rating(), 3, "Stage %d still eligible for 3 stars after failed ad" % sid)
+		get_tree().paused = false
+		lvl_fail_ad.queue_free()
+		await get_tree().physics_frame
+
+		# Clean attempt after normal death/retry -> upgrades to 3 stars
+		var lvl_clean: Node2D = scn.instantiate()
+		add_child(lvl_clean)
+		await get_tree().physics_frame
+		for enemy in lvl_clean.enemies_container.get_children():
+			enemy.set_physics_process(false)
+			enemy.take_hit(1)
+		assert_eq(lvl_clean.hud.get_run_star_rating(), 3, "Stage %d clean retry run rates 3 stars" % sid)
+		lvl_clean.extraction_beacon.extraction_reached.emit()
+		assert_eq(SaveManager.get_bb_level_stars(sid), 3, "Stage %d upgrades saved best to 3 stars" % sid)
+		assert_true("★ ★ ★" in lvl_clean.hud.victory_stats_label.text, "Stage %d completion displays ★ ★ ★ on clean clear" % sid)
+		lvl_clean.queue_free()
+		await get_tree().physics_frame
+
+		# C. Replay already 3-starred stage WITH rewarded revive -> completion shows 2 stars, saved best stays 3
+		var lvl_rep_rev: Node2D = scn.instantiate()
+		add_child(lvl_rep_rev)
+		await get_tree().physics_frame
+		for enemy in lvl_rep_rev.enemies_container.get_children():
+			enemy.set_physics_process(false)
+		if lvl_rep_rev.get_node_or_null("Worms"):
+			for w in lvl_rep_rev.get_node("Worms").get_children():
+				w.set_physics_process(false)
+		lvl_rep_rev.player.die()
+		await get_tree().create_timer(0.45).timeout
+		AdManager.set_mock_ad_available(true)
+		lvl_rep_rev.hud._on_revive_ad_pressed()
+		AdManager.simulate_mock_reward()
+		for enemy in lvl_rep_rev.enemies_container.get_children():
+			enemy.take_hit(1)
+		lvl_rep_rev.extraction_beacon.extraction_reached.emit()
+
+		assert_eq(SaveManager.get_bb_level_stars(sid), 3, "Stage %d saved best (3) never decreases on revived replay" % sid)
+		assert_true("★ ★ ☆" in lvl_rep_rev.hud.victory_stats_label.text,
+			"Stage %d revived replay completion screen shows ★ ★ ☆ instead of 3 stars" % sid)
+		assert_true(not ("★ ★ ★" in lvl_rep_rev.hud.victory_stats_label.text),
+			"Stage %d revived replay completion screen does not falsely show ★ ★ ★" % sid)
+		lvl_rep_rev.queue_free()
+		await get_tree().physics_frame
+
+		var menu_best: BulletBetrayalMenu = load("res://scenes/bullet_betrayal/bullet_betrayal_menu.tscn").instantiate()
+		add_child(menu_best)
+		await get_tree().physics_frame
+		var best_btn: Button = menu_best.get_level_button(sid)
+		assert_eq((best_btn.get_child(0).get_node("StarsLabel") as Label).text, "★ ★ ★",
+			"Menu keeps preserved ★ ★ ★ for Stage %d" % sid)
+		menu_best.queue_free()
+		await get_tree().physics_frame
+
+	if AdManager:
+		AdManager.disable_mock_mode()
+	SaveManager.bb_highest_unlocked_level = orig_bb_highest
+	SaveManager.bb_completed_levels = orig_bb_completed
+	SaveManager.bb_stage_stars = orig_bb_stars
+	SaveManager.save_data()
+	assert_eq(SaveManager.highest_unlocked_level, orig_ch_highest, "Coin Hell highest unlocked level untouched")
+	assert_eq(SaveManager.completed_levels.size(), orig_ch_completed.size(), "Coin Hell completed levels untouched")
+
+
+func test_level_8_desert_worm_nightmare() -> void:
+	print("\n=======================================================")
+	print("  TEST: World 2 Level 8 — Desert Worm Nightmare        ")
+	print("=======================================================")
+
+	var lvl8_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_level_8.tscn")
+	assert_true(lvl8_scene != null, "bb_level_8.tscn loads successfully")
+	var level: BulletBetrayalLevel8 = lvl8_scene.instantiate() as BulletBetrayalLevel8
+	assert_true(level != null, "Instantiated root uses BulletBetrayalLevel8 script")
+	add_child(level)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+
+	var p: BulletBetrayalPlayer = level.player
+	var hud: BulletBetrayalHUD = level.hud
+	var beacon: BulletBetrayalExtractionBeacon = level.extraction_beacon
+	var enemies_node: Node2D = level.enemies_container
+	var worms_node: Node2D = level.worms_container
+	var mines_node: Node2D = level.landmines_container
+	var platforms_node: Node2D = level.get_node_or_null("Platforms")
+
+	assert_true(p != null and hud != null and beacon != null, "Level 8 has Player, HUD, and ExtractionBeacon")
+	assert_true(enemies_node != null and worms_node != null and mines_node != null and platforms_node != null,
+		"Level 8 has Enemies, Worms, Landmines, and Platforms containers")
+	assert_eq(hud.current_stage_id, 8, "HUD stage id is 8")
+	assert_eq(hud.stage_label.text, "WORLD 2-3: DESERT WORM NIGHTMARE", "HUD displays 'WORLD 2-3: DESERT WORM NIGHTMARE'")
+	assert_eq(level.spawn_point.position, Vector2(120, 394), "SpawnPoint located at (120, 394)")
+	assert_eq(p.global_position, Vector2(120, 394), "Player spawns cleanly on Ground1_Staging")
+
+	# 1. Core rules: 10 bullets, 1 life, 0 pickups, 10 1-HP enemies, 2 landmines, locked beacon
+	assert_eq(p.current_ammo, 10, "Player starts Level 8 with exactly 10 bullets")
+	assert_eq(p.current_health, 1, "Player starts Level 8 with 1/1 life")
+	assert_true(level.get_node_or_null("Pickups") == null, "Level 8 contains 0 ammo pickups container")
+	var enemies: Array = enemies_node.get_children()
+	assert_eq(enemies.size(), 10, "Level 8 has exactly 10 enemies")
+	for e in enemies:
+		e.set_physics_process(false)
+		assert_eq(e.max_health, 1, "Enemy %s has 1 HP" % e.name)
+		assert_true(e.global_position.x >= 500.0, "Enemy %s outside safe spawn zone" % e.name)
+
+	assert_eq(mines_node.get_children().size(), 2, "Level 8 features 2 desert landmines")
+	assert_true(not beacon.is_unlocked, "Extraction beacon starts locked (0/10)")
+
+	# 2. Visual framing, parallax, ground/platform/enemy/prop alignment & reachability
+	assert_true(level.get_node_or_null("DesertSkyCanvas/SkyGradient") != null, "Level 8 has DesertSkyCanvas")
+	assert_true(level.get_node_or_null("ParallaxBackground/FarMesas") != null, "Level 8 has FarMesas")
+	assert_true(level.get_node_or_null("ParallaxBackground/MidDunes") != null, "Level 8 has MidDunes")
+
+	var cam8: Camera2D = p.get_node_or_null("Camera2D")
+	assert_true(cam8 != null, "Level 8 camera present")
+	if cam8:
+		assert_eq(cam8.zoom.x, cam8.zoom.y, "Camera2D maintains uniform zoom")
+		assert_eq(cam8.limit_right, 3165, "Camera right limit covers stronghold extraction")
+		assert_eq(cam8.limit_top, 80, "Camera top limit matches desert sky framing")
+		assert_eq(cam8.limit_bottom, 508, "Camera bottom limit frames desert subsurface")
+
+	var grounds: Array[Dictionary] = []
+	for child in platforms_node.get_children():
+		if child is StaticBody2D:
+			var col := child.get_node_or_null("CollisionShape2D") as CollisionShape2D
+			if col and col.shape is RectangleShape2D:
+				var sz: Vector2 = (col.shape as RectangleShape2D).size
+				if child.name.begins_with("Ground"):
+					var left_x: float = child.global_position.x - sz.x * 0.5
+					var right_x: float = child.global_position.x + sz.x * 0.5
+					var top_y: float = child.global_position.y - sz.y * 0.5
+					grounds.append({"name": child.name, "left": left_x, "right": right_x, "top": top_y})
+					var st := child.get_node_or_null("SandTop") as Sprite2D
+					var sr := child.get_node_or_null("SandRock") as Sprite2D
+					assert_true(st != null and st.region_rect.size.x == sz.x, "%s SandTop matches collision width" % child.name)
+					assert_true(sr != null and sr.region_rect.size.x == sz.x, "%s SandRock matches collision width" % child.name)
+				elif child.name.begins_with("Platform"):
+					var wd := child.get_node_or_null("Wood") as Sprite2D
+					assert_true(wd != null and wd.region_rect.size.x == sz.x, "%s Wood matches collision width" % child.name)
+
+	# Verify canyon gaps between consecutive grounds remain jumpable (max horizontal jump < 180px, step up <= 30px)
+	grounds.sort_custom(func(a, b): return a["left"] < b["left"])
+	for gi in range(grounds.size() - 1):
+		var gap_w: float = grounds[gi + 1]["left"] - grounds[gi]["right"]
+		var rise_px: float = grounds[gi]["top"] - grounds[gi + 1]["top"]
+		assert_true(gap_w >= 60.0 and gap_w <= 125.0,
+			"Gap between %s and %s (%.1f px) is challenging yet fair" % [grounds[gi]["name"], grounds[gi + 1]["name"], gap_w])
+		assert_true(rise_px <= 35.0, "Ascent between %s and %s (%.1f px) is cleanly jumpable" % [grounds[gi]["name"], grounds[gi + 1]["name"], rise_px])
+
+	for e in enemies:
+		var enemy_node := e as Node2D
+		var col_bottom: float = enemy_node.global_position.y + 17.0
+		var grounded := false
+		for child in platforms_node.get_children():
+			if child is StaticBody2D and (child.name.begins_with("Ground") or child.name.begins_with("Platform")):
+				var col := child.get_node_or_null("CollisionShape2D") as CollisionShape2D
+				if col and col.shape is RectangleShape2D:
+					var half: Vector2 = (col.shape as RectangleShape2D).size * 0.5
+					if enemy_node.global_position.x >= child.global_position.x - half.x and enemy_node.global_position.x <= child.global_position.x + half.x:
+						if absf(col_bottom - (child.global_position.y - half.y)) <= 1.0:
+							grounded = true
+							break
+		assert_true(grounded, "Enemy %s stands flush on ground/platform top" % enemy_node.name)
+
+	var props_node: Node2D = level.get_node_or_null("EnvironmentProps")
+	assert_true(props_node != null, "Level 8 has EnvironmentProps")
+	if props_node:
+		for prop in props_node.get_children():
+			if prop is Sprite2D and prop.texture:
+				var half_h: float = float(prop.texture.get_height()) * 0.5
+				if prop.texture.resource_path.ends_with("bb_crate.png"):
+					half_h = 15.0
+				var vis_bot: float = prop.global_position.y + half_h
+				var prop_grounded := false
+				for child in platforms_node.get_children():
+					if child is StaticBody2D and child.name.begins_with("Ground"):
+						var col := child.get_node_or_null("CollisionShape2D") as CollisionShape2D
+						if col and col.shape is RectangleShape2D:
+							var half: Vector2 = (col.shape as RectangleShape2D).size * 0.5
+							if prop.global_position.x >= child.global_position.x - half.x and prop.global_position.x <= child.global_position.x + half.x:
+								if absf(vis_bot - (child.global_position.y - half.y)) <= 1.0:
+									prop_grounded = true
+									break
+				assert_true(prop_grounded, "Prop %s sits flush on sand ground" % prop.name)
+
+	# 3. Compare Level 8 Worm Nightmare upgrades directly against Level 7
+	var lvl7_ref := (load("res://scenes/bullet_betrayal/bb_level_7.tscn") as PackedScene).instantiate()
+	var l7_max_speed: float = 0.0
+	var l7_min_warn: float = 99.0
+	for w7 in lvl7_ref.get_node("Worms").get_children():
+		l7_max_speed = maxf(l7_max_speed, w7.crawl_speed)
+		l7_min_warn = minf(l7_min_warn, w7.warning_duration)
+	lvl7_ref.free()
+
+	var worms8: Array[BulletBetrayalDesertWorm] = []
+	for child in worms_node.get_children():
+		if child is BulletBetrayalDesertWorm:
+			worms8.append(child)
+	assert_eq(worms8.size(), 6, "Level 8 deploys 6 Desert Worms (more than Level 7's 5)")
+
+	var l8_speeds: Dictionary = {}
+	var l8_ambush_count: int = 0
+	for w in worms8:
+		assert_true(w.is_underground(), "Worm %s starts safely underground" % w.name)
+		assert_true(w.crawl_speed > l7_max_speed,
+			"Level 8 worm %s speed (%.1f) is noticeably faster than Level 7 max (%.1f)" % [w.name, w.crawl_speed, l7_max_speed])
+		assert_true(w.warning_duration < l7_min_warn and w.warning_duration >= 0.36,
+			"Level 8 worm %s warning duration (%.2fs) is tighter than Level 7 yet fair" % [w.name, w.warning_duration])
+		assert_true(w.unpredictable_intervals, "Level 8 worm %s enables unpredictable emergence intervals" % w.name)
+		assert_true(w.crawl_distance_max > 0.0, "Level 8 worm %s varies crawling distance" % w.name)
+		assert_true(w.global_position.distance_to(p.global_position) >= 400.0, "Worm %s clear of spawn area" % w.name)
+		l8_speeds[str(w.crawl_speed)] = true
+		if w.ambush_ahead_of_player:
+			l8_ambush_count += 1
+
+		var worm_on_sand := false
+		for g in grounds:
+			if w.territory_min_x >= g["left"] and w.territory_max_x <= g["right"] and absf(w.surface_y - g["top"]) <= 1.0:
+				worm_on_sand = true
+				break
+		assert_true(worm_on_sand, "Worm %s territory fits cleanly on its sand bed" % w.name)
+
+	assert_true(l8_speeds.size() >= 4, "Level 8 worms use varied crawl speeds")
+	assert_true(l8_ambush_count >= 2, "Level 8 includes ahead-of-route ambush worms (%d)" % l8_ambush_count)
+
+	# 4. Route-ahead ambush spawn & never spawning directly on player
+	var worm2: BulletBetrayalDesertWorm = worms_node.get_node("Worm2_AheadAmbush")
+	var worm3: BulletBetrayalDesertWorm = worms_node.get_node("Worm3_BasinWest")
+	var worm4: BulletBetrayalDesertWorm = worms_node.get_node("Worm4_BasinEast")
+	for w in worms8:
+		w.set_physics_process(false)
+
+	p.global_position = Vector2(1210.0, 364.0)
+	p.facing_direction = 1
+	p.velocity = Vector2(180.0, 0.0)
+	var ambush_picks: Dictionary = {}
+	for _s in range(20):
+		var cand: float = worm2._pick_safe_emergence_x()
+		assert_true(cand > p.global_position.x,
+			"Ahead-ambush worm picks X ahead of moving player (picked %.1f > %.1f)" % [cand, p.global_position.x])
+		assert_true(absf(cand - p.global_position.x) >= worm2.min_player_spawn_clearance,
+			"Ambush worm X (%.1f) never spawns directly on player" % cand)
+		assert_true(cand >= worm2.territory_min_x and cand <= worm2.territory_max_x, "Ambush X stays inside territory")
+		ambush_picks[int(roundf(cand))] = true
+	assert_true(ambush_picks.size() >= 3, "Ambush worm varies emergence positions (%d unique)" % ambush_picks.size())
+
+	# 5. Simultaneous active multi-worm basin (Worm3 + Worm4) & underground safety vs surfaced instant kill
+	p.velocity = Vector2.ZERO
+	p.global_position = Vector2(1815.0, 394.0)
+	await get_tree().physics_frame
+	assert_true(p.is_alive, "Underground worms never kill player overhead")
+
+	worm3.set_physics_process(true)
+	worm4.set_physics_process(true)
+	p.global_position = Vector2(1825.0, 320.0) # Safely perched on Platform3_WestPerch while dual worms erupt below
+	worm3._enter_warning(1755.0)
+	worm4._enter_warning(2140.0)
+	var both_crawling := false
+	for _tick in range(120):
+		await get_tree().physics_frame
+		if worm3.is_emerged() and worm4.is_emerged():
+			both_crawling = true
+			break
+	assert_true(both_crawling, "Multiple Desert Worms (Worm3 + Worm4) operate simultaneously without state/collision bugs")
+
+	# Touching surfaced fast worm kills player immediately
+	p.global_position = Vector2(worm3.global_position.x, 394.0)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	assert_true(not p.is_alive, "Touching emerged Level 8 nightmare worm kills player instantly")
+	await get_tree().create_timer(0.45).timeout
+	p.revive()
+	p.is_invulnerable = false
+	hud.death_overlay.visible = false
+
+	# 6. Worms submerge back underground & respect crawl distance limit without sticking
+	p.global_position = Vector2(200.0, 394.0)
+	worm3._state_timer = 4.0
+	worm3._crawl_distance_limit = 65.0
+	worm3._crawl_distance_traveled = 0.0
+	var worm3_submerged := false
+	for _tick in range(120):
+		await get_tree().physics_frame
+		if worm3.state == BulletBetrayalDesertWorm.WormState.SUBMERGING or worm3.is_underground():
+			worm3_submerged = true
+			break
+	assert_true(worm3_submerged, "Nightmare worm submerges after reaching varied crawl distance limit")
+	for _tick in range(30):
+		await get_tree().physics_frame
+		if worm3.is_underground():
+			break
+	assert_true(worm3.is_underground() and not worm3.kill_zone.monitoring,
+		"Submerged nightmare worm returns underground with KillZone disabled")
+
+	# 7. Safe-Position Revive + worm dispersion in Level 8
+	worm3.set_physics_process(false)
+	worm4.set_physics_process(false)
+	if GameManager:
+		GameManager.revives_used_this_run = 0
+		GameManager.current_run_id += 1
+	p.global_position = Vector2(1740.0, 394.0)
+	p.velocity = Vector2.ZERO
+	for _f in range(14):
+		await get_tree().physics_frame
+	assert_eq(p.get_safe_revive_position(), Vector2(1740.0, 394.0), "Level 8 tracks safe anchor on Ground4_TwinBasin")
+
+	enemies[0].take_hit(1)
+	enemies[1].take_hit(1)
+	worm3.force_emerge_at(1810.0, 1)
+	p.global_position = Vector2(1810.0, 394.0)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	assert_true(not p.is_alive, "Player killed on Worm3 collision")
+	await get_tree().create_timer(0.45).timeout
+
+	worm3.force_emerge_at(1820.0, -1) # 80px away from 1740 -> in 65..95px dispersion band
+	hud._on_revive_reward_granted(GameManager.current_run_id)
+	assert_true(p.is_alive, "Level 8 rewarded revive restores player life")
+	assert_eq(p.global_position, Vector2(1740.0, 394.0), "Level 8 revives at last safe anchor (1740, 394)")
+	assert_eq(p.current_ammo, 10, "Level 8 revive restores 10 bullets")
+	assert_eq(level._enemies_eliminated, 2, "Level 8 retains 2/10 kills after revive")
+	assert_true(worm3.is_underground(), "Surfaced worm near safe respawn disperses underground on Level 8 revive")
+
+	level.queue_free()
+	await get_tree().physics_frame
+	assert_true(true, "World 2 Stage 8 Desert Worm Nightmare fully verified")
+
 
