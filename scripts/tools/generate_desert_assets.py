@@ -224,9 +224,48 @@ def create_desert_worm_sprites() -> None:
 		img_w.save(f"{SPRITES_DIR}/bb_desert_worm_crawl_{frame}.png")
 
 
+def create_desert_worm_mine_sprite() -> None:
+	# 9. Partially Buried Desert Worm Mine (24x16) — bottom flush at y=15 (+8 from center)
+	img_m = Image.new("RGBA", (24, 16), (0, 0, 0, 0))
+	dm = ImageDraw.Draw(img_m)
+
+	# Armored dark metallic mine body emerging from the sand
+	dm.polygon(
+		[(4, 13), (6, 7), (17, 7), (19, 13)],
+		fill=(54, 58, 70, 255),
+		outline=(22, 22, 32, 255),
+	)
+	# Steel rim highlight & hazard prongs on left/right shoulders
+	dm.line([(7, 8), (16, 8)], fill=(116, 126, 144, 255))
+	dm.rectangle([5, 9, 6, 10], fill=(246, 184, 48, 255))
+	dm.rectangle([17, 9, 18, 10], fill=(246, 184, 48, 255))
+	dm.point((8, 10), fill=(246, 184, 48, 255))
+	dm.point((15, 10), fill=(246, 184, 48, 255))
+
+	# Raised central pressure plate & crimson detonator sensor dome
+	dm.rectangle([8, 5, 15, 7], fill=(78, 84, 100, 255), outline=(22, 22, 32, 255))
+	dm.rectangle([10, 2, 13, 5], fill=(212, 38, 52, 255), outline=(42, 14, 22, 255))
+	dm.point((11, 3), fill=(255, 168, 136, 255))
+
+	# Partially-buried desert sand collar & tiny displaced sand pebbles at y=11..15
+	dm.polygon(
+		[(1, 15), (3, 12), (7, 11), (11, 12), (16, 11), (20, 12), (22, 15)],
+		fill=(196, 136, 68, 255),
+	)
+	dm.line([(3, 12), (7, 11), (11, 12), (16, 11), (20, 12)], fill=(246, 204, 128, 255))
+	dm.line([(2, 15), (21, 15)], fill=(122, 74, 34, 255))
+	dm.line([(4, 14), (19, 14)], fill=(154, 98, 48, 255))
+	dm.point((2, 13), fill=(248, 210, 136, 255))
+	dm.point((21, 13), fill=(248, 210, 136, 255))
+	dm.point((12, 13), fill=(236, 190, 110, 255))
+
+	img_m.save(f"{SPRITES_DIR}/bb_desert_worm_mine.png")
+
+
 if __name__ == "__main__":
 	create_desert_terrain_tiles()
 	create_desert_parallax_layers()
 	create_desert_props()
 	create_desert_worm_sprites()
+	create_desert_worm_mine_sprite()
 	print("Generated refined desert sprites and sandworm sprites.")

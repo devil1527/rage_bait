@@ -10,6 +10,7 @@ extends Node2D
 
 signal emerged(pos: Vector2)
 signal submerged
+signal submerged_at(pos: Vector2)
 signal player_killed_by_worm
 
 enum WormState {
@@ -42,9 +43,11 @@ enum WormState {
 @export var trigger_range_x: float = 300.0
 @export var ambush_lead_min: float = 95.0
 @export var ambush_lead_max: float = 165.0
+@export var unpredictable_crawl_turns: bool = false
 
 var state: WormState = WormState.UNDERGROUND
 var facing_direction: int = 1 # 1 = Right, -1 = Left
+var last_submerge_position: Vector2 = Vector2.ZERO
 
 var _state_timer: float = 1.5
 var _anim_timer: float = 0.0
@@ -55,6 +58,7 @@ var _emerge_progress: float = 0.0
 var _last_emerge_x: float = -9999.0
 var _crawl_distance_traveled: float = 0.0
 var _crawl_distance_limit: float = 0.0
+var _turn_check_timer: float = 0.0
 
 const BODY_REST_Y: float = 23.0      # Inside BodyClip (-34..0), center at -11 above surface
 const BODY_HIDDEN_Y: float = 45.0    # Clipped cleanly below surface line
@@ -190,6 +194,13 @@ func _process_crawling(delta: float) -> void:
 		global_position.x = right_bound
 		facing_direction = -1
 		_update_facing()
+	elif unpredictable_crawl_turns:
+		_turn_check_timer -= delta
+		if _turn_check_timer <= 0.0:
+			_turn_check_timer = randf_range(0.85, 1.55)
+			if global_position.x > left_bound + 28.0 and global_position.x < right_bound - 28.0 and randf() < 0.65:
+				facing_direction *= -1
+				_update_facing()
 
 	# Crawl frame animation & subtle undulation
 	_anim_timer += delta
@@ -219,7 +230,10 @@ func _process_submerging(delta: float) -> void:
 		_check_overlapping_player()
 
 	if _emerge_progress >= 1.0:
+		var submerge_pos := Vector2(global_position.x, surface_y)
+		last_submerge_position = submerge_pos
 		submerged.emit()
+		submerged_at.emit(submerge_pos)
 		_enter_underground(_next_underground_duration())
 
 
@@ -291,6 +305,7 @@ func _enter_crawling() -> void:
 		_crawl_distance_limit = randf_range(d_min, d_max)
 	else:
 		_crawl_distance_limit = 0.0
+	_turn_check_timer = randf_range(0.65, 1.35) if unpredictable_crawl_turns else 0.0
 	_anim_timer = 0.0
 	_set_hitbox_enabled(true)
 	if worm_sprite:

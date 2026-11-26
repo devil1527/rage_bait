@@ -61,6 +61,7 @@ const STAGE_TITLES: Dictionary = {
 	6: "WORLD 2-1: DUNE PATROL",
 	7: "WORLD 2-2: DESERT WORMS",
 	8: "WORLD 2-3: DESERT WORM NIGHTMARE",
+	9: "WORLD 2-4: WORM MINEFIELD",
 }
 
 @export var current_stage_id: int = 1:
@@ -531,6 +532,11 @@ func _on_next_stage_pressed() -> void:
 			return
 		get_tree().paused = false
 		get_tree().change_scene_to_file("res://scenes/bullet_betrayal/bb_level_8.tscn")
+	elif current_stage_id == 8:
+		if get_tree().current_scene and (get_tree().current_scene.name == "BulletBetrayalTestRunner" or get_tree().current_scene.name == "TestRunner"):
+			return
+		get_tree().paused = false
+		get_tree().change_scene_to_file("res://scenes/bullet_betrayal/bb_level_9.tscn")
 	else:
 		if victory_message_modal:
 			if victory_modal_title:

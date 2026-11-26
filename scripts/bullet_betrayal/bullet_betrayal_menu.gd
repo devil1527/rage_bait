@@ -16,7 +16,8 @@ const LEVEL_5_SCENE: String = "res://scenes/bullet_betrayal/bb_level_5.tscn"
 const LEVEL_6_SCENE: String = "res://scenes/bullet_betrayal/bb_level_6.tscn"
 const LEVEL_7_SCENE: String = "res://scenes/bullet_betrayal/bb_level_7.tscn"
 const LEVEL_8_SCENE: String = "res://scenes/bullet_betrayal/bb_level_8.tscn"
-const HIGHEST_IMPLEMENTED_STAGE: int = 8
+const LEVEL_9_SCENE: String = "res://scenes/bullet_betrayal/bb_level_9.tscn"
+const HIGHEST_IMPLEMENTED_STAGE: int = 9
 const ARCADE_MAIN_MENU: String = "res://scenes/ui/main_menu.tscn"
 
 @onready var back_button: Button = $MarginContainer/VBox/HeaderBar/BackButton
@@ -87,7 +88,7 @@ const STAGE_NAMES: Dictionary = {
 	6: "Dune Patrol",
 	7: "Desert Worms",
 	8: "Desert Worm Nightmare",
-	9: "Fuel Station",
+	9: "Worm Minefield",
 	10: "Desert Command",
 	11: "Mountain Pass",
 	12: "Cliffside Battery",
@@ -561,6 +562,8 @@ func _on_level_tile_pressed(level_id: int) -> void:
 		get_tree().change_scene_to_file(LEVEL_7_SCENE)
 	elif level_id == 8:
 		get_tree().change_scene_to_file(LEVEL_8_SCENE)
+	elif level_id == 9:
+		get_tree().change_scene_to_file(LEVEL_9_SCENE)
 
 func _on_back_pressed() -> void:
 	AudioManager.play_sfx("click")

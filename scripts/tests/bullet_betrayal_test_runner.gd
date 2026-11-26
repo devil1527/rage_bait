@@ -91,6 +91,7 @@ func run_all_tests() -> void:
 	await test_level_7_desert_worms()
 	await test_rewarded_revive_star_pipeline_across_stages()
 	await test_level_8_desert_worm_nightmare()
+	await test_level_9_worm_minefield()
 	await test_all_5_levels_rewarded_revive_and_reset()
 
 func test_audio_manager_bullet_betrayal_sfx() -> void:
@@ -615,14 +616,14 @@ func test_pause_menu_and_confirmation_modals() -> void:
 	assert_eq(hud.victory_mission_btn.text, "☰ LEVEL SELECT", "Level Select button text matches Coin Hell ('☰ LEVEL SELECT')")
 	assert_true(hud.victory_arcade_btn == null, "Arcade Menu button omitted from Victory overlay (matches Coin Hell 3-button layout)")
 	
-	# Test Next Stage Button opens MessageModal for unreleased Stage 9 (when on last implemented Stage 8)
-	hud.current_stage_id = 8
+	# Test Next Stage Button opens MessageModal for unreleased Stage 10 (when on last implemented Stage 9)
+	hud.current_stage_id = 9
 	assert_true(hud.victory_message_modal != null, "Victory overlay has MessageModal")
 	assert_true(not hud.victory_message_modal.visible, "MessageModal starts hidden")
 	hud.victory_next_stage_btn.pressed.emit()
 	assert_true(hud.victory_message_modal.visible, "MessageModal opens when clicking Next Stage on last implemented stage")
-	assert_eq(hud.victory_modal_title.text, "STAGE 9 IN PROGRESS", "MessageModal title is 'STAGE 9 IN PROGRESS'")
-	assert_true(hud.victory_modal_label.text.contains("still being built"), "MessageModal explains Stage 9 is being built")
+	assert_eq(hud.victory_modal_title.text, "STAGE 10 IN PROGRESS", "MessageModal title is 'STAGE 10 IN PROGRESS'")
+	assert_true(hud.victory_modal_label.text.contains("still being built"), "MessageModal explains Stage 10 is being built")
 	
 	# Dismiss MessageModal
 	hud.victory_modal_ok_btn.pressed.emit()
@@ -1100,12 +1101,19 @@ func test_bullet_betrayal_menu_stars_reflection() -> void:
 	var state8_lbl: Label = vbox8.get_child(2)
 	assert_eq(state8_lbl.text, "LOCKED", "Stage 8 tile state is 'LOCKED'")
 
-	# Check Stage 9 card tile: PLANNED (future unreleased stage)
+	# Check Stage 9 card tile: LOCKED (implemented stage beyond highest unlocked)
 	var btn_lvl9: Button = menu.get_level_button(9)
 	assert_true(btn_lvl9 != null, "LevelBtn_9 exists")
 	var vbox9 = btn_lvl9.get_child(0)
 	var state9_lbl: Label = vbox9.get_child(2)
-	assert_eq(state9_lbl.text, "PLANNED", "Stage 9 tile state is 'PLANNED'")
+	assert_eq(state9_lbl.text, "LOCKED", "Stage 9 tile state is 'LOCKED'")
+
+	# Check Stage 10 card tile: PLANNED (future unreleased stage)
+	var btn_lvl10: Button = menu.get_level_button(10)
+	assert_true(btn_lvl10 != null, "LevelBtn_10 exists")
+	var vbox10 = btn_lvl10.get_child(0)
+	var state10_lbl: Label = vbox10.get_child(2)
+	assert_eq(state10_lbl.text, "PLANNED", "Stage 10 tile state is 'PLANNED'")
 
 	menu.queue_free()
 
@@ -2109,10 +2117,12 @@ func test_level_6_dune_patrol() -> void:
 	assert_true(btn_8 != null, "Stage 8 button exists in menu")
 	var btn_9: Button = menu.get_level_button(9)
 	assert_true(btn_9 != null, "Stage 9 button exists in menu")
+	var btn_10: Button = menu.get_level_button(10)
+	assert_true(btn_10 != null, "Stage 10 button exists in menu")
 
-	menu._on_level_tile_pressed(9)
-	assert_true(menu.message_modal.visible, "Stage 9 is guarded with in-progress modal")
-	assert_true("IN PROGRESS" in menu.modal_title.text, "Modal title indicates Stage 9 in progress")
+	menu._on_level_tile_pressed(10)
+	assert_true(menu.message_modal.visible, "Stage 10 is guarded with in-progress modal")
+	assert_true("IN PROGRESS" in menu.modal_title.text, "Modal title indicates Stage 10 in progress")
 	menu.queue_free()
 
 	level.queue_free()
@@ -2439,13 +2449,15 @@ func test_stage6_to_7_progression_and_stars() -> void:
 	var btn7: Button = menu_after.get_level_button(7)
 	var btn8: Button = menu_after.get_level_button(8)
 	var btn9: Button = menu_after.get_level_button(9)
+	var btn10: Button = menu_after.get_level_button(10)
 	assert_eq((btn6.get_child(0).get_child(2) as Label).text, "COMPLETED", "Menu shows Stage 6 as COMPLETED")
 	assert_eq((btn6.get_child(0).get_node("StarsLabel") as Label).text, "★ ★ ★", "Menu shows saved ★ ★ ★ on Stage 6")
 	assert_eq((btn7.get_child(0).get_child(2) as Label).text, "AVAILABLE", "Menu shows Stage 7 as AVAILABLE after Stage 6 completion")
 	assert_eq((btn7.get_child(0).get_node("StarsLabel") as Label).text, "☆ ☆ ☆", "Menu shows unrated ☆ ☆ ☆ on uncompleted Stage 7")
 	assert_true(not (btn7.get_child(0).get_child(0).get_child(1) as TextureRect).visible, "Stage 7 lock/check icon hidden when AVAILABLE")
 	assert_eq((btn8.get_child(0).get_child(2) as Label).text, "LOCKED", "Menu shows implemented Stage 8 as LOCKED before Stage 7 clear")
-	assert_eq((btn9.get_child(0).get_child(2) as Label).text, "PLANNED", "Menu keeps unimplemented Stage 9 as PLANNED")
+	assert_eq((btn9.get_child(0).get_child(2) as Label).text, "LOCKED", "Menu keeps implemented Stage 9 as LOCKED before Stage 8 clear")
+	assert_eq((btn10.get_child(0).get_child(2) as Label).text, "PLANNED", "Menu keeps unimplemented Stage 10 as PLANNED")
 
 	# Verify HUD Next Stage on Stage 6 points to bb_level_7 scene constant
 	assert_true(ResourceLoader.exists("res://scenes/bullet_betrayal/bb_level_7.tscn"), "Next Stage target bb_level_7.tscn exists")
@@ -3164,5 +3176,349 @@ func test_level_8_desert_worm_nightmare() -> void:
 	level.queue_free()
 	await get_tree().physics_frame
 	assert_true(true, "World 2 Stage 8 Desert Worm Nightmare fully verified")
+
+
+func test_level_9_worm_minefield() -> void:
+	print("\n--- TEST: World 2 Level 9 — Worm Minefield & Dynamic Worm Mines ---")
+	var orig_bb_highest: int = SaveManager.bb_highest_unlocked_level
+	var orig_bb_completed: Array = SaveManager.bb_completed_levels.duplicate()
+	var orig_bb_stars: Dictionary = SaveManager.bb_stage_stars.duplicate()
+	var orig_revives: int = GameManager.revives_used_this_run if GameManager else 0
+
+	var lvl9_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_level_9.tscn")
+	assert_true(lvl9_scene != null, "bb_level_9.tscn loads cleanly")
+	var level := lvl9_scene.instantiate() as BulletBetrayalLevel9
+	assert_true(level != null, "Level 9 instantiates as BulletBetrayalLevel9")
+	add_child(level)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+
+	var p: BulletBetrayalPlayer = level.player
+	var hud: BulletBetrayalHUD = level.hud
+	var beacon: BulletBetrayalExtractionBeacon = level.extraction_beacon
+	var enemies_node: Node2D = level.enemies_container
+	var worms_node: Node2D = level.worms_container
+	var worm_mines_node: Node2D = level.worm_mines_container
+	var platforms_node: Node2D = level.platforms_container
+
+	assert_true(p != null and hud != null and beacon != null, "Player, HUD, and ExtractionBeacon exist in Level 9")
+	assert_true(enemies_node != null and worms_node != null and worm_mines_node != null and platforms_node != null,
+		"Level 9 has Enemies, Worms, WormMines, and Platforms containers")
+	assert_eq(hud.current_stage_id, 9, "HUD stage id is 9")
+	assert_eq(hud.stage_label.text, "WORLD 2-4: WORM MINEFIELD", "HUD displays 'WORLD 2-4: WORM MINEFIELD'")
+	assert_eq(level.spawn_point.position, Vector2(120, 394), "SpawnPoint located at (120, 394)")
+	assert_eq(p.global_position, Vector2(120, 394), "Player spawns cleanly on Ground1_Entry")
+
+	# 1. Core rules, HUD & Mobile Touch Controls
+	assert_eq(p.current_ammo, 10, "Player starts Level 9 with 10 bullets")
+	assert_eq(p.current_health, 1, "Player starts Level 9 with 1/1 life")
+	assert_true(level.get_node_or_null("Pickups") == null, "Level 9 contains 0 pickups")
+	assert_eq(worm_mines_node.get_child_count(), 0, "Level 9 starts with 0 hardcoded static worm mines")
+	assert_true(not beacon.is_unlocked, "Extraction beacon starts locked (0/10)")
+
+	hud.right_btn.touch_down.emit()
+	assert_true(p.touch_right, "Level 9 mobile touch_right responds cleanly")
+	hud.right_btn.touch_up.emit()
+	hud.jump_btn.touch_down.emit()
+	assert_true(p.touch_jump, "Level 9 mobile touch_jump responds cleanly")
+	hud.jump_btn.touch_up.emit()
+
+	var enemies: Array = enemies_node.get_children()
+	assert_eq(enemies.size(), 10, "Level 9 has exactly 10 enemies")
+	for e in enemies:
+		e.set_physics_process(false)
+		assert_eq(e.max_health, 1, "Enemy %s has 1 HP" % e.name)
+		assert_true(e.global_position.x >= 500.0, "Enemy %s outside safe spawn sanctuary" % e.name)
+
+	# 2. Visual framing, ground/platform/enemy/prop alignment & jump fairness
+	assert_true(level.get_node_or_null("DesertSkyCanvas/SkyGradient") != null, "Level 9 has DesertSkyCanvas")
+	assert_true(level.get_node_or_null("ParallaxBackground/FarMesas") != null, "Level 9 has FarMesas")
+	assert_true(level.get_node_or_null("ParallaxBackground/MidDunes") != null, "Level 9 has MidDunes")
+	var cam9: Camera2D = p.get_node_or_null("Camera2D")
+	assert_true(cam9 != null, "Level 9 Camera2D present")
+	if cam9:
+		assert_eq(cam9.zoom.x, cam9.zoom.y, "Level 9 Camera2D uniform zoom")
+		assert_eq(cam9.limit_right, 3240, "Level 9 Camera2D limit_right covers Stronghold")
+		assert_eq(cam9.limit_top, 80, "Level 9 Camera2D limit_top frames sky")
+		assert_eq(cam9.limit_bottom, 508, "Level 9 Camera2D limit_bottom frames desert")
+
+	var grounds: Array[Dictionary] = []
+	for child in platforms_node.get_children():
+		if child is StaticBody2D:
+			var col := child.get_node_or_null("CollisionShape2D") as CollisionShape2D
+			if col and col.shape is RectangleShape2D:
+				var sz: Vector2 = (col.shape as RectangleShape2D).size
+				if child.name.begins_with("Ground"):
+					var left_x: float = child.global_position.x - sz.x * 0.5
+					var right_x: float = child.global_position.x + sz.x * 0.5
+					var top_y: float = child.global_position.y - sz.y * 0.5
+					grounds.append({"name": child.name, "left": left_x, "right": right_x, "top": top_y})
+					var st := child.get_node_or_null("SandTop") as Sprite2D
+					var sr := child.get_node_or_null("SandRock") as Sprite2D
+					assert_true(st != null and st.region_rect.size.x == sz.x, "%s SandTop matches width" % child.name)
+					assert_true(sr != null and sr.region_rect.size.x == sz.x, "%s SandRock matches width" % child.name)
+				elif child.name.begins_with("Platform"):
+					var wd := child.get_node_or_null("Wood") as Sprite2D
+					assert_true(wd != null and wd.region_rect.size.x == sz.x, "%s Wood matches width" % child.name)
+
+	grounds.sort_custom(func(a, b): return a["left"] < b["left"])
+	for gi in range(grounds.size() - 1):
+		var gap_w: float = grounds[gi + 1]["left"] - grounds[gi]["right"]
+		var rise_px: float = grounds[gi]["top"] - grounds[gi + 1]["top"]
+		assert_true(gap_w >= 60.0 and gap_w <= 120.0,
+			"Level 9 gap %s -> %s (%.1f px) is jumpable" % [grounds[gi]["name"], grounds[gi + 1]["name"], gap_w])
+		assert_true(rise_px <= 30.0, "Level 9 ascent %s -> %s (%.1f px) is fair" % [grounds[gi]["name"], grounds[gi + 1]["name"], rise_px])
+
+	for e in enemies:
+		var enemy_node := e as Node2D
+		var col_bottom: float = enemy_node.global_position.y + 17.0
+		var grounded := false
+		for child in platforms_node.get_children():
+			if child is StaticBody2D and (child.name.begins_with("Ground") or child.name.begins_with("Platform")):
+				var col := child.get_node_or_null("CollisionShape2D") as CollisionShape2D
+				if col and col.shape is RectangleShape2D:
+					var half: Vector2 = (col.shape as RectangleShape2D).size * 0.5
+					if enemy_node.global_position.x >= child.global_position.x - half.x and enemy_node.global_position.x <= child.global_position.x + half.x:
+						if absf(col_bottom - (child.global_position.y - half.y)) <= 1.0:
+							grounded = true
+							break
+		assert_true(grounded, "Enemy %s stands flush on Level 9 geometry" % enemy_node.name)
+
+	# 3. Slow Desert Worms vs Level 8 speeds, territory safety & underground non-lethality
+	var lvl8_probe: Node = load("res://scenes/bullet_betrayal/bb_level_8.tscn").instantiate()
+	var lvl8_min_speed: float = 999.0
+	for w8 in lvl8_probe.get_node("Worms").get_children():
+		if w8 is BulletBetrayalDesertWorm:
+			lvl8_min_speed = minf(lvl8_min_speed, w8.crawl_speed)
+	lvl8_probe.queue_free()
+
+	var worms: Array = worms_node.get_children()
+	assert_eq(worms.size(), 6, "Level 9 features 6 slow desert sandworms")
+	for w in worms:
+		var worm := w as BulletBetrayalDesertWorm
+		assert_true(worm != null, "Worm is BulletBetrayalDesertWorm")
+		worm.set_physics_process(false)
+		assert_true(worm.crawl_speed <= 65.0 and worm.crawl_speed < lvl8_min_speed,
+			"%s crawl_speed %.1f is noticeably slower than Level 8 min %.1f" % [worm.name, worm.crawl_speed, lvl8_min_speed])
+		assert_true(worm.unpredictable_intervals, "%s uses varied emergence intervals" % worm.name)
+		assert_true(worm.unpredictable_crawl_turns, "%s supports unpredictable crawling turns" % worm.name)
+		assert_true(worm.warning_duration >= 0.60, "%s preserves clear warning telegraph (%.2fs)" % [worm.name, worm.warning_duration])
+		var on_safe_ground := false
+		for g in grounds:
+			if worm.territory_min_x >= g["left"] + 40.0 and worm.territory_max_x <= g["right"] - 40.0 and absf(worm.surface_y - g["top"]) <= 1.0:
+				on_safe_ground = true
+				break
+		assert_true(on_safe_ground, "%s territory sits cleanly inside ground with >=40px edge margin" % worm.name)
+
+	# Underground worm never harms player
+	var w1 := worms[0] as BulletBetrayalDesertWorm
+	assert_true(w1.is_underground() and not w1.kill_zone.monitoring, "Underground slow worm hitbox disabled")
+	p.global_position = Vector2(w1.global_position.x, w1.surface_y - 16.0)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	assert_true(p.is_alive, "Underground worm causes zero damage to player overhead")
+
+	# Surfaced worm instant-kills player cleanly (test & revive)
+	w1.force_emerge_at(700.0, 1)
+	p.global_position = Vector2(700.0, 384.0)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	assert_true(not p.is_alive, "Surfaced slow worm causes instant death on player contact")
+	p.global_position = Vector2(120.0, 394.0)
+	p.revive()
+	p.is_invulnerable = false
+	if GameManager:
+		GameManager.revives_used_this_run = 0
+	p.velocity = Vector2.ZERO
+	await get_tree().physics_frame
+
+	# 4. Worm-triggered Mine Spawning, Arming Guard, Proximity Warning & Single-Trigger Detonation
+	var retreat_count: Array[int] = [0]
+	var last_retreat_pos: Array[Vector2] = [Vector2.ZERO]
+	w1.submerged_at.connect(func(pos: Vector2):
+		retreat_count[0] += 1
+		last_retreat_pos[0] = pos
+	)
+	p.global_position = Vector2(120.0, 394.0) # Keep player away during spawn
+	w1.set_physics_process(true)
+	w1.force_emerge_at(815.0, -1)
+	w1.global_position = Vector2(815.0, 400.0)
+	w1.state = BulletBetrayalDesertWorm.WormState.SUBMERGING
+	w1._emerge_progress = 0.99
+	for _tick in range(6):
+		await get_tree().physics_frame
+		if w1.is_underground():
+			break
+	w1.set_physics_process(false)
+
+	assert_eq(retreat_count[0], 1, "Completed worm retreat emits submerged_at once")
+	assert_eq(last_retreat_pos[0], Vector2(815.0, 400.0), "submerged_at reports exact worm disappearance coordinates")
+	var mines_after_retreat := level.get_active_worm_mines()
+	assert_eq(mines_after_retreat.size(), 1, "Completed worm retreat dynamically spawns 1 worm mine")
+	var first_mine: BulletBetrayalWormMine = mines_after_retreat[0]
+	assert_eq(first_mine.global_position, Vector2(815.0, 400.0), "Spawned mine sits at exact worm submerge coordinate")
+	assert_true(first_mine.is_in_group("landmines") and first_mine.is_in_group("worm_mines"), "Worm mine joins expected hazard groups")
+
+	# Arming guard: before arm_delay elapses, walking atop mine MUST NOT detonate it
+	assert_true(not first_mine.is_armed and not first_mine.monitoring and first_mine.collision_shape.disabled,
+		"Newly spawned worm mine starts unarmed with collision disabled")
+	p.global_position = Vector2(815.0, 384.0)
+	await get_tree().physics_frame
+	assert_true(p.is_alive and not first_mine.has_detonated(), "Unarmed worm mine cannot detonate before settling")
+
+	# Return player safely to sanctuary while mine finishes arming
+	p.global_position = Vector2(120.0, 394.0)
+	await get_tree().create_timer(0.36).timeout
+	assert_true(first_mine.is_armed and first_mine.monitoring and not first_mine.collision_shape.disabled,
+		"Worm mine arms cleanly after arm_delay")
+
+	# Stationary persistence & force_submerge isolation check
+	w1.force_emerge_at(675.0, 1)
+	w1.force_submerge(1.5)
+	assert_eq(first_mine.global_position, Vector2(815.0, 400.0), "Mine remains stationary after worm moves/submerges elsewhere")
+	assert_eq(level.get_active_worm_mines().size(), 1, "force_submerge does NOT emit submerged_at or spawn a fake mine")
+
+	# Proximity warning glow/pulse
+	assert_true(not first_mine.is_proximity_warning_active(), "Proximity warning inactive when player far away")
+	p.is_invulnerable = false
+	p.global_position = Vector2(745.0, 384.0) # 70px away (< 94px proximity range)
+	p.velocity = Vector2.ZERO
+	for _f in range(14):
+		await get_tree().physics_frame
+	assert_true(first_mine.is_proximity_warning_active() and first_mine.proximity_ring.visible,
+		"Proximity warning shimmer activates when alive player approaches mine")
+	assert_eq(p.get_safe_revive_position(), Vector2(745.0, 384.0), "Safe anchor tracks valid approach position")
+
+	# Single-trigger detonation + instant kill
+	var death_signals: Array[int] = [0]
+	var explosion_signals: Array[int] = [0]
+	p.player_died.connect(func(): death_signals[0] += 1)
+	first_mine.exploded.connect(func(): explosion_signals[0] += 1)
+	p.global_position = Vector2(815.0, 384.0)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	assert_true(not p.is_alive and first_mine.has_detonated(), "Armed worm mine detonates and instant-kills player on contact")
+	first_mine.detonate(p)
+	assert_eq(death_signals[0], 1, "Mine cannot trigger multiple player death events")
+	assert_eq(explosion_signals[0], 1, "Mine cannot detonate more than once")
+
+	# Rewarded revive near surfaced worm & active mine clearance
+	await get_tree().create_timer(0.45).timeout
+	w1.force_emerge_at(820.0, -1) # 75px from 745 -> inside 65..95px dispersion band
+	hud._on_revive_reward_granted(GameManager.current_run_id)
+	assert_true(p.is_alive and p.global_position == Vector2(745.0, 384.0), "Rewarded revive restores player at safe anchor")
+	assert_true(w1.is_underground(), "Nearby surfaced worm disperses on revive")
+	assert_eq(level.get_active_worm_mines().size(), 0, "Detonated mine excluded from active mines")
+
+	# 5. Placement Fairness, Geometry Suppression & Safe Cap Cleanup
+	p.global_position = Vector2(1640.0, 394.0)
+	await get_tree().physics_frame
+	assert_true(level.try_spawn_worm_mine(Vector2(250.0, 410.0)) == null, "Rejects mine in spawn sanctuary")
+	assert_true(level.try_spawn_worm_mine(Vector2(1655.0, 410.0)) == null, "Rejects mine directly underneath player")
+	assert_true(level.try_spawn_worm_mine(Vector2(500.0, 410.0)) == null, "Rejects mine inside canyon gap")
+	assert_true(level.try_spawn_worm_mine(Vector2(552.0, 400.0)) == null, "Rejects mine in gap landing margin")
+	assert_true(level.try_spawn_worm_mine(Vector2(3255.0, 410.0)) == null, "Rejects mine inside RightWall")
+	assert_true(level.try_spawn_worm_mine(Vector2(3175.0, 410.0)) == null, "Rejects mine beside ExtractionBeacon")
+
+	# Per-zone & global mine cap with distant-first safe cleanup
+	p.global_position = Vector2(120.0, 394.0)
+	await get_tree().physics_frame
+	var m_z1_a := level.try_spawn_worm_mine(Vector2(1445.0, 410.0))
+	var m_z1_b := level.try_spawn_worm_mine(Vector2(1525.0, 410.0))
+	var m_z1_c := level.try_spawn_worm_mine(Vector2(1615.0, 410.0))
+	assert_true(m_z1_a != null and m_z1_b != null and m_z1_c != null, "Zone 1 accepts 3 well-spaced mines")
+	assert_true(level.try_spawn_worm_mine(Vector2(1540.0, 410.0)) == null, "Spacing guard blocks overlapping mine (< 42px)")
+	var m_z1_d := level.try_spawn_worm_mine(Vector2(1795.0, 410.0))
+	assert_true(m_z1_d != null, "Zone 1 spawns 4th mine by safely disarming oldest distant mine")
+	assert_eq(level.get_active_mines_in_zone(1).size(), 3, "Zone 1 enforces MAX_MINES_PER_ZONE = 3")
+	assert_true(m_z1_a.is_disarming() or not is_instance_valid(m_z1_a), "Oldest distant mine in Zone 1 disarmed cleanly")
+
+	# Global cap <= 8
+	level.try_spawn_worm_mine(Vector2(650.0, 400.0))
+	level.try_spawn_worm_mine(Vector2(760.0, 400.0))
+	level.try_spawn_worm_mine(Vector2(880.0, 400.0))
+	level.try_spawn_worm_mine(Vector2(2460.0, 410.0))
+	level.try_spawn_worm_mine(Vector2(2580.0, 410.0))
+	level.try_spawn_worm_mine(Vector2(2720.0, 410.0))
+	assert_true(level.get_active_worm_mines().size() <= BulletBetrayalLevel9.MAX_ACTIVE_MINES,
+		"Total active mines never exceeds MAX_ACTIVE_MINES (8)")
+
+	# Never silently delete a hazard right beside the player in a full zone
+	var z2_a := level.try_spawn_worm_mine(Vector2(2072.0, 390.0))
+	var z2_b := level.try_spawn_worm_mine(Vector2(2120.0, 390.0))
+	var z2_c := level.try_spawn_worm_mine(Vector2(2168.0, 390.0))
+	assert_true(z2_a != null and z2_b != null and z2_c != null, "Zone 2 accepts 3 valid mines for cap test")
+	if z2_a and z2_b and z2_c:
+		p.global_position = Vector2(2120.0, 374.0) # All 3 mines <= 48px (< 96px protected radius)
+		await get_tree().physics_frame
+		# 2214 passes all placement checks (46px from z2_c, 94px from player) so _ensure_mine_capacity_for_zone is exercised
+		var blocked_cleanup := level.try_spawn_worm_mine(Vector2(2214.0, 390.0))
+		assert_true(blocked_cleanup == null, "Safe cleanup refuses to delete mines adjacent to alive player")
+		assert_true(not z2_a.is_disarming() and not z2_b.is_disarming() and not z2_c.is_disarming(),
+			"Adjacent hazards near player preserved intact")
+
+	# Clean remaining active mines before completion test
+	p.global_position = Vector2(120.0, 394.0)
+	for m in level.get_active_worm_mines():
+		m.disarm_and_cleanup()
+	await get_tree().create_timer(0.32).timeout
+
+	# 6. Progression & Revived (2-star) vs Clean (3-star) Star Ratings on Stage 9
+	SaveManager.bb_highest_unlocked_level = 9
+	SaveManager.bb_completed_levels = [1, 2, 3, 4, 5, 6, 7, 8]
+	SaveManager.bb_stage_stars = {1: 3, 2: 3, 3: 3, 4: 3, 5: 3, 6: 3, 7: 3, 8: 3}
+
+	for e in enemies:
+		e.take_hit(1)
+	assert_eq(level._enemies_eliminated, 10, "Level 9 counts all 10 kills")
+	assert_true(beacon.is_unlocked, "Extraction beacon unlocks at 10/10 kills")
+
+	# Revive was applied earlier in this run -> completes with 2 stars
+	level._on_extraction_reached()
+	assert_true(SaveManager.is_bb_level_completed(9), "Stage 9 marks completed in SaveManager")
+	assert_eq(SaveManager.get_bb_level_stars(9), 2, "Stage 9 completed after rewarded revive records 2 stars")
+	assert_true(SaveManager.is_bb_level_unlocked(10), "Completing Stage 9 unlocks Stage 10")
+	assert_true("REVIVED" in hud.victory_stats_label.text and "★ ★ ☆" in hud.victory_stats_label.text,
+		"Level 9 Victory overlay shows 2-star REVIVED rating")
+
+	# Menu check with Stage 9 at 2 stars and Stage 10 PLANNED
+	var menu_revived: BulletBetrayalMenu = load("res://scenes/bullet_betrayal/bullet_betrayal_menu.tscn").instantiate()
+	add_child(menu_revived)
+	await get_tree().physics_frame
+	var m_btn9 := menu_revived.get_level_button(9)
+	var m_btn10 := menu_revived.get_level_button(10)
+	assert_eq((m_btn9.get_child(0).get_child(2) as Label).text, "COMPLETED", "Menu shows Stage 9 COMPLETED")
+	assert_eq((m_btn9.get_child(0).get_node("StarsLabel") as Label).text, "★ ★ ☆", "Menu matches 2-star Stage 9 rating")
+	assert_eq((m_btn10.get_child(0).get_child(2) as Label).text, "PLANNED", "Menu shows Stage 10 PLANNED")
+	menu_revived.queue_free()
+
+	# Clean completion upgrades Stage 9 to 3 stars
+	if GameManager:
+		GameManager.revives_used_this_run = 0
+	hud.revives_used_in_run = 0
+	hud.complete_and_record_stage(9, "WORM MINEFIELD CLEARED", 3)
+	assert_eq(SaveManager.get_bb_level_stars(9), 3, "Clean Stage 9 replay upgrades saved rating to 3 stars")
+
+	level.queue_free()
+	await get_tree().physics_frame
+
+	# 7. Non-regression sanity check on approved World 2 Levels 6, 7 & 8
+	for stage_num in [6, 7, 8]:
+		var s: PackedScene = load("res://scenes/bullet_betrayal/bb_level_%d.tscn" % stage_num)
+		var inst := s.instantiate()
+		add_child(inst)
+		await get_tree().physics_frame
+		assert_eq(inst.get_node("Enemies").get_child_count(), 10, "Approved Level %d retains 10 enemies" % stage_num)
+		inst.queue_free()
+		await get_tree().physics_frame
+
+	# Restore original SaveManager & GameManager state cleanly
+	SaveManager.bb_highest_unlocked_level = orig_bb_highest
+	SaveManager.bb_completed_levels = orig_bb_completed
+	SaveManager.bb_stage_stars = orig_bb_stars
+	if GameManager:
+		GameManager.revives_used_this_run = orig_revives
+	assert_true(true, "World 2 Stage 9 Worm Minefield fully verified")
+
 
 
