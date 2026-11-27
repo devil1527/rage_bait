@@ -1,9 +1,10 @@
-[gd_scene load_steps=26 format=3 uid="uid://bblevel10giantworm"]
+[gd_scene load_steps=27 format=3 uid="uid://bblevel10giantworm"]
 
 [ext_resource type="Script" path="res://scripts/bullet_betrayal/bb_level_10.gd" id="1_lev10"]
 [ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_player.tscn" id="2_play"]
 [ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_hud.tscn" id="3_hud"]
 [ext_resource type="PackedScene" uid="uid://bbgiantworm001" path="res://scenes/bullet_betrayal/bb_giant_worm.tscn" id="4_boss"]
+[ext_resource type="PackedScene" uid="uid://bbhangingbar001" path="res://scenes/bullet_betrayal/bb_hanging_bar.tscn" id="16_hbar"]
 [ext_resource type="Texture2D" path="res://assets/sprites/bb_desert_dunes_far.png" id="5_dfar"]
 [ext_resource type="Texture2D" path="res://assets/sprites/bb_desert_dunes_mid.png" id="6_dmid"]
 [ext_resource type="Texture2D" path="res://assets/sprites/bb_desert_sand_top.png" id="7_dsand"]
@@ -324,6 +325,73 @@ texture = ExtResource("7_dsand")
 region_enabled = true
 region_rect = Rect2(0, 0, 200, 16)
 
+[node name="HangingBars" type="Node2D" parent="."]
+
+[node name="GantryPosts" type="Node2D" parent="HangingBars"]
+z_index = -1
+
+[node name="WestPostL" type="ColorRect" parent="HangingBars/GantryPosts"]
+offset_left = 287.0
+offset_top = 278.0
+offset_right = 293.0
+offset_bottom = 346.0
+mouse_filter = 2
+color = Color(0.24, 0.2, 0.18, 1)
+
+[node name="WestPostR" type="ColorRect" parent="HangingBars/GantryPosts"]
+offset_left = 517.0
+offset_top = 278.0
+offset_right = 523.0
+offset_bottom = 338.0
+mouse_filter = 2
+color = Color(0.24, 0.2, 0.18, 1)
+
+[node name="CenterPostL" type="ColorRect" parent="HangingBars/GantryPosts"]
+offset_left = 530.0
+offset_top = 250.0
+offset_right = 536.0
+offset_bottom = 338.0
+mouse_filter = 2
+color = Color(0.24, 0.2, 0.18, 1)
+
+[node name="CenterPostR" type="ColorRect" parent="HangingBars/GantryPosts"]
+offset_left = 744.0
+offset_top = 250.0
+offset_right = 750.0
+offset_bottom = 338.0
+mouse_filter = 2
+color = Color(0.24, 0.2, 0.18, 1)
+
+[node name="EastPostL" type="ColorRect" parent="HangingBars/GantryPosts"]
+offset_left = 757.0
+offset_top = 278.0
+offset_right = 763.0
+offset_bottom = 338.0
+mouse_filter = 2
+color = Color(0.24, 0.2, 0.18, 1)
+
+[node name="EastPostR" type="ColorRect" parent="HangingBars/GantryPosts"]
+offset_left = 987.0
+offset_top = 278.0
+offset_right = 993.0
+offset_bottom = 346.0
+mouse_filter = 2
+color = Color(0.24, 0.2, 0.18, 1)
+
+[node name="HangingBar_West" parent="HangingBars" instance=ExtResource("16_hbar")]
+position = Vector2(405, 278)
+bar_width = 230.0
+
+[node name="HangingBar_CenterHigh" parent="HangingBars" instance=ExtResource("16_hbar")]
+position = Vector2(640, 250)
+bar_width = 220.0
+
+[node name="HangingBar_East" parent="HangingBars" instance=ExtResource("16_hbar")]
+position = Vector2(875, 278)
+bar_width = 230.0
+
+[node name="BossMines" type="Node2D" parent="."]
+
 [node name="SpawnPoint" type="Marker2D" parent="."]
 position = Vector2(140, 394)
 
@@ -335,7 +403,7 @@ position = Vector2(960, 410)
 territory_min_x = 64.0
 territory_max_x = 1216.0
 surface_y = 410.0
-initial_delay = 0.85
+initial_delay = 0.72
 
 [node name="Enemies" type="Node2D" parent="."]
 
@@ -462,6 +530,6 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.95, 0.86, 0.80, 0.95)
 theme_override_font_sizes/font_size = 11
-text = "10 bullets. 10 armed enemies. Survive 60s & eliminate every enemy — the stage clears ONLY when all 10 fall."
+text = "10 bullets. 10 armed enemies. Use hanging bars & dodge the hunting Giant Worm and 10s explosive mines!"
 horizontal_alignment = 1
 autowrap_mode = 2

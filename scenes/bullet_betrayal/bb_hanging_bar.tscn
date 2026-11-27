@@ -1,0 +1,58 @@
+[gd_scene load_steps=3 format=3 uid="uid://bbhangingbar001"]
+
+[ext_resource type="Script" path="res://scripts/bullet_betrayal/bb_hanging_bar.gd" id="1_hbar"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hbar"]
+size = Vector2(220, 28)
+
+[node name="BulletBetrayalHangingBar" type="Area2D" groups=["hanging_bars"]]
+z_index = 1
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("1_hbar")
+
+[node name="Visuals" type="Node2D" parent="."]
+
+[node name="RailBody" type="ColorRect" parent="Visuals"]
+offset_left = -110.0
+offset_top = -5.0
+offset_right = 110.0
+offset_bottom = 5.0
+mouse_filter = 2
+color = Color(0.20, 0.17, 0.16, 1)
+
+[node name="RailTrim" type="ColorRect" parent="Visuals"]
+offset_left = -106.0
+offset_top = -3.0
+offset_right = 106.0
+offset_bottom = 0.0
+mouse_filter = 2
+color = Color(0.56, 0.42, 0.30, 1)
+
+[node name="GrabGlow" type="ColorRect" parent="Visuals"]
+offset_left = -104.0
+offset_top = 3.0
+offset_right = 104.0
+offset_bottom = 6.0
+mouse_filter = 2
+color = Color(0.98, 0.72, 0.2, 0.28)
+
+[node name="LeftCap" type="ColorRect" parent="Visuals"]
+offset_left = -114.0
+offset_top = -7.0
+offset_right = -104.0
+offset_bottom = 7.0
+mouse_filter = 2
+color = Color(0.95, 0.56, 0.18, 1)
+
+[node name="RightCap" type="ColorRect" parent="Visuals"]
+offset_left = 104.0
+offset_top = -7.0
+offset_right = 114.0
+offset_bottom = 7.0
+mouse_filter = 2
+color = Color(0.95, 0.56, 0.18, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 10)
+shape = SubResource("RectangleShape2D_hbar")

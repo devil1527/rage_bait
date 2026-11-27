@@ -10,6 +10,7 @@ extends Node2D
 const MENU_SCENE: String = "res://scenes/bullet_betrayal/bullet_betrayal_menu.tscn"
 const ARCADE_SCENE: String = "res://scenes/ui/main_menu.tscn"
 const ENEMY_SCENE: PackedScene = preload("res://scenes/bullet_betrayal/bb_enemy_soldier.tscn")
+const BOSS_MINE_SCENE: PackedScene = preload("res://scenes/bullet_betrayal/bb_boss_mine.tscn")
 
 const TOTAL_REQUIRED_ENEMIES: int = 10
 const SURVIVAL_DURATION: float = 60.0
@@ -17,15 +18,19 @@ const ENEMY_SPAWN_INTERVAL: float = 6.0
 const FIRST_SPAWN_TIME: float = 4.5
 const ARENA_MIN_X: float = 48.0
 const ARENA_MAX_X: float = 1232.0
+const ARENA_FLOOR_Y: float = 410.0
 
 @export var survival_duration: float = SURVIVAL_DURATION
 @export var spawn_interval: float = ENEMY_SPAWN_INTERVAL
 @export var first_spawn_time: float = FIRST_SPAWN_TIME
+@export var max_active_boss_mines: int = 6
 
 @onready var player: BulletBetrayalPlayer = $Player
 @onready var hud: BulletBetrayalHUD = $HUD
 @onready var spawn_point: Marker2D = $SpawnPoint
 @onready var enemies_container: Node2D = $Enemies
+@onready var hanging_bars_container: Node2D = get_node_or_null("HangingBars")
+@onready var boss_mines_container: Node2D = get_node_or_null("BossMines")
 @onready var giant_worm: BulletBetrayalGiantWorm = $GiantWorm
 @onready var intro_banner: Control = get_node_or_null("HUD/IntroBanner")
 @onready var timer_panel: PanelContainer = get_node_or_null("HUD/SurvivalTimerPanel")
@@ -43,6 +48,9 @@ var survival_remaining: float = SURVIVAL_DURATION
 var is_overtime: bool = false
 var is_surviving: bool = false
 var is_completed: bool = false
+var current_boss_phase: int = 0
+var total_mines_created: int = 0
+var last_mine_spawn_position: Vector2 = Vector2.ZERO
 var spawn_timestamps: Array[float] = []
 var active_enemies: Array[BulletBetrayalEnemySoldier] = []
 
@@ -99,8 +107,11 @@ func _ready() -> void:
 	if player and not player.player_died.is_connected(_on_player_died):
 		player.player_died.connect(_on_player_died)
 
-	if giant_worm and not giant_worm.submerged.is_connected(_on_giant_worm_submerged):
-		giant_worm.submerged.connect(_on_giant_worm_submerged)
+	if giant_worm:
+		if not giant_worm.submerged.is_connected(_on_giant_worm_submerged):
+			giant_worm.submerged.connect(_on_giant_worm_submerged)
+		if not giant_worm.submerged_at.is_connected(_on_giant_worm_submerged_at):
+			giant_worm.submerged_at.connect(_on_giant_worm_submerged_at)
 
 	_update_camera_framing()
 	if get_viewport() and not get_viewport().size_changed.is_connected(_update_camera_framing):
@@ -157,6 +168,9 @@ func _animate_intro_banner() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if player and player.is_alive and _paused_for_death:
+		_on_player_revived()
+
 	if player and player.is_alive and player.global_position.y > 520.0:
 		player.die()
 
@@ -172,8 +186,20 @@ func _physics_process(delta: float) -> void:
 		_shown_10s_alert = true
 		_show_alert_banner("⚠ 10 SECONDS LEFT! ⚠", Color(1.0, 0.32, 0.28, 1.0), 1.5)
 
+	_update_boss_difficulty_phase()
 	_update_timer_hud()
 	_process_enemy_spawn_schedule(delta)
+
+
+func _update_boss_difficulty_phase() -> void:
+	var target_phase: int = 0
+	if is_overtime or survival_elapsed >= 40.0 or enemies_killed >= 7:
+		target_phase = 2
+	elif survival_elapsed >= 18.0 or enemies_killed >= 3:
+		target_phase = 1
+	current_boss_phase = target_phase
+	if giant_worm and is_instance_valid(giant_worm):
+		giant_worm.set_difficulty_phase(target_phase)
 
 
 func _enter_overtime_state() -> void:
@@ -333,10 +359,10 @@ func _spawn_next_enemy() -> BulletBetrayalEnemySoldier:
 	enemy.max_health = 1
 	enemy.can_shoot = true
 	enemy.is_ambush = false
-	enemy.patrol_speed = randf_range(52.0, 68.0)
+	enemy.patrol_speed = randf_range(60.0, 74.0) if current_boss_phase >= 1 else randf_range(54.0, 66.0)
 	enemy.patrol_distance = patrol_dist
 	enemy.detection_range = 1400.0
-	enemy.shoot_interval = randf_range(2.25, 2.75)
+	enemy.shoot_interval = randf_range(1.90, 2.35) if current_boss_phase >= 1 else randf_range(2.20, 2.65)
 
 	enemies_spawned += 1
 	enemies_alive += 1
@@ -450,9 +476,12 @@ func _complete_stage() -> void:
 	_spawning_stopped = true
 	_pending_spawn_slots = 0
 
-	# Stop Giant Worm, enemies, projectiles & lock player safely
+	# Stop Giant Worm, boss mines, enemies, projectiles & lock player safely
 	if giant_worm and is_instance_valid(giant_worm):
 		giant_worm.stop_encounter()
+
+	for mine in get_active_boss_mines():
+		mine.disarm_without_explosion()
 
 	_clear_active_enemy_bullets()
 	for enemy in active_enemies:
@@ -473,12 +502,79 @@ func _complete_stage() -> void:
 			AudioManager.play_sfx("complete")
 
 
+func _on_giant_worm_submerged_at(submerge_pos: Vector2) -> void:
+	if is_completed:
+		return
+	if player and is_instance_valid(player) and player.is_alive and _paused_for_death:
+		_on_player_revived()
+	if _paused_for_death:
+		return
+	_spawn_boss_mine_at(submerge_pos)
+
+
+func _spawn_boss_mine_at(submerge_pos: Vector2) -> BulletBetrayalBossMine:
+	if is_completed or not BOSS_MINE_SCENE or not boss_mines_container:
+		return null
+
+	var validated_pos: Vector2 = _validate_boss_mine_position(submerge_pos)
+	var existing := get_active_boss_mines()
+	if existing.size() >= maxi(1, max_active_boss_mines):
+		var victim: BulletBetrayalBossMine = existing[0]
+		if player and is_instance_valid(player):
+			var best_dist: float = -1.0
+			for cand in existing:
+				var d: float = cand.global_position.distance_to(player.global_position)
+				if d > best_dist:
+					best_dist = d
+					victim = cand
+		if is_instance_valid(victim):
+			victim.disarm_without_explosion()
+
+	var mine := BOSS_MINE_SCENE.instantiate() as BulletBetrayalBossMine
+	if not mine:
+		return null
+
+	mine.position = validated_pos
+	boss_mines_container.add_child(mine)
+	total_mines_created += 1
+	last_mine_spawn_position = validated_pos
+	return mine
+
+
+func _validate_boss_mine_position(raw_pos: Vector2) -> Vector2:
+	var clamped_x: float = clampf(raw_pos.x, ARENA_MIN_X + 24.0, ARENA_MAX_X - 24.0)
+	var floor_y: float = ARENA_FLOOR_Y
+	var space := get_world_2d().direct_space_state if get_world_2d() else null
+	if space:
+		var ray := PhysicsRayQueryParameters2D.create(Vector2(clamped_x, ARENA_FLOOR_Y - 24.0), Vector2(clamped_x, ARENA_FLOOR_Y + 24.0), 2)
+		var hit: Dictionary = space.intersect_ray(ray)
+		if not hit.is_empty():
+			floor_y = hit.get("position", Vector2(clamped_x, ARENA_FLOOR_Y)).y
+	return Vector2(clamped_x, floor_y)
+
+
+func get_active_boss_mines() -> Array[BulletBetrayalBossMine]:
+	var list: Array[BulletBetrayalBossMine] = []
+	if not boss_mines_container:
+		return list
+	for child in boss_mines_container.get_children():
+		if child is BulletBetrayalBossMine and is_instance_valid(child) and child.is_fuse_active():
+			list.append(child)
+	return list
+
+
+func get_active_boss_mine_count() -> int:
+	return get_active_boss_mines().size()
+
+
 func _on_player_died() -> void:
 	_paused_for_death = true
 	is_surviving = false
 	_clear_active_enemy_bullets()
 	if giant_worm and is_instance_valid(giant_worm):
 		giant_worm.set_physics_process(false)
+	for mine in get_active_boss_mines():
+		mine.is_paused = true
 	for enemy in active_enemies:
 		if is_instance_valid(enemy) and not enemy.is_dead:
 			enemy.set_physics_process(false)
@@ -497,9 +593,11 @@ func _on_player_revived() -> void:
 		if cam:
 			cam.reset_smoothing()
 
-	# Preserve Giant Worm encounter and remaining living enemies cleanly (never reset)
+	# Preserve Giant Worm encounter, active bomb fuses, and remaining enemies cleanly (never reset)
 	if giant_worm and is_instance_valid(giant_worm) and not is_completed:
 		giant_worm.set_physics_process(true)
+	for mine in get_active_boss_mines():
+		mine.is_paused = false
 
 	for enemy in active_enemies:
 		if is_instance_valid(enemy) and not enemy.is_dead:

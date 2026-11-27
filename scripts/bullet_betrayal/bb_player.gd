@@ -34,11 +34,59 @@ var input_disabled: bool = false
 var is_on_ladder: bool = false
 var ladder_climb_speed: float = 165.0
 var _ladder_dismount_timer: float = 0.0
+var is_hanging: bool = false
+var current_hanging_bar: Node2D = null
+var bar_traverse_speed: float = 205.0
+var _overlapping_bars: Array[Node2D] = []
+var _bar_regrab_timer: float = 0.0
 
 func set_on_ladder(on_ladder: bool) -> void:
 	is_on_ladder = on_ladder
 	if is_on_ladder:
 		_coyote_timer = 0.14
+
+func register_hanging_bar(bar: Node2D) -> void:
+	if bar and not _overlapping_bars.has(bar):
+		_overlapping_bars.append(bar)
+
+func unregister_hanging_bar(bar: Node2D) -> void:
+	_overlapping_bars.erase(bar)
+	if bar == current_hanging_bar:
+		release_hanging_bar(false, 0.14)
+
+func try_grab_hanging_bar(bar: Node2D = null) -> bool:
+	if not is_alive or input_disabled or is_hanging or is_on_ladder or _bar_regrab_timer > 0.0:
+		return false
+	var target: Node2D = bar
+	if not target:
+		for candidate in _overlapping_bars:
+			if is_instance_valid(candidate):
+				target = candidate
+				break
+	if not target or not is_instance_valid(target):
+		return false
+	is_hanging = true
+	current_hanging_bar = target
+	velocity.y = 0.0
+	_coyote_timer = 0.0
+	if target.has_method("get_hang_y"):
+		global_position.y = float(target.call("get_hang_y"))
+	if target.has_method("set_occupied"):
+		target.call("set_occupied", true)
+	return true
+
+func release_hanging_bar(with_hop: bool = false, cooldown: float = 0.26) -> void:
+	var prev_bar := current_hanging_bar
+	is_hanging = false
+	current_hanging_bar = null
+	_bar_regrab_timer = maxf(_bar_regrab_timer, cooldown)
+	if prev_bar and is_instance_valid(prev_bar) and prev_bar.has_method("set_occupied"):
+		prev_bar.call("set_occupied", false)
+	if with_hop:
+		velocity.y = -360.0
+		_jump_buffer_timer = 0.0
+		_coyote_timer = 0.0
+		AudioManager.play_sfx("jump")
 
 # Virtual touch input flags (direct mobile touch binding)
 var touch_left: bool = false
@@ -117,9 +165,23 @@ func _physics_process(delta: float) -> void:
 
 	# Timers
 	_fire_timer = maxf(0.0, _fire_timer - delta)
+	_bar_regrab_timer = maxf(0.0, _bar_regrab_timer - delta)
+
+	if is_hanging and (not current_hanging_bar or not is_instance_valid(current_hanging_bar)):
+		release_hanging_bar(false, 0.14)
+
+	# Auto-grab overlapping overhead bar when airborne (unless deliberately dropping)
+	if not is_hanging and not is_on_ladder and not is_on_floor() and _bar_regrab_timer <= 0.0 and not _overlapping_bars.is_empty():
+		if not Input.is_action_pressed("ui_down") and not input_disabled:
+			try_grab_hanging_bar()
 
 	# Gravity
-	if not is_on_floor():
+	if is_hanging:
+		velocity.y = 0.0
+		_coyote_timer = 0.0
+		if current_hanging_bar and current_hanging_bar.has_method("get_hang_y"):
+			global_position.y = float(current_hanging_bar.call("get_hang_y"))
+	elif not is_on_floor():
 		if is_on_ladder and _ladder_dismount_timer <= 0.0:
 			# Gravity suspended while clinging to ladder rungs
 			pass
@@ -139,6 +201,14 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, 0.0, friction * delta)
 
 	move_and_slide()
+
+	if is_hanging and current_hanging_bar and is_instance_valid(current_hanging_bar):
+		if current_hanging_bar.has_method("get_min_x") and current_hanging_bar.has_method("get_max_x"):
+			var min_x: float = float(current_hanging_bar.call("get_min_x"))
+			var max_x: float = float(current_hanging_bar.call("get_max_x"))
+			if global_position.x < min_x - 4.0 or global_position.x > max_x + 4.0:
+				release_hanging_bar(false, 0.18)
+
 	_check_and_record_safe_anchor(delta)
 	_update_animation(delta)
 
@@ -149,6 +219,32 @@ func _handle_input(delta: float) -> void:
 		move_input -= 1.0
 	if Input.is_action_pressed("move_right") or touch_right:
 		move_input += 1.0
+
+	if is_hanging:
+		if move_input != 0.0:
+			velocity.x = move_input * bar_traverse_speed
+			var new_facing := int(sign(move_input))
+			if new_facing != facing_direction and new_facing != 0:
+				facing_direction = new_facing
+				_update_facing()
+		else:
+			velocity.x = move_toward(velocity.x, 0.0, friction * delta)
+
+		var want_release_down := Input.is_action_just_pressed("ui_down") or Input.is_action_pressed("ui_down")
+		var want_jump_off := Input.is_action_just_pressed("jump") or touch_jump_just_pressed
+		touch_jump_just_pressed = false
+		touch_jump_just_released = false
+		if want_release_down:
+			release_hanging_bar(false, 0.28)
+			velocity.y = 40.0
+		elif want_jump_off:
+			release_hanging_bar(true, 0.28)
+
+		var is_shooting_hang := Input.is_action_just_pressed("shoot") or touch_shoot_just_pressed or Input.is_action_pressed("shoot") or touch_shoot
+		touch_shoot_just_pressed = false
+		if is_shooting_hang and _fire_timer <= 0.0:
+			_attempt_shoot()
+		return
 
 	if move_input != 0.0:
 		velocity.x = move_toward(velocity.x, move_input * move_speed, acceleration * delta)
@@ -279,6 +375,7 @@ func take_damage(amount: int = 1) -> void:
 func die() -> void:
 	if not is_alive:
 		return
+	release_hanging_bar(false, 0.0)
 	is_alive = false
 	input_disabled = true
 	velocity = Vector2.ZERO
@@ -303,6 +400,7 @@ func die() -> void:
 
 ## Authoritative revive method: restores 1 life and exactly 10 bullets
 func revive(safe_position: Vector2 = Vector2.ZERO) -> void:
+	release_hanging_bar(false, 0.0)
 	var target_pos: Vector2 = safe_position
 	if target_pos == Vector2.ZERO:
 		target_pos = get_safe_revive_position()
@@ -342,6 +440,7 @@ func apply_spawn_protection(duration: float = 1.5) -> void:
 		sprite.modulate = Color.WHITE
 
 func respawn(pos: Vector2) -> void:
+	release_hanging_bar(false, 0.0)
 	global_position = pos
 	is_alive = true
 	input_disabled = false
@@ -383,8 +482,8 @@ func _check_and_record_safe_anchor(delta: float) -> void:
 		_grounded_safety_timer = 0.0
 		return
 
-	# 1. Stably resting on floor (not airborne, bouncing or on ladder)
-	if not is_on_floor() or absf(velocity.y) > 1.0 or is_on_ladder:
+	# 1. Stably resting on floor (not airborne, bouncing, hanging or on ladder)
+	if not is_on_floor() or absf(velocity.y) > 1.0 or is_on_ladder or is_hanging:
 		_grounded_safety_timer = 0.0
 		return
 
@@ -444,6 +543,16 @@ func _is_current_area_clear_of_hazards(pos: Vector2) -> bool:
 				is_active = false
 			if is_active and node.global_position.distance_to(pos) < 45.0:
 				return false
+
+	# Active timed boss mines about to detonate (avoid reviving inside imminent blast)
+	var boss_mines := tree.get_nodes_in_group("boss_mines")
+	for node in boss_mines:
+		if is_instance_valid(node) and node is Node2D:
+			if node.has_method("is_fuse_active") and bool(node.call("is_fuse_active")):
+				var rem: float = float(node.call("get_fuse_remaining")) if node.has_method("get_fuse_remaining") else 0.0
+				var rad: float = float(node.get("blast_radius")) if "blast_radius" in node else 128.0
+				if rem <= 2.6 and node.global_position.distance_to(pos) < rad + 12.0:
+					return false
 
 	# Active hunting mines (safe threshold: 65px)
 	var hunting_mines := tree.get_nodes_in_group("hunting_mines")

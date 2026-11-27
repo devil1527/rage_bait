@@ -15,6 +15,16 @@ colors = PackedColorArray(0.98, 0.78, 0.42, 0.96, 0.85, 0.36, 0.16, 0)
 z_index = 3
 script = ExtResource("1_scr")
 
+[node name="BarStrikeBeam" type="ColorRect" parent="."]
+visible = false
+z_index = 1
+offset_left = -22.0
+offset_top = -178.0
+offset_right = 22.0
+offset_bottom = 0.0
+mouse_filter = 2
+color = Color(1, 0.18, 0.14, 0.24)
+
 [node name="WarningFissure" type="ColorRect" parent="."]
 visible = false
 z_index = 1
@@ -74,28 +84,28 @@ clip_contents = true
 layout_mode = 3
 anchors_preset = 0
 offset_left = -160.0
-offset_top = -80.0
+offset_top = -250.0
 offset_right = 160.0
 mouse_filter = 2
 
 [node name="TailSegment" type="Sprite2D" parent="BodyClip"]
 visible = false
 modulate = Color(0.92, 0.66, 0.52, 1)
-position = Vector2(102, 118)
+position = Vector2(102, 288)
 scale = Vector2(1.75, 1.75)
 texture = ExtResource("3_crawl1")
 
 [node name="TorsoSegment" type="Sprite2D" parent="BodyClip"]
 visible = false
 modulate = Color(1.02, 0.74, 0.58, 1)
-position = Vector2(136, 116)
+position = Vector2(136, 286)
 scale = Vector2(2.2, 2.1)
 texture = ExtResource("4_crawl2")
 
 [node name="HeadSprite" type="Sprite2D" parent="BodyClip"]
 visible = false
 modulate = Color(1.08, 0.78, 0.62, 1)
-position = Vector2(178, 114)
+position = Vector2(178, 284)
 scale = Vector2(2.6, 2.4)
 texture = ExtResource("3_crawl1")
 

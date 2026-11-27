@@ -3736,41 +3736,215 @@ func test_level_10_giant_worm_survival() -> void:
 	assert_eq(level.enemies_alive, 0, "Starts with 0 alive enemies")
 	assert_eq(level.enemies_killed, 0, "Starts with 0 killed enemies")
 	assert_eq(level.enemies_remaining_to_spawn, 10, "Starts with 10 remaining enemies to spawn")
-	assert_true(level.find_children("*", "OverheadBar", true, false).is_empty(), "No overhead bars in Stage 10 arena")
+	var bars := get_tree().get_nodes_in_group("hanging_bars")
+	var level_bars: Array = []
+	for b in bars:
+		if level.is_ancestor_of(b):
+			level_bars.append(b)
+	assert_eq(level_bars.size(), 3, "Stage 10 includes 3 hanging bars (West, CenterHigh, East)")
 
-	# 2. Giant Worm scale, underground safety, movement patterns, directions & lethality
+	# 2. Giant Worm scale, underground safety, hunting patterns, warnings & bar attacks
 	var head_spr: Sprite2D = boss.get_node_or_null("BodyClip/HeadSprite")
 	assert_true(head_spr != null and head_spr.scale.x >= 2.2, "Giant worm boss visuals are >2x larger than regular worms")
 	assert_true(boss.is_underground(), "Giant worm begins underground")
 	boss._check_overlapping_player()
 	assert_true(p.is_alive, "Giant worm deals zero damage while underground")
 
-	boss.force_emerge_at(700.0, -1, BulletBetrayalGiantWorm.MovementPattern.STALK_REVERSE)
+	boss.force_emerge_at(700.0, -1, BulletBetrayalGiantWorm.MovementPattern.TRACKING_ATTACK)
 	assert_true(boss.is_emerged(), "Giant worm can emerge from underground")
 	var start_boss_x: float = boss.global_position.x
 	for _f in range(18):
 		boss._physics_process(1.0 / 60.0)
 	assert_true(boss.global_position.x < start_boss_x, "Giant worm moves left across the arena")
 
-	boss.force_emerge_at(boss.territory_min_x + 48.0, -1, BulletBetrayalGiantWorm.MovementPattern.SURGE_DASH)
+	boss.force_emerge_at(boss.territory_min_x + 48.0, -1, BulletBetrayalGiantWorm.MovementPattern.PREDICTIVE_ATTACK)
 	boss._physics_process(1.0 / 60.0)
 	assert_eq(boss.facing_direction, 1, "Giant worm reverses direction cleanly at left boundary")
 	assert_true(boss.direction_change_count >= 1, "Giant worm tracks direction reversals")
 
-	# Submerge triggers underground transition and disables hitbox
-	boss.force_submerge(1.5)
+	# Test Predictive & Tracking emergence target selection + non-repeating patterns + warning safety
+	p.global_position = Vector2(540.0, 394.0)
+	p.velocity = Vector2(230.0, 0.0)
+	boss._player_history.clear()
+	boss._player_history.append(Vector2(380.0, 394.0))
+	boss._player_history.append(Vector2(420.0, 394.0))
+	var pred_x: float = boss._pick_emerge_x_for_pattern(BulletBetrayalGiantWorm.MovementPattern.PREDICTIVE_ATTACK)
+	assert_true(pred_x > p.global_position.x, "Predictive attack targets ahead of moving player")
+	assert_true(absf(pred_x - p.global_position.x) >= boss.min_player_emerge_clearance, "Predictive emergence respects safe warning clearance")
+	p.velocity = Vector2.ZERO
+
+	var emerge_zones_seen := {}
+	for pat in [BulletBetrayalGiantWorm.MovementPattern.SIDE_AMBUSH, BulletBetrayalGiantWorm.MovementPattern.TRACKING_ATTACK, BulletBetrayalGiantWorm.MovementPattern.GROUND_AMBUSH]:
+		var px: float = boss._pick_emerge_x_for_pattern(pat)
+		assert_true(boss._is_valid_ground_emerge(px, 64.0), "Emerge position is never unavoidably directly under ground player")
+		var z_idx: int = 0 if px < 440.0 else (2 if px > 840.0 else 1)
+		emerge_zones_seen[z_idx] = true
+		boss._enter_warning(px, pat)
+	assert_true(emerge_zones_seen.size() >= 2, "Worm emerges across multiple distinct arena zones")
+
+	# Attack warning verification
+	boss._enter_warning(860.0, BulletBetrayalGiantWorm.MovementPattern.GROUND_AMBUSH)
+	assert_eq(boss.state, BulletBetrayalGiantWorm.WormState.WARNING, "Worm enters WARNING state before surfacing")
+	assert_true(boss.sand_mound.visible and boss.warning_fissure.visible and boss.warning_label.visible, "Warning visuals appear clearly")
+	assert_true(not boss.kill_zone.monitoring, "KillZone stays disabled during WARNING telegraph")
+
+	# Test pattern variety prevents identical consecutive selections
+	var pat_samples: Array[int] = []
+	for _s in range(6):
+		var np: int = boss._choose_hunting_pattern()
+		pat_samples.append(np)
+		boss._pattern_history.append(np)
+	var no_repeat := true
+	for i in range(1, pat_samples.size()):
+		if pat_samples[i] == pat_samples[i - 1]:
+			no_repeat = false
+	assert_true(no_repeat, "Hunting pattern selector avoids identical back-to-back patterns")
+
+	# Cancelled retreat creates ZERO boss mines
+	var mines_before_cancel: int = level.total_mines_created
+	boss.force_submerge(1.2, true)
+	assert_eq(level.total_mines_created, mines_before_cancel, "Cancelled retreat creates zero boss mines")
 	assert_true(boss.is_underground(), "Giant worm returns underground cleanly")
 	assert_true(not boss.kill_zone.monitoring, "Underground disables boss kill_zone")
 
+	# 2B. Hanging Bar Mechanics + Bar-Strike Worm Attack + Overhead Blast Threat
+	var bar_west := level.get_node("HangingBars/HangingBar_West") as BulletBetrayalHangingBar
+	assert_true(bar_west != null, "HangingBar_West exists")
+	p.global_position = Vector2(bar_west.global_position.x - 40.0, bar_west.get_hang_y())
+	p.velocity = Vector2(0.0, -40.0)
+	p.register_hanging_bar(bar_west)
+	assert_true(p.try_grab_hanging_bar(bar_west), "Player grabs hanging bar smoothly")
+	assert_true(p.is_hanging and bar_west.is_occupied, "Player enters hanging state and occupies bar")
+	var hang_start_x: float = p.global_position.x
+	p.touch_right = true
+	for _f in range(12):
+		p._physics_process(1.0 / 60.0)
+	# Release bar cleanly via edge traversal & jump-off without altering shared Stage 1-9 behavior
+	p.touch_right = true
+	for _f in range(36):
+		p._physics_process(1.0 / 60.0)
+		if not p.is_hanging:
+			break
+	p.touch_right = false
+	assert_true(not p.is_hanging and not bar_west.is_occupied, "Traversing past bar end releases hanging cleanly")
+
+	# Re-grab and release via jump hop
+	p.global_position = Vector2(bar_west.global_position.x, bar_west.get_hang_y())
+	p._bar_regrab_timer = 0.0
+	p.try_grab_hanging_bar(bar_west)
+	assert_true(p.is_hanging, "Player re-grabs bar after cooldown")
+	p.touch_jump_just_pressed = true
+	p._physics_process(1.0 / 60.0)
+	assert_true(not p.is_hanging and p.velocity.y < 0.0, "Jumping while hanging releases bar with upward hop")
+
+	# Linger triggers BAR_STRIKE targeting below bar route with vertical beam & leap reaching bar height
+	boss._bar_linger_timer = 1.2
+	var selected_bar_pat: int = boss._choose_hunting_pattern()
+	assert_eq(selected_bar_pat, int(BulletBetrayalGiantWorm.MovementPattern.BAR_STRIKE), "Lingering on hanging bar draws BAR_STRIKE hunt")
+	var bar_emerge_x: float = boss._pick_emerge_x_for_pattern(BulletBetrayalGiantWorm.MovementPattern.BAR_STRIKE)
+	assert_true(bar_emerge_x >= bar_west.get_min_x() and bar_emerge_x <= bar_west.get_max_x(), "BAR_STRIKE emerges directly below bar route")
+	boss._enter_warning(bar_emerge_x, BulletBetrayalGiantWorm.MovementPattern.BAR_STRIKE)
+	boss._process_warning(0.05)
+	assert_true(boss.bar_strike_beam.visible and "BAR LEAP" in boss.warning_label.text, "BAR_STRIKE shows readable beam & bar-leap warning")
+	boss.force_emerge_at(p.global_position.x, 1, BulletBetrayalGiantWorm.MovementPattern.BAR_STRIKE)
+	var min_arc_y: float = 0.0
+	for _f in range(30):
+		boss._physics_process(0.025)
+		min_arc_y = minf(min_arc_y, boss._current_arc_y)
+	assert_true(min_arc_y <= -140.0, "BAR_STRIKE leaps high through overhead hanging bar altitude")
+
+	# Stationary hanging player hit by BAR_STRIKE arc dies cleanly (bars do NOT grant permanent immunity)
+	p.global_position = Vector2(boss.global_position.x, bar_west.get_hang_y())
+	p.is_invulnerable = false
+	boss._current_arc_y = -(410.0 - bar_west.get_hang_y() - 10.0)
+	boss._update_kill_col_offset()
+	boss._on_kill_zone_body_entered(p)
+	assert_true(not p.is_alive, "BAR_STRIKE can kill a stationary player hanging on overhead bars")
+	p.revive(Vector2(140.0, 394.0))
+	if GameManager:
+		GameManager.revives_used_this_run = 0
+	hud.revives_used_in_run = 0
+	p.is_invulnerable = false
+	p._invulnerability_timer = 0.0
+
+	# 2C. Huge Timed Boss Mines (Exact retreat pos, 10s fuse, blast radius, bar threat, enemy immunity, multiple active)
+	boss.force_emerge_at(640.0, 1, BulletBetrayalGiantWorm.MovementPattern.GROUND_AMBUSH)
+	boss._enter_submerging()
+	for _s in range(18):
+		boss._physics_process(0.03)
+		if boss.is_underground():
+			break
+	assert_true(boss.is_underground(), "Boss completed natural SUBMERGING retreat")
+	assert_eq(level.get_active_boss_mine_count(), 1, "Natural retreat spawns exact 1 boss mine")
+	var m1: BulletBetrayalBossMine = level.get_active_boss_mines()[0]
+	assert_true(absf(m1.global_position.x - boss.last_submerge_position.x) <= 1.0, "Mine position matches worm disappearance position")
+	assert_true(is_equal_approx(m1.fuse_duration, 10.0) and is_equal_approx(m1.fuse_remaining, 10.0), "Mine fuse starts at 10.0 seconds")
+	assert_true("10" in m1.countdown_label.text, "Mine displays 10s countdown cue")
+
+	# Spawn a second mine simultaneously at another retreat X -> verify multiple active mines coexist
+	boss.force_emerge_at(bar_west.global_position.x, -1, BulletBetrayalGiantWorm.MovementPattern.GROUND_AMBUSH)
+	boss._enter_submerging()
+	for _s in range(18):
+		boss._physics_process(0.03)
+		if boss.is_underground():
+			break
+	assert_eq(level.get_active_boss_mine_count(), 2, "Multiple boss mines coexist simultaneously")
+	var m2: BulletBetrayalBossMine = level.get_active_boss_mines()[1]
+
+	# Mine 1 countdown to 10.0s: player OUTSIDE blast_radius (>128px) survives cleanly; enemies inside are NEVER auto-killed
+	var test_soldier := level._spawn_next_enemy()
+	assert_true(test_soldier != null, "Spawned test soldier for blast immunity verification")
+	test_soldier.global_position = Vector2(m1.global_position.x + 20.0, 393.0)
+	p.global_position = Vector2(m1.global_position.x + m1.blast_radius + 32.0, 394.0)
+	p.is_invulnerable = false
+	for _t in range(42):
+		m1._physics_process(0.25)
+	assert_true(m1.has_exploded(), "Mine detonates cleanly after 10 seconds")
+	assert_eq(m1.get_explosion_count(), 1, "No duplicate explosion occurs")
+	assert_true(p.is_alive, "Player survives outside 128px lethal blast radius")
+	assert_true(not test_soldier.is_dead and level.enemies_killed == 0, "Mine explosion NEVER auto-kills required enemy soldiers")
+	# Free temporary test_soldier cleanly before starting full 6s schedule test
+	level.active_enemies.erase(test_soldier)
+	level.enemies_spawned = 0
+	level.enemies_alive = 0
+	level.enemies_remaining_to_spawn = 10
+	level.spawn_timestamps.clear()
+	test_soldier.queue_free()
+	await get_tree().physics_frame
+
+	# Mine 2 directly beneath HangingBar_West detonates while player hangs above (<128px) -> instant death (single event)
+	p.global_position = Vector2(m2.global_position.x, bar_west.get_hang_y())
+	p.try_grab_hanging_bar(bar_west)
+	p.is_invulnerable = false
+	for _t in range(42):
+		m2._physics_process(0.25)
+	assert_true(not p.is_alive, "Boss mine blast kills hanging player overhead inside 128px blast area")
+	assert_eq(m2.get_death_events_emitted(), 1, "Mine emits exactly 1 death event with zero duplicates")
+	await get_tree().physics_frame
+	assert_eq(level.get_active_boss_mine_count(), 0, "Exploded mines are excluded/removed cleanly")
+	p.revive(Vector2(140.0, 394.0))
+	if GameManager:
+		GameManager.revives_used_this_run = 0
+	hud.revives_used_in_run = 0
+
+	# Reset boss counters/cooldowns cleanly before full 60s progression run
+	boss.force_submerge(0.9, true)
+	level._paused_for_death = false
+	level.is_surviving = true
+	level.survival_elapsed = 0.0
+	level.survival_remaining = 60.0
+	level._last_slot_promoted_idx = -1
+	level._pending_spawn_slots = 0
+	level._spawn_cooldown = 0.0
+
 	# 3. 6-second spawning schedule + worm submerge coordination + no duplicates/overflow
-	# Step time up to first scheduled 4.5s milestone cleanly while boss is emerged
 	p.global_position = Vector2(140.0, 394.0)
 	p.apply_spawn_protection(65.0)
-	boss.force_emerge_at(640.0, 1, BulletBetrayalGiantWorm.MovementPattern.CHARGE_SWEEP)
+	boss.force_emerge_at(640.0, 1, BulletBetrayalGiantWorm.MovementPattern.GROUND_AMBUSH)
 	level._physics_process(4.4)
 	level._physics_process(0.15) # Total 4.55s: slot 0 queued, within 1.5s coordination window
 	assert_eq(level._pending_spawn_slots, 1, "First 6s-cadence slot queued at ~4.5s")
-	boss.force_submerge(1.4) # Coordinated dive spawns exact 1 enemy
+	boss.force_submerge(1.4) # Coordinated dive spawns exact 1 enemy and drops a boss mine
 	assert_eq(level.enemies_spawned, 1, "Worm going underground spawns coordinated enemy #1")
 	assert_eq(level.enemies_alive, 1, "Alive count reflects enemy #1")
 	assert_eq(level.enemies_remaining_to_spawn, 9, "Remaining to spawn decrements to 9")
@@ -3802,6 +3976,7 @@ func test_level_10_giant_worm_survival() -> void:
 	assert_eq(level.enemies_spawned, 10, "Exactly 10 enemies spawn across the survival sequence")
 	assert_eq(level.enemies_remaining_to_spawn, 0, "Remaining enemies to spawn reaches 0")
 	assert_true(level.is_overtime, "Timer reaching 60.0s enters OVERTIME state")
+	assert_eq(level.current_boss_phase, 2, "Difficulty escalates to Final Phase (Phase 2) by 60s / OVERTIME")
 	assert_eq(level.survival_remaining, 0.0, "Survival timer clamps at 0.0 (00:00)")
 	assert_true("OVERTIME" in level.timer_label.text and "00:00" in level.timer_label.text, "HUD displays OVERTIME · 00:00")
 	assert_true(not level.is_completed, "Reaching 00:00/OVERTIME NEVER clears stage while enemies remain")
@@ -3837,11 +4012,15 @@ func test_level_10_giant_worm_survival() -> void:
 	assert_true(not level.is_completed, "Killing 4/10 enemies never clears the stage")
 
 	var elapsed_before_death: float = level.survival_elapsed
+	var mine_pre_revive := level._spawn_boss_mine_at(Vector2(500.0, 410.0))
+	mine_pre_revive._physics_process(2.5)
+	var fuse_before_death: float = mine_pre_revive.fuse_remaining
 	# Kill player via emerged Giant Worm contact
 	boss.force_emerge_at(p.global_position.x, 1)
 	boss._on_kill_zone_body_entered(p)
 	assert_true(not p.is_alive, "Emerged Giant Worm contact instant-kills player")
 	assert_true(level._paused_for_death, "Encounter pauses spawning/timer cleanly when dead")
+	assert_true(mine_pre_revive.is_paused, "Active boss mines pause countdown while DeathOverlay is open")
 
 	# Eliminating an enemy while dead must NEVER trigger stage completion
 	var extra_dead_check := level._spawn_next_enemy()
@@ -3864,6 +4043,8 @@ func test_level_10_giant_worm_survival() -> void:
 	hud._on_revive_reward_granted(GameManager.current_run_id if GameManager else -1)
 	assert_true(p.is_alive, "Rewarded revive restores player alive")
 	assert_true(is_equal_approx(level.survival_elapsed, elapsed_before_death), "Rewarded revive preserves timer/overtime without resetting")
+	assert_true(not mine_pre_revive.is_paused and is_equal_approx(mine_pre_revive.fuse_remaining, fuse_before_death),
+		"Rewarded revive resumes boss mines cleanly without resetting 10s countdowns")
 	assert_eq(level.enemies_killed, 4, "Killed enemies stay killed after revive")
 	assert_eq(level.enemies_alive, 6, "Remaining alive enemies count preserved after revive")
 	assert_eq(level.enemies_spawned, 10, "No duplicate spawned enemies on revive")
