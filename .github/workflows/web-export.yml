@@ -23,10 +23,11 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: web-export-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build-and-validate-web:
@@ -39,6 +40,8 @@ jobs:
       GODOT_RELEASE: "4.7.2-stable"
       WEB_PRESET_NAME: "Web"
       WEB_EXPORT_PATH: "build/web/index.html"
+      WEB_ARTIFACT_NAME: "retro-rage-arcade-web-export"
+      PROD_AAB_ARTIFACT_ID: "13032030739"
       DEPLOY_BRANCH: "web-deploy"
 
     steps:
@@ -297,6 +300,7 @@ jobs:
                   assert ext in allowed_exts, f"Unexpected extension in Web output: {f}"
 
           # 3. Verify single-threaded shell configuration & zero cross-origin isolation requirement
+          assert not (web_dir / "index.worker.js").exists(), "Unexpected multi-threaded worker file in Web export"
           html_text = (web_dir / "index.html").read_text(encoding="utf-8")
           assert "const GODOT_THREADS_ENABLED = false;" in html_text, "Expected single-threaded Web export"
           assert '"ensureCrossOriginIsolationHeaders":false' in html_text.replace(" ", ""), "Expected COOI disabled"
@@ -358,6 +362,7 @@ jobs:
               for tok in prod_tokens:
                   assert tok not in raw, f"Production AdMob ID {tok.decode()} leaked into {artifact_name}"
 
+          pathlib.Path("/tmp/web_packed_count.txt").write_text(str(len(packed_files)), encoding="utf-8")
           print(f"VERIFIED index.pck entries: {len(packed_files)} files, zero Android/AdMob leaks.")
           EOF
 
@@ -374,6 +379,227 @@ jobs:
             echo "### Exported Artifacts (\`build/web/\`)"
             ls -lh build/web | awk 'NR>1 {printf "- `%s`: `%s`\n", $9, $5}'
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Delete Previous Web Export Artifact Before Upload
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TARGET_NAME: ${{ env.WEB_ARTIFACT_NAME }}
+          PROD_ID: ${{ env.PROD_AAB_ARTIFACT_ID }}
+        run: |
+          python3 - << 'EOF'
+          import json
+          import os
+          import urllib.parse
+          import urllib.request
+
+          token = os.environ["GH_TOKEN"]
+          repo = os.environ["REPO"]
+          target_name = os.environ["TARGET_NAME"]
+          prod_id = str(os.environ["PROD_ID"])
+
+          headers = {
+              "Authorization": f"Bearer {token}",
+              "Accept": "application/vnd.github+json",
+              "User-Agent": "retro-rage-arcade-web-artifact-policy",
+              "X-GitHub-Api-Version": "2022-11-28",
+          }
+
+          def api_request(url, method="GET"):
+              req = urllib.request.Request(url, headers=headers, method=method)
+              with urllib.request.urlopen(req) as resp:
+                  body = resp.read().decode("utf-8")
+                  return resp.status, (json.loads(body) if body else None)
+
+          encoded_name = urllib.parse.quote(target_name, safe="")
+          page = 1
+          matches = []
+          while True:
+              url = f"https://api.github.com/repos/{repo}/actions/artifacts?per_page=100&page={page}&name={encoded_name}"
+              _, data = api_request(url)
+              items = data.get("artifacts", [])
+              if not items:
+                  break
+              matches.extend(items)
+              if len(matches) >= data.get("total_count", 0):
+                  break
+              page += 1
+
+          print(f"Found {len(matches)} prior artifact(s) named '{target_name}'.")
+          for art in matches:
+              art_id = str(art["id"])
+              art_name = art.get("name", "")
+              branch = (art.get("workflow_run") or {}).get("head_branch", "")
+              if (
+                  art_id == prod_id
+                  or art_name != target_name
+                  or "aab" in art_name.lower()
+                  or "release" in art_name.lower()
+                  or "apk" in art_name.lower()
+                  or branch == "release/play"
+              ):
+                  print(f"SAFETY SKIP: Refusing to delete artifact {art_id} (name={art_name}, branch={branch}).")
+                  continue
+              del_url = f"https://api.github.com/repos/{repo}/actions/artifacts/{art_id}"
+              status, _ = api_request(del_url, method="DELETE")
+              print(f"Deleted prior Web artifact ID {art_id} ({art.get('size_in_bytes')} bytes, branch={branch}) -> HTTP {status}")
+          EOF
+
+      - name: Upload Single Web Export Artifact
+        id: upload-web-artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.WEB_ARTIFACT_NAME }}
+          path: build/web/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Verify Uploaded Web ZIP Artifact & One-Artifact Policy
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TARGET_NAME: ${{ env.WEB_ARTIFACT_NAME }}
+          UPLOADED_ID: ${{ steps.upload-web-artifact.outputs.artifact-id }}
+          PROD_ID: ${{ env.PROD_AAB_ARTIFACT_ID }}
+        run: |
+          python3 - << 'EOF'
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import shutil
+          import sys
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          import zipfile
+
+          token = os.environ["GH_TOKEN"]
+          repo = os.environ["REPO"]
+          target_name = os.environ["TARGET_NAME"]
+          uploaded_id = str(os.environ.get("UPLOADED_ID", ""))
+          prod_id = str(os.environ["PROD_ID"])
+
+          headers = {
+              "Authorization": f"Bearer {token}",
+              "Accept": "application/vnd.github+json",
+              "User-Agent": "retro-rage-arcade-web-artifact-verify",
+              "X-GitHub-Api-Version": "2022-11-28",
+          }
+
+          encoded_name = urllib.parse.quote(target_name, safe="")
+          active_web = []
+          for _ in range(10):
+              req = urllib.request.Request(
+                  f"https://api.github.com/repos/{repo}/actions/artifacts?per_page=100&name={encoded_name}",
+                  headers=headers,
+              )
+              with urllib.request.urlopen(req, timeout=30) as resp:
+                  data = json.loads(resp.read().decode("utf-8"))
+              active_web = [
+                  a for a in data.get("artifacts", [])
+                  if not a.get("expired", False) and a.get("name") == target_name
+              ]
+              if len(active_web) == 1 and (not uploaded_id or str(active_web[0]["id"]) == uploaded_id):
+                  break
+              time.sleep(3)
+
+          if len(active_web) != 1:
+              print(f"::error::Expected 1 active '{target_name}' artifact, found {len(active_web)}.")
+              sys.exit(1)
+
+          art = active_web[0]
+          art_id = str(art["id"])
+          api_size = int(art["size_in_bytes"])
+
+          # Verify production AAB remains intact
+          req_aab = urllib.request.Request(
+              f"https://api.github.com/repos/{repo}/actions/artifacts?per_page=100&name=retro-rage-arcade-release-aab",
+              headers=headers,
+          )
+          with urllib.request.urlopen(req_aab, timeout=30) as resp:
+              aab_data = json.loads(resp.read().decode("utf-8"))
+          active_aabs = [a for a in aab_data.get("artifacts", []) if not a.get("expired", False)]
+          prod_intact = any(str(a["id"]) == prod_id for a in active_aabs)
+          assert prod_intact, f"Production AAB artifact {prod_id} missing!"
+
+          # Download exact ZIP served by GitHub Actions without forwarding Authorization cross-host
+          class _NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, hdrs, newurl):
+                  return None
+
+          opener = urllib.request.build_opener(_NoRedirect)
+          dl_api = f"https://api.github.com/repos/{repo}/actions/artifacts/{art_id}/zip"
+          dl_req = urllib.request.Request(dl_api, headers=headers)
+          signed_url = ""
+          try:
+              opener.open(dl_req, timeout=30)
+              raise RuntimeError("Expected HTTP redirect for GitHub artifact ZIP download")
+          except urllib.error.HTTPError as exc:
+              if exc.code not in (301, 302, 303, 307, 308):
+                  raise
+              signed_url = exc.headers["Location"]
+
+          zip_path = pathlib.Path("/tmp") / f"{target_name}.zip"
+          blob_req = urllib.request.Request(signed_url, headers={"User-Agent": "retro-rage-arcade-web-ci"})
+          with urllib.request.urlopen(blob_req, timeout=120) as resp, open(zip_path, "wb") as out_f:
+              shutil.copyfileobj(resp, out_f)
+
+          zip_disk_size = zip_path.stat().st_size
+          zip_sha256 = hashlib.sha256(zip_path.read_bytes()).hexdigest()
+          assert zip_disk_size == api_size, f"Artifact ZIP size mismatch: disk={zip_disk_size} vs api={api_size}"
+
+          web_dir = pathlib.Path("build/web")
+          expected_files = sorted(p.name for p in web_dir.iterdir() if p.is_file())
+          member_entries = []
+          with zipfile.ZipFile(zip_path, "r") as zf:
+              bad = zf.testzip()
+              assert bad is None, f"Corrupt entry in downloaded artifact ZIP: {bad}"
+              names = sorted(info.filename for info in zf.infolist())
+              assert "index.html" in names, f"index.html missing from ZIP root: {names}"
+              for info in zf.infolist():
+                  assert "/" not in info.filename and "\\" not in info.filename, (
+                      f"ZIP entry not at root (extra enclosing folder): {info.filename}"
+                  )
+                  src_sha = hashlib.sha256((web_dir / info.filename).read_bytes()).hexdigest()
+                  zip_sha = hashlib.sha256(zf.read(info.filename)).hexdigest()
+                  assert src_sha == zip_sha, f"Checksum mismatch for ZIP entry {info.filename}"
+                  member_entries.append(
+                      f"{info.filename} (raw={info.file_size}B, zip={info.compress_size}B)"
+                  )
+              assert names == expected_files, f"ZIP members mismatch build/web/: {names} != {expected_files}"
+
+          coin_res = [
+              l.strip() for l in pathlib.Path("/tmp/coin_hell_tests.log").read_text(encoding="utf-8").splitlines()
+              if "TEST RESULTS:" in l
+          ][-1]
+          bb_res = [
+              l.strip() for l in pathlib.Path("/tmp/bb_tests.log").read_text(encoding="utf-8").splitlines()
+              if "BULLET BETRAYAL RESULTS:" in l
+          ][-1]
+          pck_count = pathlib.Path("/tmp/web_packed_count.txt").read_text(encoding="utf-8").strip()
+
+          summary_path = pathlib.Path(os.environ["GITHUB_STEP_SUMMARY"])
+          with summary_path.open("a", encoding="utf-8") as sf:
+              sf.write("\n### Downloadable ZIP Artifact Verified\n")
+              sf.write(f"- **Artifact Name / ZIP:** `{target_name}.zip` (ID `{art_id}`)\n")
+              sf.write(f"- **ZIP Size:** `{zip_disk_size:,}` bytes\n")
+              sf.write(f"- **ZIP SHA-256:** `{zip_sha256}`\n")
+              sf.write(f"- **Root Check:** `index.html` at ZIP root (zero enclosing folders), PCK entries=`{pck_count}`, Prod AAB intact=`{prod_intact}`\n")
+
+          notice_msg = (
+              f"artifact_id={art_id}; zip={target_name}.zip; zip_bytes={zip_disk_size}; "
+              f"zip_sha256={zip_sha256}; coin_hell={coin_res}; bullet_betrayal={bb_res}; "
+              f"pck_entries={pck_count}; prod_aab_intact={prod_intact}; "
+              f"files=[{', '.join(member_entries)}]"
+          )
+          print(notice_msg)
+          print(f"::notice title=Web Deployable ZIP Verified::{notice_msg}")
+          EOF
 
       - name: Publish Validated Web Export to web-deploy
         if: >-
