@@ -3938,6 +3938,7 @@ func test_level_10_giant_worm_survival() -> void:
 	level._spawn_cooldown = 0.0
 
 	# 3. 6-second spawning schedule + worm submerge coordination + no duplicates/overflow
+	seed(42)
 	p.global_position = Vector2(140.0, 394.0)
 	p.apply_spawn_protection(65.0)
 	boss.force_emerge_at(640.0, 1, BulletBetrayalGiantWorm.MovementPattern.GROUND_AMBUSH)
@@ -3982,14 +3983,15 @@ func test_level_10_giant_worm_survival() -> void:
 	assert_true(not level.is_completed, "Reaching 00:00/OVERTIME NEVER clears stage while enemies remain")
 	assert_true(p.is_alive and level.is_surviving, "Gameplay continues normally during OVERTIME without failure/completion")
 
-	# Check ~6s spawn spacing across scheduled timestamps
+	# Check ~6s spawn spacing across scheduled timestamps (max bound: 6.0s interval + 1.35s early pull + 1.50s desync timeout + 0.25s test step)
 	assert_eq(level.spawn_timestamps.size(), 10, "Exact 10 spawn timestamps recorded")
 	var valid_cadence := true
 	for i in range(1, level.spawn_timestamps.size()):
 		var gap: float = level.spawn_timestamps[i] - level.spawn_timestamps[i - 1]
-		if gap < 0.8 or gap > 8.5:
+		if gap < 0.8 or gap > 9.15:
 			valid_cadence = false
 	assert_true(valid_cadence, "Scheduled spawns pace cleanly around ~6s cadence without clumping")
+	randomize()
 
 	# Extra overtime & boss dives must NEVER spawn an 11th enemy
 	boss.force_submerge(1.0)
