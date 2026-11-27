@@ -1,0 +1,460 @@
+name: Web HTML5 Build & Export
+
+on:
+  push:
+    branches:
+      - migration/android-api36-godot47
+    paths:
+      - 'web/**'
+      - '!web/*.md'
+      - 'scenes/**'
+      - 'scripts/**'
+      - 'assets/**'
+      - 'project.godot'
+      - 'export_presets.cfg'
+      - '.github/workflows/web-export.yml'
+  workflow_dispatch:
+    inputs:
+      publish_web_deploy:
+        description: "Publish validated Web build to generated 'web-deploy' branch"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: web-export-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-validate-web:
+    name: Test, Export & Validate Web (Godot 4.7.2)
+    if: github.ref == 'refs/heads/migration/android-api36-godot47'
+    runs-on: ubuntu-latest
+
+    env:
+      GODOT_VERSION: "4.7.2"
+      GODOT_RELEASE: "4.7.2-stable"
+      WEB_PRESET_NAME: "Web"
+      WEB_EXPORT_PATH: "build/web/index.html"
+      DEPLOY_BRANCH: "web-deploy"
+
+    steps:
+      - name: Verify Target Development Branch
+        run: |
+          if [ "${{ github.ref }}" != "refs/heads/migration/android-api36-godot47" ]; then
+            echo "::error::Web export pipeline runs only on migration/android-api36-godot47 (got ${{ github.ref }})."
+            exit 1
+          fi
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Verify Exact Web Preset Configuration
+        run: |
+          python3 - << 'EOF'
+          import configparser
+          import sys
+
+          # export_presets.cfg uses INI-style sections
+          raw = open("export_presets.cfg", "r", encoding="utf-8").read()
+          assert '[preset.2]' in raw, "Missing [preset.2] in export_presets.cfg"
+          assert 'name="Web"' in raw, "Expected exact preset name=\"Web\""
+          assert 'platform="Web"' in raw, "Expected platform=\"Web\""
+          assert 'export_path="build/web/index.html"' in raw, "Expected export_path=\"build/web/index.html\""
+          print("Verified Web export preset 'Web' -> build/web/index.html")
+          EOF
+
+      - name: Cache Godot 4.7.2 Headless & Web Export Templates
+        id: cache-godot-web
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/bin/godot
+            ~/.local/share/godot/export_templates/4.7.2.stable
+          key: godot-web-toolchain-${{ env.GODOT_RELEASE }}-v1
+
+      - name: Install Godot 4.7.2 Headless & Official Web Export Templates
+        if: steps.cache-godot-web.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          BIN_DIR="$HOME/.local/bin"
+          TMPL_DIR="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          mkdir -p "$BIN_DIR" "$TMPL_DIR"
+
+          GODOT_ZIP_URL="https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/Godot_v${GODOT_RELEASE}_linux.x86_64.zip"
+          TEMPLATES_TPZ_URL="https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/Godot_v${GODOT_RELEASE}_export_templates.tpz"
+
+          curl -fsSL -o /tmp/godot_linux.zip "$GODOT_ZIP_URL"
+          unzip -q -o /tmp/godot_linux.zip -d /tmp/godot_bin
+          mv "/tmp/godot_bin/Godot_v${GODOT_RELEASE}_linux.x86_64" "$BIN_DIR/godot"
+          chmod +x "$BIN_DIR/godot"
+          rm -rf /tmp/godot_linux.zip /tmp/godot_bin
+
+          export TEMPLATES_TPZ_URL TMPL_DIR
+          python3 - << 'EOF'
+          import os
+          import pathlib
+          import shutil
+          import struct
+          import subprocess
+          import urllib.request
+          import zipfile
+          import zlib
+
+          url = os.environ["TEMPLATES_TPZ_URL"]
+          out_dir = pathlib.Path(os.environ["TMPL_DIR"])
+          targets = {
+              "templates/version.txt": "version.txt",
+              "templates/web_nothreads_release.zip": "web_nothreads_release.zip",
+              "templates/web_nothreads_debug.zip": "web_nothreads_debug.zip",
+          }
+
+          def try_range_extract() -> bool:
+              head_req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "rage-bait-web-ci"})
+              with urllib.request.urlopen(head_req, timeout=30) as r:
+                  size = int(r.headers["Content-Length"])
+
+              tail = min(65536, size)
+              tail_req = urllib.request.Request(
+                  url,
+                  headers={"Range": f"bytes={size - tail}-{size - 1}", "User-Agent": "rage-bait-web-ci"},
+              )
+              with urllib.request.urlopen(tail_req, timeout=30) as r:
+                  buf = r.read()
+
+              eocd = buf.rfind(b"PK\x05\x06")
+              if eocd == -1:
+                  return False
+              cd_off = struct.unpack_from("<I", buf, eocd + 16)[0]
+              cd_size = struct.unpack_from("<I", buf, eocd + 12)[0]
+              if cd_off < size - tail:
+                  return False
+              cd = buf[cd_off - (size - tail) : cd_off - (size - tail) + cd_size]
+
+              pos = 0
+              extracted = 0
+              while pos < len(cd) and cd[pos : pos + 4] == b"PK\x01\x02":
+                  comp_method, crc, comp_sz, uncomp_sz = struct.unpack_from("<H4xIII", cd, pos + 10)
+                  fn_len, ex_len, cm_len = struct.unpack_from("<HHH", cd, pos + 28)
+                  lh_off = struct.unpack_from("<I", cd, pos + 42)[0]
+                  fn = cd[pos + 46 : pos + 46 + fn_len].decode("utf-8", errors="replace")
+                  if fn in targets:
+                      # Local header <= 4096 bytes + compressed payload
+                      end_byte = lh_off + 30 + fn_len + 4096 + comp_sz
+                      chunk_req = urllib.request.Request(
+                          url,
+                          headers={"Range": f"bytes={lh_off}-{end_byte}", "User-Agent": "rage-bait-web-ci"},
+                      )
+                      with urllib.request.urlopen(chunk_req, timeout=120) as r:
+                          lh = r.read()
+                      l_fn, l_ex = struct.unpack_from("<HH", lh, 26)
+                      payload = lh[30 + l_fn + l_ex : 30 + l_fn + l_ex + comp_sz]
+                      data = payload if comp_method == 0 else zlib.decompress(payload, -zlib.MAX_WBITS)
+                      if len(data) != uncomp_sz or (zlib.crc32(data) & 0xFFFFFFFF) != crc:
+                          raise RuntimeError(f"Checksum/length mismatch extracting {fn}")
+                      dest = out_dir / targets[fn]
+                      dest.write_bytes(data)
+                      if dest.suffix == ".zip":
+                          with zipfile.ZipFile(dest, "r") as zf:
+                              bad = zf.testzip()
+                              if bad is not None:
+                                  raise RuntimeError(f"Corrupt archive entry {bad} in {dest.name}")
+                      print(f"Extracted {targets[fn]} ({len(data)} bytes) via HTTP Range.")
+                      extracted += 1
+                  pos += 46 + fn_len + ex_len + cm_len
+              return extracted == len(targets)
+
+          ok = False
+          try:
+              ok = try_range_extract()
+          except Exception as exc:
+              print(f"Range extraction failed ({exc}); falling back to full .tpz download.")
+
+          if not ok:
+              tpz_path = "/tmp/godot_export_templates.tpz"
+              subprocess.run(["curl", "-fsSL", "-o", tpz_path, url], check=True)
+              subprocess.run(
+                  ["unzip", "-q", "-o", "-j", tpz_path, *targets.keys(), "-d", str(out_dir)],
+                  check=True,
+              )
+              os.remove(tpz_path)
+          EOF
+
+      - name: Configure Godot PATH & Verify Web Templates
+        run: |
+          set -euo pipefail
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.local/bin:$PATH"
+          TMPL_DIR="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+
+          godot --version
+          test -f "$TMPL_DIR/version.txt"
+          grep -q "^${GODOT_RELEASE}$" "$TMPL_DIR/version.txt"
+          unzip -tq "$TMPL_DIR/web_nothreads_release.zip"
+          unzip -tq "$TMPL_DIR/web_nothreads_debug.zip"
+          ls -lh "$TMPL_DIR"
+
+      - name: Import Project Assets Headlessly
+        run: |
+          godot --headless --editor --quit
+
+      - name: Run Coin Hell & Web Compatibility Test Suite
+        run: |
+          set -euo pipefail
+          set +e
+          godot --headless "res://scenes/tests/test_runner.tscn" 2>&1 | tee /tmp/coin_hell_tests.log
+          TEST_STATUS=${PIPESTATUS[0]}
+          set -e
+
+          if [ "$TEST_STATUS" -ne 0 ] || grep -q '\[FAIL\]' /tmp/coin_hell_tests.log || ! grep -q '0 FAILED' /tmp/coin_hell_tests.log; then
+            echo "::error title=Coin Hell Test Suite Failed::Automated Coin Hell / Web test suite failed (status=$TEST_STATUS)."
+            tail -n 120 /tmp/coin_hell_tests.log || true
+            exit 1
+          fi
+
+          grep 'TEST RESULTS:' /tmp/coin_hell_tests.log
+
+      - name: Run Bullet Betrayal Test Suite
+        run: |
+          set -euo pipefail
+          set +e
+          godot --headless "res://scenes/tests/bullet_betrayal_test_runner.tscn" 2>&1 | tee /tmp/bb_tests.log
+          TEST_STATUS=${PIPESTATUS[0]}
+          set -e
+
+          if [ "$TEST_STATUS" -ne 0 ] || grep -q '\[FAIL\]' /tmp/bb_tests.log || ! grep -q '0 FAILED' /tmp/bb_tests.log; then
+            echo "::error title=Bullet Betrayal Test Suite Failed::Automated Bullet Betrayal test suite failed (status=$TEST_STATUS)."
+            tail -n 120 /tmp/bb_tests.log || true
+            exit 1
+          fi
+
+          grep 'BULLET BETRAYAL RESULTS:' /tmp/bb_tests.log
+
+      - name: Export Web Preset (Single-Threaded Release)
+        run: |
+          set -euo pipefail
+          rm -rf build/web
+          mkdir -p build/web
+
+          set +e
+          godot --verbose --headless --export-release "${WEB_PRESET_NAME}" "${WEB_EXPORT_PATH}" 2>&1 | tee /tmp/godot_web_export.log
+          EXPORT_STATUS=${PIPESTATUS[0]}
+          set -e
+
+          if [ "$EXPORT_STATUS" -ne 0 ] || grep -qE '^(SCRIPT ERROR:|ERROR: Failed to export)' /tmp/godot_web_export.log; then
+            echo "::error title=Web Export Failed::Godot Web export failed with status $EXPORT_STATUS."
+            tail -n 150 /tmp/godot_web_export.log || true
+            exit 1
+          fi
+
+      - name: Validate Exported Web Bundle & Security Exclusions
+        run: |
+          python3 - << 'EOF'
+          import json
+          import pathlib
+          import sys
+
+          web_dir = pathlib.Path("build/web")
+          assert web_dir.is_dir(), "build/web directory missing"
+
+          # 1. Verify required core Web files, magic bytes, and sane non-zero sizes
+          required_min_sizes = {
+              "index.html": 4096,
+              "index.js": 100_000,
+              "index.wasm": 10_000_000,
+              "index.pck": 1_000_000,
+              "index.audio.worklet.js": 500,
+              "index.audio.position.worklet.js": 500,
+              "index.icon.png": 1024,
+              "index.png": 1024,
+              "index.apple-touch-icon.png": 1024,
+          }
+          for fname, min_sz in required_min_sizes.items():
+              p = web_dir / fname
+              assert p.is_file(), f"Missing required Web export file: {p}"
+              sz = p.stat().st_size
+              assert sz >= min_sz, f"Export file {fname} unexpectedly small ({sz} < {min_sz} bytes)"
+              print(f"VERIFIED file: {fname} ({sz:,} bytes)")
+
+          wasm_bytes = (web_dir / "index.wasm").read_bytes()
+          assert wasm_bytes[:8] == b"\x00asm\x01\x00\x00\x00", "Invalid WebAssembly magic header in index.wasm"
+
+          pck_bytes = (web_dir / "index.pck").read_bytes()
+          assert pck_bytes[:4] == b"GDPC", "Invalid Godot PCK magic header in index.pck"
+
+          # 2. Verify MIME-sensitive extensions and absence of Android binaries in build/web
+          allowed_exts = {".html", ".js", ".wasm", ".pck", ".png", ".json", ".svg", ".ico", ".css", ".txt"}
+          forbidden_exts = {".apk", ".aab", ".so", ".aar", ".jar", ".dex", ".keystore", ".jks"}
+          for f in web_dir.rglob("*"):
+              if f.is_file():
+                  ext = f.suffix.lower()
+                  assert ext not in forbidden_exts, f"Forbidden Android/native binary in Web output: {f}"
+                  assert ext in allowed_exts, f"Unexpected extension in Web output: {f}"
+
+          # 3. Verify single-threaded shell configuration & zero cross-origin isolation requirement
+          html_text = (web_dir / "index.html").read_text(encoding="utf-8")
+          assert "const GODOT_THREADS_ENABLED = false;" in html_text, "Expected single-threaded Web export"
+          assert '"ensureCrossOriginIsolationHeaders":false' in html_text.replace(" ", ""), "Expected COOI disabled"
+          assert '<script src="index.js"></script>' in html_text, "Expected JS loader script tag in index.html"
+          assert "rotate-overlay" in html_text, "Expected mobile portrait overlay in index.html"
+          assert "__retroRageResumeAudio" in html_text, "Expected audio unlock hook in index.html"
+
+          # 4. Inspect packed PCK manifest from export log for excluded Android/test/AdMob paths
+          export_log = pathlib.Path("/tmp/godot_web_export.log").read_text(encoding="utf-8", errors="replace")
+          packed_files = [
+              line.split("Storing File: ", 1)[1].strip()
+              for line in export_log.splitlines()
+              if "Storing File: " in line
+          ]
+          assert len(packed_files) > 50, f"Unexpectedly few packed files in index.pck ({len(packed_files)})"
+
+          forbidden_substrings = (
+              "addons/admobplugin",
+              "addons/gmpshared",
+              "ad_config.json",
+              "scenes/tests",
+              "scripts/tests",
+              "scripts/tools",
+              "screenshots",
+              "assets/icons",
+              "build/",
+              ".apk",
+              ".aab",
+              ".so",
+              ".aar",
+              ".jar",
+          )
+          leaks = [p for p in packed_files if any(bad in p.lower() for bad in forbidden_substrings)]
+          assert not leaks, f"Excluded files leaked into index.pck: {leaks}"
+
+          # Verify required bundled fallback fonts & core scripts are packed
+          required_packed = (
+              "NotoEmoji-Variable.ttf",
+              "NotoSansMath-Regular.ttf",
+              "NotoSansSymbols2-Regular.ttf",
+              "scripts/autoload/ad_manager.gdc",
+              "scripts/autoload/save_manager.gdc",
+              "scripts/autoload/audio_manager.gdc",
+              "scripts/ui/welcome_screen.gdc",
+              "scripts/ui/main_menu.gdc",
+          )
+          for req in required_packed:
+              assert any(req in p for p in packed_files), f"Missing required asset/script in PCK: {req}"
+
+          # 5. Verify production AdMob identifiers are not embedded in Web artifacts
+          ad_cfg = json.loads(pathlib.Path("ad_config.json").read_text(encoding="utf-8"))
+          prod_tokens = []
+          for k in ("app_id_production", "rewarded_ad_unit_id_production"):
+              val = str(ad_cfg.get(k, "")).strip()
+              if val:
+                  prod_tokens.append(val.encode("utf-8"))
+          for artifact_name in ("index.html", "index.js", "index.pck", "index.wasm"):
+              raw = (web_dir / artifact_name).read_bytes()
+              for tok in prod_tokens:
+                  assert tok not in raw, f"Production AdMob ID {tok.decode()} leaked into {artifact_name}"
+
+          print(f"VERIFIED index.pck entries: {len(packed_files)} files, zero Android/AdMob leaks.")
+          EOF
+
+      - name: Write Build Validation Summary
+        run: |
+          {
+            echo "## Web HTML5 Build Validation Passed"
+            echo "- **Branch:** \`${{ github.ref_name }}\`"
+            echo "- **Commit:** \`${{ github.sha }}\`"
+            echo "- **Preset:** \`${{ env.WEB_PRESET_NAME }}\` (Godot \`${{ env.GODOT_RELEASE }}\`, single-threaded)"
+            echo "- **Coin Hell & Web Tests:** \`$(grep 'TEST RESULTS:' /tmp/coin_hell_tests.log | tail -n 1)\`"
+            echo "- **Bullet Betrayal Tests:** \`$(grep 'BULLET BETRAYAL RESULTS:' /tmp/bb_tests.log | tail -n 1)\`"
+            echo ""
+            echo "### Exported Artifacts (\`build/web/\`)"
+            ls -lh build/web | awk 'NR>1 {printf "- `%s`: `%s`\n", $9, $5}'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish Validated Web Export to web-deploy
+        if: >-
+          success() &&
+          github.ref == 'refs/heads/migration/android-api36-godot47' &&
+          (vars.ENABLE_WEB_DEPLOY_BRANCH == 'true' ||
+           (github.event_name == 'workflow_dispatch' && inputs.publish_web_deploy == true))
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ "${DEPLOY_BRANCH}" != "web-deploy" ]; then
+            echo "::error::Safety refusal: target deployment branch must strictly be 'web-deploy'."
+            exit 1
+          fi
+
+          STAGE_DIR="/tmp/web-deploy-stage"
+          rm -rf "$STAGE_DIR"
+          mkdir -p "$STAGE_DIR"
+          cp -R build/web/. "$STAGE_DIR/"
+
+          python3 - << 'EOF'
+          import datetime
+          import hashlib
+          import json
+          import os
+          import pathlib
+
+          stage = pathlib.Path("/tmp/web-deploy-stage")
+          checksums = {}
+          for p in sorted(stage.rglob("*")):
+              if p.is_file():
+                  rel = p.relative_to(stage).as_posix()
+                  checksums[rel] = {
+                      "bytes": p.stat().st_size,
+                      "sha256": hashlib.sha256(p.read_bytes()).hexdigest(),
+                  }
+
+          meta = {
+              "source_repository": os.environ["GITHUB_REPOSITORY"],
+              "source_branch": os.environ["GITHUB_REF_NAME"],
+              "source_commit": os.environ["GITHUB_SHA"],
+              "workflow_run_id": os.environ["GITHUB_RUN_ID"],
+              "godot_version": os.environ["GODOT_RELEASE"],
+              "export_preset": os.environ["WEB_PRESET_NAME"],
+              "published_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              "files": checksums,
+          }
+          (stage / "deploy-metadata.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+          EOF
+
+          cd "$STAGE_DIR"
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan "${DEPLOY_BRANCH}"
+          git add -A
+          git commit -q -m "chore(web-deploy): publish validated web build (${GITHUB_SHA::7})"
+
+          PUSH_URL="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push --force "$PUSH_URL" "HEAD:refs/heads/${DEPLOY_BRANCH}"
+
+          echo "Published validated Web build to orphan branch '${DEPLOY_BRANCH}'."
+          {
+            echo ""
+            echo "### Deployment Branch Updated"
+            echo "- Published validated single-snapshot output to branch \`${DEPLOY_BRANCH}\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Note Gated web-deploy Publication
+        if: >-
+          success() &&
+          vars.ENABLE_WEB_DEPLOY_BRANCH != 'true' &&
+          !(github.event_name == 'workflow_dispatch' && inputs.publish_web_deploy == true)
+        run: |
+          echo "Web export validated cleanly. Publishing to '${DEPLOY_BRANCH}' is currently gated (set repo variable ENABLE_WEB_DEPLOY_BRANCH=true or run workflow_dispatch with publish_web_deploy=true)."
+          {
+            echo ""
+            echo "### Deployment Branch Status (Gated)"
+            echo "- Export & validation passed. \`${DEPLOY_BRANCH}\` was not modified because automatic publishing is gated (\`ENABLE_WEB_DEPLOY_BRANCH != 'true'\`)."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Report Failure (Preserve Previous Deployment)
+        if: failure()
+        run: |
+          echo "::error::Web build/test/validation failed. Existing '${DEPLOY_BRANCH}' branch (if any) and Android artifacts remain completely untouched."
