@@ -5,8 +5,13 @@ extends Node
 
 var _sfx_players: Array[AudioStreamPlayer] = []
 var _sounds: Dictionary = {}
+var _initialized: bool = false
+var _web_audio_unlocked: bool = false
 
 func _ready() -> void:
+	if _initialized:
+		return
+	_initialized = true
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	# Create pool of audio players for concurrent sound effects
 	for i: int in range(6):
@@ -16,6 +21,29 @@ func _ready() -> void:
 		_sfx_players.append(player)
 
 	_generate_retro_sounds()
+	set_process_input(OS.has_feature("web") and not _web_audio_unlocked)
+
+func _input(event: InputEvent) -> void:
+	if _web_audio_unlocked or not OS.has_feature("web"):
+		set_process_input(false)
+		return
+	var is_gesture := false
+	if event is InputEventScreenTouch and event.pressed:
+		is_gesture = true
+	elif event is InputEventMouseButton and event.pressed:
+		is_gesture = true
+	elif event is InputEventKey and event.pressed and not event.echo:
+		is_gesture = true
+	if is_gesture:
+		unlock_web_audio()
+
+func unlock_web_audio() -> void:
+	if not OS.has_feature("web"):
+		return
+	_web_audio_unlocked = true
+	set_process_input(false)
+	if ClassDB.class_exists("JavaScriptBridge"):
+		JavaScriptBridge.eval("if (typeof window.__retroRageResumeAudio === 'function') { window.__retroRageResumeAudio(); }", true)
 
 func _generate_retro_sounds() -> void:
 	_sounds["click"] = _synth_tone(0.06, 520.0, 380.0, 0.4, "square")

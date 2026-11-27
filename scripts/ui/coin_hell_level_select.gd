@@ -643,10 +643,12 @@ func _input(event: InputEvent) -> void:
 		return
 	if not scroll_container or not scroll_container.is_visible_in_tree():
 		return
+	if not (event is InputEventScreenTouch or event is InputEventMouseButton or event is InputEventScreenDrag or event is InputEventMouseMotion):
+		return
 
 	var s_rect: Rect2 = scroll_container.get_global_rect()
 	var in_bounds: bool = true
-	if s_rect.size.x > 0 and s_rect.size.y > 0:
+	if (event is InputEventScreenTouch or event is InputEventMouseButton) and s_rect.size.x > 0 and s_rect.size.y > 0:
 		in_bounds = s_rect.has_point(event.position)
 
 	if event is InputEventScreenTouch:

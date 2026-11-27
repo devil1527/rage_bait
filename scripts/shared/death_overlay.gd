@@ -26,7 +26,7 @@ func open() -> void:
 	_update_ad_status()
 	# Proactively request ad if eligible, not ready yet, not loading, and native SDK is initialized
 	if GameManager and GameManager.can_revive_this_run():
-		if AdManager and not AdManager.is_rewarded_ad_ready() and not AdManager.is_loading() and AdManager.is_plugin_initialized():
+		if AdManager and AdManager.is_ads_supported() and not AdManager.is_rewarded_ad_ready() and not AdManager.is_loading() and AdManager.is_plugin_initialized():
 			AdManager.load_rewarded_ad()
 
 func _exit_tree() -> void:
@@ -37,17 +37,26 @@ func _update_ad_status() -> void:
 	if not is_inside_tree() or not visible:
 		return
 
+	if not AdManager:
+		revive_btn.disabled = true
+		ad_status_label.text = "Ad service unavailable"
+		ad_status_label.modulate = Color(0.8, 0.8, 0.8, 0.7)
+		return
+
+	if not AdManager.is_ads_supported() and not AdManager.is_mock_mode():
+		revive_btn.disabled = true
+		revive_btn.text = "🎬 WATCH AD — REVIVE"
+		ad_status_label.text = AdManager.get_status_text()
+		ad_status_label.modulate = Color(0.78, 0.82, 0.9, 0.8)
+		retry_btn.disabled = false
+		level_select_btn.disabled = false
+		return
+
 	# Authoritative run allowance check
 	if GameManager and not GameManager.can_revive_this_run():
 		revive_btn.disabled = true
 		revive_btn.text = "🎬 WATCH AD — REVIVE"
 		ad_status_label.text = "Revive already used this run"
-		ad_status_label.modulate = Color(0.8, 0.8, 0.8, 0.7)
-		return
-
-	if not AdManager:
-		revive_btn.disabled = true
-		ad_status_label.text = "Ad service unavailable"
 		ad_status_label.modulate = Color(0.8, 0.8, 0.8, 0.7)
 		return
 
@@ -80,6 +89,8 @@ func _update_ad_status() -> void:
 			ad_status_label.modulate = Color(0.8, 0.8, 0.8, 0.7)
 
 func _on_ad_status_label_gui_input(event: InputEvent) -> void:
+	if AdManager and not AdManager.is_ads_supported() and not AdManager.is_mock_mode():
+		return
 	var is_click := false
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		is_click = true
@@ -109,6 +120,9 @@ func _on_network_state_changed(_available: bool) -> void:
 		_update_ad_status()
 
 func _on_revive_pressed() -> void:
+	if not AdManager or (not AdManager.is_ads_supported() and not AdManager.is_mock_mode()):
+		_update_ad_status()
+		return
 	if not GameManager or not GameManager.can_revive_this_run():
 		_update_ad_status()
 		return

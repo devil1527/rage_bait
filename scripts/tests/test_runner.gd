@@ -163,6 +163,7 @@ func run_all_tests() -> void:
 	test_level_20_jump_physics_and_arena_reachability()
 	test_level_20_gate_unlock_and_dragon_defeat()
 	test_level_20_lifecycle_death_retry_revive_resets()
+	test_web_export_and_compatibility_guards()
 
 
 func test_save_manager_and_persistence() -> void:
@@ -8162,6 +8163,147 @@ func test_level_20_lifecycle_death_retry_revive_resets() -> void:
 
 	remove_child(lvl)
 	lvl.free()
+
+
+func test_web_export_and_compatibility_guards() -> void:
+	print("\n--- TEST: Web Export Preset & Browser Compatibility Guards ---")
+
+	# 1. Verify export_presets.cfg preserves Android [preset.0]/[preset.1] and defines single-threaded Web [preset.2]
+	var cfg := ConfigFile.new()
+	var cfg_err := cfg.load("res://export_presets.cfg")
+	assert_eq(cfg_err, OK, "Web Preset: export_presets.cfg parses cleanly as ConfigFile")
+	assert_eq(str(cfg.get_value("preset.0", "name", "")), "Android", "Web Preset: Android preset.0 preserved")
+	assert_eq(str(cfg.get_value("preset.1", "name", "")), "Android-Release-AAB", "Web Preset: Android preset.1 preserved")
+	assert_eq(str(cfg.get_value("preset.2", "name", "")), "Web", "Web Preset: preset.2 named Web")
+	assert_eq(str(cfg.get_value("preset.2", "platform", "")), "Web", "Web Preset: preset.2 platform is Web")
+	assert_eq(str(cfg.get_value("preset.2", "export_path", "")), "build/web/index.html", "Web Preset: output path is build/web/index.html")
+	assert_eq(bool(cfg.get_value("preset.2.options", "variant/thread_support", true)), false, "Web Preset: single-threaded export enabled")
+	assert_eq(bool(cfg.get_value("preset.2.options", "progressive_web_app/enabled", true)), false, "Web Preset: PWA disabled initially")
+	assert_eq(bool(cfg.get_value("preset.2.options", "progressive_web_app/ensure_cross_origin_isolation_headers", true)), false, "Web Preset: no COOI requirement")
+	assert_eq(str(cfg.get_value("preset.2.options", "html/custom_html_shell", "")), "res://web/custom_shell.html", "Web Preset: custom shell configured")
+	var excl: String = str(cfg.get_value("preset.2", "exclude_filter", ""))
+	for req_excl in ["addons/AdmobPlugin/*", "addons/GMPShared/*", "ad_config.json", "scenes/tests/*", "scripts/tests/*", "assets/icons/*"]:
+		assert_true(excl.contains(req_excl), "Web Preset: excludes " + req_excl)
+
+	# 2. Verify custom Web shell exists with required mobile UX and audio unlock hooks
+	var shell_file := FileAccess.open("res://web/custom_shell.html", FileAccess.READ)
+	assert_true(shell_file != null, "Web Shell: web/custom_shell.html exists")
+	var shell_text: String = shell_file.get_as_text()
+	shell_file.close()
+	assert_true(shell_text.contains("rotate-overlay"), "Web Shell: includes portrait Rotate-to-Landscape overlay")
+	assert_true(shell_text.contains("touch-action: none"), "Web Shell: disables browser scroll/zoom touch gestures")
+	assert_true(shell_text.contains("overscroll-behavior: none"), "Web Shell: disables pull-to-refresh")
+	assert_true(shell_text.contains("env(safe-area-inset-top)"), "Web Shell: respects safe area insets")
+	assert_true(shell_text.contains("__retroRageResumeAudio"), "Web Shell: includes first-gesture audio resume hook")
+
+	# 3. Verify bundled fallback fonts cover all non-ASCII UI glyphs without OS system fallback
+	var base_font: Font = ThemeDB.fallback_font
+	assert_true(base_font != null, "Web Fonts: ThemeDB.fallback_font exists")
+	var font_chain: Array[Font] = [base_font]
+	for fb in base_font.fallbacks:
+		if fb:
+			font_chain.append(fb)
+	var required_glyphs := "🎬🎯🔒⏸⏱⚠🛠▶◀↺☰★☆♥·—–°"
+	var missing_glyphs := []
+	for i in range(required_glyphs.length()):
+		var ch := required_glyphs.substr(i, 1)
+		var cp := ch.unicode_at(0)
+		var found := false
+		for f in font_chain:
+			if f.has_char(cp):
+				found = true
+				break
+		if not found:
+			missing_glyphs.append(ch)
+	assert_eq(missing_glyphs.size(), 0, "Web Fonts: All required UI symbols covered by bundled fonts")
+
+	# 4. Verify Web-safe AdMob exclusion across AdManager, DeathOverlay, and BulletBetrayalHUD
+	AdManager.set_web_platform_override(1)
+	assert_true(not AdManager.is_ads_supported(), "Web AdMob: ads disabled when Web platform active")
+	assert_true(not AdManager.is_rewarded_ad_ready(), "Web AdMob: rewarded ad never reports ready")
+	assert_true(not AdManager.is_plugin_initialized(), "Web AdMob: native plugin never marked initialized")
+	assert_eq(AdManager.get_plugin_singleton(), null, "Web AdMob: native singleton never probed on Web")
+	assert_eq(AdManager.get_status_text(), AdManager.WEB_UNAVAILABLE_MESSAGE, "Web AdMob: clean unavailable message returned")
+	AdManager.retry_load_ad()
+	assert_true(not AdManager.is_loading(), "Web AdMob: retry_load_ad does not start loading on Web")
+
+	var reward_box := [false]
+	var fail_box := [""]
+	var started := AdManager.show_rewarded_ad_for_revive(
+		func(): reward_box[0] = true,
+		func(r: String): fail_box[0] = r
+	)
+	assert_true(not started, "Web AdMob: show_rewarded_ad_for_revive returns false on Web")
+	assert_true(not reward_box[0], "Web AdMob: never grants unearned revive")
+	assert_eq(fail_box[0], AdManager.WEB_UNAVAILABLE_MESSAGE, "Web AdMob: failure callback receives clean Web message")
+
+	var death_scene: PackedScene = load("res://scenes/shared/death_overlay.tscn")
+	var death_ov := death_scene.instantiate()
+	add_child(death_ov)
+	death_ov.open()
+	assert_true(death_ov.revive_btn.disabled, "Web DeathOverlay: Revive button disabled on Web")
+	assert_eq(death_ov.ad_status_label.text, AdManager.WEB_UNAVAILABLE_MESSAGE, "Web DeathOverlay: displays clean unavailable message")
+	assert_true(not death_ov.retry_btn.disabled, "Web DeathOverlay: Retry button stays enabled")
+	assert_true(not death_ov.level_select_btn.disabled, "Web DeathOverlay: Level select stays enabled")
+	var click_ev := InputEventMouseButton.new()
+	click_ev.button_index = MOUSE_BUTTON_LEFT
+	click_ev.pressed = true
+	death_ov._on_ad_status_label_gui_input(click_ev)
+	assert_eq(death_ov.ad_status_label.text, AdManager.WEB_UNAVAILABLE_MESSAGE, "Web DeathOverlay: clicking status label does not retry loading ads")
+	remove_child(death_ov)
+	death_ov.free()
+
+	var bb_hud_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_hud.tscn")
+	var bb_hud := bb_hud_scene.instantiate()
+	add_child(bb_hud)
+	bb_hud.death_overlay.visible = true
+	bb_hud._update_death_ad_status()
+	assert_true(bb_hud.death_revive_btn.disabled, "Web BB HUD: Revive button disabled on Web")
+	assert_eq(bb_hud.death_ad_status.text, AdManager.WEB_UNAVAILABLE_MESSAGE, "Web BB HUD: displays clean unavailable message")
+	assert_true(not bb_hud.death_retry_btn.disabled, "Web BB HUD: Retry button stays enabled")
+	bb_hud.death_overlay.visible = false
+
+	# 5. Verify Escape key pauses and resumes BulletBetrayalHUD cleanly
+	var esc_press := InputEventKey.new()
+	esc_press.physical_keycode = KEY_ESCAPE
+	esc_press.keycode = KEY_ESCAPE
+	esc_press.pressed = true
+	bb_hud._unhandled_input(esc_press)
+	assert_true(bb_hud.pause_overlay.visible, "BB HUD Desktop Input: Escape opens pause overlay")
+	assert_true(get_tree().paused, "BB HUD Desktop Input: Escape pauses SceneTree")
+	bb_hud._unhandled_input(esc_press)
+	assert_true(not bb_hud.pause_overlay.visible, "BB HUD Desktop Input: Escape resumes pause overlay")
+	assert_true(not get_tree().paused, "BB HUD Desktop Input: Escape unpauses SceneTree")
+	remove_child(bb_hud)
+	bb_hud.free()
+
+	AdManager.set_web_platform_override(-1)
+	assert_true(AdManager.is_ads_supported(), "Web AdMob: non-Web ads support restored cleanly")
+
+	# 6. Verify CoinHellLevelSelect does not crash on InputEventKey
+	var ls_scene: PackedScene = load("res://scenes/ui/coin_hell_level_select.tscn")
+	var ls := ls_scene.instantiate()
+	add_child(ls)
+	var key_ev := InputEventKey.new()
+	key_ev.physical_keycode = KEY_RIGHT
+	key_ev.pressed = true
+	ls._input(key_ev)
+	assert_true(is_instance_valid(ls), "CoinHellLevelSelect: InputEventKey handled without event.position error")
+	remove_child(ls)
+	ls.free()
+
+	# 7. Verify AudioManager singleton guard prevents duplicate SFX player pool creation
+	var pool_before := AudioManager._sfx_players.size()
+	AudioManager._ready()
+	assert_eq(AudioManager._sfx_players.size(), pool_before, "AudioManager: duplicate _ready() does not duplicate SFX pool")
+	assert_eq(AudioManager._sfx_players.size(), 6, "AudioManager: maintains exactly 6 SFX players")
+
+	# 8. Verify SaveManager persistence confirmation state on native platform
+	SaveManager._apply_defaults()
+	assert_true(SaveManager.save_data(), "SaveManager: save_data() succeeds")
+	assert_true(SaveManager.last_save_confirmed_persistent, "SaveManager: native persistence confirmed immediately")
+	get_tree().paused = false
+
 
 
 

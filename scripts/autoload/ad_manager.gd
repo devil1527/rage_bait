@@ -41,6 +41,7 @@ enum AdErrorType {
 const DEFAULT_TEST_APP_ID := "ca-app-pub-3940256099942544~3347511713"
 const DEFAULT_TEST_REWARDED_AD_UNIT_ID := "ca-app-pub-3940256099942544/5224354917"
 const CONFIG_PATH := "res://ad_config.json"
+const WEB_UNAVAILABLE_MESSAGE := "Rewarded revive unavailable in web version"
 
 const MAX_LOAD_RETRIES := 3
 const RETRY_BACKOFF_DELAYS: Array[float] = [5.0, 15.0, 30.0]
@@ -84,14 +85,52 @@ var _transaction_counter: int = 0
 # Mock / Unit Testing support
 var _mock_mode_enabled: bool = false
 var _mock_ad_ready: bool = false
+var _web_platform_override: int = -1
+
+func is_web_platform() -> bool:
+	if _web_platform_override != -1:
+		return _web_platform_override == 1
+	return OS.has_feature("web")
+
+func is_ads_supported() -> bool:
+	return not is_web_platform()
+
+func is_mock_mode() -> bool:
+	return _mock_mode_enabled
+
+func _apply_web_disabled_state() -> void:
+	app_id = ""
+	rewarded_ad_unit_id = ""
+	is_test_mode = true
+	_plugin_singleton = null
+	_plugin_name = ""
+	_last_loaded_ad_id = ""
+	_is_plugin_initialized = false
+	_init_requested = false
+	_init_timeout_timer = 0.0
+	_load_timeout_timer = 0.0
+	_load_retry_count = 0
+	_retry_timer = 0.0
+	_is_retrying = false
+	_cooldown_timer = 0.0
+	current_state = AdState.NOT_LOADED
+	last_error_type = AdErrorType.NONE
+	last_error_code = null
+	last_error_message = ""
+	print("[AdManager] Web platform detected: native AdMob disabled.")
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	if not is_ads_supported():
+		_apply_web_disabled_state()
+		return
 	_load_configuration()
 	_detect_plugin()
 	initialize()
 
 func _process(delta: float) -> void:
+	if not _mock_mode_enabled and not is_ads_supported():
+		return
 	if _cooldown_timer > 0.0:
 		_cooldown_timer = maxf(0.0, _cooldown_timer - delta)
 
@@ -122,6 +161,8 @@ func _process(delta: float) -> void:
 			_on_load_timeout()
 
 func _load_configuration() -> void:
+	if not is_ads_supported():
+		return
 	var cfg_app_id_test: String = DEFAULT_TEST_APP_ID
 	var cfg_ad_unit_test: String = DEFAULT_TEST_REWARDED_AD_UNIT_ID
 	var cfg_app_id_prod: String = ""
@@ -160,6 +201,10 @@ func _load_configuration() -> void:
 	])
 
 func _detect_plugin() -> void:
+	if not is_ads_supported():
+		_plugin_singleton = null
+		_plugin_name = ""
+		return
 	if Engine.has_singleton("AdmobPlugin"):
 		_plugin_singleton = Engine.get_singleton("AdmobPlugin")
 		_plugin_name = "AdmobPlugin"
@@ -193,6 +238,10 @@ func initialize() -> void:
 		_is_plugin_initialized = true
 		initialization_completed.emit(true)
 		print("[AdManager] SDK initialized in mock test mode.")
+		return
+
+	if not is_ads_supported():
+		_apply_web_disabled_state()
 		return
 
 	if _plugin_singleton == null:
@@ -398,6 +447,9 @@ func load_rewarded_ad() -> void:
 	if _mock_mode_enabled:
 		return
 
+	if not is_ads_supported():
+		return
+
 	# Strict gate: Never request an ad before native initialization completes and is verified
 	if not _is_plugin_initialized or current_state == AdState.INITIALIZING:
 		print("[AdManager] Refusing ad load: Native plugin has not completed initialization yet (state: %s, initialized: %s)." % [AdState.keys()[current_state], _is_plugin_initialized])
@@ -449,12 +501,18 @@ func load_rewarded_ad() -> void:
 func is_rewarded_ad_ready() -> bool:
 	if _mock_mode_enabled:
 		return _mock_ad_ready
+	if not is_ads_supported():
+		return false
 	return current_state == AdState.READY
 
 func is_loading() -> bool:
 	return current_state == AdState.LOADING
 
 func show_rewarded_ad_for_revive(on_reward: Callable, on_failure: Callable) -> bool:
+	if not _mock_mode_enabled and not is_ads_supported():
+		if on_failure.is_valid():
+			on_failure.call(WEB_UNAVAILABLE_MESSAGE)
+		return false
 	if _transaction_in_progress:
 		print("[AdManager] Revive requested while a transaction is already in progress.")
 		if on_failure.is_valid():
@@ -629,6 +687,8 @@ func _on_load_timeout() -> void:
 
 ## Allows controlled manual retry from the UI when an ad is not ready or has timed out
 func retry_load_ad() -> void:
+	if not _mock_mode_enabled and not is_ads_supported():
+		return
 	if current_state == AdState.INITIALIZING:
 		print("[AdManager] Native SDK is still initializing. Cannot retry load yet.")
 		return
@@ -715,6 +775,8 @@ func cancel_current_transaction() -> void:
 
 ## Clear, non-misleading user-facing message corresponding to the exact current state
 func get_status_text() -> String:
+	if not _mock_mode_enabled and not is_ads_supported():
+		return WEB_UNAVAILABLE_MESSAGE
 	if is_rewarded_ad_ready():
 		return "Watch a short ad to revive here!"
 	elif current_state == AdState.INITIALIZING:
@@ -776,7 +838,21 @@ func restore_plugin_detection() -> void:
 	_mock_mode_enabled = false
 	_is_plugin_initialized = false
 	current_state = AdState.UNINITIALIZED
+	if not is_ads_supported():
+		_apply_web_disabled_state()
+		return
 	_detect_plugin()
+
+func set_web_platform_override(override_val: int) -> void:
+	_web_platform_override = override_val
+	_mock_mode_enabled = false
+	_mock_ad_ready = false
+	if not is_ads_supported():
+		_apply_web_disabled_state()
+	else:
+		_load_configuration()
+		_detect_plugin()
+		initialize()
 
 func get_plugin_singleton() -> Object:
 	return _plugin_singleton

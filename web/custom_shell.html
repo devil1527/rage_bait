@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+		<meta name="theme-color" content="#120e1f">
+		<title>$GODOT_PROJECT_NAME</title>
+		<style>
+*, *::before, *::after {
+	box-sizing: border-box;
+	-webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	width: 100%;
+	height: 100%;
+	position: fixed;
+	inset: 0;
+	overflow: hidden;
+	overscroll-behavior: none;
+	overscroll-behavior-y: none;
+	background-color: #120e1f;
+	color: #f4f4ff;
+	font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	touch-action: none;
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-touch-callout: none;
+}
+
+#game-stage {
+	position: fixed;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: #120e1f;
+	overflow: hidden;
+	touch-action: none;
+}
+
+#canvas {
+	display: block;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	width: 100% !important;
+	height: 100% !important;
+	max-width: 100%;
+	max-height: 100%;
+	touch-action: none;
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-touch-callout: none;
+}
+
+#canvas:focus {
+	outline: none;
+}
+
+#status, #status-splash {
+	position: fixed;
+	inset: 0;
+}
+
+#status {
+	background-color: $GODOT_SPLASH_COLOR;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+	visibility: hidden;
+	z-index: 20;
+}
+
+#status-splash {
+	max-height: 100%;
+	max-width: 100%;
+	margin: auto;
+	pointer-events: none;
+}
+
+#status-splash.show-image--false {
+	display: none;
+}
+
+#status-splash.fullsize--true {
+	height: 100%;
+	width: 100%;
+	object-fit: contain;
+}
+
+#status-splash.use-filter--false {
+	image-rendering: pixelated;
+}
+
+#status-progress, #status-notice {
+	display: none;
+	z-index: 21;
+}
+
+#status-progress {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: max(10%, calc(env(safe-area-inset-bottom) + 1.5rem));
+	width: min(55%, 360px);
+	height: 10px;
+	margin: 0 auto;
+	accent-color: #00f5a0;
+}
+
+#status-notice {
+	background-color: #3a1628;
+	border-radius: 0.5rem;
+	border: 1px solid #ff4d6d;
+	color: #f4f4ff;
+	line-height: 1.4;
+	margin: 0 1.5rem;
+	max-width: 32rem;
+	overflow: hidden;
+	padding: 1rem 1.25rem;
+	text-align: center;
+}
+
+#rotate-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 50;
+	display: none;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 1rem;
+	padding: calc(env(safe-area-inset-top) + 1.5rem) calc(env(safe-area-inset-right) + 1.5rem) calc(env(safe-area-inset-bottom) + 1.5rem) calc(env(safe-area-inset-left) + 1.5rem);
+	background: radial-gradient(circle at center, rgba(30, 20, 56, 0.96), rgba(10, 8, 22, 0.98));
+	text-align: center;
+	touch-action: none;
+}
+
+@media (orientation: portrait) and (pointer: coarse),
+       (orientation: portrait) and (any-pointer: coarse) {
+	#rotate-overlay {
+		display: flex;
+	}
+}
+
+body.mobile-portrait #rotate-overlay {
+	display: flex;
+}
+
+.rotate-card {
+	max-width: 320px;
+	padding: 1.5rem 1.25rem;
+	border: 2px solid #00e5ff;
+	border-radius: 12px;
+	background: rgba(18, 14, 31, 0.94);
+	box-shadow: 0 0 24px rgba(0, 229, 255, 0.22);
+}
+
+.rotate-icon {
+	width: 56px;
+	height: 56px;
+	margin: 0 auto 0.75rem;
+	color: #00f5a0;
+	animation: rotateHint 1.8s ease-in-out infinite;
+}
+
+.rotate-title {
+	margin: 0 0 0.5rem;
+	font-size: 1.15rem;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	color: #ffd166;
+}
+
+.rotate-subtitle {
+	margin: 0;
+	font-size: 0.9rem;
+	line-height: 1.4;
+	color: #cdd6f4;
+}
+
+@keyframes rotateHint {
+	0%, 20% { transform: rotate(0deg); }
+	60%, 85% { transform: rotate(-90deg); }
+	100% { transform: rotate(-90deg); }
+}
+		</style>
+		$GODOT_HEAD_INCLUDE
+		<script>
+(function () {
+	const trackedContexts = new Set();
+	const NativeAC = window.AudioContext || window.webkitAudioContext;
+	if (NativeAC && !NativeAC.__retroRageTracked) {
+		const TrackedAudioContext = function (...args) {
+			const ctx = new NativeAC(...args);
+			trackedContexts.add(ctx);
+			if (typeof ctx.addEventListener === 'function') {
+				ctx.addEventListener('statechange', function () {
+					if (ctx.state === 'closed') {
+						trackedContexts.delete(ctx);
+					}
+				});
+			}
+			return ctx;
+		};
+		TrackedAudioContext.prototype = NativeAC.prototype;
+		Object.setPrototypeOf(TrackedAudioContext, NativeAC);
+		TrackedAudioContext.__retroRageTracked = true;
+		if (window.AudioContext === NativeAC) {
+			window.AudioContext = TrackedAudioContext;
+		}
+		if (window.webkitAudioContext === NativeAC) {
+			window.webkitAudioContext = TrackedAudioContext;
+		}
+	}
+
+	window.__retroRageResumeAudio = function () {
+		trackedContexts.forEach(function (ctx) {
+			if (ctx && ctx.state === 'suspended' && typeof ctx.resume === 'function') {
+				try {
+					const p = ctx.resume();
+					if (p && typeof p.catch === 'function') {
+						p.catch(function () {});
+					}
+				} catch (_e) {}
+			}
+		});
+	};
+}());
+		</script>
+	</head>
+	<body>
+		<div id="game-stage">
+			<canvas id="canvas" tabindex="0">
+				Your browser does not support the canvas tag.
+			</canvas>
+		</div>
+
+		<noscript>
+			JavaScript is required to run Retro Rage Arcade in your browser.
+		</noscript>
+
+		<div id="status">
+			<img id="status-splash" class="$GODOT_SPLASH_CLASSES" src="$GODOT_SPLASH" alt="">
+			<progress id="status-progress"></progress>
+			<div id="status-notice"></div>
+		</div>
+
+		<div id="rotate-overlay" role="status" aria-live="polite">
+			<div class="rotate-card">
+				<svg class="rotate-icon" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+					<rect x="20" y="8" width="24" height="48" rx="4" />
+					<line x1="29" y1="49" x2="35" y2="49" />
+					<path d="M10 30a18 18 0 0 1 6-13" />
+					<polyline points="11 16 17 16 17 22" />
+				</svg>
+				<h2 class="rotate-title">ROTATE TO LANDSCAPE</h2>
+				<p class="rotate-subtitle">Retro Rage Arcade is designed for horizontal gameplay. Turn your device sideways to play.</p>
+			</div>
+		</div>
+
+		<script src="$GODOT_URL"></script>
+		<script>
+const GODOT_CONFIG = $GODOT_CONFIG;
+const GODOT_THREADS_ENABLED = $GODOT_THREADS_ENABLED;
+const engine = new Engine(GODOT_CONFIG);
+
+(function () {
+	const canvas = document.getElementById('canvas');
+	const statusOverlay = document.getElementById('status');
+	const statusProgress = document.getElementById('status-progress');
+	const statusNotice = document.getElementById('status-notice');
+
+	let initializing = true;
+	let statusMode = '';
+
+	function setStatusMode(mode) {
+		if (statusMode === mode || !initializing) {
+			return;
+		}
+		if (mode === 'hidden') {
+			statusOverlay.remove();
+			initializing = false;
+			return;
+		}
+		statusOverlay.style.visibility = 'visible';
+		statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
+		statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
+		statusMode = mode;
+	}
+
+	function setStatusNotice(text) {
+		while (statusNotice.lastChild) {
+			statusNotice.removeChild(statusNotice.lastChild);
+		}
+		const lines = text.split('\n');
+		lines.forEach((line) => {
+			statusNotice.appendChild(document.createTextNode(line));
+			statusNotice.appendChild(document.createElement('br'));
+		});
+	}
+
+	function displayFailureNotice(err) {
+		console.error(err);
+		if (err instanceof Error) {
+			setStatusNotice(err.message);
+		} else if (typeof err === 'string') {
+			setStatusNotice(err);
+		} else {
+			setStatusNotice('An unknown error occurred.');
+		}
+		setStatusMode('notice');
+		initializing = false;
+	}
+
+	function isMobileTouchDevice() {
+		const coarse = window.matchMedia && (
+			window.matchMedia('(pointer: coarse)').matches ||
+			window.matchMedia('(any-pointer: coarse)').matches
+		);
+		const touchPoints = navigator.maxTouchPoints && navigator.maxTouchPoints > 0;
+		const smallViewport = window.innerWidth <= 600 && window.innerHeight > window.innerWidth;
+		const smallDevice = Math.min(window.innerWidth, window.innerHeight) <= 900;
+		return Boolean(((coarse || ('ontouchstart' in window && touchPoints)) && smallDevice) || smallViewport);
+	}
+
+	function updateOrientationClass() {
+		const isPortrait = window.innerHeight > window.innerWidth;
+		const showRotate = isMobileTouchDevice() && isPortrait;
+		document.body.classList.toggle('mobile-portrait', showRotate);
+	}
+
+	window.addEventListener('resize', updateOrientationClass, { passive: true });
+	window.addEventListener('orientationchange', updateOrientationClass, { passive: true });
+	updateOrientationClass();
+
+	// Unlock WebAudio on the first user gesture (and after mobile tab resume) without duplicate AudioContext init
+	function handleAudioUnlockGesture() {
+		if (typeof window.__retroRageResumeAudio === 'function') {
+			window.__retroRageResumeAudio();
+		}
+	}
+	['touchstart', 'touchend', 'pointerdown', 'mousedown', 'keydown'].forEach(function (evtName) {
+		window.addEventListener(evtName, handleAudioUnlockGesture, { capture: true, passive: true });
+	});
+	document.addEventListener('visibilitychange', function () {
+		if (document.visibilityState === 'visible') {
+			handleAudioUnlockGesture();
+		}
+	});
+
+	// Prevent unwanted context menu, pinch-zoom gestures, and outside-canvas browser scrolling
+	canvas.addEventListener('contextmenu', function (e) {
+		e.preventDefault();
+	});
+	document.addEventListener('gesturestart', function (e) {
+		if (e.cancelable) {
+			e.preventDefault();
+		}
+	}, { passive: false });
+	document.addEventListener('gesturechange', function (e) {
+		if (e.cancelable) {
+			e.preventDefault();
+		}
+	}, { passive: false });
+	document.addEventListener('touchmove', function (e) {
+		if (e.target !== canvas && e.cancelable) {
+			e.preventDefault();
+		}
+	}, { passive: false });
+
+	const missing = Engine.getMissingFeatures({
+		threads: GODOT_THREADS_ENABLED,
+	});
+
+	if (missing.length !== 0) {
+		const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
+		displayFailureNotice(missingMsg + missing.join('\n'));
+	} else {
+		setStatusMode('progress');
+		engine.startGame({
+			'onProgress': function (current, total) {
+				if (current > 0 && total > 0) {
+					statusProgress.value = current;
+					statusProgress.max = total;
+				} else {
+					statusProgress.removeAttribute('value');
+					statusProgress.removeAttribute('max');
+				}
+			},
+		}).then(() => {
+			setStatusMode('hidden');
+			updateOrientationClass();
+		}, displayFailureNotice);
+	}
+}());
+		</script>
+	</body>
+</html>

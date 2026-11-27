@@ -59,11 +59,47 @@ var levels: Dictionary = {
 
 var shown_stage_intros: Dictionary = {}
 
+const FALLBACK_FONT_PATHS: Array[String] = [
+	"res://assets/fonts/NotoSansSymbols2-Regular.ttf",
+	"res://assets/fonts/NotoEmoji-Variable.ttf",
+	"res://assets/fonts/NotoSansMath-Regular.ttf",
+]
+
+var _registered_fallback_fonts: Array[Font] = []
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	if OS.get_name() == "Android" or OS.get_name() == "iOS":
 		DisplayServer.screen_set_orientation(DisplayServer.SCREEN_LANDSCAPE)
+	_setup_fallback_fonts()
 	_setup_input_actions()
+
+func _exit_tree() -> void:
+	var base_font: Font = ThemeDB.fallback_font
+	if base_font and not _registered_fallback_fonts.is_empty():
+		var cleaned: Array[Font] = []
+		for f in base_font.fallbacks:
+			if not _registered_fallback_fonts.has(f):
+				cleaned.append(f)
+		base_font.fallbacks = cleaned
+	_registered_fallback_fonts.clear()
+
+func _setup_fallback_fonts() -> void:
+	var base_font: Font = ThemeDB.fallback_font
+	if base_font == null:
+		return
+	var current_fallbacks: Array[Font] = base_font.fallbacks.duplicate()
+	var changed := false
+	for font_path in FALLBACK_FONT_PATHS:
+		if not ResourceLoader.exists(font_path):
+			continue
+		var loaded := ResourceLoader.load(font_path) as Font
+		if loaded and not current_fallbacks.has(loaded):
+			current_fallbacks.append(loaded)
+			_registered_fallback_fonts.append(loaded)
+			changed = true
+	if changed:
+		base_font.fallbacks = current_fallbacks
 
 func _setup_input_actions() -> void:
 	# Ensure custom actions exist with desktop and keyboard bindings

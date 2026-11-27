@@ -21,6 +21,7 @@ var _target_progress: float = 0.0
 var _current_progress: float = 0.0
 var _resource_loaded: bool = false
 var _transition_started: bool = false
+var _use_threaded_preload: bool = false
 var _load_status_progress: Array = []
 
 func _ready() -> void:
@@ -38,11 +39,20 @@ func _ready() -> void:
 	# Initial safe verify of save without data loss
 	SaveManager.load_save()
 	
-	# Start threaded preload of main menu scene
-	var err := ResourceLoader.load_threaded_request(MAIN_MENU_SCENE)
-	if err != OK:
-		push_warning("Threaded load request failed with err %d, will use standard load fallback." % err)
+	# Single-threaded Web exports can stall on cooperative threaded ResourceLoader requests
+	if OS.has_feature("web"):
+		_use_threaded_preload = false
 		_resource_loaded = true
+		_target_progress = 1.0
+	else:
+		# Start threaded preload of main menu scene
+		var err := ResourceLoader.load_threaded_request(MAIN_MENU_SCENE)
+		if err != OK:
+			push_warning("Threaded load request failed with err %d, will use standard load fallback." % err)
+			_use_threaded_preload = false
+			_resource_loaded = true
+		else:
+			_use_threaded_preload = true
 	
 	# Animate fade in
 	var tween := create_tween()
@@ -65,7 +75,7 @@ func _process(delta: float) -> void:
 	_elapsed_time += delta
 	
 	# Poll ResourceLoader progress if still loading
-	if not _resource_loaded:
+	if not _resource_loaded and _use_threaded_preload:
 		var status := ResourceLoader.load_threaded_get_status(MAIN_MENU_SCENE, _load_status_progress)
 		if status == ResourceLoader.THREAD_LOAD_LOADED:
 			_resource_loaded = true

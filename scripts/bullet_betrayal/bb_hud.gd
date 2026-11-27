@@ -250,6 +250,19 @@ func reset_touch_controls() -> void:
 	if _player_ref and _player_ref.has_method("reset_touch_inputs"):
 		_player_ref.reset_touch_inputs()
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("pause"):
+		if pause_overlay and pause_overlay.visible:
+			if confirm_modal and confirm_modal.visible:
+				_close_confirm()
+			else:
+				_on_pause_resume_pressed()
+		else:
+			_on_pause_pressed()
+		var vp := get_viewport()
+		if vp:
+			vp.set_input_as_handled()
+
 func _on_pause_gui_input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch and event.pressed:
 		pause_btn.accept_event()
@@ -358,7 +371,7 @@ func _on_player_died() -> void:
 		_update_death_ad_status()
 		# Proactively load rewarded ad if eligible
 		if GameManager and GameManager.can_revive_this_run():
-			if AdManager and not AdManager.is_rewarded_ad_ready() and not AdManager.is_loading() and AdManager.is_plugin_initialized():
+			if AdManager and AdManager.is_ads_supported() and not AdManager.is_rewarded_ad_ready() and not AdManager.is_loading() and AdManager.is_plugin_initialized():
 				AdManager.load_rewarded_ad()
 	)
 
@@ -368,16 +381,23 @@ func _update_death_ad_status() -> void:
 	if not death_revive_btn or not death_ad_status:
 		return
 
+	if not AdManager:
+		death_revive_btn.disabled = true
+		death_ad_status.text = "Ad service unavailable"
+		death_ad_status.modulate = Color(0.8, 0.8, 0.8, 0.7)
+		return
+
+	if not AdManager.is_ads_supported() and not AdManager.is_mock_mode():
+		death_revive_btn.disabled = true
+		death_ad_status.text = AdManager.get_status_text()
+		death_ad_status.modulate = Color(0.78, 0.82, 0.9, 0.8)
+		death_retry_btn.disabled = false
+		return
+
 	# Authoritative run allowance check
 	if GameManager and not GameManager.can_revive_this_run():
 		death_revive_btn.disabled = true
 		death_ad_status.text = "Revive already used this run"
-		death_ad_status.modulate = Color(0.8, 0.8, 0.8, 0.7)
-		return
-
-	if not AdManager:
-		death_revive_btn.disabled = true
-		death_ad_status.text = "Ad service unavailable"
 		death_ad_status.modulate = Color(0.8, 0.8, 0.8, 0.7)
 		return
 
@@ -399,6 +419,9 @@ func _update_death_ad_status() -> void:
 		death_ad_status.modulate = Color(0.8, 0.8, 0.8, 0.7)
 
 func _on_revive_ad_pressed() -> void:
+	if not AdManager or (not AdManager.is_ads_supported() and not AdManager.is_mock_mode()):
+		_update_death_ad_status()
+		return
 	if not GameManager or not GameManager.can_revive_this_run():
 		_update_death_ad_status()
 		return
