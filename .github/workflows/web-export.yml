@@ -210,7 +210,8 @@ jobs:
           set -e
 
           if [ "$TEST_STATUS" -ne 0 ] || grep -q '\[FAIL\]' /tmp/coin_hell_tests.log || ! grep -q '0 FAILED' /tmp/coin_hell_tests.log; then
-            echo "::error title=Coin Hell Test Suite Failed::Automated Coin Hell / Web test suite failed (status=$TEST_STATUS)."
+            FAIL_MSG=$(grep -E '(\[FAIL\]|TEST RESULTS:|SCRIPT ERROR:)' /tmp/coin_hell_tests.log | tail -n 15 | tr '\r\n' ' ' || true)
+            echo "::error title=Coin Hell Test Suite Failed::status=${TEST_STATUS} ${FAIL_MSG}"
             tail -n 120 /tmp/coin_hell_tests.log || true
             exit 1
           fi
@@ -226,7 +227,8 @@ jobs:
           set -e
 
           if [ "$TEST_STATUS" -ne 0 ] || grep -q '\[FAIL\]' /tmp/bb_tests.log || ! grep -q '0 FAILED' /tmp/bb_tests.log; then
-            echo "::error title=Bullet Betrayal Test Suite Failed::Automated Bullet Betrayal test suite failed (status=$TEST_STATUS)."
+            FAIL_MSG=$(grep -E '(\[FAIL\]|BULLET BETRAYAL RESULTS:|SCRIPT ERROR:)' /tmp/bb_tests.log | tail -n 15 | tr '\r\n' ' ' || true)
+            echo "::error title=Bullet Betrayal Test Suite Failed::status=${TEST_STATUS} ${FAIL_MSG}"
             tail -n 120 /tmp/bb_tests.log || true
             exit 1
           fi
