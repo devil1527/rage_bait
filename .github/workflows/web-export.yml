@@ -192,7 +192,7 @@ jobs:
 
           godot --version
           test -f "$TMPL_DIR/version.txt"
-          grep -q "^${GODOT_RELEASE}$" "$TMPL_DIR/version.txt"
+          grep -q "^${GODOT_VERSION}\.stable$" "$TMPL_DIR/version.txt"
           unzip -tq "$TMPL_DIR/web_nothreads_release.zip"
           unzip -tq "$TMPL_DIR/web_nothreads_debug.zip"
           ls -lh "$TMPL_DIR"
