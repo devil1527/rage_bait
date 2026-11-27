@@ -1,0 +1,467 @@
+[gd_scene load_steps=26 format=3 uid="uid://bblevel10giantworm"]
+
+[ext_resource type="Script" path="res://scripts/bullet_betrayal/bb_level_10.gd" id="1_lev10"]
+[ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_player.tscn" id="2_play"]
+[ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_hud.tscn" id="3_hud"]
+[ext_resource type="PackedScene" uid="uid://bbgiantworm001" path="res://scenes/bullet_betrayal/bb_giant_worm.tscn" id="4_boss"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_desert_dunes_far.png" id="5_dfar"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_desert_dunes_mid.png" id="6_dmid"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_desert_sand_top.png" id="7_dsand"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_desert_subsurface.png" id="8_drock"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_sandbag.png" id="9_sbag"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_crate.png" id="10_crate"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_sign_danger.png" id="11_sign"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_bunker.png" id="12_bunk"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_desert_cactus.png" id="13_cact"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_desert_rock.png" id="14_drok"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_watchtower.png" id="15_tower"]
+
+[sub_resource type="Gradient" id="Gradient_sky"]
+offsets = PackedFloat32Array(0, 0.28, 0.56, 0.80, 1)
+colors = PackedColorArray(0.14, 0.04, 0.11, 1, 0.42, 0.10, 0.13, 1, 0.72, 0.22, 0.14, 1, 0.92, 0.44, 0.18, 1, 0.84, 0.40, 0.20, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_sky"]
+gradient = SubResource("Gradient_sky")
+width = 16
+height = 256
+fill_to = Vector2(0, 1)
+
+[sub_resource type="Gradient" id="Gradient_sun"]
+offsets = PackedFloat32Array(0, 0.25, 0.52, 1)
+colors = PackedColorArray(1, 0.85, 0.52, 0.95, 1, 0.55, 0.24, 0.80, 0.96, 0.26, 0.14, 0.28, 0.94, 0.24, 0.12, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_sun"]
+gradient = SubResource("Gradient_sun")
+width = 190
+height = 190
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
+size = Vector2(40, 700)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_floor"]
+size = Vector2(1280, 220)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_mesa_side"]
+size = Vector2(200, 14)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_mesa_center"]
+size = Vector2(280, 14)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_timer"]
+bg_color = Color(0.11, 0.05, 0.07, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.72, 0.22, 0.92)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+shadow_color = Color(1, 0.45, 0.15, 0.25)
+shadow_size = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_banner"]
+bg_color = Color(0.16, 0.06, 0.06, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.36, 0.22, 0.96)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="BulletBetrayalLevel10" type="Node2D"]
+script = ExtResource("1_lev10")
+
+[node name="DesertSkyCanvas" type="CanvasLayer" parent="."]
+layer = -20
+
+[node name="SkyGradient" type="TextureRect" parent="DesertSkyCanvas"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("GradientTexture2D_sky")
+expand_mode = 1
+stretch_mode = 0
+
+[node name="ParallaxBackground" type="ParallaxBackground" parent="."]
+layer = -10
+
+[node name="SunLayer" type="ParallaxLayer" parent="ParallaxBackground"]
+motion_scale = Vector2(0.04, 1)
+
+[node name="DesertSun" type="Sprite2D" parent="ParallaxBackground/SunLayer"]
+position = Vector2(640, 165)
+texture = SubResource("GradientTexture2D_sun")
+
+[node name="FarMesas" type="ParallaxLayer" parent="ParallaxBackground"]
+modulate = Color(0.88, 0.68, 0.68, 1)
+motion_scale = Vector2(0.16, 1)
+motion_mirroring = Vector2(1024, 0)
+
+[node name="MesaTile1" type="Sprite2D" parent="ParallaxBackground/FarMesas"]
+position = Vector2(256, 250)
+texture = ExtResource("5_dfar")
+
+[node name="MesaTile2" type="Sprite2D" parent="ParallaxBackground/FarMesas"]
+position = Vector2(768, 250)
+texture = ExtResource("5_dfar")
+
+[node name="MesaBaseFill" type="ColorRect" parent="ParallaxBackground/FarMesas"]
+offset_top = 328.0
+offset_right = 1024.0
+offset_bottom = 900.0
+mouse_filter = 2
+color = Color(0.42, 0.18, 0.14, 1)
+
+[node name="MidDunes" type="ParallaxLayer" parent="ParallaxBackground"]
+modulate = Color(0.96, 0.80, 0.72, 1)
+motion_scale = Vector2(0.38, 1)
+motion_mirroring = Vector2(1024, 0)
+
+[node name="DuneTile1" type="Sprite2D" parent="ParallaxBackground/MidDunes"]
+position = Vector2(256, 316)
+texture = ExtResource("6_dmid")
+
+[node name="DuneTile2" type="Sprite2D" parent="ParallaxBackground/MidDunes"]
+position = Vector2(768, 316)
+texture = ExtResource("6_dmid")
+
+[node name="DuneBaseFill" type="ColorRect" parent="ParallaxBackground/MidDunes"]
+offset_top = 378.0
+offset_right = 1024.0
+offset_bottom = 900.0
+mouse_filter = 2
+color = Color(0.54, 0.27, 0.16, 1)
+
+[node name="EnvironmentProps" type="Node2D" parent="."]
+z_index = -1
+
+[node name="WestWatchtower" type="Sprite2D" parent="EnvironmentProps"]
+modulate = Color(0.92, 0.78, 0.70, 1)
+position = Vector2(36, 378)
+texture = ExtResource("15_tower")
+
+[node name="EastWatchtower" type="Sprite2D" parent="EnvironmentProps"]
+modulate = Color(0.92, 0.78, 0.70, 1)
+position = Vector2(1244, 378)
+texture = ExtResource("15_tower")
+
+[node name="WestMesaPillarL" type="Sprite2D" parent="EnvironmentProps"]
+texture_repeat = 2
+modulate = Color(0.84, 0.58, 0.36, 1)
+position = Vector2(142, 382)
+texture = ExtResource("8_drock")
+region_enabled = true
+region_rect = Rect2(0, 0, 20, 56)
+
+[node name="WestMesaPillarR" type="Sprite2D" parent="EnvironmentProps"]
+texture_repeat = 2
+modulate = Color(0.84, 0.58, 0.36, 1)
+position = Vector2(298, 382)
+texture = ExtResource("8_drock")
+region_enabled = true
+region_rect = Rect2(0, 0, 20, 56)
+
+[node name="CenterDaisPillarL" type="Sprite2D" parent="EnvironmentProps"]
+texture_repeat = 2
+modulate = Color(0.84, 0.58, 0.36, 1)
+position = Vector2(528, 380)
+texture = ExtResource("8_drock")
+region_enabled = true
+region_rect = Rect2(0, 0, 22, 60)
+
+[node name="CenterDaisPillarR" type="Sprite2D" parent="EnvironmentProps"]
+texture_repeat = 2
+modulate = Color(0.84, 0.58, 0.36, 1)
+position = Vector2(752, 380)
+texture = ExtResource("8_drock")
+region_enabled = true
+region_rect = Rect2(0, 0, 22, 60)
+
+[node name="EastMesaPillarL" type="Sprite2D" parent="EnvironmentProps"]
+texture_repeat = 2
+modulate = Color(0.84, 0.58, 0.36, 1)
+position = Vector2(982, 382)
+texture = ExtResource("8_drock")
+region_enabled = true
+region_rect = Rect2(0, 0, 20, 56)
+
+[node name="EastMesaPillarR" type="Sprite2D" parent="EnvironmentProps"]
+texture_repeat = 2
+modulate = Color(0.84, 0.58, 0.36, 1)
+position = Vector2(1138, 382)
+texture = ExtResource("8_drock")
+region_enabled = true
+region_rect = Rect2(0, 0, 20, 56)
+
+[node name="BunkerWest" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(88, 389)
+texture = ExtResource("12_bunk")
+
+[node name="SignBoss" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(362, 395)
+texture = ExtResource("11_sign")
+
+[node name="RockWest" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(448, 401)
+texture = ExtResource("14_drok")
+
+[node name="SandbagCenter" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(640, 326)
+texture = ExtResource("9_sbag")
+
+[node name="CrateCenter" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(640, 394)
+texture = ExtResource("10_crate")
+
+[node name="CactusEast" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(822, 392)
+texture = ExtResource("13_cact")
+
+[node name="SignEast" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(912, 395)
+texture = ExtResource("11_sign")
+
+[node name="BunkerEast" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(1192, 389)
+texture = ExtResource("12_bunk")
+
+[node name="Platforms" type="Node2D" parent="."]
+
+[node name="LeftWall" type="StaticBody2D" parent="Platforms"]
+position = Vector2(-20, 260)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/LeftWall"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="RightWall" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1300, 260)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/RightWall"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="Ground_ArenaFloor" type="StaticBody2D" parent="Platforms"]
+position = Vector2(640, 520)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Ground_ArenaFloor"]
+shape = SubResource("RectangleShape2D_floor")
+
+[node name="SandTop" type="Sprite2D" parent="Platforms/Ground_ArenaFloor"]
+texture_repeat = 2
+position = Vector2(0, -94)
+texture = ExtResource("7_dsand")
+region_enabled = true
+region_rect = Rect2(0, 0, 1280, 32)
+
+[node name="SandRock" type="Sprite2D" parent="Platforms/Ground_ArenaFloor"]
+texture_repeat = 2
+position = Vector2(0, 42)
+texture = ExtResource("8_drock")
+region_enabled = true
+region_rect = Rect2(0, 0, 1280, 240)
+
+[node name="Mesa_WestBastion" type="StaticBody2D" parent="Platforms"]
+position = Vector2(220, 353)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Mesa_WestBastion"]
+shape = SubResource("RectangleShape2D_mesa_side")
+one_way_collision = true
+
+[node name="SandTop" type="Sprite2D" parent="Platforms/Mesa_WestBastion"]
+texture_repeat = 2
+position = Vector2(0, 1)
+texture = ExtResource("7_dsand")
+region_enabled = true
+region_rect = Rect2(0, 0, 200, 16)
+
+[node name="Mesa_CenterDais" type="StaticBody2D" parent="Platforms"]
+position = Vector2(640, 345)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Mesa_CenterDais"]
+shape = SubResource("RectangleShape2D_mesa_center")
+one_way_collision = true
+
+[node name="SandTop" type="Sprite2D" parent="Platforms/Mesa_CenterDais"]
+texture_repeat = 2
+position = Vector2(0, 1)
+texture = ExtResource("7_dsand")
+region_enabled = true
+region_rect = Rect2(0, 0, 280, 16)
+
+[node name="Mesa_EastBastion" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1060, 353)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Mesa_EastBastion"]
+shape = SubResource("RectangleShape2D_mesa_side")
+one_way_collision = true
+
+[node name="SandTop" type="Sprite2D" parent="Platforms/Mesa_EastBastion"]
+texture_repeat = 2
+position = Vector2(0, 1)
+texture = ExtResource("7_dsand")
+region_enabled = true
+region_rect = Rect2(0, 0, 200, 16)
+
+[node name="SpawnPoint" type="Marker2D" parent="."]
+position = Vector2(140, 394)
+
+[node name="Player" parent="." instance=ExtResource("2_play")]
+position = Vector2(140, 394)
+
+[node name="GiantWorm" parent="." instance=ExtResource("4_boss")]
+position = Vector2(960, 410)
+territory_min_x = 64.0
+territory_max_x = 1216.0
+surface_y = 410.0
+initial_delay = 0.85
+
+[node name="Enemies" type="Node2D" parent="."]
+
+[node name="HUD" parent="." instance=ExtResource("3_hud")]
+current_stage_id = 10
+
+[node name="SurvivalTimerPanel" type="PanelContainer" parent="HUD"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -165.0
+offset_top = 48.0
+offset_right = 165.0
+offset_bottom = 92.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_timer")
+
+[node name="VBox" type="VBoxContainer" parent="HUD/SurvivalTimerPanel"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 1
+alignment = 1
+
+[node name="SurvivalTimerLabel" type="Label" parent="HUD/SurvivalTimerPanel/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.22, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.95)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 16
+text = "⏱ SURVIVE  01:00"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="HUD/SurvivalTimerPanel/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.86, 0.92, 1, 0.95)
+theme_override_font_sizes/font_size = 10
+text = "SPAWNED: 0/10  ·  TARGETS LEFT: 10"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AlertBanner" type="Label" parent="HUD"]
+visible = false
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -250.0
+offset_top = 98.0
+offset_right = 250.0
+offset_bottom = 132.0
+grow_horizontal = 2
+pivot_offset = Vector2(250, 17)
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.28, 0.28, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 18
+text = "⚠ 10 SECONDS LEFT! ⚠"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="IntroBanner" type="Control" parent="HUD"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="Panel" parent="HUD/IntroBanner"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -255.0
+offset_top = -64.0
+offset_right = 255.0
+offset_bottom = 64.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_banner")
+
+[node name="VBox" type="VBoxContainer" parent="HUD/IntroBanner/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 14.0
+offset_right = -16.0
+offset_bottom = -14.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="WorldTitle" type="Label" parent="HUD/IntroBanner/Panel/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.42, 0.24, 1)
+theme_override_font_sizes/font_size = 18
+text = "WORLD 2 — FINAL BOSS SURVIVAL"
+horizontal_alignment = 1
+
+[node name="StageTitle" type="Label" parent="HUD/IntroBanner/Panel/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.9, 1)
+theme_override_font_sizes/font_size = 14
+text = "STAGE 10: THE GIANT WORM"
+horizontal_alignment = 1
+
+[node name="Briefing" type="Label" parent="HUD/IntroBanner/Panel/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.95, 0.86, 0.80, 0.95)
+theme_override_font_sizes/font_size = 11
+text = "10 bullets. 10 armed enemies. Survive 60s & eliminate every enemy — the stage clears ONLY when all 10 fall."
+horizontal_alignment = 1
+autowrap_mode = 2

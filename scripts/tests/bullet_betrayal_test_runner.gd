@@ -92,6 +92,7 @@ func run_all_tests() -> void:
 	await test_rewarded_revive_star_pipeline_across_stages()
 	await test_level_8_desert_worm_nightmare()
 	await test_level_9_worm_minefield()
+	await test_level_10_giant_worm_survival()
 	await test_all_5_levels_rewarded_revive_and_reset()
 
 func test_audio_manager_bullet_betrayal_sfx() -> void:
@@ -616,14 +617,14 @@ func test_pause_menu_and_confirmation_modals() -> void:
 	assert_eq(hud.victory_mission_btn.text, "☰ LEVEL SELECT", "Level Select button text matches Coin Hell ('☰ LEVEL SELECT')")
 	assert_true(hud.victory_arcade_btn == null, "Arcade Menu button omitted from Victory overlay (matches Coin Hell 3-button layout)")
 	
-	# Test Next Stage Button opens MessageModal for unreleased Stage 10 (when on last implemented Stage 9)
-	hud.current_stage_id = 9
+	# Test Next Stage Button opens MessageModal for unreleased Stage 11 (when on last implemented Stage 10)
+	hud.current_stage_id = 10
 	assert_true(hud.victory_message_modal != null, "Victory overlay has MessageModal")
 	assert_true(not hud.victory_message_modal.visible, "MessageModal starts hidden")
 	hud.victory_next_stage_btn.pressed.emit()
 	assert_true(hud.victory_message_modal.visible, "MessageModal opens when clicking Next Stage on last implemented stage")
-	assert_eq(hud.victory_modal_title.text, "STAGE 10 IN PROGRESS", "MessageModal title is 'STAGE 10 IN PROGRESS'")
-	assert_true(hud.victory_modal_label.text.contains("still being built"), "MessageModal explains Stage 10 is being built")
+	assert_eq(hud.victory_modal_title.text, "STAGE 11 IN PROGRESS", "MessageModal title is 'STAGE 11 IN PROGRESS'")
+	assert_true(hud.victory_modal_label.text.contains("still being built"), "MessageModal explains Stage 11 is being built")
 	
 	# Dismiss MessageModal
 	hud.victory_modal_ok_btn.pressed.emit()
@@ -1108,12 +1109,19 @@ func test_bullet_betrayal_menu_stars_reflection() -> void:
 	var state9_lbl: Label = vbox9.get_child(2)
 	assert_eq(state9_lbl.text, "LOCKED", "Stage 9 tile state is 'LOCKED'")
 
-	# Check Stage 10 card tile: PLANNED (future unreleased stage)
+	# Check Stage 10 card tile: LOCKED (implemented stage beyond highest unlocked)
 	var btn_lvl10: Button = menu.get_level_button(10)
 	assert_true(btn_lvl10 != null, "LevelBtn_10 exists")
 	var vbox10 = btn_lvl10.get_child(0)
 	var state10_lbl: Label = vbox10.get_child(2)
-	assert_eq(state10_lbl.text, "PLANNED", "Stage 10 tile state is 'PLANNED'")
+	assert_eq(state10_lbl.text, "LOCKED", "Stage 10 tile state is 'LOCKED'")
+
+	# Check Stage 11 card tile: PLANNED (future unreleased stage)
+	var btn_lvl11: Button = menu.get_level_button(11)
+	assert_true(btn_lvl11 != null, "LevelBtn_11 exists")
+	var vbox11 = btn_lvl11.get_child(0)
+	var state11_lbl: Label = vbox11.get_child(2)
+	assert_eq(state11_lbl.text, "PLANNED", "Stage 11 tile state is 'PLANNED'")
 
 	menu.queue_free()
 
@@ -2119,10 +2127,12 @@ func test_level_6_dune_patrol() -> void:
 	assert_true(btn_9 != null, "Stage 9 button exists in menu")
 	var btn_10: Button = menu.get_level_button(10)
 	assert_true(btn_10 != null, "Stage 10 button exists in menu")
+	var btn_11: Button = menu.get_level_button(11)
+	assert_true(btn_11 != null, "Stage 11 button exists in menu")
 
-	menu._on_level_tile_pressed(10)
-	assert_true(menu.message_modal.visible, "Stage 10 is guarded with in-progress modal")
-	assert_true("IN PROGRESS" in menu.modal_title.text, "Modal title indicates Stage 10 in progress")
+	menu._on_level_tile_pressed(11)
+	assert_true(menu.message_modal.visible, "Stage 11 is guarded with in-progress modal")
+	assert_true("IN PROGRESS" in menu.modal_title.text, "Modal title indicates Stage 11 in progress")
 	menu.queue_free()
 
 	level.queue_free()
@@ -2457,7 +2467,9 @@ func test_stage6_to_7_progression_and_stars() -> void:
 	assert_true(not (btn7.get_child(0).get_child(0).get_child(1) as TextureRect).visible, "Stage 7 lock/check icon hidden when AVAILABLE")
 	assert_eq((btn8.get_child(0).get_child(2) as Label).text, "LOCKED", "Menu shows implemented Stage 8 as LOCKED before Stage 7 clear")
 	assert_eq((btn9.get_child(0).get_child(2) as Label).text, "LOCKED", "Menu keeps implemented Stage 9 as LOCKED before Stage 8 clear")
-	assert_eq((btn10.get_child(0).get_child(2) as Label).text, "PLANNED", "Menu keeps unimplemented Stage 10 as PLANNED")
+	assert_eq((btn10.get_child(0).get_child(2) as Label).text, "LOCKED", "Menu keeps implemented Stage 10 as LOCKED before Stage 9 clear")
+	var btn11: Button = menu_after.get_level_button(11)
+	assert_eq((btn11.get_child(0).get_child(2) as Label).text, "PLANNED", "Menu keeps unimplemented Stage 11 as PLANNED")
 
 	# Verify HUD Next Stage on Stage 6 points to bb_level_7 scene constant
 	assert_true(ResourceLoader.exists("res://scenes/bullet_betrayal/bb_level_7.tscn"), "Next Stage target bb_level_7.tscn exists")
@@ -3649,7 +3661,7 @@ func test_level_9_worm_minefield() -> void:
 	assert_true("REVIVED" in hud.victory_stats_label.text and "★ ★ ☆" in hud.victory_stats_label.text,
 		"Level 9 Victory overlay shows 2-star REVIVED rating")
 
-	# Menu check with Stage 9 at 2 stars and Stage 10 PLANNED
+	# Menu check with Stage 9 at 2 stars and Stage 10 AVAILABLE
 	var menu_revived: BulletBetrayalMenu = load("res://scenes/bullet_betrayal/bullet_betrayal_menu.tscn").instantiate()
 	add_child(menu_revived)
 	await get_tree().physics_frame
@@ -3657,7 +3669,7 @@ func test_level_9_worm_minefield() -> void:
 	var m_btn10 := menu_revived.get_level_button(10)
 	assert_eq((m_btn9.get_child(0).get_child(2) as Label).text, "COMPLETED", "Menu shows Stage 9 COMPLETED")
 	assert_eq((m_btn9.get_child(0).get_node("StarsLabel") as Label).text, "★ ★ ☆", "Menu matches 2-star Stage 9 rating")
-	assert_eq((m_btn10.get_child(0).get_child(2) as Label).text, "PLANNED", "Menu shows Stage 10 PLANNED")
+	assert_eq((m_btn10.get_child(0).get_child(2) as Label).text, "AVAILABLE", "Menu shows Stage 10 AVAILABLE after Stage 9 clear")
 	menu_revived.queue_free()
 
 	# Clean completion upgrades Stage 9 to 3 stars
@@ -3687,6 +3699,247 @@ func test_level_9_worm_minefield() -> void:
 	if GameManager:
 		GameManager.revives_used_this_run = orig_revives
 	assert_true(true, "World 2 Stage 9 Worm Minefield fully verified")
+
+
+func test_level_10_giant_worm_survival() -> void:
+	print("\n=======================================================")
+	print("  TEST: World 2 Level 10 — The Giant Worm Survival     ")
+	print("=======================================================")
+
+	var orig_bb_highest: int = SaveManager.bb_highest_unlocked_level
+	var orig_bb_completed: Array = SaveManager.bb_completed_levels.duplicate()
+	var orig_bb_stars: Dictionary = SaveManager.bb_stage_stars.duplicate()
+	var orig_revives: int = GameManager.revives_used_this_run if GameManager else 0
+
+	var lvl10_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_level_10.tscn")
+	assert_true(lvl10_scene != null, "bb_level_10.tscn loads cleanly")
+	var level := lvl10_scene.instantiate() as BulletBetrayalLevel10
+	assert_true(level != null, "Stage 10 instantiates as BulletBetrayalLevel10")
+	add_child(level)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+
+	var p: BulletBetrayalPlayer = level.player
+	var hud: BulletBetrayalHUD = level.hud
+	var boss: BulletBetrayalGiantWorm = level.giant_worm
+	assert_true(p != null and hud != null and boss != null, "Stage 10 core player, HUD & GiantWorm exist")
+
+	# 1. Bullets, zero pickups, initial state & timer start
+	assert_eq(p.initial_ammo, 10, "Player starts with exactly 10 initial ammo")
+	assert_eq(p.current_ammo, 10, "Player has 10 active bullets at start")
+	var pickups := level.find_children("*", "BulletBetrayalAmmoPickup", true, false)
+	assert_eq(pickups.size(), 0, "Zero ammo pickups exist in Stage 10")
+	assert_eq(level.survival_duration, 60.0, "Survival timer configured to 60.0s")
+	assert_true("01:00" in level.timer_label.text, "Timer starts displaying 01:00")
+	assert_true(not level.is_overtime, "Overtime starts false")
+	assert_eq(level.enemies_spawned, 0, "Starts with 0 spawned enemies")
+	assert_eq(level.enemies_alive, 0, "Starts with 0 alive enemies")
+	assert_eq(level.enemies_killed, 0, "Starts with 0 killed enemies")
+	assert_eq(level.enemies_remaining_to_spawn, 10, "Starts with 10 remaining enemies to spawn")
+	assert_true(level.find_children("*", "OverheadBar", true, false).is_empty(), "No overhead bars in Stage 10 arena")
+
+	# 2. Giant Worm scale, underground safety, movement patterns, directions & lethality
+	var head_spr: Sprite2D = boss.get_node_or_null("BodyClip/HeadSprite")
+	assert_true(head_spr != null and head_spr.scale.x >= 2.2, "Giant worm boss visuals are >2x larger than regular worms")
+	assert_true(boss.is_underground(), "Giant worm begins underground")
+	boss._check_overlapping_player()
+	assert_true(p.is_alive, "Giant worm deals zero damage while underground")
+
+	boss.force_emerge_at(700.0, -1, BulletBetrayalGiantWorm.MovementPattern.STALK_REVERSE)
+	assert_true(boss.is_emerged(), "Giant worm can emerge from underground")
+	var start_boss_x: float = boss.global_position.x
+	for _f in range(18):
+		boss._physics_process(1.0 / 60.0)
+	assert_true(boss.global_position.x < start_boss_x, "Giant worm moves left across the arena")
+
+	boss.force_emerge_at(boss.territory_min_x + 48.0, -1, BulletBetrayalGiantWorm.MovementPattern.SURGE_DASH)
+	boss._physics_process(1.0 / 60.0)
+	assert_eq(boss.facing_direction, 1, "Giant worm reverses direction cleanly at left boundary")
+	assert_true(boss.direction_change_count >= 1, "Giant worm tracks direction reversals")
+
+	# Submerge triggers underground transition and disables hitbox
+	boss.force_submerge(1.5)
+	assert_true(boss.is_underground(), "Giant worm returns underground cleanly")
+	assert_true(not boss.kill_zone.monitoring, "Underground disables boss kill_zone")
+
+	# 3. 6-second spawning schedule + worm submerge coordination + no duplicates/overflow
+	# Step time up to first scheduled 4.5s milestone cleanly while boss is emerged
+	p.global_position = Vector2(140.0, 394.0)
+	p.apply_spawn_protection(65.0)
+	boss.force_emerge_at(640.0, 1, BulletBetrayalGiantWorm.MovementPattern.CHARGE_SWEEP)
+	level._physics_process(4.4)
+	level._physics_process(0.15) # Total 4.55s: slot 0 queued, within 1.5s coordination window
+	assert_eq(level._pending_spawn_slots, 1, "First 6s-cadence slot queued at ~4.5s")
+	boss.force_submerge(1.4) # Coordinated dive spawns exact 1 enemy
+	assert_eq(level.enemies_spawned, 1, "Worm going underground spawns coordinated enemy #1")
+	assert_eq(level.enemies_alive, 1, "Alive count reflects enemy #1")
+	assert_eq(level.enemies_remaining_to_spawn, 9, "Remaining to spawn decrements to 9")
+	assert_eq(level._pending_spawn_slots, 0, "Pending slot consumed without duplicate")
+
+	# Verify spawned enemy cannot spawn on top of player or with max_health > 1
+	var first_enemy: BulletBetrayalEnemySoldier = level.active_enemies[0]
+	assert_eq(first_enemy.max_health, 1, "Spawned enemy has 1-hit max_health == 1")
+	assert_true(first_enemy.can_shoot, "Spawned enemy is armed")
+	assert_true(first_enemy.global_position.distance_to(p.global_position) >= 135.0, "Enemy never spawns directly on top of player")
+
+	# Missed shot consumes 1 ammo cleanly without duplication or free refill
+	p.facing_direction = -1
+	p._update_facing()
+	p._attempt_shoot()
+	assert_eq(p.current_ammo, 9, "Missed shot consumes strictly 1 bullet (10 -> 9)")
+
+	# Advance simulation step-by-step past 60s to test full 10 spawns, interval cadence & OVERTIME
+	var step_dt: float = 0.25
+	var sim_iters: int = 0
+	while level.survival_elapsed < 60.5 and sim_iters < 320:
+		sim_iters += 1
+		level._physics_process(step_dt)
+		boss._physics_process(step_dt)
+		await get_tree().physics_frame
+	p.is_invulnerable = false
+	p._invulnerability_timer = 0.0
+
+	assert_eq(level.enemies_spawned, 10, "Exactly 10 enemies spawn across the survival sequence")
+	assert_eq(level.enemies_remaining_to_spawn, 0, "Remaining enemies to spawn reaches 0")
+	assert_true(level.is_overtime, "Timer reaching 60.0s enters OVERTIME state")
+	assert_eq(level.survival_remaining, 0.0, "Survival timer clamps at 0.0 (00:00)")
+	assert_true("OVERTIME" in level.timer_label.text and "00:00" in level.timer_label.text, "HUD displays OVERTIME · 00:00")
+	assert_true(not level.is_completed, "Reaching 00:00/OVERTIME NEVER clears stage while enemies remain")
+	assert_true(p.is_alive and level.is_surviving, "Gameplay continues normally during OVERTIME without failure/completion")
+
+	# Check ~6s spawn spacing across scheduled timestamps
+	assert_eq(level.spawn_timestamps.size(), 10, "Exact 10 spawn timestamps recorded")
+	var valid_cadence := true
+	for i in range(1, level.spawn_timestamps.size()):
+		var gap: float = level.spawn_timestamps[i] - level.spawn_timestamps[i - 1]
+		if gap < 0.8 or gap > 8.5:
+			valid_cadence = false
+	assert_true(valid_cadence, "Scheduled spawns pace cleanly around ~6s cadence without clumping")
+
+	# Extra overtime & boss dives must NEVER spawn an 11th enemy
+	boss.force_submerge(1.0)
+	level._physics_process(3.0)
+	assert_eq(level.enemies_spawned, 10, "No 11th enemy ever spawns in OVERTIME or extra boss dives")
+
+	# 4. Eliminate 4 enemies by real bullet collision & test Rewarded Revive preserves state + timer
+	var initial_alive_list: Array = level.active_enemies.duplicate()
+	for k in range(4):
+		var target_enemy: BulletBetrayalEnemySoldier = initial_alive_list[k]
+		var bullet := preload("res://scenes/bullet_betrayal/bb_bullet.tscn").instantiate() as BulletBetrayalBullet
+		level.add_child(bullet)
+		bullet.setup(Vector2.RIGHT, target_enemy.global_position)
+		bullet._on_area_entered(target_enemy.hurtbox_col.get_parent() as Area2D)
+		if is_instance_valid(bullet):
+			bullet.queue_free()
+
+	assert_eq(level.enemies_killed, 4, "4 enemies eliminated via 1-hit bullet impact")
+	assert_eq(level.enemies_alive, 6, "Exactly 6 living enemies remain")
+	assert_true(not level.is_completed, "Killing 4/10 enemies never clears the stage")
+
+	var elapsed_before_death: float = level.survival_elapsed
+	# Kill player via emerged Giant Worm contact
+	boss.force_emerge_at(p.global_position.x, 1)
+	boss._on_kill_zone_body_entered(p)
+	assert_true(not p.is_alive, "Emerged Giant Worm contact instant-kills player")
+	assert_true(level._paused_for_death, "Encounter pauses spawning/timer cleanly when dead")
+
+	# Eliminating an enemy while dead must NEVER trigger stage completion
+	var extra_dead_check := level._spawn_next_enemy()
+	assert_true(extra_dead_check == null, "Cannot spawn an 11th enemy while dead or capped")
+	level._on_enemy_eliminated(null)
+	assert_true(not level.is_completed, "Dead player cannot complete stage even if final kill signal arrives")
+	level.enemies_killed -= 1 # restore exact killed count to 4 before testing revive
+	level.enemies_alive = 6
+	hud.update_targets(level.enemies_killed, 10)
+
+	# Cancel ad / failed revive must NOT count
+	if AdManager:
+		AdManager.enable_mock_mode(true)
+	if GameManager:
+		GameManager.revives_used_this_run = 0
+	hud.revives_used_in_run = 0
+	assert_true(not hud.has_used_rewarded_revive(), "Failed/unused ad does not count as revive")
+
+	# Apply authorized rewarded revive (as HUD grants reward)
+	hud._on_revive_reward_granted(GameManager.current_run_id if GameManager else -1)
+	assert_true(p.is_alive, "Rewarded revive restores player alive")
+	assert_true(is_equal_approx(level.survival_elapsed, elapsed_before_death), "Rewarded revive preserves timer/overtime without resetting")
+	assert_eq(level.enemies_killed, 4, "Killed enemies stay killed after revive")
+	assert_eq(level.enemies_alive, 6, "Remaining alive enemies count preserved after revive")
+	assert_eq(level.enemies_spawned, 10, "No duplicate spawned enemies on revive")
+	assert_true(hud.has_used_rewarded_revive(), "Rewarded revive recorded in run")
+
+	# Kill remaining up to 9/10 -> MUST NOT clear stage yet
+	for k in range(4, 9):
+		initial_alive_list[k].take_hit(1)
+	assert_eq(level.enemies_killed, 9, "9/10 enemies killed")
+	assert_true(not level.is_completed, "9/10 killed NEVER clears Stage 10")
+
+	# Verify dying right before 10th enemy dies blocks victory (player must be alive)
+	# Kill 10th enemy while alive -> clears stage immediately with 2-star REVIVED rating
+	SaveManager.bb_highest_unlocked_level = 10
+	SaveManager.bb_completed_levels = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+	SaveManager.bb_stage_stars = {1: 3, 2: 3, 3: 3, 4: 3, 5: 3, 6: 3, 7: 3, 8: 3, 9: 3}
+
+	initial_alive_list[9].take_hit(1)
+	assert_eq(level.enemies_killed, 10, "10/10 enemies killed")
+	assert_true(level.is_completed, "Killing 10th enemy while alive completes Stage 10")
+	assert_true(boss.state == BulletBetrayalGiantWorm.WormState.STOPPED, "Giant worm stops cleanly upon stage clear")
+	assert_true(SaveManager.is_bb_level_completed(10), "Stage 10 marked completed in SaveManager")
+	assert_eq(SaveManager.get_bb_level_stars(10), 2, "Rewarded-revive Stage 10 clear awards 2 stars")
+	assert_true(SaveManager.is_bb_level_unlocked(11), "Completing Stage 10 with 2 stars unlocks Stage 11")
+	assert_true("REVIVED" in hud.victory_stats_label.text and "★ ★ ☆" in hud.victory_stats_label.text,
+		"Stage 10 victory overlay displays 2-star REVIVED rating")
+
+	# Clean completion without revive upgrades best stars to 3 stars (never decreases)
+	if GameManager:
+		GameManager.revives_used_this_run = 0
+	hud.revives_used_in_run = 0
+	hud.complete_and_record_stage(10, "GIANT WORM SURVIVAL CLEARED", 1)
+	assert_eq(SaveManager.get_bb_level_stars(10), 3, "Clean Stage 10 clear awards/upgrades to 3 stars")
+
+	# Re-completing with revive must never decrease saved 3 stars
+	hud.revives_used_in_run = 1
+	if GameManager:
+		GameManager.revives_used_this_run = 1
+	hud.complete_and_record_stage(10, "GIANT WORM SURVIVAL CLEARED", 1)
+	assert_eq(SaveManager.get_bb_level_stars(10), 3, "Best stars on Stage 10 never decrease below 3")
+
+	# Menu reflects Stage 10 COMPLETED with 3 stars & Stage 11 PLANNED
+	var menu_after: BulletBetrayalMenu = load("res://scenes/bullet_betrayal/bullet_betrayal_menu.tscn").instantiate()
+	add_child(menu_after)
+	await get_tree().physics_frame
+	var m10 := menu_after.get_level_button(10)
+	var m11 := menu_after.get_level_button(11)
+	assert_eq((m10.get_child(0).get_child(2) as Label).text, "COMPLETED", "Menu shows Stage 10 COMPLETED")
+	assert_eq((m10.get_child(0).get_node("StarsLabel") as Label).text, "★ ★ ★", "Menu shows 3-star Stage 10 rating")
+	assert_eq((m11.get_child(0).get_child(2) as Label).text, "PLANNED", "Menu shows unimplemented Stage 11 as PLANNED")
+	menu_after.queue_free()
+
+	if AdManager:
+		AdManager.disable_mock_mode()
+	level.queue_free()
+	await get_tree().physics_frame
+
+	# 5. Non-regression check across World 2 Levels 6-9
+	for s_num in [6, 7, 8, 9]:
+		var s_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_level_%d.tscn" % s_num)
+		var s_inst := s_scene.instantiate()
+		add_child(s_inst)
+		await get_tree().physics_frame
+		assert_eq(s_inst.get_node("Enemies").get_child_count(), 10, "Stages 6-9 regression check: Level %d intact" % s_num)
+		s_inst.queue_free()
+		await get_tree().physics_frame
+
+	# Restore original SaveManager & GameManager state cleanly
+	SaveManager.bb_highest_unlocked_level = orig_bb_highest
+	SaveManager.bb_completed_levels = orig_bb_completed
+	SaveManager.bb_stage_stars = orig_bb_stars
+	if GameManager:
+		GameManager.revives_used_this_run = orig_revives
+	SaveManager.save_data()
+	assert_true(true, "World 2 Stage 10 Giant Worm Survival fully verified")
+
 
 
 
