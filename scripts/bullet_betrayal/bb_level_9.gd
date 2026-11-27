@@ -6,8 +6,10 @@ extends Node2D
 ## Multi-elevation uneven desert terrain (raised mesas, sunken canyon basins,
 ## narrow stepping pillars, deep pits, steep climbs, and controlled descents)
 ## with ZERO overhead bars or sky-bridge bypasses.
-## Slower sandworms burrow back underground on varied paths and leave a live,
-## partially buried proximity mine at their exact submerge coordinate.
+## Level 8-speed sandworms coordinate unique underground exit locations:
+## every completed retreat buries one permanent stationary proximity mine at
+## the exact disappearance coordinate, and that exit is permanently recorded in
+## used-exit history for the current level attempt (never reused by any worm).
 ## Mandatory Rules: 10 starting bullets, 10 required enemies, 1-hit enemy kills,
 ## 0 ammo pickups, locked extraction beacon requiring 10 kills, safe-position revive.
 
@@ -18,7 +20,8 @@ const WORM_MINE_SCENE: PackedScene = preload("res://scenes/bullet_betrayal/bb_wo
 const TOTAL_REQUIRED_ENEMIES: int = 10
 const MAX_ACTIVE_MINES: int = 10
 const MAX_MINES_PER_ZONE: int = 3
-const MIN_MINE_SPACING: float = 42.0
+const MIN_MINE_SPACING: float = 44.0
+const MIN_EXIT_SPACING: float = 44.0
 const PLATFORM_EDGE_MARGIN: float = 46.0
 const SAFE_SPAWN_MAX_X: float = 360.0
 const EXTRACTION_CLEARANCE: float = 95.0
@@ -26,6 +29,10 @@ const PLAYER_CLEARANCE_X: float = 58.0
 const PLAYER_CLEARANCE_Y: float = 56.0
 const SAFE_CLEANUP_MIN_PLAYER_DIST: float = 180.0
 const SAFE_CLEANUP_ABS_MIN_DIST: float = 96.0
+
+@export var max_active_mines: int = MAX_ACTIVE_MINES
+@export var max_mines_per_zone: int = MAX_MINES_PER_ZONE
+@export var min_exit_spacing: float = MIN_EXIT_SPACING
 
 @onready var player: BulletBetrayalPlayer = $Player
 @onready var hud: BulletBetrayalHUD = $HUD
@@ -42,9 +49,14 @@ var _enemies_eliminated: int = 0
 var _is_completed: bool = false
 var _mines_spawned_count: int = 0
 var _mines_disarmed_count: int = 0
+var _used_exit_positions: Array[Vector2] = []
+var _exit_reservations: Dictionary = {} # worm instance_id (int) -> Vector2
 
 
 func _ready() -> void:
+	_used_exit_positions.clear()
+	_exit_reservations.clear()
+
 	if GameManager:
 		GameManager.is_gameplay_active = true
 		GameManager.revives_used_this_run = 0
@@ -103,6 +115,7 @@ func _update_camera_framing() -> void:
 
 
 func _exit_tree() -> void:
+	_exit_reservations.clear()
 	if GameManager:
 		GameManager.is_gameplay_active = false
 
@@ -121,8 +134,10 @@ func _setup_worm_signals() -> void:
 		return
 	for worm in worms_container.get_children():
 		if worm is BulletBetrayalDesertWorm:
-			if not worm.submerged_at.is_connected(_on_worm_submerged_at):
-				worm.submerged_at.connect(_on_worm_submerged_at)
+			worm.require_exit_validation = true
+			worm.exit_coordinator = self
+			if not worm.submerged_at.is_connected(_on_worm_submerged_at_for_worm):
+				worm.submerged_at.connect(_on_worm_submerged_at_for_worm.bind(worm))
 
 
 func _animate_intro_banner() -> void:
@@ -142,8 +157,26 @@ func _physics_process(_delta: float) -> void:
 		player.die()
 
 
-func _on_worm_submerged_at(world_pos: Vector2) -> void:
+func _on_worm_submerged_at_for_worm(world_pos: Vector2, worm: BulletBetrayalDesertWorm = null) -> void:
+	var w_id: int = worm.get_instance_id() if is_instance_valid(worm) else -1
+	var had_reservation := (w_id != -1 and _exit_reservations.has(w_id))
+	if had_reservation:
+		_exit_reservations.erase(w_id)
+		_place_mine_for_completed_retreat(world_pos)
+		return
 	try_spawn_worm_mine(world_pos)
+
+
+func _place_mine_for_completed_retreat(world_pos: Vector2) -> BulletBetrayalWormMine:
+	if not worm_mines_container or not WORM_MINE_SCENE:
+		return null
+
+	var snapped_surface_y := _find_valid_ground_surface_y(world_pos)
+	var final_pos := Vector2(world_pos.x, snapped_surface_y if not is_nan(snapped_surface_y) else world_pos.y)
+	var zone_id := get_zone_for_x(final_pos.x)
+	_ensure_mine_capacity_for_zone(zone_id)
+
+	return _instantiate_and_record_mine(final_pos)
 
 
 func try_spawn_worm_mine(world_pos: Vector2) -> BulletBetrayalWormMine:
@@ -162,16 +195,28 @@ func try_spawn_worm_mine(world_pos: Vector2) -> BulletBetrayalWormMine:
 	if not _ensure_mine_capacity_for_zone(zone_id):
 		return null
 
+	return _instantiate_and_record_mine(candidate_pos)
+
+
+func _instantiate_and_record_mine(surface_pos: Vector2) -> BulletBetrayalWormMine:
 	var mine := WORM_MINE_SCENE.instantiate() as BulletBetrayalWormMine
 	if not mine:
 		return null
-	mine.position = candidate_pos
+	mine.position = surface_pos
 	worm_mines_container.add_child(mine)
 	_mines_spawned_count += 1
+	_record_used_exit(surface_pos)
 	return mine
 
 
-func can_place_mine_at(world_pos: Vector2) -> bool:
+func _record_used_exit(surface_pos: Vector2) -> void:
+	for existing in _used_exit_positions:
+		if existing.distance_to(surface_pos) < 1.0:
+			return
+	_used_exit_positions.append(surface_pos)
+
+
+func is_valid_exit_position(world_pos: Vector2, requesting_worm: Node = null, check_player: bool = true) -> bool:
 	if world_pos.x < SAFE_SPAWN_MAX_X:
 		return false
 
@@ -182,23 +227,116 @@ func can_place_mine_at(world_pos: Vector2) -> bool:
 	if is_nan(surface_y):
 		return false
 
+	var check_pos := Vector2(world_pos.x, surface_y)
 	if _is_blocked_by_wall_or_platform(Vector2(world_pos.x, surface_y - 6.0)):
 		return false
 
-	if _is_blocked_by_prop(Vector2(world_pos.x, surface_y)):
+	if _is_blocked_by_prop(check_pos):
 		return false
 
-	if player and (not ("is_alive" in player) or player.is_alive):
-		var dx := absf(player.global_position.x - world_pos.x)
+	if check_player and player and (not ("is_alive" in player) or player.is_alive):
+		var dx := absf(player.global_position.x - check_pos.x)
 		var dy := absf(player.global_position.y - (surface_y - 16.0))
 		if dx < PLAYER_CLEARANCE_X and dy < PLAYER_CLEARANCE_Y:
 			return false
 
 	for mine in get_active_worm_mines():
-		if mine.global_position.distance_to(Vector2(world_pos.x, surface_y)) < MIN_MINE_SPACING:
+		if mine.global_position.distance_to(check_pos) < min_exit_spacing:
+			return false
+
+	for used_pos in _used_exit_positions:
+		if used_pos.distance_to(check_pos) < min_exit_spacing:
+			return false
+
+	var requester_id: int = requesting_worm.get_instance_id() if is_instance_valid(requesting_worm) else -1
+	for worm_id in _exit_reservations.keys():
+		if worm_id == requester_id:
+			continue
+		var reserved_pos: Vector2 = _exit_reservations[worm_id]
+		if reserved_pos.distance_to(check_pos) < min_exit_spacing:
 			return false
 
 	return true
+
+
+func can_place_mine_at(world_pos: Vector2, requesting_worm: Node = null) -> bool:
+	return is_valid_exit_position(world_pos, requesting_worm, true)
+
+
+func request_worm_exit(worm: BulletBetrayalDesertWorm) -> float:
+	if not is_instance_valid(worm):
+		return -99999.0
+
+	release_worm_exit(worm)
+
+	var left_x: float = worm.territory_min_x + 22.0
+	var right_x: float = worm.territory_max_x - 22.0
+	if right_x <= left_x:
+		return -99999.0
+
+	var probe_pos := Vector2(clampf(worm.global_position.x, left_x, right_x), worm.surface_y)
+	var zone_id := get_zone_for_x(probe_pos.x)
+	if not _can_zone_accept_new_mine(zone_id):
+		return -99999.0
+
+	var candidates: Array[float] = []
+	var scan_x: float = left_x
+	while scan_x <= right_x + 0.01:
+		var cand_pos := Vector2(scan_x, worm.surface_y)
+		if is_valid_exit_position(cand_pos, worm, true):
+			candidates.append(scan_x)
+		scan_x += 4.0
+
+	if candidates.is_empty():
+		return -99999.0
+
+	# Prefer varied exits separated from the worm's emergence spot when options allow
+	var varied: Array[float] = []
+	for cx in candidates:
+		if absf(cx - worm._last_emerge_x) >= 24.0:
+			varied.append(cx)
+	var pool: Array[float] = varied if not varied.is_empty() else candidates
+	var chosen_x: float = pool[randi() % pool.size()]
+	_exit_reservations[worm.get_instance_id()] = Vector2(chosen_x, worm.surface_y)
+	return chosen_x
+
+
+func can_complete_retreat_at(world_pos: Vector2, worm: Node = null) -> bool:
+	if not is_valid_exit_position(world_pos, worm, true):
+		return false
+	return _can_zone_accept_new_mine(get_zone_for_x(world_pos.x))
+
+
+func release_worm_exit(worm: Node) -> void:
+	if not is_instance_valid(worm):
+		return
+	_exit_reservations.erase(worm.get_instance_id())
+
+
+func is_exit_used(world_pos: Vector2) -> bool:
+	for used_pos in _used_exit_positions:
+		if used_pos.distance_to(world_pos) < min_exit_spacing:
+			return true
+	return false
+
+
+func is_exit_reserved(world_pos: Vector2, ignoring_worm: Node = null) -> bool:
+	var ignore_id: int = ignoring_worm.get_instance_id() if is_instance_valid(ignoring_worm) else -1
+	for worm_id in _exit_reservations.keys():
+		if worm_id == ignore_id:
+			continue
+		var reserved_pos: Vector2 = _exit_reservations[worm_id]
+		if reserved_pos.distance_to(world_pos) < min_exit_spacing:
+			return true
+	return false
+
+
+func get_used_exit_positions() -> Array[Vector2]:
+	return _used_exit_positions.duplicate()
+
+
+func get_reserved_exits() -> Dictionary:
+	return _exit_reservations.duplicate()
 
 
 func _find_valid_ground_surface_y(world_pos: Vector2) -> float:
@@ -300,16 +438,28 @@ func get_active_mines_in_zone(zone_id: int) -> Array[BulletBetrayalWormMine]:
 	return result
 
 
+func _can_zone_accept_new_mine(zone_id: int) -> bool:
+	var zone_mines := get_active_mines_in_zone(zone_id)
+	if zone_mines.size() >= max_mines_per_zone and _pick_oldest_distant_mine(zone_mines) == null:
+		return false
+
+	var all_mines := get_active_worm_mines()
+	if all_mines.size() >= max_active_mines and _pick_oldest_distant_mine(all_mines) == null:
+		return false
+
+	return true
+
+
 func _ensure_mine_capacity_for_zone(zone_id: int) -> bool:
 	var zone_mines := get_active_mines_in_zone(zone_id)
-	if zone_mines.size() >= MAX_MINES_PER_ZONE:
+	if zone_mines.size() >= max_mines_per_zone:
 		var victim := _pick_oldest_distant_mine(zone_mines)
 		if not victim:
 			return false
 		_disarm_mine_safely(victim)
 
 	var all_mines := get_active_worm_mines()
-	if all_mines.size() >= MAX_ACTIVE_MINES:
+	if all_mines.size() >= max_active_mines:
 		var global_victim := _pick_oldest_distant_mine(all_mines)
 		if not global_victim:
 			return false
@@ -340,6 +490,8 @@ func _pick_oldest_distant_mine(candidates: Array[BulletBetrayalWormMine]) -> Bul
 
 
 func _disarm_mine_safely(mine: BulletBetrayalWormMine) -> void:
+	# Note: intentionally preserves the mine's coordinate inside _used_exit_positions
+	# so worms never reuse an exit whose mine was removed by capacity cleanup.
 	if is_instance_valid(mine) and not mine.is_disarming():
 		mine.disarm_and_cleanup()
 		_mines_disarmed_count += 1
@@ -378,7 +530,7 @@ func _on_player_revived() -> void:
 		player.global_position = safe_pos
 		player.velocity = Vector2.ZERO
 
-		# Disperse any surfaced or emerging worm near the revive spot (does not drop a mine)
+		# Disperse any surfaced or emerging worm near the revive spot (cancels reservation cleanly; no mine)
 		if worms_container:
 			for worm in worms_container.get_children():
 				if worm is BulletBetrayalDesertWorm and worm.global_position.distance_to(safe_pos) < 95.0:

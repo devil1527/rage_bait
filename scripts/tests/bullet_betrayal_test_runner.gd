@@ -3325,31 +3325,41 @@ func test_level_9_worm_minefield() -> void:
 							break
 		assert_true(grounded, "Enemy %s stands flush on Level 9 sand geometry" % enemy_node.name)
 
-	# 3. Slow Desert Worms vs Level 8 speeds, territory safety & underground non-lethality
+	# 3. Fast Desert Worms matching Level 8 speeds, territory safety & underground non-lethality
 	var lvl8_probe: Node = load("res://scenes/bullet_betrayal/bb_level_8.tscn").instantiate()
 	var lvl8_min_speed: float = 999.0
+	var lvl8_max_speed: float = 0.0
+	var lvl8_max_warning: float = 0.0
 	for w8 in lvl8_probe.get_node("Worms").get_children():
 		if w8 is BulletBetrayalDesertWorm:
 			lvl8_min_speed = minf(lvl8_min_speed, w8.crawl_speed)
+			lvl8_max_speed = maxf(lvl8_max_speed, w8.crawl_speed)
+			lvl8_max_warning = maxf(lvl8_max_warning, w8.warning_duration)
 	lvl8_probe.queue_free()
 
 	var worms: Array = worms_node.get_children()
-	assert_eq(worms.size(), 8, "Level 9 features 8 slow desert sandworms across terrain tiers")
+	assert_eq(worms.size(), 8, "Level 9 features 8 fast desert sandworms across terrain tiers")
+	var lvl9_max_speed: float = 0.0
 	for w in worms:
 		var worm := w as BulletBetrayalDesertWorm
 		assert_true(worm != null, "Worm is BulletBetrayalDesertWorm")
 		worm.set_physics_process(false)
-		assert_true(worm.crawl_speed <= 65.0 and worm.crawl_speed < lvl8_min_speed,
-			"%s crawl_speed %.1f is noticeably slower than Level 8 min %.1f" % [worm.name, worm.crawl_speed, lvl8_min_speed])
+		lvl9_max_speed = maxf(lvl9_max_speed, worm.crawl_speed)
+		assert_true(worm.crawl_speed >= lvl8_min_speed - 5.0 and worm.crawl_speed <= lvl8_max_speed + 5.0,
+			"%s crawl_speed %.1f matches Level 8 speed band [%.1f..%.1f]" % [worm.name, worm.crawl_speed, lvl8_min_speed, lvl8_max_speed])
 		assert_true(worm.unpredictable_intervals, "%s uses varied emergence intervals" % worm.name)
 		assert_true(worm.unpredictable_crawl_turns, "%s supports unpredictable crawling turns" % worm.name)
-		assert_true(worm.warning_duration >= 0.60, "%s preserves clear warning telegraph (%.2fs)" % [worm.name, worm.warning_duration])
+		assert_true(worm.warning_duration >= 0.38 and worm.warning_duration <= lvl8_max_warning + 0.03,
+			"%s tight warning telegraph (%.2fs) matches Level 8 reference" % [worm.name, worm.warning_duration])
+		assert_true(worm.require_exit_validation and worm.exit_coordinator == level,
+			"%s validates unique underground exit locations via Level 9 coordinator" % worm.name)
 		var on_safe_ground := false
 		for g in grounds:
 			if worm.territory_min_x >= g["left"] + 44.0 and worm.territory_max_x <= g["right"] - 44.0 and absf(worm.surface_y - g["top"]) <= 1.0:
 				on_safe_ground = true
 				break
 		assert_true(on_safe_ground, "%s territory sits cleanly inside ground with >=44px edge margin" % worm.name)
+	assert_true(lvl9_max_speed >= lvl8_max_speed, "Level 9 peak worm speed (%.1f) reaches Level 8 nightmare speed (%.1f)" % [lvl9_max_speed, lvl8_max_speed])
 
 	# Underground worm never harms player
 	var w1 := worms[0] as BulletBetrayalDesertWorm
@@ -3467,29 +3477,137 @@ func test_level_9_worm_minefield() -> void:
 	assert_true(level.try_spawn_worm_mine(Vector2(3665.0, 380.0)) == null, "Rejects mine inside RightWall")
 	assert_true(level.try_spawn_worm_mine(Vector2(3600.0, 380.0)) == null, "Rejects mine beside ExtractionBeacon")
 
-	# Per-zone & global mine cap with distant-first safe cleanup
+	# 5B. Used-Exit Tracking, Reservations, Multi-Worm Concurrency, Delay & Reset
 	p.global_position = Vector2(85.0, 394.0)
 	await get_tree().physics_frame
-	var m_z2_a := level.try_spawn_worm_mine(Vector2(1485.0, 325.0))
-	var m_z2_b := level.try_spawn_worm_mine(Vector2(1555.0, 325.0))
-	var m_z2_c := level.try_spawn_worm_mine(Vector2(1640.0, 325.0))
-	assert_true(m_z2_a != null and m_z2_b != null and m_z2_c != null, "Zone 2 accepts 3 well-spaced mines")
-	assert_true(level.try_spawn_worm_mine(Vector2(1568.0, 325.0)) == null, "Spacing guard blocks overlapping mine (< 42px)")
-	var m_z2_d := level.try_spawn_worm_mine(Vector2(1740.0, 325.0))
-	assert_true(m_z2_d != null, "Zone 2 spawns 4th mine by safely disarming oldest distant mine")
-	assert_eq(level.get_active_mines_in_zone(2).size(), 3, "Zone 2 enforces MAX_MINES_PER_ZONE = 3")
-	assert_true(m_z2_a.is_disarming() or not is_instance_valid(m_z2_a), "Oldest distant mine in Zone 2 disarmed cleanly")
 
-	# Global cap <= 10
-	level.try_spawn_worm_mine(Vector2(500.0, 365.0))
-	level.try_spawn_worm_mine(Vector2(560.0, 365.0))
-	level.try_spawn_worm_mine(Vector2(620.0, 365.0))
-	level.try_spawn_worm_mine(Vector2(925.0, 440.0))
-	level.try_spawn_worm_mine(Vector2(985.0, 440.0))
-	level.try_spawn_worm_mine(Vector2(1055.0, 440.0))
-	level.try_spawn_worm_mine(Vector2(2260.0, 390.0))
-	level.try_spawn_worm_mine(Vector2(2330.0, 390.0))
-	level.try_spawn_worm_mine(Vector2(2410.0, 390.0))
+	# First retreated spot (545, 365) must stay permanently in used-exit history even after its mine detonated
+	assert_true(level.is_exit_used(Vector2(545.0, 365.0)), "Used-exit history preserves (545, 365) after mine detonation")
+	assert_true(not level.is_valid_exit_position(Vector2(545.0, 365.0)), "No worm can reuse already-mined coordinate (545, 365)")
+	assert_true(not level.is_valid_exit_position(Vector2(565.0, 365.0)), "Minimum spacing (44px) enforced around used exit")
+
+	# Multi-worm exit reservation exclusivity on shared high ridge (Ground5: w3 & w4)
+	var w3 := worms[2] as BulletBetrayalDesertWorm
+	var w4 := worms[3] as BulletBetrayalDesertWorm
+	var rx3: float = level.request_worm_exit(w3)
+	assert_true(rx3 > -9000.0, "Worm3 finds and reserves a valid exit on Ground5")
+	assert_true(level.is_exit_reserved(Vector2(rx3, 325.0), w4), "Reserved exit visible to other worms")
+	assert_true(not level.is_valid_exit_position(Vector2(rx3, 325.0), w4), "Worm4 cannot validate/claim Worm3's reserved spot")
+	var rx4: float = level.request_worm_exit(w4)
+	assert_true(rx4 > -9000.0 and absf(rx4 - rx3) >= level.min_exit_spacing,
+		"Concurrent Worm4 reserves a distinct exit >=44px away from Worm3 (%.1f vs %.1f)" % [rx4, rx3])
+
+	# Cancelled retreat releases reservation cleanly without marking spot as used
+	w4.force_emerge_at(1700.0, -1)
+	w4._has_reserved_exit = true
+	w4._reserved_exit_x = rx4
+	w4.force_submerge(1.5)
+	assert_true(not w4.has_reserved_exit(), "force_submerge cancels active worm exit reservation")
+	assert_true(not level.get_reserved_exits().has(w4.get_instance_id()), "Level 9 clears cancelled worm reservation")
+	assert_true(not level.is_exit_used(Vector2(rx4, 325.0)), "Cancelled retreat does NOT mark reserved exit as used")
+	level.release_worm_exit(w3)
+
+	# Concurrent multi-worm validated live crawl -> retreat -> unique mine generation
+	var mines_before_dual: int = level._mines_spawned_count
+	w3.force_emerge_at(1505.0, 1)
+	w4.force_emerge_at(1750.0, -1)
+	w3._state_timer = 0.02
+	w4._state_timer = 0.02
+	w3._crawl_distance_limit = 0.0
+	w4._crawl_distance_limit = 0.0
+	w3.set_physics_process(true)
+	w4.set_physics_process(true)
+	for _tick in range(180):
+		await get_tree().physics_frame
+		if w3.is_underground() and w4.is_underground():
+			break
+	w3.set_physics_process(false)
+	w4.set_physics_process(false)
+	assert_true(w3.is_underground() and w4.is_underground(), "Both concurrent high-speed worms completed validated retreats cleanly")
+	assert_eq(level._mines_spawned_count - mines_before_dual, 2, "Concurrent retreats produce exact 1 mine per worm (total +2)")
+	assert_true(w3.last_submerge_position.distance_to(w4.last_submerge_position) >= level.min_exit_spacing,
+		"Concurrent worms submerged at distinct exits >=44px apart (%.1f px)" % w3.last_submerge_position.distance_to(w4.last_submerge_position))
+
+	# Clean up dual mines' physical nodes while checking used-exit persistence!
+	for dual_m in level.get_active_mines_in_zone(2):
+		dual_m.disarm_and_cleanup()
+	await get_tree().create_timer(0.32).timeout
+	assert_true(level.is_exit_used(w3.last_submerge_position) and level.is_exit_used(w4.last_submerge_position),
+		"Used-exit history persists after active mine cleanup")
+
+	# Worm finds alternative valid exit when part of territory is already used, and DELAYS retreat when all exits used
+	var w2 := worms[1] as BulletBetrayalDesertWorm # Ground3_SunkenCanyon (885..1075, surface_y=440)
+	var m_z1_alt1 := level.try_spawn_worm_mine(Vector2(905.0, 440.0))
+	var m_z1_alt2 := level.try_spawn_worm_mine(Vector2(960.0, 440.0))
+	assert_true(m_z1_alt1 != null and m_z1_alt2 != null, "Ground3 accepts test obstacles for alternative exit validation")
+	w2.force_emerge_at(920.0, 1)
+	w2._state_timer = 0.02
+	w2._crawl_distance_limit = 0.0
+	w2.set_physics_process(true)
+	for _tick in range(160):
+		await get_tree().physics_frame
+		if w2.is_underground():
+			break
+	w2.set_physics_process(false)
+	assert_true(w2.is_underground() and w2.last_submerge_position.x >= 1004.0,
+		"Worm2 bypasses used spots (905, 960) and retreats cleanly at alternative exit %.1f" % w2.last_submerge_position.x)
+
+	# Exhaust remaining valid exit coordinates on Ground3 and confirm Worm2 delays retreat cleanly without reusing/stacking
+	var scan_x: float = w2.territory_min_x + 22.0
+	while scan_x <= w2.territory_max_x - 22.0:
+		if level.is_valid_exit_position(Vector2(scan_x, 440.0), null, false):
+			level._record_used_exit(Vector2(scan_x, 440.0))
+		scan_x += 4.0
+	var count_before_crowded: int = level._mines_spawned_count
+	w2.force_emerge_at(980.0, 1)
+	w2._state_timer = 0.02
+	w2._crawl_distance_limit = 0.0
+	w2.set_physics_process(true)
+	for _tick in range(25):
+		await get_tree().physics_frame
+	w2.set_physics_process(false)
+	assert_true(w2.state == BulletBetrayalDesertWorm.WormState.CRAWLING and w2.is_retreat_delayed(),
+		"Crowded worm delays retreat and continues crawling cleanly when no valid exit exists")
+	assert_eq(level._mines_spawned_count, count_before_crowded, "No duplicate or invalid mine spawned when exits exhausted")
+	w2.force_submerge(1.5)
+	for m in level.get_active_worm_mines():
+		m.disarm_and_cleanup()
+	await get_tree().create_timer(0.32).timeout
+
+	# Fresh level attempt clears used-exit history & reservations completely
+	var fresh_lvl9 := lvl9_scene.instantiate() as BulletBetrayalLevel9
+	add_child(fresh_lvl9)
+	await get_tree().physics_frame
+	assert_true(fresh_lvl9.get_used_exit_positions().is_empty(), "Fresh Level 9 attempt starts with empty used-exit history")
+	assert_true(fresh_lvl9.get_reserved_exits().is_empty(), "Fresh Level 9 attempt starts with empty reservation table")
+	assert_true(fresh_lvl9.is_valid_exit_position(Vector2(545.0, 365.0)), "Previously used spot becomes selectable on fresh attempt")
+	fresh_lvl9.queue_free()
+	await get_tree().physics_frame
+
+	# Per-zone & global mine cap with distant-first safe cleanup (on clean Zone 3: 2236..2464)
+	p.global_position = Vector2(85.0, 394.0)
+	await get_tree().physics_frame
+	var m_z3_a := level.try_spawn_worm_mine(Vector2(2245.0, 390.0))
+	var m_z3_b := level.try_spawn_worm_mine(Vector2(2295.0, 390.0))
+	var m_z3_c := level.try_spawn_worm_mine(Vector2(2350.0, 390.0))
+	assert_true(m_z3_a != null and m_z3_b != null and m_z3_c != null, "Zone 3 accepts 3 well-spaced unused mines")
+	assert_true(level.try_spawn_worm_mine(Vector2(2310.0, 390.0)) == null, "Spacing guard blocks overlapping mine (< 44px)")
+	var m_z3_d := level.try_spawn_worm_mine(Vector2(2415.0, 390.0))
+	assert_true(m_z3_d != null, "Zone 3 spawns 4th mine by safely disarming oldest distant mine")
+	assert_eq(level.get_active_mines_in_zone(3).size(), 3, "Zone 3 enforces MAX_MINES_PER_ZONE = 3")
+	assert_true(m_z3_a.is_disarming() or not is_instance_valid(m_z3_a), "Oldest distant mine in Zone 3 disarmed cleanly")
+	assert_true(level.is_exit_used(Vector2(2245.0, 390.0)), "Used-exit history retains disarmed mine spot (2245, 390)")
+	assert_true(level.try_spawn_worm_mine(Vector2(2245.0, 390.0)) == null, "Removed distant mine's exit remains permanently unusable")
+
+	# Global cap <= 10 (populate remaining unused spots across Zone 0, Zone 5, and Zone 2 open slots)
+	level.try_spawn_worm_mine(Vector2(475.0, 365.0))
+	level.try_spawn_worm_mine(Vector2(615.0, 365.0))
+	level.try_spawn_worm_mine(Vector2(3320.0, 380.0))
+	level.try_spawn_worm_mine(Vector2(3380.0, 380.0))
+	level.try_spawn_worm_mine(Vector2(3440.0, 380.0))
+	level.try_spawn_worm_mine(Vector2(1465.0, 325.0))
+	level.try_spawn_worm_mine(Vector2(1610.0, 325.0))
+	level.try_spawn_worm_mine(Vector2(1760.0, 325.0))
 	assert_true(level.get_active_worm_mines().size() <= BulletBetrayalLevel9.MAX_ACTIVE_MINES,
 		"Total active mines never exceeds MAX_ACTIVE_MINES (10)")
 

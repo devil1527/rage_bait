@@ -11,6 +11,7 @@ extends Node2D
 signal emerged(pos: Vector2)
 signal submerged
 signal submerged_at(pos: Vector2)
+signal retreat_cancelled(worm: Node)
 signal player_killed_by_worm
 
 enum WormState {
@@ -44,6 +45,9 @@ enum WormState {
 @export var ambush_lead_min: float = 95.0
 @export var ambush_lead_max: float = 165.0
 @export var unpredictable_crawl_turns: bool = false
+@export var require_exit_validation: bool = false
+
+var exit_coordinator: Node = null
 
 var state: WormState = WormState.UNDERGROUND
 var facing_direction: int = 1 # 1 = Right, -1 = Left
@@ -59,6 +63,10 @@ var _last_emerge_x: float = -9999.0
 var _crawl_distance_traveled: float = 0.0
 var _crawl_distance_limit: float = 0.0
 var _turn_check_timer: float = 0.0
+var _has_reserved_exit: bool = false
+var _reserved_exit_x: float = 0.0
+var _exit_retry_timer: float = 0.0
+var _seeking_exit: bool = false
 
 const BODY_REST_Y: float = 23.0      # Inside BodyClip (-34..0), center at -11 above surface
 const BODY_HIDDEN_Y: float = 45.0    # Clipped cleanly below surface line
@@ -98,6 +106,10 @@ func _ready() -> void:
 
 	var start_wait: float = initial_delay if initial_delay >= 0.0 else randf_range(0.5, underground_time_max)
 	_enter_underground(start_wait)
+
+
+func _exit_tree() -> void:
+	cancel_exit_reservation()
 
 
 func _physics_process(delta: float) -> void:
@@ -182,6 +194,10 @@ func _process_crawling(delta: float) -> void:
 
 	var left_bound: float = territory_min_x + 22.0
 	var right_bound: float = territory_max_x - 22.0
+	if _has_reserved_exit:
+		facing_direction = 1 if _reserved_exit_x >= global_position.x else -1
+		_update_facing()
+
 	var step_x: float = facing_direction * crawl_speed * delta
 	global_position.x += step_x
 	_crawl_distance_traveled += absf(step_x)
@@ -194,7 +210,7 @@ func _process_crawling(delta: float) -> void:
 		global_position.x = right_bound
 		facing_direction = -1
 		_update_facing()
-	elif unpredictable_crawl_turns:
+	elif unpredictable_crawl_turns and not _has_reserved_exit:
 		_turn_check_timer -= delta
 		if _turn_check_timer <= 0.0:
 			_turn_check_timer = randf_range(0.85, 1.55)
@@ -215,8 +231,60 @@ func _process_crawling(delta: float) -> void:
 
 	_check_overlapping_player()
 
+	if require_exit_validation and is_instance_valid(exit_coordinator):
+		_process_validated_exit_crawling(delta, left_bound, right_bound)
+		return
+
 	if _state_timer <= 0.0 or (_crawl_distance_limit > 0.0 and _crawl_distance_traveled >= _crawl_distance_limit):
 		_enter_submerging()
+
+
+func _process_validated_exit_crawling(delta: float, left_bound: float, right_bound: float) -> void:
+	if _has_reserved_exit:
+		var step_reach: float = maxf(6.0, crawl_speed * delta * 1.15)
+		if absf(global_position.x - _reserved_exit_x) <= step_reach:
+			var target_pos := Vector2(clampf(_reserved_exit_x, left_bound, right_bound), surface_y)
+			var ok := true
+			if exit_coordinator.has_method("can_complete_retreat_at"):
+				ok = bool(exit_coordinator.call("can_complete_retreat_at", target_pos, self))
+			if ok:
+				global_position.x = target_pos.x
+				_seeking_exit = false
+				_enter_submerging()
+				return
+			# Player or world change invalidated reserved exit on arrival: release and retry cleanly
+			cancel_exit_reservation()
+			_seeking_exit = true
+			_exit_retry_timer = 0.08
+		return
+
+	if not _seeking_exit:
+		if _state_timer <= 0.0 or (_crawl_distance_limit > 0.0 and _crawl_distance_traveled >= _crawl_distance_limit):
+			_seeking_exit = true
+			_exit_retry_timer = 0.0
+		else:
+			return
+
+	_exit_retry_timer -= delta
+	if _exit_retry_timer > 0.0:
+		return
+
+	if exit_coordinator.has_method("request_worm_exit"):
+		var chosen_x: float = float(exit_coordinator.call("request_worm_exit", self))
+		if chosen_x > -9000.0:
+			_has_reserved_exit = true
+			_reserved_exit_x = clampf(chosen_x, left_bound, right_bound)
+			facing_direction = 1 if _reserved_exit_x >= global_position.x else -1
+			_update_facing()
+			if absf(global_position.x - _reserved_exit_x) <= 6.0:
+				global_position.x = _reserved_exit_x
+				_seeking_exit = false
+				_enter_submerging()
+			return
+
+	# No valid exit available right now: continue crawling and delay retreat
+	_exit_retry_timer = 0.28
+	_state_timer = maxf(_state_timer, 0.28)
 
 
 func _process_submerging(delta: float) -> void:
@@ -240,6 +308,10 @@ func _process_submerging(delta: float) -> void:
 func _enter_underground(duration: float) -> void:
 	state = WormState.UNDERGROUND
 	_state_timer = maxf(0.25, duration)
+	_has_reserved_exit = false
+	_reserved_exit_x = 0.0
+	_seeking_exit = false
+	_exit_retry_timer = 0.0
 	_set_hitbox_enabled(false)
 	if sand_mound:
 		sand_mound.visible = false
@@ -305,6 +377,10 @@ func _enter_crawling() -> void:
 		_crawl_distance_limit = randf_range(d_min, d_max)
 	else:
 		_crawl_distance_limit = 0.0
+	_has_reserved_exit = false
+	_reserved_exit_x = 0.0
+	_seeking_exit = false
+	_exit_retry_timer = 0.0
 	_turn_check_timer = randf_range(0.65, 1.35) if unpredictable_crawl_turns else 0.0
 	_anim_timer = 0.0
 	_set_hitbox_enabled(true)
@@ -483,5 +559,31 @@ func force_emerge_at(x_pos: float, dir: int = 1) -> void:
 	_enter_crawling()
 
 
+func has_reserved_exit() -> bool:
+	return _has_reserved_exit
+
+
+func get_reserved_exit_x() -> float:
+	return _reserved_exit_x
+
+
+func is_retreat_delayed() -> bool:
+	return _seeking_exit and not _has_reserved_exit
+
+
+func cancel_exit_reservation() -> void:
+	var had_state := _has_reserved_exit or _seeking_exit
+	if _has_reserved_exit:
+		_has_reserved_exit = false
+		_reserved_exit_x = 0.0
+		if is_instance_valid(exit_coordinator) and exit_coordinator.has_method("release_worm_exit"):
+			exit_coordinator.call("release_worm_exit", self)
+	_seeking_exit = false
+	_exit_retry_timer = 0.0
+	if had_state:
+		retreat_cancelled.emit(self)
+
+
 func force_submerge(wait_duration: float = 1.8) -> void:
+	cancel_exit_reservation()
 	_enter_underground(wait_duration)
