@@ -18,7 +18,8 @@ const LEVEL_7_SCENE: String = "res://scenes/bullet_betrayal/bb_level_7.tscn"
 const LEVEL_8_SCENE: String = "res://scenes/bullet_betrayal/bb_level_8.tscn"
 const LEVEL_9_SCENE: String = "res://scenes/bullet_betrayal/bb_level_9.tscn"
 const LEVEL_10_SCENE: String = "res://scenes/bullet_betrayal/bb_level_10.tscn"
-const HIGHEST_IMPLEMENTED_STAGE: int = 10
+const LEVEL_11_SCENE: String = "res://scenes/bullet_betrayal/bb_level_11.tscn"
+const HIGHEST_IMPLEMENTED_STAGE: int = 11
 const ARCADE_MAIN_MENU: String = "res://scenes/ui/main_menu.tscn"
 
 @onready var back_button: Button = $MarginContainer/VBox/HeaderBar/BackButton
@@ -567,6 +568,8 @@ func _on_level_tile_pressed(level_id: int) -> void:
 		get_tree().change_scene_to_file(LEVEL_9_SCENE)
 	elif level_id == 10:
 		get_tree().change_scene_to_file(LEVEL_10_SCENE)
+	elif level_id == 11:
+		get_tree().change_scene_to_file(LEVEL_11_SCENE)
 
 func _on_back_pressed() -> void:
 	AudioManager.play_sfx("click")

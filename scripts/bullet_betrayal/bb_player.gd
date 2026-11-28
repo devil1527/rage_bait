@@ -39,6 +39,36 @@ var current_hanging_bar: Node2D = null
 var bar_traverse_speed: float = 205.0
 var _overlapping_bars: Array[Node2D] = []
 var _bar_regrab_timer: float = 0.0
+var is_on_ice: bool = false
+var _overlapping_ice_patches: Array[Node2D] = []
+
+func _prune_invalid_ice_surfaces() -> void:
+	for i in range(_overlapping_ice_patches.size() - 1, -1, -1):
+		if not is_instance_valid(_overlapping_ice_patches[i]):
+			_overlapping_ice_patches.remove_at(i)
+	is_on_ice = not _overlapping_ice_patches.is_empty()
+
+func is_actively_on_ice() -> bool:
+	_prune_invalid_ice_surfaces()
+	return is_on_ice and is_on_floor() and not is_hanging and not is_on_ladder
+
+func register_ice_surface(surface: Node2D) -> void:
+	_prune_invalid_ice_surfaces()
+	if surface and is_instance_valid(surface) and not _overlapping_ice_patches.has(surface):
+		_overlapping_ice_patches.append(surface)
+	is_on_ice = not _overlapping_ice_patches.is_empty()
+
+func has_ice_surface(surface: Node2D) -> bool:
+	_prune_invalid_ice_surfaces()
+	return surface != null and _overlapping_ice_patches.has(surface)
+
+func unregister_ice_surface(surface: Node2D) -> void:
+	_overlapping_ice_patches.erase(surface)
+	_prune_invalid_ice_surfaces()
+
+func clear_ice_surfaces() -> void:
+	_overlapping_ice_patches.clear()
+	is_on_ice = false
 
 func set_on_ladder(on_ladder: bool) -> void:
 	is_on_ladder = on_ladder
@@ -246,14 +276,18 @@ func _handle_input(delta: float) -> void:
 			_attempt_shoot()
 		return
 
+	var on_ice_ground := is_actively_on_ice()
+	var effective_accel := acceleration * 0.48 if on_ice_ground else acceleration
+	var effective_friction := friction * 0.24 if on_ice_ground else friction
+
 	if move_input != 0.0:
-		velocity.x = move_toward(velocity.x, move_input * move_speed, acceleration * delta)
+		velocity.x = move_toward(velocity.x, move_input * move_speed, effective_accel * delta)
 		var new_facing := int(sign(move_input))
 		if new_facing != facing_direction and new_facing != 0:
 			facing_direction = new_facing
 			_update_facing()
 	else:
-		velocity.x = move_toward(velocity.x, 0.0, friction * delta)
+		velocity.x = move_toward(velocity.x, 0.0, effective_friction * delta)
 
 	# Ladder vertical climbing
 	if is_on_ladder and _ladder_dismount_timer <= 0.0:
@@ -376,6 +410,7 @@ func die() -> void:
 	if not is_alive:
 		return
 	release_hanging_bar(false, 0.0)
+	clear_ice_surfaces()
 	is_alive = false
 	input_disabled = true
 	velocity = Vector2.ZERO
@@ -401,6 +436,7 @@ func die() -> void:
 ## Authoritative revive method: restores 1 life and exactly 10 bullets
 func revive(safe_position: Vector2 = Vector2.ZERO) -> void:
 	release_hanging_bar(false, 0.0)
+	clear_ice_surfaces()
 	var target_pos: Vector2 = safe_position
 	if target_pos == Vector2.ZERO:
 		target_pos = get_safe_revive_position()
@@ -441,6 +477,7 @@ func apply_spawn_protection(duration: float = 1.5) -> void:
 
 func respawn(pos: Vector2) -> void:
 	release_hanging_bar(false, 0.0)
+	clear_ice_surfaces()
 	global_position = pos
 	is_alive = true
 	input_disabled = false
@@ -572,6 +609,16 @@ func _is_current_area_clear_of_hazards(pos: Vector2) -> bool:
 			if node.has_method("is_emerged"):
 				is_active_worm = node.is_emerged()
 			if is_active_worm and node.global_position.distance_to(pos) < 65.0:
+				return false
+
+	# Active / falling hanging icicles (horizontal drop-lane threshold: 38px)
+	var icicles := tree.get_nodes_in_group("icicle_traps")
+	for node in icicles:
+		if is_instance_valid(node) and node is Node2D:
+			var is_active_icicle := true
+			if node.has_method("is_threat_active"):
+				is_active_icicle = bool(node.call("is_threat_active"))
+			if is_active_icicle and absf(node.global_position.x - pos.x) < 38.0 and node.global_position.y <= pos.y + 18.0:
 				return false
 
 	# Living enemy soldiers and explosive rushers (safe threshold: 50px)

@@ -1,0 +1,817 @@
+[gd_scene load_steps=44 format=3 uid="uid://bblevel11mountainpass"]
+
+[ext_resource type="Script" path="res://scripts/bullet_betrayal/bb_level_11.gd" id="1_lev11"]
+[ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_player.tscn" id="2_play"]
+[ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_hud.tscn" id="3_hud"]
+[ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_enemy_soldier.tscn" id="4_esol"]
+[ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_extraction_beacon.tscn" id="5_beac"]
+[ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_ice_patch.tscn" id="6_ice"]
+[ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_icicle_trap.tscn" id="7_ici"]
+[ext_resource type="PackedScene" path="res://scenes/bullet_betrayal/bb_ladder.tscn" id="8_lad"]
+[ext_resource type="Script" path="res://scripts/bullet_betrayal/bb_ambush_trigger.gd" id="9_amb"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_snow_peaks_far.png" id="10_pfar"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_snow_ridges_mid.png" id="11_pmid"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_snow_top.png" id="12_stop"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_mountain_slate.png" id="13_ssub"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_snow_pine.png" id="14_pine"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_snow_rock.png" id="15_srok"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_snow_barricade.png" id="16_sbar"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_snow_sign.png" id="17_ssign"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_platform_wood.png" id="18_pwood"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_crate.png" id="19_crate"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_bunker.png" id="20_bunk"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bb_watchtower.png" id="21_towr"]
+
+[sub_resource type="Gradient" id="Gradient_sky"]
+offsets = PackedFloat32Array(0, 0.28, 0.55, 0.78, 1)
+colors = PackedColorArray(0.07, 0.11, 0.19, 1, 0.13, 0.22, 0.35, 1, 0.25, 0.39, 0.55, 1, 0.45, 0.62, 0.76, 1, 0.58, 0.74, 0.86, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_sky"]
+gradient = SubResource("Gradient_sky")
+width = 16
+height = 256
+fill_to = Vector2(0, 1)
+
+[sub_resource type="Gradient" id="Gradient_halo"]
+offsets = PackedFloat32Array(0, 0.22, 0.32, 0.62, 1)
+colors = PackedColorArray(0.95, 0.98, 1, 0.9, 0.84, 0.94, 1, 0.75, 0.56, 0.80, 0.98, 0.34, 0.42, 0.68, 0.90, 0.1, 0.42, 0.68, 0.90, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_halo"]
+gradient = SubResource("Gradient_halo")
+width = 160
+height = 160
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
+size = Vector2(40, 600)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_g1"]
+size = Vector2(420, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_g2"]
+size = Vector2(160, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_g3"]
+size = Vector2(180, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_p_bridge1"]
+size = Vector2(160, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_arch1"]
+size = Vector2(140, 28)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_g4"]
+size = Vector2(180, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_p_highspan"]
+size = Vector2(150, 18)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_g5"]
+size = Vector2(140, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_arch2"]
+size = Vector2(105, 24)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_g6"]
+size = Vector2(680, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_p_rstep"]
+size = Vector2(72, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_p_rupper"]
+size = Vector2(390, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_arch_ridge"]
+size = Vector2(270, 24)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_g7"]
+size = Vector2(535, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_p_gtower"]
+size = Vector2(120, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_arch_gate"]
+size = Vector2(120, 22)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ambush_trig"]
+size = Vector2(28, 170)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_banner"]
+bg_color = Color(0.06, 0.1, 0.18, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.56, 0.84, 1, 0.95)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="BulletBetrayalLevel11" type="Node2D"]
+script = ExtResource("1_lev11")
+
+[node name="SnowSkyCanvas" type="CanvasLayer" parent="."]
+layer = -20
+
+[node name="SkyGradient" type="TextureRect" parent="SnowSkyCanvas"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("GradientTexture2D_sky")
+expand_mode = 1
+stretch_mode = 0
+
+[node name="ParallaxBackground" type="ParallaxBackground" parent="."]
+layer = -10
+
+[node name="MoonLayer" type="ParallaxLayer" parent="ParallaxBackground"]
+motion_scale = Vector2(0.04, 1)
+
+[node name="WinterSunHalo" type="Sprite2D" parent="ParallaxBackground/MoonLayer"]
+position = Vector2(540, 200)
+texture = SubResource("GradientTexture2D_halo")
+
+[node name="FarPeaks" type="ParallaxLayer" parent="ParallaxBackground"]
+motion_scale = Vector2(0.18, 1)
+motion_mirroring = Vector2(1024, 0)
+
+[node name="PeakTile1" type="Sprite2D" parent="ParallaxBackground/FarPeaks"]
+position = Vector2(256, 268)
+texture = ExtResource("10_pfar")
+
+[node name="PeakTile2" type="Sprite2D" parent="ParallaxBackground/FarPeaks"]
+position = Vector2(768, 268)
+texture = ExtResource("10_pfar")
+
+[node name="PeaksBaseFill" type="ColorRect" parent="ParallaxBackground/FarPeaks"]
+offset_top = 346.0
+offset_right = 1024.0
+offset_bottom = 720.0
+mouse_filter = 2
+color = Color(0.24, 0.34, 0.48, 1)
+
+[node name="MidRidges" type="ParallaxLayer" parent="ParallaxBackground"]
+motion_scale = Vector2(0.42, 1)
+motion_mirroring = Vector2(1024, 0)
+
+[node name="RidgeTile1" type="Sprite2D" parent="ParallaxBackground/MidRidges"]
+position = Vector2(256, 330)
+texture = ExtResource("11_pmid")
+
+[node name="RidgeTile2" type="Sprite2D" parent="ParallaxBackground/MidRidges"]
+position = Vector2(768, 330)
+texture = ExtResource("11_pmid")
+
+[node name="RidgeBaseFill" type="ColorRect" parent="ParallaxBackground/MidRidges"]
+offset_top = 392.0
+offset_right = 1024.0
+offset_bottom = 740.0
+mouse_filter = 2
+color = Color(0.14, 0.2, 0.3, 1)
+
+[node name="SnowWeatherCanvas" type="CanvasLayer" parent="."]
+layer = -5
+
+[node name="SnowfallFar" type="CPUParticles2D" parent="SnowWeatherCanvas"]
+position = Vector2(800, -10)
+amount = 64
+lifetime = 9.0
+preprocess = 6.0
+emission_shape = 3
+emission_rect_extents = Vector2(900, 10)
+direction = Vector2(-0.32, 1)
+spread = 14.0
+gravity = Vector2(-10, 22)
+initial_velocity_min = 48.0
+initial_velocity_max = 76.0
+scale_amount_min = 1.5
+scale_amount_max = 2.6
+color = Color(0.86, 0.94, 1, 0.48)
+
+[node name="SnowfallNear" type="CPUParticles2D" parent="SnowWeatherCanvas"]
+position = Vector2(800, -10)
+amount = 36
+lifetime = 7.5
+preprocess = 5.0
+emission_shape = 3
+emission_rect_extents = Vector2(900, 10)
+direction = Vector2(-0.42, 1)
+spread = 18.0
+gravity = Vector2(-14, 30)
+initial_velocity_min = 64.0
+initial_velocity_max = 98.0
+scale_amount_min = 2.2
+scale_amount_max = 3.5
+color = Color(0.96, 0.99, 1, 0.62)
+
+[node name="EnvironmentProps" type="Node2D" parent="."]
+
+[node name="SnowPine1" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(52, 382)
+texture = ExtResource("14_pine")
+
+[node name="SnowRock1" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(176, 400)
+texture = ExtResource("15_srok")
+
+[node name="SnowSign1" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(232, 394)
+texture = ExtResource("17_ssign")
+
+[node name="SnowBarricade1" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(455, 382)
+texture = ExtResource("16_sbar")
+
+[node name="SnowPine2" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(612, 352)
+texture = ExtResource("14_pine")
+
+[node name="SnowRock2" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(734, 370)
+texture = ExtResource("15_srok")
+
+[node name="SnowRock3" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(1110, 370)
+texture = ExtResource("15_srok")
+
+[node name="SnowBarricade2" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(1198, 367)
+texture = ExtResource("16_sbar")
+
+[node name="Crates1" type="Sprite2D" parent="EnvironmentProps"]
+modulate = Color(0.86, 0.94, 1, 1)
+position = Vector2(1465, 380)
+texture = ExtResource("19_crate")
+
+[node name="SnowPine3" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(1592, 382)
+texture = ExtResource("14_pine")
+
+[node name="SnowRock4" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(1755, 400)
+texture = ExtResource("15_srok")
+
+[node name="SnowBarricade3" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(1910, 397)
+texture = ExtResource("16_sbar")
+
+[node name="Crates2" type="Sprite2D" parent="EnvironmentProps"]
+modulate = Color(0.86, 0.94, 1, 1)
+position = Vector2(2135, 395)
+texture = ExtResource("19_crate")
+
+[node name="SnowSign2" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(2208, 394)
+texture = ExtResource("17_ssign")
+
+[node name="SnowSign3" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(2332, 394)
+texture = ExtResource("17_ssign")
+
+[node name="FrostBunker" type="Sprite2D" parent="EnvironmentProps"]
+z_index = -1
+modulate = Color(0.84, 0.92, 1, 1)
+position = Vector2(2480, 389)
+texture = ExtResource("20_bunk")
+
+[node name="FrostWatchtower" type="Sprite2D" parent="EnvironmentProps"]
+z_index = -1
+modulate = Color(0.86, 0.93, 1, 1)
+position = Vector2(2590, 378)
+texture = ExtResource("21_towr")
+
+[node name="SnowBarricade4" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(2645, 397)
+texture = ExtResource("16_sbar")
+
+[node name="SnowPine4" type="Sprite2D" parent="EnvironmentProps"]
+position = Vector2(2785, 382)
+texture = ExtResource("14_pine")
+
+[node name="Platforms" type="Node2D" parent="."]
+
+[node name="LeftWall" type="StaticBody2D" parent="Platforms"]
+position = Vector2(-20, 200)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/LeftWall"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="RightWall" type="StaticBody2D" parent="Platforms"]
+position = Vector2(2860, 200)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/RightWall"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="Ground1_Trailhead" type="StaticBody2D" parent="Platforms"]
+position = Vector2(210, 460)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Ground1_Trailhead"]
+shape = SubResource("RectangleShape2D_g1")
+
+[node name="SnowTop" type="Sprite2D" parent="Platforms/Ground1_Trailhead"]
+texture_repeat = 2
+position = Vector2(0, -34)
+texture = ExtResource("12_stop")
+region_enabled = true
+region_rect = Rect2(0, 0, 420, 32)
+
+[node name="SlateSub" type="Sprite2D" parent="Platforms/Ground1_Trailhead"]
+texture_repeat = 2
+position = Vector2(0, 62)
+texture = ExtResource("13_ssub")
+region_enabled = true
+region_rect = Rect2(0, 0, 420, 160)
+
+[node name="Ground2_GraniteStep1" type="StaticBody2D" parent="Platforms"]
+position = Vector2(500, 445)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Ground2_GraniteStep1"]
+shape = SubResource("RectangleShape2D_g2")
+
+[node name="SnowTop" type="Sprite2D" parent="Platforms/Ground2_GraniteStep1"]
+texture_repeat = 2
+position = Vector2(0, -34)
+texture = ExtResource("12_stop")
+region_enabled = true
+region_rect = Rect2(0, 0, 160, 32)
+
+[node name="SlateSub" type="Sprite2D" parent="Platforms/Ground2_GraniteStep1"]
+texture_repeat = 2
+position = Vector2(0, 62)
+texture = ExtResource("13_ssub")
+region_enabled = true
+region_rect = Rect2(0, 0, 160, 160)
+
+[node name="Ground3_GraniteStep2" type="StaticBody2D" parent="Platforms"]
+position = Vector2(670, 430)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Ground3_GraniteStep2"]
+shape = SubResource("RectangleShape2D_g3")
+
+[node name="SnowTop" type="Sprite2D" parent="Platforms/Ground3_GraniteStep2"]
+texture_repeat = 2
+position = Vector2(0, -34)
+texture = ExtResource("12_stop")
+region_enabled = true
+region_rect = Rect2(0, 0, 180, 32)
+
+[node name="SlateSub" type="Sprite2D" parent="Platforms/Ground3_GraniteStep2"]
+texture_repeat = 2
+position = Vector2(0, 62)
+texture = ExtResource("13_ssub")
+region_enabled = true
+region_rect = Rect2(0, 0, 180, 160)
+
+[node name="Platform_Bridge1" type="StaticBody2D" parent="Platforms"]
+position = Vector2(925, 388)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform_Bridge1"]
+shape = SubResource("RectangleShape2D_p_bridge1")
+
+[node name="SnowDeck" type="Sprite2D" parent="Platforms/Platform_Bridge1"]
+texture_repeat = 2
+texture = ExtResource("12_stop")
+region_enabled = true
+region_rect = Rect2(0, 0, 160, 20)
+
+[node name="Overhang_Arch1" type="StaticBody2D" parent="Platforms"]
+position = Vector2(935, 222)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Overhang_Arch1"]
+shape = SubResource("RectangleShape2D_arch1")
+
+[node name="ArchTop" type="Sprite2D" parent="Platforms/Overhang_Arch1"]
+texture_repeat = 2
+position = Vector2(0, -5)
+texture = ExtResource("12_stop")
+region_enabled = true
+region_rect = Rect2(0, 0, 140, 18)
+
+[node name="ArchBase" type="Sprite2D" parent="Platforms/Overhang_Arch1"]
+texture_repeat = 2
+position = Vector2(0, 6)
+texture = ExtResource("13_ssub")
+region_enabled = true
+region_rect = Rect2(0, 0, 140, 16)
+
+[node name="Ground4_MidPillar" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1175, 430)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Ground4_MidPillar"]
+shape = SubResource("RectangleShape2D_g4")
+
+[node name="SnowTop" type="Sprite2D" parent="Platforms/Ground4_MidPillar"]
+texture_repeat = 2
+position = Vector2(0, -34)
+texture = ExtResource("12_stop")
+region_enabled = true
+region_rect = Rect2(0, 0, 180, 32)
+
+[node name="SlateSub" type="Sprite2D" parent="Platforms/Ground4_MidPillar"]
+texture_repeat = 2
+position = Vector2(0, 62)
+texture = ExtResource("13_ssub")
+region_enabled = true
+region_rect = Rect2(0, 0, 180, 160)
+
+[node name="Platform_HighSpan" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1285, 326)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform_HighSpan"]
+shape = SubResource("RectangleShape2D_p_highspan")
+
+[node name="SnowDeck" type="Sprite2D" parent="Platforms/Platform_HighSpan"]
+texture_repeat = 2
+texture = ExtResource("12_stop")
+region_enabled = true
+region_rect = Rect2(0, 0, 150, 18)
+
+[node name="Ground5_Landing" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1445, 445)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Ground5_Landing"]
+shape = SubResource("RectangleShape2D_g5")
+
+[node name="SnowTop" type="Sprite2D" parent="Platforms/Ground5_Landing"]
+texture_repeat = 2
+position = Vector2(0, -34)
+texture = ExtResource("12_stop")
+region_enabled = true
+region_rect = Rect2(0, 0, 140, 32)
+
+[node name="SlateSub" type="Sprite2D" parent="Platforms/Ground5_Landing"]
+texture_repeat = 2
+position = Vector2(0, 62)
+texture = ExtResource("13_ssub")
+region_enabled = true
+region_rect = Rect2(0, 0, 140, 160)
+
+[node name="Overhang_Arch2" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1442, 234)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Overhang_Arch2"]
+shape = SubResource("RectangleShape2D_arch2")
+
+[node name="ArchTop" type="Sprite2D" parent="Platforms/Overhang_Arch2"]
+texture_repeat = 2
+position = Vector2(0, -4)
+texture = ExtResource("12_stop")
+region_enabled = true
+region_rect = Rect2(0, 0, 105, 16)
+
+[node name="ArchBase" type="Sprite2D" parent="Platforms/Overhang_Arch2"]
+texture_repeat = 2
+position = Vector2(0, 5)
+texture = ExtResource("13_ssub")
+region_enabled = true
+region_rect = Rect2(0, 0, 105, 14)
+
+[node name="Ground6_RidgeBase" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1895, 460)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Ground6_RidgeBase"]
+shape = SubResource("RectangleShape2D_g6")
+
+[node name="SnowTop" type="Sprite2D" parent="Platforms/Ground6_RidgeBase"]
+texture_repeat = 2
+position = Vector2(0, -34)
+texture = ExtResource("12_stop")
+region_enabled = true
+region_rect = Rect2(0, 0, 680, 32)
+
+[node name="SlateSub" type="Sprite2D" parent="Platforms/Ground6_RidgeBase"]
+texture_repeat = 2
+position = Vector2(0, 62)
+texture = ExtResource("13_ssub")
+region_enabled = true
+region_rect = Rect2(0, 0, 680, 160)
+
+[node name="Platform_RidgeStep" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1585, 358)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform_RidgeStep"]
+shape = SubResource("RectangleShape2D_p_rstep")
+
+[node name="Wood" type="Sprite2D" parent="Platforms/Platform_RidgeStep"]
+modulate = Color(0.86, 0.94, 1, 1)
+texture_repeat = 2
+texture = ExtResource("18_pwood")
+region_enabled = true
+region_rect = Rect2(0, 0, 72, 16)
+
+[node name="Platform_RidgeUpper" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1845, 298)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform_RidgeUpper"]
+shape = SubResource("RectangleShape2D_p_rupper")
+
+[node name="SnowDeck" type="Sprite2D" parent="Platforms/Platform_RidgeUpper"]
+texture_repeat = 2
+texture = ExtResource("12_stop")
+region_enabled = true
+region_rect = Rect2(0, 0, 390, 16)
+
+[node name="Overhang_Ridge" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1850, 166)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Overhang_Ridge"]
+shape = SubResource("RectangleShape2D_arch_ridge")
+
+[node name="ArchTop" type="Sprite2D" parent="Platforms/Overhang_Ridge"]
+texture_repeat = 2
+position = Vector2(0, -4)
+texture = ExtResource("12_stop")
+region_enabled = true
+region_rect = Rect2(0, 0, 270, 16)
+
+[node name="ArchBase" type="Sprite2D" parent="Platforms/Overhang_Ridge"]
+texture_repeat = 2
+position = Vector2(0, 5)
+texture = ExtResource("13_ssub")
+region_enabled = true
+region_rect = Rect2(0, 0, 270, 14)
+
+[node name="Ground7_OutpostCourtyard" type="StaticBody2D" parent="Platforms"]
+position = Vector2(2572.5, 460)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Ground7_OutpostCourtyard"]
+shape = SubResource("RectangleShape2D_g7")
+
+[node name="SnowTop" type="Sprite2D" parent="Platforms/Ground7_OutpostCourtyard"]
+texture_repeat = 2
+position = Vector2(0, -34)
+texture = ExtResource("12_stop")
+region_enabled = true
+region_rect = Rect2(0, 0, 535, 32)
+
+[node name="SlateSub" type="Sprite2D" parent="Platforms/Ground7_OutpostCourtyard"]
+texture_repeat = 2
+position = Vector2(0, 62)
+texture = ExtResource("13_ssub")
+region_enabled = true
+region_rect = Rect2(0, 0, 535, 160)
+
+[node name="Platform_GateTower" type="StaticBody2D" parent="Platforms"]
+position = Vector2(2590, 344)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform_GateTower"]
+shape = SubResource("RectangleShape2D_p_gtower")
+
+[node name="Wood" type="Sprite2D" parent="Platforms/Platform_GateTower"]
+modulate = Color(0.86, 0.94, 1, 1)
+texture_repeat = 2
+texture = ExtResource("18_pwood")
+region_enabled = true
+region_rect = Rect2(0, 0, 120, 16)
+
+[node name="Overhang_Gate" type="StaticBody2D" parent="Platforms"]
+position = Vector2(2415, 252)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Overhang_Gate"]
+shape = SubResource("RectangleShape2D_arch_gate")
+
+[node name="ArchTop" type="Sprite2D" parent="Platforms/Overhang_Gate"]
+texture_repeat = 2
+position = Vector2(0, -4)
+texture = ExtResource("12_stop")
+region_enabled = true
+region_rect = Rect2(0, 0, 120, 14)
+
+[node name="ArchBase" type="Sprite2D" parent="Platforms/Overhang_Gate"]
+texture_repeat = 2
+position = Vector2(0, 5)
+texture = ExtResource("13_ssub")
+region_enabled = true
+region_rect = Rect2(0, 0, 120, 12)
+
+[node name="IcePatches" type="Node2D" parent="."]
+
+[node name="IcePatch_Trailhead" parent="IcePatches" instance=ExtResource("6_ice")]
+position = Vector2(325, 410)
+patch_width = 130.0
+
+[node name="IcePatch_Bridge1" parent="IcePatches" instance=ExtResource("6_ice")]
+position = Vector2(925, 378)
+patch_width = 110.0
+
+[node name="IcePatch_HighSpan" parent="IcePatches" instance=ExtResource("6_ice")]
+position = Vector2(1285, 317)
+patch_width = 96.0
+
+[node name="IcePatch_UpperRidge" parent="IcePatches" instance=ExtResource("6_ice")]
+position = Vector2(1825, 290)
+patch_width = 120.0
+
+[node name="IcePatch_Courtyard" parent="IcePatches" instance=ExtResource("6_ice")]
+position = Vector2(2425, 410)
+patch_width = 140.0
+
+[node name="Icicles" type="Node2D" parent="."]
+
+[node name="Icicle1_BridgeA" parent="Icicles" instance=ExtResource("7_ici")]
+position = Vector2(900, 236)
+warning_duration = 0.55
+max_fall_distance = 160.0
+
+[node name="Icicle2_BridgeB" parent="Icicles" instance=ExtResource("7_ici")]
+position = Vector2(965, 236)
+warning_duration = 0.55
+max_fall_distance = 160.0
+
+[node name="Icicle3_ArchLanding" parent="Icicles" instance=ExtResource("7_ici")]
+position = Vector2(1425, 246)
+warning_duration = 0.55
+max_fall_distance = 170.0
+
+[node name="Icicle4_RidgeA" parent="Icicles" instance=ExtResource("7_ici")]
+position = Vector2(1760, 178)
+warning_duration = 0.5
+max_fall_distance = 132.0
+
+[node name="Icicle5_RidgeB" parent="Icicles" instance=ExtResource("7_ici")]
+position = Vector2(1870, 178)
+warning_duration = 0.55
+max_fall_distance = 132.0
+
+[node name="Icicle6_GateApproach" parent="Icicles" instance=ExtResource("7_ici")]
+position = Vector2(2415, 263)
+warning_duration = 0.55
+max_fall_distance = 165.0
+
+[node name="Ladder_Ridge" parent="." instance=ExtResource("8_lad")]
+position = Vector2(1638, 350)
+scale = Vector2(1, 1.9)
+
+[node name="SpawnPoint" type="Marker2D" parent="."]
+position = Vector2(110, 394)
+
+[node name="Player" parent="." instance=ExtResource("2_play")]
+position = Vector2(110, 394)
+
+[node name="Enemies" type="Node2D" parent="."]
+
+[node name="Enemy1_TrailScout" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(520, 378)
+patrol_distance = 22.0
+
+[node name="Enemy2_StepRifleman" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(690, 363)
+patrol_distance = 28.0
+
+[node name="Enemy3_CrevasseRifleman" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1160, 363)
+patrol_distance = 24.0
+
+[node name="Enemy4_HighSpanGuard" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1320, 300)
+patrol_distance = 14.0
+
+[node name="Enemy5_ArchSniper" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1475, 378)
+patrol_distance = 14.0
+
+[node name="Enemy6_UpperRidgeGuard" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1975, 273)
+patrol_distance = 32.0
+
+[node name="Enemy7_LowerRidgePatrol" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1840, 393)
+patrol_distance = 45.0
+
+[node name="Enemy8_BehindAmbush" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(1680, 393)
+patrol_distance = 30.0
+is_ambush = true
+ambush_type = 6
+
+[node name="Enemy9_WatchtowerSniper" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(2590, 319)
+patrol_distance = 0.0
+
+[node name="Enemy10_GateCommander" parent="Enemies" instance=ExtResource("4_esol")]
+position = Vector2(2550, 393)
+patrol_distance = 30.0
+
+[node name="Ambushes" type="Node2D" parent="."]
+
+[node name="AmbushTrigger_Ridge" type="Area2D" parent="Ambushes"]
+position = Vector2(1910, 340)
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("9_amb")
+target_enemies = [NodePath("../../Enemies/Enemy8_BehindAmbush")]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ambushes/AmbushTrigger_Ridge"]
+shape = SubResource("RectangleShape2D_ambush_trig")
+
+[node name="ExtractionBeacon" parent="." instance=ExtResource("5_beac")]
+position = Vector2(2710, 378)
+required_enemies = 10
+
+[node name="HUD" parent="." instance=ExtResource("3_hud")]
+current_stage_id = 11
+
+[node name="IntroBanner" type="Control" parent="HUD"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="Panel" parent="HUD/IntroBanner"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -230.0
+offset_top = -65.0
+offset_right = 230.0
+offset_bottom = 65.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_banner")
+
+[node name="VBox" type="VBoxContainer" parent="HUD/IntroBanner/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="WorldTitle" type="Label" parent="HUD/IntroBanner/Panel/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.58, 0.86, 1, 1)
+theme_override_font_sizes/font_size = 18
+text = "WORLD 3 — MOUNTAIN FORTRESS"
+horizontal_alignment = 1
+
+[node name="StageTitle" type="Label" parent="HUD/IntroBanner/Panel/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.98, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "STAGE 11: MOUNTAIN PASS"
+horizontal_alignment = 1
+
+[node name="Briefing" type="Label" parent="HUD/IntroBanner/Panel/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.86, 0.93, 0.98, 0.9)
+theme_override_font_sizes/font_size = 11
+text = "Slick glacier ice and hanging icicles ahead. Eliminate all 10 sentries."
+horizontal_alignment = 1

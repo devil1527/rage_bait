@@ -93,6 +93,7 @@ func run_all_tests() -> void:
 	await test_level_8_desert_worm_nightmare()
 	await test_level_9_worm_minefield()
 	await test_level_10_giant_worm_survival()
+	await test_level_11_mountain_pass()
 	await test_all_5_levels_rewarded_revive_and_reset()
 
 func test_audio_manager_bullet_betrayal_sfx() -> void:
@@ -617,14 +618,14 @@ func test_pause_menu_and_confirmation_modals() -> void:
 	assert_eq(hud.victory_mission_btn.text, "☰ LEVEL SELECT", "Level Select button text matches Coin Hell ('☰ LEVEL SELECT')")
 	assert_true(hud.victory_arcade_btn == null, "Arcade Menu button omitted from Victory overlay (matches Coin Hell 3-button layout)")
 	
-	# Test Next Stage Button opens MessageModal for unreleased Stage 11 (when on last implemented Stage 10)
-	hud.current_stage_id = 10
+	# Test Next Stage Button opens MessageModal for unreleased Stage 12 (when on last implemented Stage 11)
+	hud.current_stage_id = 11
 	assert_true(hud.victory_message_modal != null, "Victory overlay has MessageModal")
 	assert_true(not hud.victory_message_modal.visible, "MessageModal starts hidden")
 	hud.victory_next_stage_btn.pressed.emit()
 	assert_true(hud.victory_message_modal.visible, "MessageModal opens when clicking Next Stage on last implemented stage")
-	assert_eq(hud.victory_modal_title.text, "STAGE 11 IN PROGRESS", "MessageModal title is 'STAGE 11 IN PROGRESS'")
-	assert_true(hud.victory_modal_label.text.contains("still being built"), "MessageModal explains Stage 11 is being built")
+	assert_eq(hud.victory_modal_title.text, "STAGE 12 IN PROGRESS", "MessageModal title is 'STAGE 12 IN PROGRESS'")
+	assert_true(hud.victory_modal_label.text.contains("still being built"), "MessageModal explains Stage 12 is being built")
 	
 	# Dismiss MessageModal
 	hud.victory_modal_ok_btn.pressed.emit()
@@ -1116,12 +1117,19 @@ func test_bullet_betrayal_menu_stars_reflection() -> void:
 	var state10_lbl: Label = vbox10.get_child(2)
 	assert_eq(state10_lbl.text, "LOCKED", "Stage 10 tile state is 'LOCKED'")
 
-	# Check Stage 11 card tile: PLANNED (future unreleased stage)
+	# Check Stage 11 card tile: LOCKED (implemented stage beyond highest unlocked)
 	var btn_lvl11: Button = menu.get_level_button(11)
 	assert_true(btn_lvl11 != null, "LevelBtn_11 exists")
 	var vbox11 = btn_lvl11.get_child(0)
 	var state11_lbl: Label = vbox11.get_child(2)
-	assert_eq(state11_lbl.text, "PLANNED", "Stage 11 tile state is 'PLANNED'")
+	assert_eq(state11_lbl.text, "LOCKED", "Stage 11 tile state is 'LOCKED'")
+
+	# Check Stage 12 card tile: PLANNED (future unreleased stage)
+	var btn_lvl12: Button = menu.get_level_button(12)
+	assert_true(btn_lvl12 != null, "LevelBtn_12 exists")
+	var vbox12 = btn_lvl12.get_child(0)
+	var state12_lbl: Label = vbox12.get_child(2)
+	assert_eq(state12_lbl.text, "PLANNED", "Stage 12 tile state is 'PLANNED'")
 
 	menu.queue_free()
 
@@ -2129,10 +2137,12 @@ func test_level_6_dune_patrol() -> void:
 	assert_true(btn_10 != null, "Stage 10 button exists in menu")
 	var btn_11: Button = menu.get_level_button(11)
 	assert_true(btn_11 != null, "Stage 11 button exists in menu")
+	var btn_12: Button = menu.get_level_button(12)
+	assert_true(btn_12 != null, "Stage 12 button exists in menu")
 
-	menu._on_level_tile_pressed(11)
-	assert_true(menu.message_modal.visible, "Stage 11 is guarded with in-progress modal")
-	assert_true("IN PROGRESS" in menu.modal_title.text, "Modal title indicates Stage 11 in progress")
+	menu._on_level_tile_pressed(12)
+	assert_true(menu.message_modal.visible, "Stage 12 is guarded with in-progress modal")
+	assert_true("IN PROGRESS" in menu.modal_title.text, "Modal title indicates Stage 12 in progress")
 	menu.queue_free()
 
 	level.queue_free()
@@ -2469,7 +2479,9 @@ func test_stage6_to_7_progression_and_stars() -> void:
 	assert_eq((btn9.get_child(0).get_child(2) as Label).text, "LOCKED", "Menu keeps implemented Stage 9 as LOCKED before Stage 8 clear")
 	assert_eq((btn10.get_child(0).get_child(2) as Label).text, "LOCKED", "Menu keeps implemented Stage 10 as LOCKED before Stage 9 clear")
 	var btn11: Button = menu_after.get_level_button(11)
-	assert_eq((btn11.get_child(0).get_child(2) as Label).text, "PLANNED", "Menu keeps unimplemented Stage 11 as PLANNED")
+	assert_eq((btn11.get_child(0).get_child(2) as Label).text, "LOCKED", "Menu keeps implemented Stage 11 as LOCKED before Stage 10 clear")
+	var btn12: Button = menu_after.get_level_button(12)
+	assert_eq((btn12.get_child(0).get_child(2) as Label).text, "PLANNED", "Menu keeps unimplemented Stage 12 as PLANNED")
 
 	# Verify HUD Next Stage on Stage 6 points to bb_level_7 scene constant
 	assert_true(ResourceLoader.exists("res://scenes/bullet_betrayal/bb_level_7.tscn"), "Next Stage target bb_level_7.tscn exists")
@@ -4088,15 +4100,17 @@ func test_level_10_giant_worm_survival() -> void:
 	hud.complete_and_record_stage(10, "GIANT WORM SURVIVAL CLEARED", 1)
 	assert_eq(SaveManager.get_bb_level_stars(10), 3, "Best stars on Stage 10 never decrease below 3")
 
-	# Menu reflects Stage 10 COMPLETED with 3 stars & Stage 11 PLANNED
+	# Menu reflects Stage 10 COMPLETED with 3 stars, Stage 11 AVAILABLE & Stage 12 PLANNED
 	var menu_after: BulletBetrayalMenu = load("res://scenes/bullet_betrayal/bullet_betrayal_menu.tscn").instantiate()
 	add_child(menu_after)
 	await get_tree().physics_frame
 	var m10 := menu_after.get_level_button(10)
 	var m11 := menu_after.get_level_button(11)
+	var m12 := menu_after.get_level_button(12)
 	assert_eq((m10.get_child(0).get_child(2) as Label).text, "COMPLETED", "Menu shows Stage 10 COMPLETED")
 	assert_eq((m10.get_child(0).get_node("StarsLabel") as Label).text, "★ ★ ★", "Menu shows 3-star Stage 10 rating")
-	assert_eq((m11.get_child(0).get_child(2) as Label).text, "PLANNED", "Menu shows unimplemented Stage 11 as PLANNED")
+	assert_eq((m11.get_child(0).get_child(2) as Label).text, "AVAILABLE", "Menu shows implemented Stage 11 AVAILABLE after Stage 10 clear")
+	assert_eq((m12.get_child(0).get_child(2) as Label).text, "PLANNED", "Menu shows unimplemented Stage 12 as PLANNED")
 	menu_after.queue_free()
 
 	if AdManager:
@@ -4123,6 +4137,260 @@ func test_level_10_giant_worm_survival() -> void:
 	SaveManager.save_data()
 	assert_true(true, "World 2 Stage 10 Giant Worm Survival fully verified")
 
+func test_level_11_mountain_pass() -> void:
+	print("\n--- TEST: World 3 Stage 11 Mountain Pass ---")
+	var orig_bb_highest: int = SaveManager.bb_highest_unlocked_level
+	var orig_bb_completed: Array = SaveManager.bb_completed_levels.duplicate()
+	var orig_bb_stars: Dictionary = SaveManager.bb_stage_stars.duplicate()
+	var orig_revives: int = GameManager.revives_used_this_run if GameManager else 0
+	var orig_ch_highest: int = SaveManager.highest_unlocked_level
+	var orig_ch_completed: Array = SaveManager.completed_levels.duplicate()
 
+	if AdManager:
+		AdManager.enable_mock_mode(true)
 
+	# 1. Stage 11 scene instantiation, HUD title & core Bullet Betrayal rules
+	var lvl11_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_level_11.tscn")
+	assert_true(lvl11_scene != null, "bb_level_11.tscn loads successfully")
+	var level: BulletBetrayalLevel11 = lvl11_scene.instantiate()
+	add_child(level)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+
+	assert_eq(level.hud.current_stage_id, 11, "Stage 11 HUD stage_id is 11")
+	assert_eq(level.hud.stage_label.text, "WORLD 3-1: MOUNTAIN PASS", "HUD shows exact title WORLD 3-1: MOUNTAIN PASS")
+	assert_eq(level.player.current_ammo, 10, "Player starts Stage 11 with 10 bullets")
+	assert_eq(level.player.max_health, 1, "Player starts Stage 11 with 1-life rule")
+	assert_eq(level.enemies_container.get_child_count(), 10, "Stage 11 has exactly 10 enemies")
+	assert_eq(get_tree().get_nodes_in_group("ammo_pickups").size(), 0, "Stage 11 has 0 ammo pickups")
+	assert_true(level.ice_patches_container != null and level.ice_patches_container.get_child_count() >= 4, "Stage 11 places glacier ice patches")
+	assert_true(level.icicles_container != null and level.icicles_container.get_child_count() >= 5, "Stage 11 places falling icicle traps")
+	assert_true(not level.extraction_beacon.is_unlocked, "Extraction beacon starts locked at 0/10 kills")
+
+	# 2. Check World 3 identity & progression state in menu
+	SaveManager.bb_completed_levels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+	SaveManager.bb_highest_unlocked_level = 11
+	SaveManager.bb_stage_stars = {"10": 3}
+	var menu_check: BulletBetrayalMenu = load("res://scenes/bullet_betrayal/bullet_betrayal_menu.tscn").instantiate()
+	add_child(menu_check)
+	await get_tree().physics_frame
+	var w3_sec: Control = menu_check.worlds_container.get_node_or_null("WorldSection_3")
+	assert_true(w3_sec != null, "World 3 section exists in menu")
+	var w3_header: Label = w3_sec.get_node_or_null("WorldHeader_3/TitleLabel") if w3_sec else null
+	assert_true(w3_header != null and "MOUNTAIN FORTRESS" in w3_header.text, "World 3 title preserves exact name MOUNTAIN FORTRESS")
+	var btn11_init := menu_check.get_level_button(11)
+	assert_true("Mountain Pass" in (btn11_init.get_child(0).get_child(1) as Label).text, "Stage 11 tile displays Mountain Pass")
+	assert_eq((btn11_init.get_child(0).get_child(2) as Label).text, "AVAILABLE", "Stage 10 clear unlocks Stage 11 as AVAILABLE")
+	menu_check.queue_free()
+	await get_tree().physics_frame
+
+	# 3. Verify ice patch traction ratios (0.48x accel, 0.24x friction), overlap dedup, stale pruning & reset
+	var player: BulletBetrayalPlayer = level.player
+	player.is_invulnerable = false
+	player.global_position = Vector2(140.0, 394.0)
+	player.velocity = Vector2.ZERO
+	player.reset_touch_inputs()
+	for _i in range(3):
+		await get_tree().physics_frame
+	assert_true(player.is_on_floor() and not player.is_on_ice, "Player grounded on snow starts with is_on_ice == false")
+
+	# Measure normal snow acceleration over 3 frames
+	player.touch_right = true
+	for _i in range(3):
+		await get_tree().physics_frame
+	var snow_accel_v: float = player.velocity.x
+	player.touch_right = false
+	player.velocity.x = 180.0
+	for _i in range(3):
+		await get_tree().physics_frame
+	var snow_decel_dv: float = 180.0 - player.velocity.x
+
+	# Measure ice patch acceleration & deceleration ratios (0.48x accel, 0.24x friction)
+	player.global_position = Vector2(325.0, 394.0)
+	player.velocity = Vector2.ZERO
+	for _i in range(3):
+		await get_tree().physics_frame
+	assert_true(player.is_on_floor() and player.is_actively_on_ice(), "Player grounded on IcePatch_Trailhead has active ice traction")
+
+	player.touch_right = true
+	for _i in range(3):
+		await get_tree().physics_frame
+	var ice_accel_v: float = player.velocity.x
+	player.touch_right = false
+	player.velocity.x = 180.0
+	for _i in range(3):
+		await get_tree().physics_frame
+	var ice_decel_dv: float = 180.0 - player.velocity.x
+	player.velocity = Vector2.ZERO
+
+	var accel_ratio: float = ice_accel_v / maxf(1.0, snow_accel_v)
+	var friction_ratio: float = ice_decel_dv / maxf(1.0, snow_decel_dv)
+	assert_true(absf(accel_ratio - 0.48) < 0.03, "Ice traction acceleration matches ~0.48x (got %.3f)" % accel_ratio)
+	assert_true(absf(friction_ratio - 0.24) < 0.03, "Ice traction glide friction matches ~0.24x (got %.3f)" % friction_ratio)
+
+	# Overlap dedup & stale pruning check (move onto normal snow so Trailhead patch does not overlap)
+	player.global_position = Vector2(140.0, 394.0)
+	for _i in range(2):
+		await get_tree().physics_frame
+	var p_a: BulletBetrayalIcePatch = load("res://scenes/bullet_betrayal/bb_ice_patch.tscn").instantiate()
+	var p_b: BulletBetrayalIcePatch = load("res://scenes/bullet_betrayal/bb_ice_patch.tscn").instantiate()
+	add_child(p_a)
+	add_child(p_b)
+	player.clear_ice_surfaces()
+	player.register_ice_surface(p_a)
+	player.register_ice_surface(p_a)
+	player.register_ice_surface(p_b)
+	assert_eq(player._overlapping_ice_patches.size(), 2, "Duplicate ice registration deduplicated cleanly")
+	player.unregister_ice_surface(p_a)
+	assert_true(player.is_on_ice, "Unregistering one overlapping patch retains ice traction from second patch")
+	p_b.queue_free()
+	await get_tree().physics_frame
+	assert_true(not player.is_actively_on_ice(), "Stale freed ice patch reference pruned automatically")
+	if is_instance_valid(p_a):
+		p_a.queue_free()
+	await get_tree().physics_frame
+
+	# Ice reset on die(), revive(), and respawn()
+	player.global_position = Vector2(325.0, 394.0)
+	for _i in range(3):
+		await get_tree().physics_frame
+	assert_true(player.is_on_ice, "Player re-entered Trailhead ice patch")
+	player.die()
+	assert_true(not player.is_on_ice, "die() cleanly resets is_on_ice")
+	player.revive(Vector2(140.0, 394.0))
+	assert_true(not player.is_on_ice, "revive() clears ice state cleanly")
+	player.is_invulnerable = false
+	player.global_position = Vector2(325.0, 394.0)
+	for _i in range(3):
+		await get_tree().physics_frame
+	player.respawn(Vector2(140.0, 394.0))
+	assert_true(not player.is_on_ice, "respawn() clears ice state cleanly")
+
+	# 4. Falling icicles: telegraph (~0.55s), bullet pass-through, enemy immunity, player kill & ground shatter
+	var icicle1: BulletBetrayalIcicleTrap = level.icicles_container.get_node("Icicle1_BridgeA")
+	assert_true(icicle1 != null and icicle1.state == BulletBetrayalIcicleTrap.State.ARMED, "Icicle1 starts ARMED")
+	assert_eq(icicle1.collision_layer, 0, "Icicle collision_layer is 0 so bullets never collide")
+	assert_true(icicle1.is_threat_active(), "Armed icicle reports active threat")
+
+	# Player bullet passes straight through armed/falling icicle
+	var test_bullet: BulletBetrayalBullet = load("res://scenes/bullet_betrayal/bb_bullet.tscn").instantiate()
+	level.add_child(test_bullet)
+	test_bullet.setup(Vector2.RIGHT, Vector2(icicle1.global_position.x - 16.0, icicle1.global_position.y + 16.0))
+	for _i in range(6):
+		await get_tree().physics_frame
+	assert_true(is_instance_valid(test_bullet) and test_bullet.global_position.x > icicle1.global_position.x + 10.0, "Player bullet passes cleanly through hanging icicle")
+	if is_instance_valid(test_bullet):
+		test_bullet.queue_free()
+
+	# Falling icicle never harms enemies
+	var enemy1: BulletBetrayalEnemySoldier = level.enemies_container.get_node("Enemy1_TrailScout")
+	var enemy_icicle: BulletBetrayalIcicleTrap = load("res://scenes/bullet_betrayal/bb_icicle_trap.tscn").instantiate()
+	enemy_icicle.position = enemy1.position - Vector2(0.0, 48.0)
+	enemy_icicle.warning_duration = 0.12
+	level.add_child(enemy_icicle)
+	enemy_icicle.trigger_fall()
+	for _i in range(25):
+		await get_tree().physics_frame
+	assert_true(not enemy1.is_dead, "Falling icicle does not harm or kill enemies")
+	if is_instance_valid(enemy_icicle):
+		enemy_icicle.queue_free()
+
+	# Safe revive excludes active icicle column
+	player.record_safe_position(Vector2(140.0, 394.0))
+	assert_true(not player.is_position_safe_for_revive(Vector2(icicle1.global_position.x, 362.0)), "Revive check rejects position directly under active icicle")
+
+	# Trigger Icicle1 by walking underneath, verify warning delay -> fall -> instant player death -> ground shatter
+	player.global_position = Vector2(icicle1.global_position.x, 362.0)
+	player.velocity = Vector2.ZERO
+	player.is_invulnerable = false
+	for _i in range(3):
+		await get_tree().physics_frame
+	assert_eq(icicle1.state, BulletBetrayalIcicleTrap.State.WARNING, "Walking beneath icicle triggers WARNING state")
+	for _i in range(15): # ~0.25s elapsed, total 0.30s < 0.55s warning
+		await get_tree().physics_frame
+	assert_eq(icicle1.state, BulletBetrayalIcicleTrap.State.WARNING, "Icicle sustains fair ~0.55s telegraph before dropping")
+	assert_true(player.is_alive, "Player survives during telegraph window")
+
+	for _i in range(42): # ~0.70s more -> falls, kills player, hits bridge & shatters
+		await get_tree().physics_frame
+	assert_true(not player.is_alive, "Falling icicle causes instant 1-hit death to player")
+	assert_eq(icicle1.state, BulletBetrayalIcicleTrap.State.SHATTERED, "Icicle shatters cleanly on hitting bridge surface")
+	assert_true(not icicle1.is_threat_active() and not icicle1.monitoring, "Shattered icicle cleans up collision & threat flag")
+
+	# 5. Eliminate 4 enemies (including testing Zone 3 rear ambush safety), revive preserving kill count, then reach 10/10 & unlock beacon
+	var enemies := level.enemies_container.get_children()
+	var ambush_enemy: BulletBetrayalEnemySoldier = level.enemies_container.get_node("Enemy8_BehindAmbush")
+	var ambush_trig := level.ambushes_container.get_node("AmbushTrigger_Ridge")
+	var saved_dead_pos := player.global_position
+	player.global_position = Vector2(1910.0, 394.0)
+	ambush_trig._on_body_entered(player)
+	player.global_position = saved_dead_pos
+	assert_true(ambush_enemy.global_position.y == 393.0 and ambush_enemy.global_position.x >= 1560.0 and ambush_enemy.global_position.x <= 2230.0, "Zone 3 BEHIND ambush spawns safely on solid Ground6_RidgeBase")
+
+	for i in range(4):
+		var e: BulletBetrayalEnemySoldier = enemies[i]
+		e.take_hit(1)
+	assert_eq(level._enemies_eliminated, 4, "1-hit kills eliminate 4 enemies cleanly")
+
+	if GameManager:
+		GameManager.revives_used_this_run = 0
+	level.hud.revives_used_in_run = 0
+	level.hud._on_revive_reward_granted(GameManager.current_run_id if GameManager else -1)
+	await get_tree().physics_frame
+	assert_true(player.is_alive, "Rewarded-ad revive restores player life in Stage 11")
+	assert_eq(player.current_ammo, 10, "Rewarded-ad revive restores 10 bullets")
+	assert_eq(level._enemies_eliminated, 4, "Enemy kill count (4/10) preserved across revive")
+	assert_true(player.is_position_safe_for_revive(player.global_position), "Revived player lands at validated safe anchor away from icicles & pits")
+	assert_true(not level.extraction_beacon.is_unlocked, "Extraction beacon remains locked at 4/10 kills")
+
+	for i in range(4, 10):
+		var e2: BulletBetrayalEnemySoldier = enemies[i]
+		e2.take_hit(1)
+	assert_eq(level._enemies_eliminated, 10, "All 10/10 Stage 11 enemies eliminated")
+	assert_true(level.extraction_beacon.is_unlocked, "Extraction beacon unlocks at 10/10 kills")
+
+	# 6. 2-star with revive, 3-star clean upgrade & no-downgrade + Stage 12 unlock progression
+	if GameManager:
+		GameManager.revives_used_this_run = 1
+	level.hud.revives_used_in_run = 1
+	level.hud.complete_and_record_stage(11, "MOUNTAIN PASS CLEARED", player.current_ammo)
+	assert_eq(SaveManager.get_bb_level_stars(11), 2, "Stage 11 clear with revive records 2 stars")
+	assert_true(SaveManager.bb_highest_unlocked_level >= 12, "Clearing Stage 11 unlocks Stage 12")
+
+	if GameManager:
+		GameManager.revives_used_this_run = 0
+	level.hud.revives_used_in_run = 0
+	level.hud.complete_and_record_stage(11, "MOUNTAIN PASS CLEARED", 1)
+	assert_eq(SaveManager.get_bb_level_stars(11), 3, "Clean Stage 11 clear upgrades best stars to 3")
+
+	if GameManager:
+		GameManager.revives_used_this_run = 1
+	level.hud.revives_used_in_run = 1
+	level.hud.complete_and_record_stage(11, "MOUNTAIN PASS CLEARED", 1)
+	assert_eq(SaveManager.get_bb_level_stars(11), 3, "Revived Stage 11 re-clear never decreases saved 3 stars")
+
+	level.queue_free()
+	await get_tree().physics_frame
+
+	# 7. Non-regression check across World 1 & World 2 stages (no leaked ice state; Coin Hell untouched)
+	for check_stage in [1, 10]:
+		var chk_scene: PackedScene = load("res://scenes/bullet_betrayal/bb_level_%d.tscn" % check_stage)
+		var chk_inst := chk_scene.instantiate()
+		add_child(chk_inst)
+		await get_tree().physics_frame
+		assert_true(not chk_inst.player.is_on_ice, "Stage %d has no leaked ice state" % check_stage)
+		chk_inst.queue_free()
+		await get_tree().physics_frame
+
+	if AdManager:
+		AdManager.disable_mock_mode()
+	SaveManager.bb_highest_unlocked_level = orig_bb_highest
+	SaveManager.bb_completed_levels = orig_bb_completed
+	SaveManager.bb_stage_stars = orig_bb_stars
+	if GameManager:
+		GameManager.revives_used_this_run = orig_revives
+	SaveManager.save_data()
+	assert_eq(SaveManager.highest_unlocked_level, orig_ch_highest, "Coin Hell highest unlocked untouched after Stage 11 tests")
+	assert_eq(SaveManager.completed_levels.size(), orig_ch_completed.size(), "Coin Hell completed levels untouched after Stage 11 tests")
+	assert_true(true, "World 3 Stage 11 Mountain Pass fully verified")
 
